@@ -1,0 +1,144 @@
+---
+- hosts: sender:receiver
+  remote_user: root
+  tasks:
+  - name: Pull centos image
+    shell: docker pull centos
+    
+  - name: Create directory for uperf docker image resources
+    file: path=/tmp/uperf state=directory
+    
+  - name: Copy Dockerfile to sender
+    copy: src=uperf/Dockerfile dest=/tmp/uperf/Dockerfile
+    
+  - name: Build uperf docker image
+    shell: docker build --tag centos/uperf /tmp/uperf
+
+- hosts: master
+  remote_user: root
+  tasks:
+  - name: Create SSH directory /root/.ssh if it does not exist
+    file: path=/root/.ssh state=directory
+
+  - stat: path=/root/.ssh/id_rsa
+    register: id_rsa
+    
+  - name: Create /root/.ssh/id_rsa if it does not exist
+    shell: ssh-keygen -f /root/.ssh/id_rsa -N ''
+    when: id_rsa.stat.islnk is not defined
+    
+  - name: Create directory for uperf resources
+    file: path=/tmp/origin state=directory
+
+  - name: Copy uperf scc
+    copy: src=content/uperf-scc.json dest=/tmp/origin/uperf-scc.json
+
+  - name: Copy uperf replicationcontroller template
+    copy: src=content/uperf-rc-template.json dest=/tmp/origin/uperf-rc-template.json
+
+  - name: Add uperf scc
+    shell: oc create -f /tmp/origin/uperf-scc.json
+    ignore_errors: yes
+    
+  - name: Label sender nodes
+    shell: oc label node {{ item }} --overwrite region={{ sender_region }}
+    with_items: "{{ groups['sender'] }}"
+
+  - name: Label receiver nodes
+    shell: oc label node {{ item }} --overwrite region={{ receiver_region }}
+    with_items: "{{ groups['receiver'] }}"
+
+  - name: Create uperf projects
+    shell: oc new-project uperf-{{ item }}
+    with_sequence: start=1 end={{ uperf_pod_number }}
+
+  - name: Create sender pods
+    shell: >
+      oc process
+      -v REGION={{ sender_region }},ROLE=sender
+      -f /tmp/origin/uperf-rc-template.json |
+      oc create --namespace=uperf-{{ item }} -f -
+    with_sequence: start=1 end={{ uperf_pod_number }}
+
+  - name: Wait for sender pods to be ready
+    script: scripts/wait-ready.sh sender
+
+  - name: Create receiver pods
+    shell: >
+      oc process
+      -v REGION={{ receiver_region }},ROLE=receiver
+      -f /tmp/origin/uperf-rc-template.json |
+      oc create --namespace=uperf-{{ item }} -f -
+    with_sequence: start=1 end={{ uperf_pod_number }}
+
+  - name: Wait for receiver pods to be ready
+    script: scripts/wait-ready.sh receiver
+
+- hosts: master
+  remote_user: root
+  pre_tasks:
+  - name: Get sender pods ip addresses
+    shell: oc get pods --output=json --all-namespaces --selector="name=sender"
+    register: oc_get_senders
+
+  - name: Get receiver pods ip addresses
+    shell: oc get pods --output=json --all-namespaces --selector="name=receiver"
+    register: oc_get_receivers
+
+  vars:
+    uperf_clients: "{{ (oc_get_senders.stdout | from_json)['items'] | join(',', attribute='status.podIP') }}"
+    uperf_servers: "{{ (oc_get_receivers.stdout | from_json)['items'] | join(',', attribute='status.podIP') }}"
+
+  tasks:
+  - name: Patch pbench-uperf
+    patch: >
+      src=content/pbench-uperf.patch
+      dest=/opt/pbench-agent/bench-scripts/pbench-uperf
+      
+  - name: Register pbench tools on master
+    shell: pbench-register-tool-set --label={{ pbench_label }}
+
+  - name: Register pbench tools on remote
+    shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ pbench_remote }}
+    when: pbench_remote != "None"
+
+  - name: Run pbench-uperf for TCP benchmarks
+    shell: >
+      pbench-uperf
+      --test-types=stream,rr
+      --runtime=30
+      --message-sizes=64,1024,16384
+      --protocols=tcp
+      --instances=1,2
+      --samples=3
+      --max-stddev=10
+      --clients={{ uperf_clients }}
+      --servers={{ uperf_servers }}
+      --config={{ pbench_label }}_TCP
+
+  - name: Run pbench-uperf for UDP benchmarks
+    shell: >
+      pbench-uperf
+      --test-types=rr
+      --runtime=30
+      --message-sizes=64,1024,16384
+      --protocols=udp
+      --instances=1,2
+      --samples=3
+      --max-stddev=10
+      --clients={{ uperf_clients }}
+      --servers={{ uperf_servers }}
+      --config={{ pbench_label }}_UDP
+
+  - name: Copy pbench results
+    shell: pbench-copy-results
+
+  - name: Kill pbench tools
+    shell: pbench-kill-tools
+
+  - name: Clear pbench tools
+    shell: pbench-clear-tools
+
+  - name: Delete uperf projects
+    shell: oc delete project uperf-{{ item }}
+    with_sequence: start=1 end={{ uperf_pod_number }}

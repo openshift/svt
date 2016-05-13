@@ -1,0 +1,41 @@
+{
+  "kind": "ReplicationController",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "frontend-controller",
+    "labels": {
+      "state": "serving"
+    }
+  },
+  "spec": {
+    "replicas": 2,
+    "selector": {
+      "app": "frontend"
+    },
+    "template": {
+      "metadata": {
+        "labels": {
+          "app": "frontend"
+        }
+      },
+      "spec": {
+        "volumes": null,
+        "containers": [
+          {
+            "name": "php-redis",
+            "image": "redis",
+            "ports": [
+              {
+                "containerPort": 80,
+                "protocol": "TCP"
+              }
+            ],
+            "imagePullPolicy": "IfNotPresent"
+          }
+        ],
+        "restartPolicy": "Always",
+        "dnsPolicy": "ClusterFirst"
+      }
+    }
+  }
+}

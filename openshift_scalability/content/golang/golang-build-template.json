@@ -1,0 +1,88 @@
+{
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "beego-example",
+    "annotations": {
+      "description": "An example Beego (http://beego.me/) application written in Golang",
+      "tags": "instant-app,golang",
+      "iconClass": "icon-golang"
+    }
+  },
+  "labels": {
+    "template": "beego-example"
+  },
+    "objects": [
+	{
+	    "kind": "ImageStream",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "beego-example",
+		"annotations": {
+		    "description": "Keeps track of changes in the application image"
+		}
+	    }
+	},
+	{
+	    "kind": "BuildConfig",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "beego-example",
+		"annotations": {
+		    "description": "Defines how to build the application"
+		}
+	    },
+	    "spec": {
+		"source": {
+		    "type": "Git",
+		    "git": {
+			"uri": "${SOURCE_REPOSITORY_URL}",
+			"ref": "${SOURCE_REPOSITORY_REF}"
+		    },
+		    "contextDir": "${CONTEXT_DIR}"
+		},
+		"strategy": {
+		    "type": "Docker"
+		},
+		"output": {
+		    "to": {
+			"kind": "ImageStreamTag",
+			"name": "beego-example:latest"
+		    }
+		},
+		"triggers": [
+		    {
+			"type": "ConfigChange"
+		    },
+		    {
+			"type": "GitHub",
+			"github": {
+			    "secret": "${GITHUB_WEBHOOK_SECRET}"
+			}
+		    }
+		]
+	    }
+	}
+    ],
+    "parameters": [
+	{
+	    "name": "SOURCE_REPOSITORY_URL",
+	    "description": "The URL of the repository with your application source code",
+	    "value": "https://github.com/openshift/golang-ex.git"
+	},
+	{
+	    "name": "SOURCE_REPOSITORY_REF",
+	    "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch"
+	},
+	{
+	    "name": "CONTEXT_DIR",
+	    "description": "Set this to the relative path to your project if it is not in the root of your repository"
+	},
+	{
+	    "name": "GITHUB_WEBHOOK_SECRET",
+	    "description": "A secret string used to configure the GitHub webhook",
+	    "generate": "expression",
+	    "from": "[a-zA-Z0-9]{40}"
+	}
+    ]
+} 

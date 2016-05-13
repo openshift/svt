@@ -1,0 +1,135 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+	"name": "dancer-example",
+	"annotations": {
+	    "description": "An example Dancer application with no database",
+	    "tags": "instant-app,perl,dancer",
+	    "iconClass": "icon-perl"
+	}
+    },
+    "labels": {
+	"template": "dancer-example"
+    },
+    "objects": [
+	{
+	    "kind": "Service",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "dancer-example",
+		"annotations": {
+		    "description": "Exposes and load balances the application pods"
+		}
+	    },
+	    "spec": {
+		"ports": [
+		    {
+			"name": "web",
+			"port": 8080,
+			"targetPort": 8080
+		    }
+		],
+		"selector": {
+		    "name": "dancer-example"
+		}
+	    }
+	},
+	{
+	    "kind": "Route",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "dancer-example"
+	    },
+	    "spec": {
+		"host": "${APPLICATION_DOMAIN}",
+		"to": {
+		    "kind": "Service",
+		    "name": "dancer-example"
+		}
+	    }
+	},
+	{
+	    "kind": "DeploymentConfig",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "dancer-example",
+		"annotations": {
+		    "description": "Defines how to deploy the application server"
+		}
+	    },
+	    "spec": {
+		"strategy": {
+		    "type": "Rolling"
+		},
+		"triggers": [
+		    {
+			"type": "ImageChange",
+			"imageChangeParams": {
+			    "automatic": true,
+			    "containerNames": [
+				"dancer-example"
+			    ],
+			    "from": {
+				"kind": "ImageStreamTag",
+				"name": "dancer-example:latest",
+				"namespace": "${IMAGESTREAM_NAMESPACE}"
+			    }
+			}
+		    },
+		    {
+			"type": "ConfigChange"
+		    }
+		],
+		"replicas": 1,
+		"selector": {
+		    "name": "dancer-example"
+		},
+		"template": {
+		    "metadata": {
+			"name": "dancer-example",
+			"labels": {
+			    "name": "dancer-example"
+			}
+		    },
+		    "spec": {
+			"containers": [
+			    {
+				"name": "dancer-example",
+				"image": "dancer-example",
+				"ports": [
+				    {
+					"containerPort": 8080
+				    }
+				],
+				"env": [
+				    {
+					"name": "PERL_APACHE2_RELOAD",
+					"value": "${PERL_APACHE2_RELOAD}"
+				    }
+				]
+			    }
+			]
+		    }
+		}
+	    }
+	}
+    ],
+    "parameters": [
+	{
+	    "name": "IMAGESTREAM_NAMESPACE",
+	    "description": "Namespace where the dancer-example imagestream is, only works for current namespace and openshift",
+	    "value": "openshift"
+	},
+	{
+	    "name": "APPLICATION_DOMAIN",
+	    "description": "The exposed hostname that will route to the Dancer service, if left blank a value will be defaulted.",
+	    "value": ""
+	},
+	{
+	    "name": "PERL_APACHE2_RELOAD",
+	    "description": "Set this to \"true\" to enable automatic reloading of modified Perl modules",
+	    "value": ""
+	}
+    ]
+}

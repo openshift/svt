@@ -1,0 +1,46 @@
+---
+- name: Add the OS specific varibles
+  include_vars: "{{ ansible_os_family }}.yml"
+
+- name: print
+  debug: msg={{ interface10g  }}
+
+- name: print
+  debug: msg={{ ansible_os_family }}
+
+- name: Install the required  packages in Redhat derivatives
+  yum: name={{ item }} state=installed
+  with_items: network_pkgs
+  when: ansible_os_family == 'RedHat' and interface10g
+
+- name: Create the network configuration file for ethernet devices
+  template: src=ethernet_{{ ansible_os_family }}.j2 dest={{ net_path }}/ifcfg-{{ item.device }}
+  with_items: network_ether_interfaces
+  when: network_ether_interfaces is defined and interface10g
+  register: ether_result
+
+- shell: ifdown {{ item.item.device }}; ifup {{ item.item.device }}
+  with_items: ether_result.results
+  when: ether_result is defined and item.changed and interface10g
+
+- name: Create the network configuration file for bridge devices
+  template: src=bridge_{{ ansible_os_family }}.j2 dest={{ net_path }}/ifcfg-{{ item.device }}
+  with_items: network_bridge_interfaces
+  when: network_bridge_interfaces is defined and interface10g 
+  register: bridge_result
+
+- shell: ifdown {{ item.item.device }}; ifup {{ item.item.device }}
+  with_items: bridge_result.results
+  when: bridge_result is defined and item.changed and interface10g
+ 
+- name: Create the network configuration file for port on the bridge devices
+  template: src=bridge_port_{{ ansible_os_family }}.j2 dest={{ net_path }}/ifcfg-{{ item.1 }}
+  with_subelements: 
+   - network_bridge_interfaces
+   - ports
+  when: network_bridge_interfaces is defined  and interface10g
+  register: bridge_port_result
+
+- shell: ifdown {{ item.item.1 }}; ifup {{ item.item.1 }}
+  with_items: bridge_port_result.results
+  when: bridge_port_result is defined and item.changed and interface10g

@@ -1,0 +1,14 @@
+---
+- name: write /etc/sysconfig/docker-storage-setup to be ready for d-s-s  
+  hosts: nodes
+  vars: 
+       device: DEVICE
+       ose_docker_storage: http://example.com/git/perf-dept.git/plain/docker/openshift/jenkins/ose3_perf/scripts/ose-docker-storage.sh
+  tasks:
+    - name: download ose-docker-storage.sh file to /tmp
+      get_url: url={{ ose_docker_storage }} dest=/tmp/ose-docker-storage.sh mode=0744
+      remote_user: root 
+
+    - name: Execute script to create storage 
+      shell: /tmp/ose-docker-storage.sh -s d -d {{ device }}
+      remote_user: root

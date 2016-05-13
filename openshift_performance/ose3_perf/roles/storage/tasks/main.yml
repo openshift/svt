@@ -1,0 +1,3 @@
+--- 
+- name: run ose-docker-storage.sh script
+  shell: scripts/ose-docker-storage.sh -s d -d {{DEVICE}}

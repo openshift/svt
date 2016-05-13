@@ -1,0 +1,408 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+	"name": "network-test",
+	"annotations": {
+	    "description": "A template for creating resources for network testing",
+	    "tags": "iperf,netperf,uperf,networking"
+	}
+    },
+    "labels": {
+	"template": "network-test"
+    },
+    "objects": [
+	{
+            "apiVersion": "v1",
+            "kind": "Route",
+            "metadata": {
+                "name": "sender"
+            },
+            "spec": {
+                "host": "${APPLICATION_DOMAIN}",
+                "to": {
+                    "kind": "Service",
+                    "name": "sender"
+                }
+            }
+        },
+	{
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "annotations": {
+                    "description": "Exposes and load balances the application pods"
+                },
+                "name": "sender"
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "ssh",
+                        "port": 22
+                    },
+                    {
+                        "name": "netperf-control-tcp",
+                        "port": 12865,
+                        "protocol": "TCP"
+                    },
+                    {
+                        "name": "netperf-control-udp",
+                        "port": 12865,
+                        "protocol": "UDP"
+                    },
+                    {
+                        "name": "netperf-data-tcp",
+                        "port": 12866,
+                        "protocol": "TCP"
+                    },
+                    {
+                        "name": "netperf-data-udp",
+                        "port": 12866,
+                        "protocol": "UDP"
+                    },
+                    {
+                        "name": "iperf2-tcp",
+                        "port": 5001,
+                        "protocol": "TCP"
+                    },
+                    {
+                        "name": "iperf2-udp",
+                        "port": 5001,
+                        "protocol": "UDP"
+                    },
+                    {
+                        "name": "iperf3-tcp",
+                        "port": 5201,
+                        "protocol": "TCP"
+                    },
+                    {
+                        "name": "iperf3-udp",
+                        "port": 5201,
+                        "protocol": "UDP"
+                    },
+		    {
+			"name": "uperf-1-tcp",
+			"port": 20000,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-2-tcp",
+			"port": 20001,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-3-tcp",
+			"port": 20002,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-1-udp",
+			"port": 20000,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-2-udp",
+			"port": 20001,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-3-udp",
+			"port": 20002,
+			"protocol": "UDP"
+		    }
+                ],
+                "selector": {
+                    "name": "sender"
+                }
+            }
+        },
+	{
+            "apiVersion": "v1",
+            "kind": "DeploymentConfig",
+            "metadata": {
+                "annotations": {
+                    "description": "Defines how to deploy the application server"
+                },
+                "labels": {
+		    "name": "sender"
+                },
+                "name": "sender"
+            },
+            "spec": {
+                "replicas": 1,
+                "selector": {
+                    "name": "sender"
+                },
+                "strategy": {
+                    "type": "Rolling"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "name": "sender"
+                        },
+                        "name": "sender"
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "image": "network-test",
+                                "name": "sender",
+                                "securityContext": {
+                                    "privileged": true
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/sys/fs/cgroup",
+                                        "name": "sys-fs-cgroup"
+                                    }
+                                ]
+                            }
+                        ],
+			"dnsPolicy": "ClusterFirst",
+                        "nodeSelector": {
+                            "region": "${SENDER_REGION}"
+                        },
+                        "restartPolicy": "Always",
+                        "volumes": [
+                            {
+                                "hostPath": {
+                                    "path": "/sys/fs/cgroup"
+                                },
+                                "name": "sys-fs-cgroup"
+                            }
+                        ]
+                    }
+                },
+                "triggers": [
+                    {
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "sender"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "name": "network-test:latest",
+				"namespace": "${IMAGESTREAM_NAMESPACE}"
+                            }
+                        },
+                        "type": "ImageChange"
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ]
+            }
+        },
+	{
+            "apiVersion": "v1",
+            "kind": "Route",
+            "metadata": {
+                "name": "receiver"
+            },
+            "spec": {
+                "host": "${APPLICATION_DOMAIN}",
+                "to": {
+                    "kind": "Service",
+                    "name": "receiver"
+                }
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "annotations": {
+                    "description": "Exposes and load balances the application pods"
+                },
+                "name": "receiver"
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "ssh",
+                        "port": 22
+                    },
+                    {
+                        "name": "netperf-control-tcp",
+                        "port": 12865,
+                        "protocol": "TCP"
+                    },
+                    {
+                        "name": "netperf-control-udp",
+                        "port": 12865,
+                        "protocol": "UDP"
+                    },
+                    {
+                        "name": "netperf-data-tcp",
+                        "port": 12866,
+                        "protocol": "TCP"
+                    },
+                    {
+                        "name": "netperf-data-udp",
+                        "port": 12866,
+                        "protocol": "UDP"
+                    },
+                    {
+                        "name": "iperf2-tcp",
+                        "port": 5001,
+                        "protocol": "TCP"
+                    },
+                    {
+                        "name": "iperf2-udp",
+                        "port": 5001,
+                        "protocol": "UDP"
+                    },
+                    {
+                        "name": "iperf3-tcp",
+                        "port": 5201,
+                        "protocol": "TCP"
+                    },
+                    {
+                        "name": "iperf3-udp",
+                        "port": 5201,
+                        "protocol": "UDP"
+                    },
+		    {
+			"name": "uperf-1-tcp",
+			"port": 20000,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-2-tcp",
+			"port": 20001,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-3-tcp",
+			"port": 20002,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-1-udp",
+			"port": 20000,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-2-udp",
+			"port": 20001,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-3-udp",
+			"port": 20002,
+			"protocol": "UDP"
+		    }
+                ],
+                "selector": {
+                    "name": "receiver"
+                }
+            }
+        },
+	{
+            "apiVersion": "v1",
+            "kind": "DeploymentConfig",
+            "metadata": {
+                "annotations": {
+                    "description": "Defines how to deploy the application server"
+                },
+                "labels": {
+		    "name": "receiver"
+                },
+                "name": "receiver"
+            },
+            "spec": {
+                "replicas": 1,
+                "selector": {
+                    "name": "receiver"
+                },
+                "strategy": {
+                    "type": "Rolling"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "name": "receiver"
+                        },
+                        "name": "receiver"
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "image": "network-test",
+                                "name": "receiver",
+                                "securityContext": {
+                                    "privileged": true
+                                },
+                                "terminationMessagePath": "/dev/termination-log",
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/sys/fs/cgroup",
+                                        "name": "sys-fs-cgroup"
+                                    }
+                                ]
+                            }
+                        ],
+			"dnsPolicy": "ClusterFirst",
+                        "nodeSelector": {
+                            "region": "${RECEIVER_REGION}"
+                        },
+                        "restartPolicy": "Always",
+                        "volumes": [
+                            {
+                                "hostPath": {
+                                    "path": "/sys/fs/cgroup"
+                                },
+                                "name": "sys-fs-cgroup"
+                            }
+                        ]
+                    }
+                },
+                "triggers": [
+                    {
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "receiver"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "name": "network-test:latest",
+				"namespace": "${IMAGESTREAM_NAMESPACE}"
+                            }
+                        },
+                        "type": "ImageChange"
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ]
+            }
+        }
+    ],
+    "parameters": [
+	{
+	    "name": "APPLICATION_DOMAIN",
+	    "description": "The exposed hostname that will route to the Beego service",
+	    "value": ""
+	},
+	{
+	    "name": "IMAGESTREAM_NAMESPACE",
+	    "description": "Namespace where the network-test imagestream is, only works for current namespace and openshift",
+	    "value": "openshift"
+	},
+	{
+	    "name": "SENDER_REGION",
+	    "description": "The name of the region where the sender pods will be scheduled",
+	    "value": "sender"
+	},
+	{
+	    "name": "RECEIVER_REGION",
+	    "description": "The name of the region where the receiver pods will be scheduled",
+	    "value": "receiver"
+	}
+    ]
+}

@@ -1,0 +1,15 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: elkopod
+spec:
+  containers:
+    - name: fedssh
+      image: fedssh
+      volumeMounts:
+      - mountPath: "/mnt/ceph"
+        name: ceph-pv
+  volumes:
+    - name: ceph-pv
+      persistentVolumeClaim:
+        claimName: ceph-claim

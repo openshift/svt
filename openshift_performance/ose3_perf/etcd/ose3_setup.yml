@@ -1,0 +1,26 @@
+- include: ../setup_10g.yml
+  vars:
+    - interface10g: false
+  remote_user: root
+
+- name: Common taks for master and nodes
+  hosts: OSEv3
+  remote_user: root
+  vars:
+    - RHEL7_OSE_REPO: http://buildvm-devops.example.com/puddle/build/OpenShiftEnterprise/3.0/latest/RH7-RHOSE-3.0.repo
+    - interface10g: false
+  roles:
+    - ../roles/common
+
+- include: ../setup_dnsmasq.yml
+  vars:
+    - interface10g: false
+  remote_user: root
+
+- include: ../openshift-ansible/playbooks/byo/config.yml
+  remote_user: root
+
+- include: ../setup_dnsmasq.yml --tags=post_installation
+  vars:
+    - interface10g: false
+  remote_user: root

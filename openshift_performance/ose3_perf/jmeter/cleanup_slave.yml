@@ -1,0 +1,8 @@
+- name: cleanup slave to run next tasks
+  hosts: jenkins_slave_jmeter
+
+  tasks:
+    - name: move back the original resolv.conf file
+      shell: mv  /etc/resolv.conf.upstream  /etc/resolv.conf
+      ignore_errors: yes
+  

@@ -1,0 +1,63 @@
+---
+
+- name: install dnsmasq package on controller node
+  yum: name=dnsmasq state=latest
+  when: inventory_hostname == {{ controller_node }}
+
+- name: get sample dnsmasq config to controller node
+  get_url: url={{ dnsmasq_config }} dest=/etc/dnsmasq.conf force=yes
+  when: inventory_hostname == {{ controller_node }}
+
+- name: update dnsmasq.conf domain to point to controller IP
+  shell: sed -i s'/xx.xx.xx.xx/{{ ipaddress10ge }}/g' /etc/dnsmasq.conf
+  when: inventory_hostname == {{ controller_node }} and interface10g 
+
+- name: update dnsmasq.conf domain to point to controller IP 1Gbps
+  shell: sed -i s'/xx.xx.xx.xx/{{ hostvars[item]['ansible_default_ipv4']['address'] }}/g' /etc/dnsmasq.conf
+  with_items:  "{{ controller_node }}"
+  when: (inventory_hostname == {{ controller_node }})  and not interface10g
+
+- name: enable port 53 on controller node
+  shell: iptables -I INPUT -p udp -m udp --dport 53 -j ACCEPT
+  when: inventory_hostname == {{ controller_node }}
+  tags:
+   - post_installation
+
+- name: save iptables on controller node
+  shell: iptables-save
+  when: inventory_hostname == {{ controller_node }}
+  tags:
+   - post_installation
+
+- name: check /etc/resolv.conf.upstream
+  stat: path=/etc/resolv.conf.upstream
+  register: resolve_status
+  when: inventory_hostname != "localhost" 
+  tags:
+   - post_installation
+
+- name: move existing resolv.conf to /etc/resolv.conf.upstream
+  shell: mv /etc/resolv.conf /etc/resolv.conf.upstream
+  when: inventory_hostname != "localhost" and resolve_status.stat.exists != True
+  tags:
+   - post_installation
+
+- name: create resolv.conf file with our nameserver on all systems when 10ge interface
+  shell: echo nameserver "{{ hostvars[item].ipaddress10ge }}" >  /etc/resolv.conf
+  with_items: "{{ controller_node }} "
+  when: inventory_hostname != "localhost" and interface10g 
+  tags:
+   - post_installation
+
+- name: create resolv.conf file with our nameserver on all systems when 1ge interface
+  shell: echo nameserver "{{ hostvars[item]['ansible_default_ipv4']['address'] }}" >  /etc/resolv.conf
+  with_items: "{{ controller_node }} "
+  when: inventory_hostname != "localhost" and not interface10g 
+  tags:
+   - post_installation
+
+- name: restart dnsmasq on controller node
+  service: name=dnsmasq state=restarted
+  with_items: inventory_hostname == {{ controller_node }} 
+  tags:
+   - post_installation

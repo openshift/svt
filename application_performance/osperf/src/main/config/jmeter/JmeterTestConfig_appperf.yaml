@@ -1,0 +1,84 @@
+## JMeter Test Config
+## Mention the parameters of each Jmeter Test that are needed to create a Jmeter Test Plan.
+## Each test will have its own parameters.
+## Each parameter set will correspond to one Jmeter test plan.
+
+## Conditions:
+##     1. Test Suite Name has to be unique, otherwise the test plan files will be overwritten.
+##     1. Test Suite Name should not contain hyphens (-), used as a seperator for discribing the scenario
+##     2. interval between app hits must be mentioned in milliSecs and all other time in Secs
+##     3. app URL must be of the format http://<appurl>(optional < :port >)/path_to_resource
+##     4. number of users, ramp up time, number of user loops, number of app loops and interval are all arrays.
+
+
+jmeterTestParameters:
+   - testSuiteName: cakephp
+     appURL: http://<<cakephp app url here >>
+     numberOfUsers: [100]
+     rampUpTime: [5]
+     numberOfUserLoops: [ 1 ]
+     numberOfAppLoops: [10, 100, 200, 400, 600, 800, 1000] 
+     intervalBetweenAppHits: [750]
+   - testSuiteName: cakephpmysql
+     appURL: http://<<cakephpmysql app url here >>
+     numberOfUsers: [100]
+     rampUpTime: [5]
+     numberOfUserLoops: [ 1 ]
+     numberOfAppLoops: [10, 100, 200, 400, 600, 800, 1000] 
+     intervalBetweenAppHits: [750]
+   - testSuiteName: dancer
+     appURL: http://<<dancer app url here >>
+     numberOfUsers: [100]
+     rampUpTime: [5]
+     numberOfUserLoops: [ 1 ]
+     numberOfAppLoops: [10, 100, 200, 400, 600, 800, 1000] 
+     intervalBetweenAppHits: [750]  
+   - testSuiteName: dancermysql
+     appURL: http://<<dancermysql app url here >>
+     numberOfUsers: [100]
+     rampUpTime: [5]
+     numberOfUserLoops: [ 1 ]
+     numberOfAppLoops: [10, 100, 200, 400, 600, 800, 1000] 
+     intervalBetweenAppHits: [750]     
+   - testSuiteName: django
+     appURL: http://<<django app url here >>
+     numberOfUsers: [100]
+     rampUpTime: [5]
+     numberOfUserLoops: [ 1 ]
+     numberOfAppLoops: [10, 100, 200, 400, 600, 800, 1000] 
+     intervalBetweenAppHits: [750]
+   - testSuiteName: djangopsql
+     appURL: http://<<djangopsql app url here >>
+     numberOfUsers: [100]
+     rampUpTime: [5]
+     numberOfUserLoops: [ 1 ]
+     numberOfAppLoops: [10, 100, 200, 400, 600, 800, 1000] 
+     intervalBetweenAppHits: [750]  
+   - testSuiteName: nodejs
+     appURL: http://<<nodejs app url here >>
+     numberOfUsers: [100]
+     rampUpTime: [5]
+     numberOfUserLoops: [ 1 ]
+     numberOfAppLoops: [10, 100, 200, 400, 600, 800, 1000] 
+     intervalBetweenAppHits: [750]     
+   - testSuiteName: nodejsmongodb
+     appURL: http://<<nodejsmongodb app url here >>
+     numberOfUsers: [100]
+     rampUpTime: [5]
+     numberOfUserLoops: [ 1 ]
+     numberOfAppLoops: [10, 100, 200, 400, 600, 800, 1000] 
+     intervalBetweenAppHits: [750]
+   - testSuiteName: railspsql
+     appURL: http://<<railpsql app url here >>
+     numberOfUsers: [100]
+     rampUpTime: [5]
+     numberOfUserLoops: [ 1 ]
+     numberOfAppLoops: [10, 100, 200, 400, 600, 800, 1000] 
+     intervalBetweenAppHits: [750]
+   - testSuiteName: jbosseap
+     appURL: http://<<jbossapp app url here >>
+     numberOfUsers: [100]
+     rampUpTime: [5]
+     numberOfUserLoops: [ 1 ]
+     numberOfAppLoops: [10, 100, 200, 400, 600, 800, 1000] 
+     intervalBetweenAppHits: [750]

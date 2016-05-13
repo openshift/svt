@@ -1,0 +1,15 @@
+---
+
+- name: setup pbench and run benchmark
+  hosts: all
+  remote_user: root
+  vars:
+    - controller_node: groups.jenkins_slave_jmeter[0]
+    - cmd: /usr/bin/bzt /tmp/bzt.yaml
+    - result_dir: /tmp/pbench_bzt_results
+    - pbench_test_name: ose3_test
+    - pbench_result_folder: /var/lib/pbench-agent
+    - benchmark_result: /tmp/taurus.csv
+
+  roles:
+    - ../roles/pbench

@@ -1,0 +1,33 @@
+projects:
+  - num: 1
+    basename: clusterproject
+    tuning: default
+    services:
+      - num: 3
+        file: default
+        basename: testservice
+    rcs:
+      - num: 2
+        replicas: 5
+        file: default
+        basename: testrc
+        image: openshift/hello-openshift
+    pods:
+      - total: 10
+      - num: 100
+        image: openshift/hello-openshift
+        basename: hellopods
+        file: default
+
+quotas:
+  - name: default
+    file: default
+
+tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 40
+        pause: 180 s
+      rate_limit:
+        delay: 0 ms

@@ -1,0 +1,15 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: r7perf
+  annotations:
+#    kubernetes.io/ingress-bandwidth: 10M
+#    kubernetes.io/egress-bandwidth: 10M
+spec:
+  nodeSelector:
+# tag a node:  oc label nodes my.host.name.com name=foo
+#    name: "foo"
+  containers:
+    - name: r7perf
+      image: r7perf
+      args: ['/usr/sbin/init']

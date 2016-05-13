@@ -1,0 +1,32 @@
+- name: setup registry
+  hosts: masters
+  vars:
+    - CA: /etc/openshift/master/
+    - registry_volume: http://example.com/git/perf-dept.git/plain/docker/openshift/jenkins/config_files/registry-volume.json
+    - registry_claim: http://example.com/git/perf-dept.git/plain/docker/openshift/jenkins/config_files/registry-claim.json
+
+  tasks:
+    - name: update priviledged SCC for registry  service
+      shell:  oc get scc privileged -o yaml | sed '/.*:build-controller/a - system:serviceaccount:default:registry' | oc replace -f -
+      ignore_errors: yes
+
+    - name: create registry
+      shell: oadm registry --credentials=/etc/openshift/master/openshift-registry.kubeconfig --images='registry.access.redhat.com/openshift3/ose-${component}:${version}'  --service-account=registry
+
+    - name: sleep for 120 sec to get registry ready
+      pause: minutes=2
+  
+    - name: get registry volume configuration file 
+      get_url: url={{ registry_volume }} dest=/tmp/registry-volume.json
+ 
+    - name: create registry volume
+      shell: oc create -f /tmp/registry-volume.json
+  
+    - name: get volume claim configuration file 
+      get_url: url={{ registry_claim  }} dest=/tmp/registry-claim.json
+
+    - name: claim the volume
+      shell:  oc create -f /tmp/registry-claim.json
+
+    - name: update registry to use volume
+      shell: oc volume dc/docker-registry --add --overwrite -t persistentVolumeClaim --claim-name=registry-claim --name=registry-storage 

@@ -1,0 +1,12 @@
+---
+
+- name: setup dnsmasq
+  hosts: all
+  remote_user: root
+  vars:
+    - controller_node: groups.masters[0]
+    - dnsmasq_config: http://example.com/git/perf-dept.git/plain/docker/openshift/jenkins/config_files/dnsmasq.conf 
+    - interface10g: false
+
+  roles:
+    - dnsmasq

@@ -1,0 +1,56 @@
+- name: Create users, corresponding projects and a pod inside that project
+  hosts: masters
+  vars:
+    USER_START: 1
+    USER_END: 32
+    urls_dump: /tmp/urls
+    pod_configuration: http://example.com/git/perf-dept.git/plain/docker/openshift/jenkins/pod_configurations/hello-complete.json
+    pod_type: "simple"
+
+  tasks:
+    - name: create users
+      user: name=user{{ item }} state=present
+      with_sequence: start={{ USER_START }}  end={{ USER_END }}
+
+    - name: create htpasswd
+      shell: htpasswd -b /etc/openshift/openshift-passwd user{{ item }} redhat
+      with_sequence: start={{ USER_START }}  end={{ USER_END }}
+
+    - name: login to projects
+      shell: su - user{{ item }} -c "oc login -u user{{ item }} --certificate-authority=/etc/openshift/master/ca.crt --server=https://ose3-master.example.com:8443 -p redhat" 
+      with_sequence: start={{ USER_START }}  end={{ USER_END }}
+
+    - name: create projects
+      shell: su - user{{ item }} -c "oc new-project project{{ item }} --display-name='OpenShift 3 Demo' --description='demo' && sleep 1"
+      with_sequence: start={{ USER_START }}  end={{ USER_END }}
+      ignore_errors: yes
+   
+    - name: copy pod configuration  file to /tmp
+      get_url: url={{ pod_configuration }} dest=/tmp/pod-configuration.json
+      remote_user: root
+       
+    - name: create pod when template
+      shell:  su - user{{ item }} -c "oc new-app  /tmp/pod-configuration.json"
+      with_sequence: start={{ USER_START }}  end={{ USER_END }}
+      when: pod_type != "simple"
+      ignore_errors: yes
+
+    - name: create pod
+      shell:  su - user{{ item }} -c "oc create -f  /tmp/pod-configuration.json && sleep 1"
+      with_sequence: start={{ USER_START }}  end={{ USER_END }}
+      when: pod_type == "simple"
+      ignore_errors: yes
+
+    - name: update hostname
+      shell:  su - user{{ item }} -c 'oc get route -o yaml | sed "s/host:.*$/host:\ pod{{ item }}.cloudapps.example.com/" | oc replace -f -'
+      with_sequence: start={{ USER_START }}  end={{ USER_END }}
+
+    - name: remove existing URL files 
+      shell: rm -rf {{ urls_dump }} 
+
+    - name: capture the URL in one file
+      shell: echo pod{{ item }}.cloudapps.example.com >> {{ urls_dump }}
+      with_sequence: start={{ USER_START }}  end={{ USER_END }}
+
+    - name: get the url file
+      fetch: src={{ urls_dump }} dest={{ urls_dump }} flat=yes

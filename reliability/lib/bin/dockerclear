@@ -1,0 +1,1 @@
+docker rm -v $(docker ps -a|grep Exited | cut -d' ' -f 1)

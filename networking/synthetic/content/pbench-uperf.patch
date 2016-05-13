@@ -1,0 +1,75 @@
+--- pbench-uperf	2016-04-01 11:12:58.581866149 -0400
++++ pbench-uperf-new	2016-04-01 10:56:58.826109202 -0400
+@@ -461,26 +461,26 @@
+ if [ "$postprocess_only" != "y" ]; then
+ 	# Always install locally
+ 	# FIXME: why is this necessary?
+-	install_uperf
++	#install_uperf
+ 	let err_cnt=0
+-	err_clients=""
+-	for client in `echo $clients | sed -e s/,/" "/g`; do
+-		debug_log "checking for uperf on client $client"
+-		ssh $ssh_opts $client $script_name --install
+-		if [ $? -ne 0 ]; then
+-			let err_cnt=err_cnt+1
+-			err_clients="$err_clients $client"
+-		fi
+-	done
+-	err_servers=""
+-	for server in `echo $servers | sed -e s/,/" "/g`; do
+-		debug_log "checking for uperf on server $server"
+-		ssh $ssh_opts $server $script_name --install
+-		if [ $? -ne 0 ]; then
+-			let err_cnt=err_cnt+1
+-			err_servers="$err_servers $server"
+-		fi
+-	done
++	#err_clients=""
++	#for client in `echo $clients | sed -e s/,/" "/g`; do
++	#	debug_log "checking for uperf on client $client"
++	#	ssh $ssh_opts $client $script_name --install
++	#	if [ $? -ne 0 ]; then
++	#		let err_cnt=err_cnt+1
++	#		err_clients="$err_clients $client"
++	#	fi
++	#done
++	#err_servers=""
++	#for server in `echo $servers | sed -e s/,/" "/g`; do
++	#	debug_log "checking for uperf on server $server"
++	#	ssh $ssh_opts $server $script_name --install
++	#	if [ $? -ne 0 ]; then
++	#		let err_cnt=err_cnt+1
++	#		err_servers="$err_servers $server"
++	#	fi
++	#done
+ 	if [ $err_cnt -gt 0 ]; then
+ 		error_log "Unable to verify connectivity and uperf installation on the following clients and servers:"
+ 		error_log "    clients: $err_clients"
+@@ -547,7 +547,7 @@
+ 
+ 									server_node=`echo "$server_nodes," | cut -d, -f$server_nr`
+ 									client_node=`echo "$client_nodes," | cut -d, -f$server_nr`
+-									server_port=`echo "1000 * $server_nr + $server_base_port" | bc`
++									server_port=$server_base_port
+ 									xml_file="$iteration_dir/uperf-config-$server:$server_port.xml"
+ 									benchmark_client_cmd_file="$iteration_dir/uperf-client-$server:$server_port.cmd"
+ 									result_file=$benchmark_results_dir/result-$server:$server_port.txt
+@@ -628,7 +628,7 @@
+ 									if [ -z "$client" ]; then
+ 										client="127.0.0.1"
+ 									fi
+-									server_port=`echo "1000 * $server_nr + $server_base_port" | bc`
++									server_port=$server_base_port
+ 									benchmark_client_cmd_file="$iteration_dir/uperf-client-$server:$server_port.cmd"
+ 									result_file=$benchmark_results_dir/result-$server:$server_port.txt
+ 									debug_log "client[$client]${client_nodeinfo}protocol[$protocol]test[$test_type]instances[$instance]size[$message_size] <-> server[$server]${server_nodeinfo}"
+@@ -652,7 +652,7 @@
+ 
+ 								server_nr=1
+ 								for server in `echo $servers | sed -e s/,/" "/g`; do
+-									server_port=`echo "1000 * $server_nr + $server_base_port" | bc`
++									server_port=$server_base_port
+ 									stop_server $server $server_port 0
+ 									if [ ! -z "$clients" ]; then
+ 										client=`echo $clients | cut -d, -f$server_nr`

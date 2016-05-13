@@ -1,0 +1,291 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.redhat.os.svt</groupId>
+	<artifactId>osperf</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>osperf</name>
+	<url>https://www.openshift.com/</url>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<final-name>os-performance</final-name>
+		<compiler-plugin-version>3.1</compiler-plugin-version>
+		<maven-surefire-plugin-version>2.19.1</maven-surefire-plugin-version>
+		<maven-failsafe-plugin-version>2.19.1</maven-failsafe-plugin-version>
+		<jdk-version>1.7</jdk-version>
+		<slf4j-version>1.7.7</slf4j-version>
+		<logback-classic-version>1.1.2</logback-classic-version>
+		<jmeter-maven-plugin-version>1.10.1</jmeter-maven-plugin-version>
+		<jmeter-analysis-maven-plugin-version>1.0.4</jmeter-analysis-maven-plugin-version>
+		<testng-version>6.9.8</testng-version>
+		<Jmeter-main-version>2.13</Jmeter-main-version>
+		<Jmeter-report-version>2.12</Jmeter-report-version>
+		<snakeyaml-version>1.16</snakeyaml-version>
+		<jfreechart-version>1.0.15</jfreechart-version>
+	</properties>
+
+	<build>
+		<finalName>${final-name}</finalName>
+		<resources>
+			<resource>
+				<directory>src/main/config/log</directory>
+			</resource>
+			<resource>
+				<directory>src/main/config/test</directory>
+			</resource>
+			<resource>
+				<directory>src/main/config/jmeter</directory>
+			</resource>
+			<!-- <resource> <directory>src/main/config/configurationInternal</directory> 
+				</resource> -->
+		</resources>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${compiler-plugin-version}</version>
+				<configuration>
+					<source>${jdk-version}</source>
+					<target>${jdk-version}</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven-surefire-plugin-version}</version>
+				<configuration>
+					<suiteXmlFiles>
+						<suiteXmlFile>src/main/config/test/preperftests.xml</suiteXmlFile>
+					</suiteXmlFiles>
+					<properties>
+						<property>
+							<name>usedefaultlisteners</name>
+							<value>true</value>
+						</property>
+					</properties>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.lazerycode.jmeter</groupId>
+				<artifactId>jmeter-maven-plugin</artifactId>
+				<version>${jmeter-maven-plugin-version}</version>
+				<configuration>
+					<!-- By default the test results are saved in a file /target/jmeter/results/<testname>-<timestamp>.jtl 
+						Further processing is easier without timestamp though. -->
+					<testResultsTimestamp>false</testResultsTimestamp>
+
+					<!-- To simplify debugging, it is advisable to adapt the loglevel. The 
+						jmeter logs are written to the file jmeter.log. -->
+					<overrideRootLogLevel>INFO</overrideRootLogLevel>
+
+					<!-- By default, the console output during a jmeter test run is suppressed. 
+						We want to display the progress using the listener "Generate Summary Results" 
+						(which periodically prints stats to stdout). Therefore we have to make sure, 
+						that the jmeter output is not suppressed. -->
+					<suppressJMeterOutput>false</suppressJMeterOutput>
+
+					<!-- If tests fail (e.g. a http-request running into a timeout), the 
+						corresponding maven goal also fails (and subsequent goals aren't executed 
+						anymore). We want to create graphs from test-results, no matter if some requests 
+						failed or not, so we ignore jmeter failures. -->
+					<ignoreResultFailures>true</ignoreResultFailures>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>kg.apc</groupId>
+						<artifactId>jmeter-plugins</artifactId>
+						<version>1.0.0</version>
+						<exclusions>
+							<!-- Unfortunately some transitive dependencies cannot be found on 
+								mvncentral and we have to explicitly exclude them. For a complete list, see 
+								https://github.com/mlex/jmeter-maven-example/ -->
+							<exclusion>
+								<groupId>kg.apc</groupId>
+								<artifactId>perfmon</artifactId>
+							</exclusion>
+							<!-- Because of a bug in the jmeter-maven-plugin (see https://github.com/Ronnie76er/jmeter-maven-plugin/issues/77) 
+								we have to exclude jmeter dependencies here, too. -->
+							<exclusion>
+								<groupId>org.apache.jmeter</groupId>
+								<artifactId>jorphan</artifactId>
+							</exclusion>
+							<!-- ... -->
+						</exclusions>
+					</dependency>
+				</dependencies>
+				<executions>
+					<execution>
+						<id>jmeter-tests</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jmeter</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.lazerycode.jmeter</groupId>
+				<artifactId>jmeter-analysis-maven-plugin</artifactId>
+				<version>${jmeter-analysis-maven-plugin-version}</version>
+				<configuration>
+					<source>${project.build.directory}/**/*.jtl</source>
+					<targetDirectory>${project.build.directory}/jmeter/test_report</targetDirectory>
+					<processAllFilesFound>true</processAllFilesFound>
+				</configuration>
+				<executions>
+					<execution>
+						<id>thread</id>
+						<phase>package</phase>
+						<goals>
+							<goal>analyze</goal>
+						</goals>
+						<configuration>
+							<source>${project.build.directory}/**/*.jtl</source>
+							<targetDirectory>${project.build.directory}/jmeter/test_report</targetDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>${maven-failsafe-plugin-version}</version>
+				<configuration>
+					<suiteXmlFiles>
+						<suiteXmlFile>src/main/config/test/postperftests.xml</suiteXmlFile>
+					</suiteXmlFiles>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+	<dependencies>
+		<!-- start test frameworks -->
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<version>${testng-version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- end test frameworks -->
+
+		<!-- start log frameworks -->
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback-classic-version}</version>
+			<scope>runtime</scope>
+		</dependency>
+		<!-- end log frameworks -->
+
+		<!-- start jmeter libraries -->
+		<dependency>
+			<groupId>org.apache.jmeter</groupId>
+			<artifactId>ApacheJMeter_http</artifactId>
+			<version>${Jmeter-main-version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-nop</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>d-haven-managed-pool</groupId>
+					<artifactId>d-haven-managed-pool</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-math3</groupId>
+					<artifactId>commons-math3</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-pool2</groupId>
+					<artifactId>commons-pool2</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.jmeter</groupId>
+			<artifactId>ApacheJMeter_report</artifactId>
+			<version>${Jmeter-report-version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-nop</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>d-haven-managed-pool</groupId>
+					<artifactId>d-haven-managed-pool</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-math3</groupId>
+					<artifactId>commons-math3</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-pool2</groupId>
+					<artifactId>commons-pool2</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.jmeter</groupId>
+			<artifactId>ApacheJMeter_junit-test</artifactId>
+			<version>${Jmeter-main-version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-nop</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>d-haven-managed-pool</groupId>
+					<artifactId>d-haven-managed-pool</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-math3</groupId>
+					<artifactId>commons-math3</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-pool2</groupId>
+					<artifactId>commons-pool2</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>d-haven-mpool</groupId>
+			<artifactId>managed-pool</artifactId>
+			<version>1.0</version>
+			<exclusions>
+				<exclusion>
+					<groupId>event</groupId>
+					<artifactId>event</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<!-- end jmeter libraries -->
+		<!-- start other -->
+		<dependency>
+			<groupId>org.yaml</groupId>
+			<artifactId>snakeyaml</artifactId>
+			<version>${snakeyaml-version}</version>
+		</dependency>
+
+		<!-- end other -->
+		<!-- start chart libraries -->
+		<dependency>
+			<groupId>org.jfree</groupId>
+			<artifactId>jfreechart</artifactId>
+			<version>${jfreechart-version}</version>
+		</dependency>
+		<!-- end chart libraries -->
+	</dependencies>
+</project>

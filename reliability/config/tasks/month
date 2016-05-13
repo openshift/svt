@@ -1,0 +1,24 @@
+### Monthly tasks
+###
+#create "1" user
+#login "100%" users
+#create "1" project
+#create "1" app
+#visit "100%" app
+#modify "40%" project
+#modify "40%" app
+#scale up "80%" app
+#visit "100%" app
+#visit "100%" app
+#scale down "80%" app
+#delete "10%" project
+#delete "1" user
+#monitor masters
+#monitor nodes
+#monitor etcds
+#check project info
+#clean environment
+#monitor masters
+#monitor nodes
+#monitor etcds
+

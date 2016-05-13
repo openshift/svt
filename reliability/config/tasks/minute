@@ -1,0 +1,20 @@
+### Minute tasks
+###
+#create "1" user
+#login "100%" users
+#create "1" project
+#create "1" app
+#visit "100%" app
+#modify "40%" project
+#modify "40%" app
+#scale up "80%" app
+#scale down "80%" app
+#delete "10%" project
+#delete "1" user
+#check project info
+#clean environment
+#monitor openshift
+#monitor masters
+#monitor nodes
+#monitor etcds
+

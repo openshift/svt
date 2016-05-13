@@ -1,0 +1,21 @@
+---
+- name: Setup Docker Configuration
+  hosts: all
+  vars:
+       buildname: BUILDNAME
+       Dockerfile_rtp: http://example.com/git/perf-dept.git/plain/docker/Dockerfiles/Dockerfile_rtp
+  tasks:
+    - name: download Dockerfile_rtp file to /root
+      get_url: url={{ Dockerfile_rtp }} dest=/root/Dockerfile_rtp mode=0744
+      remote_user: root
+
+    - name : update /etc/sysconfig/docker to have --insecure-registry example.com
+      lineinfile: dest=/etc/sysconfig/docker line="INSECURE_REGISTRY='--insecure-registry example.com'"
+
+    - name: restart docker after updating /etc/sysconfig/docker to have --insecure-registry example.com
+      shell: systemctl restart docker
+
+    - name: build docker image based on rhel-tools  
+      shell: docker build -t {{ buildname }} --rm=true --no-cache=true - < /root/Dockerfile_rtp
+      remote_user: root
+

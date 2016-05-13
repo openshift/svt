@@ -1,0 +1,16 @@
+---
+
+- name: setup pbench and run benchmark
+  hosts: all
+  remote_user: root
+  vars:
+    - controller_node: groups.jenkins_slave_jmeter[0]
+    - result_dir: /tmp/pbench_etcd_load_results
+    - pbench_test_name: etcd_test
+    - pbench_result_folder: /var/lib/pbench-agent
+    - bin_path: {{ BIN_DIR }}
+    - cmd: {{ BIN_DIR }}/etcd_load -c {{ BIN_DIR }}/etcd_load.cfg -secure -h={{ ETCD_HOST }} -p={{ ETCD_PORT }}  -capath={{ CAPATH }} -ca={{ CACERT }} -cert={{ CLIENT_CRT }} -cakey={{ CLIENT_KEY }}
+   # - stats_file: /tmp/etcd_load_gen.csv
+
+  roles:
+    - ../roles/pbench

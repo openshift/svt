@@ -1,0 +1,124 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+	"name": "beego-example",
+	"annotations": {
+	    "description": "An example Beego (http://beego.me/) application written in Golang",
+	    "tags": "instant-app,golang",
+	    "iconClass": "icon-golang"
+	}
+    },
+    "labels": {
+	"template": "beego-example"
+    },
+    "objects": [
+	{
+	    "kind": "Service",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "beego-example",
+		"annotations": {
+		    "description": "Exposes and load balances the application pods"
+		}
+	    },
+	    "spec": {
+		"ports": [
+		    {
+			"name": "web",
+			"port": 8080,
+			"targetPort": 8080
+		    }
+		],
+		"selector": {
+		    "name": "beego-example"
+		}
+	    }
+	},
+	{
+	    "kind": "Route",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "beego-example"
+	    },
+	    "spec": {
+		"host": "${APPLICATION_DOMAIN}",
+		"to": {
+		    "kind": "Service",
+		    "name": "beego-example"
+		}
+	    }
+	},
+	{
+	    "kind": "DeploymentConfig",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "beego-example",
+		"annotations": {
+		    "description": "Defines how to deploy the application server"
+		}
+	    },
+	    "spec": {
+		"strategy": {
+		    "type": "Recreate"
+		},
+		"triggers": [
+		    {
+			"type": "ImageChange",
+			"imageChangeParams": {
+			    "automatic": true,
+			    "containerNames": [
+				"beego-example"
+			    ],
+			    "from": {
+				"kind": "ImageStreamTag",
+				"name": "beego-example:latest",
+				"namespace": "${IMAGESTREAM_NAMESPACE}"
+			    }
+			}
+		    },
+		    {
+			"type": "ConfigChange"
+		    }
+		],
+		"replicas": 1,
+		"selector": {
+		    "name": "beego-example"
+		},
+		"template": {
+		    "metadata": {
+			"name": "beego-example",
+			"labels": {
+			    "name": "beego-example"
+			}
+		    },
+		    "spec": {
+			"containers": [
+			    {
+				"name": "beego-example",
+				"image": "beego-example",
+				"ports": [
+				    {
+					"containerPort": 8080
+				    }
+				]
+			    }
+			]
+		    }
+		}
+	    }
+	}
+    ],
+    "parameters": [
+	{
+	    "name": "IMAGESTREAM_NAMESPACE",
+	    "description": "Namespace where imagestream is, only works for current namespace and openshift",
+	    "value": "openshift"
+	},
+	{
+	    "name": "APPLICATION_DOMAIN",
+	    "description": "The exposed hostname that will route to the Beego service",
+	    "value": ""
+	}
+    ]
+}

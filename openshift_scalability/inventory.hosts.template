@@ -1,0 +1,31 @@
+[OSEv3:children]
+masters
+nodes
+etcd
+lb
+
+[OSEv3:vars]
+ansible_ssh_user=root
+deployment_type=openshift-enterprise
+oreg_url=registry.access.redhat.com/openshift3/ose-${component}:${version}
+openshift_additional_repos=[{'id': 'aos-devel', 'name': 'aos-devel', 'baseurl': 'http://example.com/puddle/build/AtomicOpenShift/3.1/latest/RH7-RHAOS-3.1/x86_64/os', 'enabled': 1, 'gpgcheck': 0}]
+openshift_master_identity_providers=[{'name': 'allow_all', 'login': 'true', 'challenge': 'true', 'kind': 'AllowAllPasswordIdentityProvider'}]
+cli_docker_additional_registries="rcm-img-docker01.example.com:5001"
+cli_docker_insecure_registries="0.0.0.0/0"
+openshift_set_hostname=True
+openshift_override_hostname_check=true
+debug_level=5
+
+openshift_master_cluster_ha=native
+openshift_master_cluster_hostname=
+openshift_master_cluster_public_hostname=
+
+[lb]
+
+[masters]
+
+[etcd]
+
+[nodes]
+#master-1 openshift_scheduleable=False
+#node-1 openshift_node_labels="{'region': 'primary', 'zone': 'default'}"

@@ -1,0 +1,10 @@
+---
+
+- name: setup nfs server
+  hosts: OSEv3
+  remote_user: root
+  vars:
+    - nfs_server: groups.masters[0]
+
+  roles:
+    - nfs

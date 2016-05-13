@@ -1,0 +1,59 @@
+---
+
+- name: install nfs-utils
+  yum: name=nfs-utils state=latest
+
+- name: setup directory  on master
+  shell: "{{ item  }}"
+  with_items:
+  - mkdir -p /var/export/regvol
+  - chown nfsnobody:nfsnobody /var/export/regvol
+  - chmod 777 /var/export/regvol
+  - echo "/var/export/regvol *(rw,sync,all_squash)" > /etc/exports
+  when: inventory_hostname == {{ nfs_server }}
+
+- name: start the services on master
+  service: name={{ item }} state=restarted
+  with_items:
+  - rpcbind 
+  - nfs-server 
+  - nfs-lock 
+  - nfs-idmap
+  when: inventory_hostname == {{ nfs_server }}
+
+- name: setup iptables rules on master
+  shell: "{{ item }} "
+  with_items:
+  - iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 111 -j ACCEPT
+  - iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 2049 -j ACCEPT
+  - iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 20048 -j ACCEPT
+  - iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 50825 -j ACCEPT
+  - iptables -I OS_FIREWALL_ALLOW -p tcp -m state --state NEW -m tcp --dport 53248 -j ACCEPT
+  when: inventory_hostname == {{ nfs_server }}
+
+- name: update /etc/sysconfig/nfs file
+  shell: "{{  item }}" 
+  with_items:
+  - sed -i 's/RPCMOUNTDOPTS=""/RPCMOUNTDOPTS="-p 20048"/' /etc/sysconfig/nfs
+  - sed -i 's/STATDARG=""/STATDARG="-p 50825"/' /etc/sysconfig/nfs
+  when: inventory_hostname == {{ nfs_server }}
+
+- name: update sysctl settings for nfs1
+  sysctl: name=fs.nfs.nlm_tcpport value=53248 state=present 
+  when: inventory_hostname == {{ nfs_server }}
+
+- name: update sysctl settings for nfs2
+  sysctl: name=fs.nfs.nlm_udpport value=53248 state=present 
+  when: inventory_hostname == {{ nfs_server }}
+
+- name: persist sysctl settingd
+  shell: sysctl -p 
+  when: inventory_hostname == {{ nfs_server }}
+
+- name: start the services on master
+  service: name=nfs state=restarted
+  when: inventory_hostname == {{ nfs_server }}
+
+- name: Adjust SELINUX policy 
+  shell: setsebool -P virt_use_nfs=true
+  when: inventory_hostname == {{ nfs_server }}

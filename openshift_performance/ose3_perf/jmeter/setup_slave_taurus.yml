@@ -1,0 +1,32 @@
+---
+- name: setup taurus/bzt
+  hosts: jenkins_slave_jmeter
+  remote_user: root
+
+  tasks:
+    - name: install epel 
+      yum: name=https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm state=present
+
+    - name: install pre-requistite packages for taurus
+      yum: name={{ item }} state=present
+      with_items:
+        - python-setuptools
+        - python-pip
+        - python-devel
+        - java
+        - libxml2-devel
+        - libxslt-devel
+        - zlib
+        - gcc
+        - numpy
+        - python-matplotlib
+        - ansible
+    
+    - name: install bzt
+      shell: pip install bzt
+
+    - name: install pandas
+      pip: name={{ item }}
+      with_items:
+        - pandas
+        - prettytable

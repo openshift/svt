@@ -1,0 +1,96 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+	"name": "uperf",
+	"annotations": {
+	    "description": "A template for creating an uperf replicationcontroller",
+	    "tags": "uperf,perf"
+	}
+    },
+    "labels": {
+	"template": "uperf"
+    },
+    "objects": [
+	{
+	    "apiVersion": "v1",
+	    "kind": "ReplicationController",
+	    "metadata": {
+		"labels": {
+		    "name": "${ROLE}",
+		    "test": "uperf"
+		},
+		"name": "uperf-${ROLE}"
+	    },
+	    "spec": {
+		"replicas": 1,
+		"selector": {
+		    "name": "${ROLE}"
+		},
+		"template": {
+		    "metadata": {
+			"labels": {
+			    "name": "${ROLE}",
+			    "test": "uperf"
+			},
+			"name": "uperf"
+		    },
+		    "spec": {
+			"containers": [
+			    {
+				"image": "centos/uperf",
+				"imagePullPolicy": "Never",
+				"name": "uperf",
+				"terminationMessagePath": "/dev/termination-log",
+				"securityContext": {
+				    "privileged": true
+				},
+				"volumeMounts": [
+                                    {
+                                        "mountPath": "/sys/fs/cgroup",
+                                        "name": "sys-fs-cgroup"
+                                    },
+				    {
+					"mountPath": "/root/.ssh/authorized_keys",
+					"name": "uperf-ssh"
+				    }
+                                ]
+			    }
+			],
+			"dnsPolicy": "ClusterFirst",
+			"nodeSelector": {
+			    "region": "${REGION}"
+			},
+			"restartPolicy": "Always",
+			"volumes": [
+                            {
+                                "hostPath": {
+                                    "path": "/sys/fs/cgroup"
+                                },
+                                "name": "sys-fs-cgroup"
+                            },
+			    {
+				"hostPath": {
+				    "path": "/root/.ssh/id_rsa.pub"
+				},
+				"name": "uperf-ssh"
+			    }
+                        ]
+		    }
+		}
+	    }
+	}
+    ],
+    "parameters": [
+	{
+	    "name": "REGION",
+	    "description": "Region label where the pods will be scheduled",
+	    "value": "primary"
+	},
+	{
+	    "name": "ROLE",
+	    "description": "Role for uperf pod, either sender or receiver",
+	    "required": true
+	}
+    ]
+}

@@ -1,0 +1,20 @@
+TEST_PLAN_TEMPLATE    --- replace with the test name.
+TEST_SCENARIO_TEMPLATE --- replace with the test name + scenario
+
+USERS    ---   number of users
+RAMP_UP_TIME  ---  remp up time
+NUM_OF_SCENARIO_PASSES  ---   number of loops for the scenario
+
+NUM_OF_HITS_PER_USER   --- number of hits per user
+APP_URL    --- application url
+PORT   ---  port  empty string if default port
+PATH_TO_RESOURCE  --  path "/" if default 
+RESPONSE_CODE_VALUE   --- 200 OK. otherwise other code
+
+INTERVAL_BETWEEN_REQUESTS -- inetrval between requests in ms.
+
+================================================
+TEST_LOOP_CONTROLLER
+TEST_HTTP_REQUEST
+TEST_HTTP_REQUEST_RESPONSE_CODE_ASSERTION
+INTERVAL_TIMER_BETWEEN_REQUESTS

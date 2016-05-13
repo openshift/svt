@@ -1,0 +1,14 @@
+---
+- name: Setup Gluster Client
+  hosts: all
+  vars:
+       gluster_repo: http://example.com/rel-eng/RHGS/3.1-u2-RHEL-7/2015-10-20.1/Server-RH-Gluster-3-Server.repo 
+  tasks:
+    - name: download gluster_repo file to /etc/yum.repos.d/
+      get_url: url={{ gluster_repo }} dest=/etc/yum.repos.d/ mode=0744
+      remote_user: root
+
+    - name: Setup gluster client
+      shell: yum install -y glusterfs-client
+      remote_user: root
+

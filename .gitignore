@@ -1,0 +1,11 @@
+.idea
+*.iml
+*.pyc
+target/
+*.swp
+.vimrc
+.DS_Store
+.project
+.class 
+results/
+.pydevproject

@@ -1,0 +1,56 @@
+---
+- name: change hostname for system
+  shell: hostnamectl set-hostname {{ openshift_hostname }}
+
+- name: install git
+  yum: name=git state=present
+
+- name: Build hosts file (backups will be made)
+  lineinfile: dest=/etc/hosts regexp='{{ hostvars[item].ansible_hostname }}$' line='{{ hostvars[item].ipaddress10ge }} {{ hostvars[item].ose3name }}' state=present backup=yes
+  with_items: groups['OSEv3']
+  when: interface10g
+
+- name: Build hosts file (backups will be made)
+  lineinfile: dest=/etc/hosts regexp='{{ hostvars[item].ansible_hostname }}$' line='{{ hostvars[item]['ansible_default_ipv4']['address'] }} {{ hostvars[item].ose3name }}' state=present backup=yes
+  with_items: groups['OSEv3']
+  when: not interface10g
+
+- name: do not verity ssl certificate while cloning
+  raw: git config --global http.sslVerify false
+
+#- name: subscription register
+#  shell: subscription-manager register --username=user@XXX.com --password=XXX --auto-attach --force
+
+#- name: attach to the OSE pool 
+#  shell: subscription-manager attach --pool=XXX
+
+#- name: disable all repo
+#  shell:  subscription-manager repos --disable="*"
+
+#- name: enable selected repos
+#  shell: subscription-manager repos  --enable="rhel-7-server-rpms" --enable="rhel-7-server-extras-rpms" --enable="rhel-7-server-optional-rpms" --enable="rhel-7-server-ose-3.0-rpms"
+
+#- name: import GPG key
+#  shell: rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-beta
+- name: copy rhel71-ose repo file to yum.repos.d
+  get_url: url={{ RHEL7_OSE_REPO }} dest=/etc/yum.repos.d/ force=yes
+
+#- name: Remove Network Manager
+#  yum: name=NetworkManager* state=absent
+
+- name: install update packages
+  yum: name={{ item }} state=present
+  with_items:
+    - deltarpm
+    - wget
+    - docker
+    - net-tools
+    - bind-utils
+    - tuned-utils
+    - vim-enhanced
+    - git
+    - iptables-services
+    - bridge-utils
+
+- name: yum update
+  yum: name=* state=latest

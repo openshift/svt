@@ -1,0 +1,98 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+	"name": "dancer-example",
+	"annotations": {
+	    "description": "An example Dancer application with no database",
+	    "tags": "instant-app,perl,dancer",
+	    "iconClass": "icon-perl"
+	}
+    },
+    "labels": {
+	"template": "dancer-example"
+    },
+    "objects": [
+	{
+	    "kind": "ImageStream",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "dancer-example",
+		"annotations": {
+		    "description": "Keeps track of changes in the application image"
+		}
+	    }
+	},
+	{
+	    "kind": "BuildConfig",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "dancer-example",
+		"annotations": {
+		    "description": "Defines how to build the application"
+		}
+	    },
+	    "spec": {
+		"source": {
+		    "type": "Git",
+		    "git": {
+			"uri": "${SOURCE_REPOSITORY_URL}",
+			"ref": "${SOURCE_REPOSITORY_REF}"
+		    },
+		    "contextDir": "${CONTEXT_DIR}"
+		},
+		"strategy": {
+		    "type": "Source",
+		    "sourceStrategy": {
+			"from": {
+			    "kind": "ImageStreamTag",
+			    "namespace": "openshift",
+			    "name": "perl:latest"
+			}
+		    }
+		},
+		"output": {
+		    "to": {
+			"kind": "ImageStreamTag",
+			"name": "dancer-example:latest"
+		    }
+		},
+		"triggers": [
+		    {
+			"type": "ImageChange"
+		    },
+		    {
+			"type": "ConfigChange"
+		    },
+		    {
+			"type": "GitHub",
+			"github": {
+			    "secret": "${GITHUB_WEBHOOK_SECRET}"
+			}
+		    }
+		]
+	    }
+	}
+    ],
+    "parameters": [
+	{
+	    "name": "SOURCE_REPOSITORY_URL",
+	    "description": "The URL of the repository with your application source code",
+	    "value": "https://github.com/openshift/dancer-ex.git"
+	},
+	{
+	    "name": "SOURCE_REPOSITORY_REF",
+	    "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch"
+	},
+	{
+	    "name": "CONTEXT_DIR",
+	    "description": "Set this to the relative path to your project if it is not in the root of your repository"
+	},
+	{
+	    "name": "GITHUB_WEBHOOK_SECRET",
+	    "description": "A secret string used to configure the GitHub webhook",
+	    "generate": "expression",
+	    "from": "[a-zA-Z0-9]{40}"
+	}
+    ]
+}

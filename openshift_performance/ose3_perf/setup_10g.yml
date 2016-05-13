@@ -1,0 +1,5 @@
+---
+- name: setup 10g nics
+  hosts: all
+  roles:
+    - setup_10g

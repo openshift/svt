@@ -1,0 +1,53 @@
+{
+  "kind": "Pod",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "podname",
+    "creationTimestamp": null,
+    "labels": {
+      "name": "hello-fio"
+    }
+  },
+  "spec": {
+    "containers": [
+      {
+        "name": "podname",
+        "image": "fedssh",
+	"volumeMounts": [
+		{
+			"mountPath": "/mnt/ceph",
+			"name": "ceph-pv"
+		}
+	],
+        "ports": [
+          {
+            "containerPort": 22,
+            "protocol": "TCP"
+	  }
+        ],
+        "resources": {
+        },
+        "terminationMessagePath": "/dev/termination-log",
+        "imagePullPolicy": "IfNotPresent",
+        "capabilities": {},
+        "securityContext": {
+          "capabilities": {},
+          "privileged": true,	
+	  "command": "/usr/bin/init"
+        }
+      }
+    ],
+    "volumes": [
+      {
+        "name": "ceph-pv",
+        "persistentVolumeClaim": {
+          "claimName": "ceph-claim"
+        }
+      }
+    ],
+    "restartPolicy": "Always",
+    "dnsPolicy": "ClusterFirst",
+    "serviceAccount": ""
+  },
+  "status": {}
+}

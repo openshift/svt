@@ -1,0 +1,21 @@
+---
+- name: run ose i/o test
+  hosts: masters
+  vars:
+       podname: PODNAME
+       testtype: TESTTYPE
+       fio_smallfile_ose: http://example.com/git/perf-dept.git/plain/docker/openshift/jenkins/ose3_perf/scripts/fio_smallfile_ose.sh
+  tasks:
+    - name: download fio_smallfile_ose file to /tmp
+      get_url: url={{ fio_smallfile_ose }} dest=/tmp/fio_smallfile_ose.sh mode=0744
+      remote_user: root
+
+    - name: Execute fio_smallfile_ose.sh script - which runs IO test inside pod
+      shell: /tmp/fio_smallfile_ose.sh -p {{podname}} -t {{testtype}}
+      register: fio_smallfile_ose
+      remote_user: root
+
+    - name: debug fio_smallfile_ose.sh
+      debug: var=fio_smallfile_ose
+
+

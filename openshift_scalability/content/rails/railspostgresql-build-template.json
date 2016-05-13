@@ -1,0 +1,103 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+	"name": "rails-postgresql-example",
+	"annotations": {
+	    "description": "An example Rails application with a PostgreSQL database",
+	    "tags": "instant-app,ruby,rails,postgresql",
+	    "iconClass": "icon-ruby"
+	}
+    },
+    "labels": {
+	"template": "rails-postgresql-example"
+    },
+    "objects": [
+	{
+	    "kind": "ImageStream",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "rails-postgresql-example",
+		"annotations": {
+		    "description": "Keeps track of changes in the application image"
+		}
+	    }
+	},
+	{
+	    "kind": "BuildConfig",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "rails-postgresql-example",
+		"annotations": {
+		    "description": "Defines how to build the application"
+		}
+	    },
+	    "spec": {
+		"source": {
+		    "type": "Git",
+		    "git": {
+			"uri": "${SOURCE_REPOSITORY_URL}",
+			"ref": "${SOURCE_REPOSITORY_REF}"
+		    },
+		    "contextDir": "${CONTEXT_DIR}"
+		},
+		"strategy": {
+		    "type": "Source",
+		    "sourceStrategy": {
+			"from": {
+			    "kind": "ImageStreamTag",
+			    "namespace": "openshift",
+			    "name": "ruby:latest"
+			}
+		    }
+		},
+		"output": {
+		    "to": {
+			"kind": "ImageStreamTag",
+			"name": "rails-postgresql-example:latest"
+		    }
+		},
+		"triggers": [
+		    {
+			"type": "ImageChange"
+		    },
+		    {
+			"type": "ConfigChange"
+		    },
+		    {
+			"type": "GitHub",
+			"github": {
+			    "secret": "${GITHUB_WEBHOOK_SECRET}"
+			}
+		    }
+		]
+	    }
+	}
+    ],
+    "parameters": [
+	{
+	    "name": "SOURCE_REPOSITORY_URL",
+	    "description": "The URL of the repository with your application source code",
+	    "value": "https://github.com/openshift/rails-ex.git"
+	},
+	{
+	    "name": "SOURCE_REPOSITORY_REF",
+	    "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch"
+	},
+	{
+	    "name": "CONTEXT_DIR",
+	    "description": "Set this to the relative path to your project if it is not in the root of your repository"
+	},
+	{
+	    "name": "APPLICATION_DOMAIN",
+	    "description": "The exposed hostname that will route to the Rails service, if left blank a value will be defaulted.",
+	    "value": ""
+	},
+	{
+	    "name": "GITHUB_WEBHOOK_SECRET",
+	    "description": "A secret string used to configure the GitHub webhook",
+	    "generate": "expression",
+	    "from": "[a-zA-Z0-9]{40}"
+	}
+    ]
+}

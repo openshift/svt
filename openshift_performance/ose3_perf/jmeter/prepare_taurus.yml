@@ -1,0 +1,38 @@
+- name: Run Taurus Benchmark
+  hosts: jenkins_slave_jmeter
+  vars:
+    - pod_type: "simple"
+    - urls_dump: /tmp/urls
+    - bzt_jobfile:  /tmp/bzt.yaml
+    - pod_prefix: "http://"
+    - create_taurus_yaml_binary: "http://example.com/git/perf-dept.git/plain/docker/openshift/jenkins/scripts/create_taurus_yaml.py" 
+    - create_taurus_yaml_binary_dest: "/tmp/create_taurus_yaml.py" 
+    - bzt_binary: /usr/bin/bzt
+    - ramp_time: "10s"
+    - hold_for: "1m"
+    - concurrency: "10"
+    - stats_file: "/tmp/taurus.csv"
+
+  tasks:
+    - name: get the taurus config file creation script
+      get_url: url={{ create_taurus_yaml_binary }} dest={{ create_taurus_yaml_binary_dest }} 
+  
+    - name: change permission of the downloaded  binary
+      file: path={{ create_taurus_yaml_binary_dest }} mode=755     
+      
+    - name: Create taurus configuration file to put one key for each pod
+      shell: "{{ create_taurus_yaml_binary_dest }} -u {{ urls_dump }} -s  key-value-put -c 1 -p {{ pod_prefix }} -r {{ ramp_time }} -d {{ hold_for }} -o {{ bzt_jobfile }} -f {{ stats_file }}"
+      when: pod_type != "simple"
+  
+    - name: run taurus to put insert key value pair for each pod
+      shell: "{{ bzt_binary }} {{ bzt_jobfile }}" 
+      when: pod_type != "simple"
+
+    - name: Create taurus configuration file to get key for each pod
+      shell: "{{ create_taurus_yaml_binary_dest }}  -u {{ urls_dump }} -s  key-value-get -c {{ concurrency }} -p {{ pod_prefix }} -r {{ ramp_time }} -d {{ hold_for }} -o {{ bzt_jobfile }}"
+      when: pod_type != "simple"
+
+    - name: Create taurus configuration file to get key for each pod
+      shell: "{{ create_taurus_yaml_binary_dest }}  -u {{ urls_dump }} -c {{ concurrency }} -p {{ pod_prefix }} -r {{ ramp_time }} -d {{ hold_for }} -o {{ bzt_jobfile }}"
+      when: pod_type == "simple"
+

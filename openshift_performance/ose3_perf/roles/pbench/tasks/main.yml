@@ -1,0 +1,54 @@
+---
+- name: install wget
+  yum: name=wget state=latest
+  tags: pbench_setup
+
+- name: Get the pbench repo
+  shell: wget -O /etc/yum.repos.d/pbench.repo http://pbench.example.com/repo/yum.repos.d/pbench.repo 
+  tags: pbench_setup
+
+- name: install the pbench rpm
+  yum: name=pbench-agent state=latest
+  tags: pbench_setup
+
+- name: register the controller node
+  when: inventory_hostname == {{ controller_node }}
+  shell: register-tool-set
+  tags: pbench_setup
+
+- name: register all other nodes
+  shell: register-tool-set --remote={{ item }}
+  with_items: groups['all']
+  when: inventory_hostname == {{ controller_node }} and item != {{ controller_node }}
+  tags: pbench_setup
+
+- name: run the benchamrk 
+  shell: user-benchmark -C {{ pbench_test_name }}  -- {{ cmd }} 
+  when: inventory_hostname == {{ controller_node }}
+  tags: pbench_run
+
+- name: copy the benchmark specific result  file to pbench result folder   
+  shell: mv {{ benchmark_result }} {{ pbench_result_folder }}/user*/1 
+  when: inventory_hostname == {{ controller_node }}
+  tags: pbench_run
+  ignore_errors: yes
+
+#- name: move the results to pbench result folder
+#  shell: mv {{ result_dir }}_* {{ pbench_result_folder }}/user*/1
+#  when: inventory_hostname == {{ controller_node }}
+#  tags: pbench_run
+
+- name: move the results
+  when: inventory_hostname == {{ controller_node }}
+  shell: copy-results 
+  tags: pbench_run_post
+
+- name: kill all the tools
+  when: inventory_hostname == {{ controller_node }}
+  shell: kill-tools
+  tags: pbench_run_post
+
+- name: clear all the tools
+  when: inventory_hostname == {{ controller_node }}
+  shell: clear-tools
+  tags: pbench_clear

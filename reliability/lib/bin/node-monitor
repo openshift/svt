@@ -1,0 +1,33 @@
+#!/usr/bin/bash
+
+date_time=`date +%Y%m%d%H%M%S`
+echo 
+echo "******Monitor node start at $date_time ******"
+
+echo "****** 3. MEMORY info: ******"
+free -m
+ 
+echo "****** 4. Vmstat info: ******"
+vmstat 1 3
+ 
+echo "****** 4. Cpu consume top 5: ******"
+ps auxw|head -1;ps auxw --no-header|sort -rn -k3|head -5
+
+#echo "****** 5. Mem consume top 5: ******"
+#;ps auxw|head -1;ps auxw --no-header |sort -rn -k4|head -5
+ 
+#echo "****** 7. Openshift process info: ******"
+#ps auxw |grep openshift |grep -v grep
+ 
+echo "****** 8. Docker container number: ******"
+docker ps -a
+
+#echo "****** 9. Docker process info: ******"
+#ps auxw |grep docker |grep -v grep
+ 
+echo "****** 10. iptables router info: ******"
+iptables -L -n -t nat
+
+echo 
+date_time=`date +%Y%m%d%H%M%S`
+echo "******Monitor node end at $date_time ******"

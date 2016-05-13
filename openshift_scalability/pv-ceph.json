@@ -1,0 +1,30 @@
+{
+    "apiVersion": "v1",
+    "kind": "PersistentVolume",
+    "metadata": {
+        "name": "pvname"
+    },
+    "spec": {
+        "capacity": {
+            "storage": "XGi"
+        },
+        "accessModes": [
+            "ReadWriteMany"
+        ],
+        "rbd": {
+            "monitors": [
+                "ceph_monitor_1_IP:6789",
+                "ceph_monitor_2_IP:6789",
+                "ceph_monitor_3_IP:6789"
+            ],
+            "pool": "ceph_pool_name",
+            "image": "ceph_image",
+            "user": "admin",
+            "secretRef": {
+                "name": "ceph-secret"
+            },
+            "fsType": "ext4",
+            "readOnly": false
+        }
+    }
+}

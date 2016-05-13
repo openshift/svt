@@ -1,0 +1,58 @@
+projects:
+  - num: 1
+    basename: clusterproject
+    tuning: default
+    quota: default
+    users:
+      - num: 2
+        role: admin
+        basename: demo
+        password: demo
+        userpassfile: /etc/origin/openshift-passwd
+    services:
+      - num: 3
+        file: default
+        basename: testservice
+    rcs:
+      - num: 2
+        replicas: 5
+        file: default
+        basename: testrc
+        image: openshift/hello-openshift:v1.0.6
+    pods:
+      - total: 10
+      - num: 40
+        image: openshift/hello-openshift:v1.0.6
+        basename: hellopods
+        file: default
+        storage:
+          - num: 40
+            type: either none, ebs, ceph 
+            # ebs parameters 
+            ebsvolumesize: X
+            ebsvtype: gp2
+            ebsregion: us-west-2b
+            ebstagprefix: ebs_amazon_prefix 
+            fstype: ext4 or xfs 
+            # ceph parameters 
+            cephpool: cephpool_name 
+            cephimagesize: X
+            cephmonitors: [x.x.x.x,y.y.y.y,z.z.z.z]
+            cephsecretname: ceph-secret-name
+            cephsecret: <long line> 
+            # parameters applicable to all storage types 
+            mountdir: /desired_location
+            pvpermissions: ReadWriteMany
+            pvcpermissions: ReadWriteMany 
+quotas:
+  - name: default
+    file: default
+
+tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 5
+        pause: 10 s
+      rate_limit:
+        delay: 250 ms

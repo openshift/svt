@@ -1,0 +1,20 @@
+- name: setup router
+  hosts: masters
+  vars:
+    - CA: /etc/openshift/master/
+
+  tasks:
+    - name: update priviledged SCC for router service
+      shell:  oc get scc privileged -o yaml | sed '/.*:build-controller/a - system:serviceaccount:default:router' | oc replace -f -
+
+    - name: create cert
+      shell: oadm create-server-cert --signer-cert={{ CA }}/ca.crt --signer-key={{ CA }}/ca.key --signer-serial={{ CA }}/ca.serial.txt --hostnames='*.cloudapps.example.com' --cert=/root/cloudapps.crt --key=/root/cloudapps.key
+
+    - name: router cert
+      shell: cat /root/cloudapps.crt /root/cloudapps.key {{ CA }}/ca.crt > /root/cloudapps.router.pem
+
+    - name: create router
+      shell: oadm router --default-cert=/root/cloudapps.router.pem --credentials=/etc/openshift/master/openshift-router.kubeconfig --images='registry.access.redhat.com/openshift3/ose-${component}:${version}' --selector='region=infra' --service-account=router
+
+    - name: sleep for 120 sec to get router ready
+      pause: minutes=2

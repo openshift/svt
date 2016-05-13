@@ -1,0 +1,20 @@
+---
+environment:
+  master: master.example.com
+  masters: master1.example.com,master2.example.com,master3.example.com
+  nodes: node1.example.com,node2.example.com
+  etcds: master1.example.com,master2.example.com,master3.example.com
+  routers: master.example.com
+  authtype: htpasswd
+  htpasswd: /etc/origin/master/htpasswd
+exection:
+  gituser: anpingli
+  templates: cakephp-mysql-example,ruby-hello-world,dancer-mysql-example,eap64-mysql-s2i
+  userprefix: user
+  loadproject: true
+schedule:
+  minute: 1
+  hour: 2
+  day: 10
+  week: 20
+  month: 40

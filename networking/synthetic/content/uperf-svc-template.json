@@ -1,0 +1,78 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+	"name": "uperf",
+	"annotations": {
+	    "description": "A template for creating resources for network testing",
+	    "tags": "uperf,networking"
+	}
+    },
+    "labels": {
+	"template": "uperf"
+    },
+    "objects": [
+	{
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+		"labels": {
+		    "name": "${ROLE}",
+		    "test": "uperf"
+		},
+                "annotations": {
+                    "description": "Exposes and load balances the application pods"
+                },
+                "name": "uperf-${ROLE}"
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "ssh",
+                        "port": 22
+                    },
+		    {
+			"name": "uperf-1-tcp",
+			"port": 20000,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-2-tcp",
+			"port": 20001,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-3-tcp",
+			"port": 20002,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-1-udp",
+			"port": 20000,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-2-udp",
+			"port": 20001,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-3-udp",
+			"port": 20002,
+			"protocol": "UDP"
+		    }
+                ],
+                "selector": {
+                    "name": "${ROLE}"
+                }
+            }
+        }
+    ],
+    "parameters": [
+	{
+	    "name": "ROLE",
+	    "description": "Role for the service, either sender or receiver",
+	    "required": true
+	}
+    ]
+}
