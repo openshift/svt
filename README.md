@@ -20,3 +20,5 @@ The hierarchy of this repository is as follows:
 ├── openshift_scalability: Home of the infamous "cluster-loader", details in openshift_scalability/README.md
 └── reliability: Run tests over long periods of time (weeks), cycle object quantity up and down.
 ```
+
+Feedback, issues and pull requests happily accepted!
