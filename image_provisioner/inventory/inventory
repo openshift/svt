@@ -3,6 +3,7 @@ config_type=ose
 graphite_host=
 graphite_prefix=ose
 collectd_interval=10
+<<<<<<< d2dcb7d6b0db9d3b1303aac9a5f9d4652c5ea8f1
 openshift_version=3.3.0.4
 docker_storage_device=/dev/sdb
 docker_storage_vgname=docker_vg
@@ -11,6 +12,16 @@ aos_ansible_path=/root/aos-ansible
 ansible_ssh_user=root
 aos_repo=https://mirror.example.com/enterprise/enterprise-3.2/latest/RH7-RHAOS-3.2/x86_64/os
 qe_repo_image_versions=v3.3.0.4
+=======
+openshift_version=3.2.0.44
+docker_storage_device=/dev/sdb
+docker_storage_vgname=docker_vg
+docker_login_file_path=config.json
+aos_ansible_path=/storage/repos/aos-ansible
+ansible_ssh_user=root
+aos_repo=https://mirror.example.com/enterprise/enterprise-3.2/latest/RH7-RHAOS-3.2/x86_64/os
+qe_repo_image_versions=v3.2.0.44
+>>>>>>> initial commit of image provisioner for fast scale-out prototyping
 qe_repo_image_type=ose
 
 [all]
