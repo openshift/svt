@@ -1,0 +1,11 @@
+---
+- name: provision gold images
+  user: root
+  hosts: all
+
+  roles:
+    - repo-install
+    - os-kickstart
+    - collectd-install
+    - docker-config
+    - aos-ansible
