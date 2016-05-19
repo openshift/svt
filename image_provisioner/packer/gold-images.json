@@ -1,0 +1,38 @@
+{
+  "variables": {
+    "aws_access_key": "xxxxxxxxxxxxxxxxxxxx",
+    "aws_secret_key": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "github_token": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  "builders": [
+    {
+      "ssh_pty": true,
+      "type": "amazon-ebs",
+      "access_key": "{{user `aws_access_key`}}",
+      "secret_key": "{{user `aws_secret_key`}}",
+      "region": "us-xxxx-x",
+      "source_ami": "ami-xxxxxxxx",
+      "instance_type": "m4.xlarge",
+      "ssh_username": "ec2-user",
+      "ami_name": "r7perf-{{isotime \"2006-01-02-23-23-23\"}}",
+      "ami_description": "packer-example {{timestamp}}",
+      "subnet_id": "subnet-xxxxxxxx",
+      "availability_zone": "us-xxxx-xx",
+      "tags": {
+        "group": "perf"
+      }
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm",
+        "sudo yum install -y ansible git",
+	"sudo git clone https://github.com/redhat-performance/xxxx-xxxx.git",
+	"sudo ansible-playbook -i svt/inventory/inventory svt/image_provisioner/playbooks/provision_gold_images.yaml"
+        ]
+    }
+  ]
+}
