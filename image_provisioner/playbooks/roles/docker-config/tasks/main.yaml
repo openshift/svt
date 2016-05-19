@@ -1,0 +1,9 @@
+---
+- name: copy docker-storage-setup config
+  template: src=etc/sysconfig/docker-storage-setup dest=/etc/sysconfig/docker-storage-setup
+
+- name: mkdir /root/.docker
+  shell: mkdir /root/.docker
+
+- name: copy docker login config.json
+  copy: src={{ docker_login_file_path }} dest=/root/.docker/config.json

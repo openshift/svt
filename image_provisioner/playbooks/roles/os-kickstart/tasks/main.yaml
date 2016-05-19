@@ -1,0 +1,40 @@
+---
+- name: install packages
+  yum: name={{ item }} state=latest
+  with_items:
+    - blktrace
+    - dropwatch
+    - ethtool
+    - findutils
+    - git
+    - gnuplot
+    - hwloc
+    - iotop
+    - kernel
+    - ltrace
+    - mailx
+    - netsniff-ng
+    - net-tools
+    - ntp
+    - ntpdate
+    - numactl
+    - pciutils
+    - perf
+    - powertop
+    - psmisc
+    - rpm-build
+    - screen
+    - sos
+    - strace
+    - tar
+    - tcpdump
+    - vim-enhanced
+    - xauth
+    - wget
+    - yum-utils
+
+- name: yum update
+  yum: name=* state=latest
+
+- name: stop cloud-init from disabling root ssh
+  - 
