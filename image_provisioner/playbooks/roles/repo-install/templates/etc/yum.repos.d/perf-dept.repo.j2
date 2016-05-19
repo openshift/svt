@@ -1,0 +1,25 @@
+# Template file to be used with ansible playbook "perf-dept-repo.yml"
+
+###########################################################################
+# pbench "official" repos
+# External COPR repo
+[copr-pbench]
+name=Copr repo for pbench owned by ndokos
+baseurl=https://copr-be.cloud.fedoraproject.org/results/ndokos/pbench/{{ (ansible_distribution == "RedHat") | ternary('epel', 'fedora') }}-{{ ansible_distribution_major_version }}-$basearch/
+skip_if_unavailable=True
+gpgcheck=1
+gpgkey=https://copr-be.cloud.fedoraproject.org/results/ndokos/pbench/pubkey.gpg
+enabled=1
+enabled_metadata=1
+skip_if_unavailable=1
+
+# external copr repo
+[copr-pbench-test]
+name=Pbench Test $releasever - $basearch
+baseurl=https://copr-be.cloud.fedoraproject.org/results/ndokos/pbench-test/{{ (ansible_distribution == "RedHat") | ternary('epel', 'fedora') }}-{{ ansible_distribution_major_version }}-$basearch/
+arch=$basearch
+enabled=0
+gpgcheck=1
+enabled_metadata=1
+gpgkey=https://copr-be.cloud.fedoraproject.org/results/ndokos/pbench-test/pubkey.gpg
+skip_if_unavailable=1
