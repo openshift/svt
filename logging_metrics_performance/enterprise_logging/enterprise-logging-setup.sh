@@ -1,6 +1,6 @@
 ### Create from zero, not idempotent.
 set -x
-set -e 
+set -e
 
 echo "... Hit enter to proceed"
 read x
@@ -9,11 +9,11 @@ oc new-project logging
 
 oc create -f /home/cloud-user/openshift-ansible/roles/openshift_examples/files/examples/v1.2/infrastructure-templates/origin/logging-deployer.yaml
 
-### Make sure to delete any old secret, and use a new empty secret.  
+### Make sure to delete any old secret, and use a new empty secret.
 ### This secret will be used by kibana to talk to ES servers, and scrape the logs.  very important that its in sync.
 sudo oc delete secret logging-deployer || echo "could not delete secret" ; sleep 5
 sudo oc secrets new logging-deployer nothing=/dev/null
- 
+
 ## Now create svc/roles
 
 oc create -f - <<API
@@ -42,9 +42,9 @@ oc process logging-deployer-template -v KIBANA_HOSTNAME=kibana.example.com,ES_CL
 #           - containerPort: 9200
 #             hostPort: 1234
 #             name: restapi
-#           - containerPort: 9300 
+#           - containerPort: 9300
 #            purpose: to prevent more than one per node
-# 
+#
 # template "logging-es-template" edited
 echo "now, edit the port for spreading, containerPort: 9200 , hostPort: 1234.... sleeping first..."
 sleep 10
@@ -55,18 +55,18 @@ do
 	echo "waiting for completion..."
 	sleep 1
 done
-oc edit template logging-es-template 
+oc edit template logging-es-template
 
 oc process logging-support-template | oc create -f -
 
-### You should see some ELK pods by now 
+### You should see some ELK pods by now
 
 oc get pods --all-namespaces
 
 echo "Not guaranteed that everything will pass w/ exit code 0 below, so unsetting -e"
 echo "For example: Some creates may fail but probably its nothing to worry about (yet) :)"
 unset -e
- 
+
 ### Now deploy the rest of the infra
 
 oc process logging-support-template | oc create -f -
@@ -102,7 +102,7 @@ oc scale dc/logging-fluentd --replicas=10
 #logging     logging-fluentd-1-vy0t3       1/1       Running     0          3m
 
 ### SMOKE TEST of kibana logs w/o need for a router
-export LOGGING_ES=logging-es 
+export LOGGING_ES=logging-es
 # or LOGGING_ES=logging-es-ops
 # example:
-oc exec logging-kibana-1-8pip6 -- curl --connect-timeout 2 -s -k --cert /etc/kibana/keys/cert --key /etc/kibana/keys/key https://$LOGGING_ES:9200/.operations*/_search
+# oc exec logging-kibana-1-8pip6 -- curl --connect-timeout 2 -s -k --cert /etc/kibana/keys/cert --key /etc/kibana/keys/key https://$LOGGING_ES:9200/.operations*/_search

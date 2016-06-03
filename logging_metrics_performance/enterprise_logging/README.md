@@ -22,6 +22,9 @@ Currently there are two ways we can execute the test harness
 
 E2Es:
 
+TODO:
+ . change instructions once this lands in a rebase to just run from extended. (Tim)
+
 Relevant Until https://github.com/kubernetes/kubernetes/pull/24536/files merges into upstream kube and openshift...
 
 To run the e2es, you essentially follow these steps.

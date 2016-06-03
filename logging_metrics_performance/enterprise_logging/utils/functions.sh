@@ -115,7 +115,7 @@ function pbench_perftest() {
 	pbench-copy-results
 }
 
-cleanup() {
+function cleanup() {
 	: '
 	TODO
 	'
@@ -124,7 +124,7 @@ cleanup() {
         return $?
 }
 
-sig_handler() {
+function sig_handler() {
 	: '
 	User signal handler
 	'
