@@ -5,18 +5,18 @@ Currently there are two ways we can execute the test harness
 
 	Ex:
 
-	  # this will execute the E2E's with a scale option of 5, while gathering metrics with pbench.
+	  This will execute the E2E's with a scale option of 5, while gathering metrics with pbench.
 
 	  ./perftest.sh -n LoggingSoak_E2E_5 -e 5
 
 	  ./perftest.sh -h
 
-2. Run the scripts individually from the 'utils' folder. This will not gather metrics with pbench.
+2. Run the scripts individually from the 'test' folder. This will not gather metrics with pbench.
 
 	Ex:
-	  1) ./utils/jdspammer.sh -r 60 -l 512
+	  1) ./test/jdspammer.sh -r 60 -l 512
 
-	  2) EXPORT FD=100 ; EXPORT ES=10 ; ./utils/fluentd_autoscaler.sh
+	  2) EXPORT FD=100 ; EXPORT ES=10 ; ./test/fluentd_autoscaler.sh
 
 
 
