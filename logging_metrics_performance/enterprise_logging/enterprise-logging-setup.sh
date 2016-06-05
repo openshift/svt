@@ -7,7 +7,7 @@ read x
 
 oc new-project logging
 
-oc create -f /home/cloud-user/openshift-ansible/roles/openshift_examples/files/examples/v1.2/infrastructure-templates/origin/logging-deployer.yaml
+oc create -f $HOME/openshift-ansible/roles/openshift_examples/files/examples/v1.2/infrastructure-templates/origin/logging-deployer.yaml
 
 ### Make sure to delete any old secret, and use a new empty secret.
 ### This secret will be used by kibana to talk to ES servers, and scrape the logs.  very important that its in sync.
