@@ -9,3 +9,4 @@ target/
 .class 
 results/
 .pydevproject
+current_environment.json

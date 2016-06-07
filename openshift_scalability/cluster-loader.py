@@ -40,6 +40,9 @@ cliparser.add_option("--kubeconfig", dest="kubeconfig",
 cliparser.add_option("-p", "--processes", dest="processes",
                      default="10",
                      help="The maximum number of concurrent processes used to create projects")
+cliparser.add_option("-x", "--forcedelete", dest="forcedelete", default=False,
+                    action="store_true",
+                    help="Force deletion of existing projects")
 
 (options, args) = cliparser.parse_args()
 
@@ -56,6 +59,7 @@ globalvars["env"] = []
 globalvars["quotas"] = testconfig["quotas"]
 globalvars["kubeconfig"] = options.kubeconfig
 globalvars["processes"] = options.processes
+globalvars["forcedelete"] = options.forcedelete
 
 user = options.oseuser
 passwd = options.osepass
