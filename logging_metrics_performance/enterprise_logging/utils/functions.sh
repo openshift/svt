@@ -13,6 +13,9 @@ function setup_globals() {
 	# e2es
 	export KUBEREPO=${1:-'/opt/kubernetes'}
 
+	# tests
+	export TESTDIR=$SCRIPTDIR/test
+
 	# pbench
 	export PB_RES=${2:-'/var/lib/pbench-agent'}
 }
@@ -59,13 +62,13 @@ function parse_opts() {
 		s)
 		    SCALE=${OPTARG}
 		    RUN_TYPE="Fluentd scale"
-		    TESTBIN="EXPORT FD=$SCALE ; EXPORT ES=10 ; $UTILS/fluentd_autoscaler.sh"
+		    TESTBIN="EXPORT FD=$SCALE ; EXPORT ES=10 ; $TESTDIR/fluentd_autoscaler.sh"
 		    CMD="$TESTBIN"
 		    ;;
 		j)
 		    JOURNALD=${OPTARG}
 		    RUN_TYPE="Journalctl spammer"
-		    TESTBIN="$UTILS/jdspammer.sh"
+		    TESTBIN="$TESTDIR/jdspammer.sh"
 		    CMD="$TESTBIN -r $JOURNALD -l 512"
 		    ;;
 

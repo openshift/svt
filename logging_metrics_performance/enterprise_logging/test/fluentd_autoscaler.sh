@@ -8,7 +8,7 @@ function clean() {
 	oc delete rc `oc get rc | grep logging-es | cut -d' ' -f 1`
 	oc delete dc `oc get dc | grep logging-es | cut -d' ' -f 1`
 
-    # now, manually delete all pods.  fluentd shoudlnt be many, but es may have orphans...?
+        # now, manually delete all pods.  fluentd shoudlnt be many, but es may have orphans...?
 	for f in `oc get pods | grep logging-es | cut -d' ' -f 1 ` ; do oc delete pod $f ; done
 	# for f in `oc get pods | grep fluentd | cut -d' ' -f 1 ` ; do oc delete pod $f ; done
 }
@@ -16,15 +16,11 @@ function clean() {
 POD=`oc get pods | grep kibana | cut -d' ' -f 1`
 
 function es() { 
-#	for i in `seq 1 1 $ES`; do
-#		echo "Creating es: $i"
-		oc process logging-deployer-template \
+	oc process logging-deployer-template \
 -v ES_CLUSTER_SIZE=$ES,KIBANA_HOSTNAME=kibana.example.com,PUBLIC_MASTER_URL=https://localhost:8443,IMAGE_VERSION=3.1.0,IMAGE_PREFIX=registry.access.redhat.com/openshift3/ | oc create -f -
-#	done
-#	echo "Done creating $ES Nodes... total : "
 	sleep 5
 	oc get pods | grep logging-es | wc -l
-    oc get pods | grep logging-es
+        oc get pods | grep logging-es
 }
 
 function report() {
