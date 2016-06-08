@@ -32,7 +32,7 @@ def oc_command(args, globalvars):
     return ret
 
 def login(user,passwd,master):
-    return subprocess.check_output("oc login -u " + user + " -p " + passwd + " " + master,shell=True)
+    return subprocess.check_output("oc login --insecure-skip-tls-verify=true -u " + user + " -p " + passwd + " " + master,shell=True)
 
 
 def create_template(templatefile, num, parameters, globalvars):
