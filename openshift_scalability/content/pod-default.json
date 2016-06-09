@@ -20,6 +20,14 @@
           }
         ],
         "resources": {
+				"requests": {
+					"cpu" : "50m",
+					"memory": "100Mi"
+				},
+				"limits": {
+					"cpu" : "400m",
+					"memory": "400Mi"
+				}
         },
         "terminationMessagePath": "/dev/termination-log",
         "imagePullPolicy": "IfNotPresent",

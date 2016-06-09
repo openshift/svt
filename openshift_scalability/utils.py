@@ -32,7 +32,7 @@ def oc_command(args, globalvars):
     return ret
 
 def login(user,passwd,master):
-    return subprocess.check_output("oc login -u " + user + " -p " + passwd + " " + master,shell=True)
+    return subprocess.check_output("oc login --insecure-skip-tls-verify=true -u " + user + " -p " + passwd + " " + master,shell=True)
 
 
 def create_template(templatefile, num, parameters, globalvars):
@@ -276,7 +276,43 @@ def create_user(usercfg, globalvars):
               " :: " + "role: " + role
         i = i + 1
 
-def single_project(testconfig, projname, globalvars): 
+
+def project_exists(projname, globalvars) :
+    exists = False
+    try :
+        cmd = "kubectl" if globalvars["kubeopt"] else "oc"
+        output = oc_command(cmd + " get project -o name " + projname, globalvars).rstrip()
+        if output.endswith(projname) :
+            exists = True
+    except subprocess.CalledProcessError : # this is ok, means the project does not already exist
+        pass
+
+    return exists
+
+def delete_project(projname, globalvars) :
+    # Check if the project exists
+    cmd = "kubectl" if globalvars["kubeopt"] else "oc"
+    oc_command(cmd + " delete project " + projname, globalvars)
+
+    # project deletion is asynch from resource deletion.  command returns before project is really gone
+    retries = 0
+    while project_exists(projname,globalvars) and (retries < 10) :
+        retries += 1
+        print "Project " + projname + " still exists, waiting 10 seconds"
+        time.sleep(10)
+
+    # not deleted after retries, bail out
+    if project_exists(projname,globalvars) :
+        raise RuntimeError("Failed to delete project " + projname)
+
+def single_project(testconfig, projname, globalvars):
+    if project_exists(projname,globalvars) :
+        if globalvars["forcedelete"] :
+            delete_project(projname,globalvars)
+        else :
+            print "ERROR: Project " + projname + " already exists.  Use -x option to force deletion"
+            return
+
     if globalvars["kubeopt"]:
         tmpfile=tempfile.NamedTemporaryFile()
         with open("content/namespace-default.yaml") as infile:
