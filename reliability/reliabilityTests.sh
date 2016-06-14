@@ -7,7 +7,9 @@
 ################################################
 if [ "${1}" == "start" ]; then
   pbench-user-benchmark -- ./invokeReliabilityTest.sh
+  echo "INFO: move results"
   pbench-move-results
+  echo "INFO: clear tools"
   pbench-clear-tools
   echo "INFO: reliability tests complete"
 elif [ "${1}" == "test" ]; then
