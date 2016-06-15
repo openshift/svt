@@ -9,7 +9,7 @@ projects:
         password: demo
         userpassfile: /etc/origin/openshift-passwd
     pods:
-      - total: 120
+      - total: 240
       - num: 100
         image: openshift/hello-openshift
         basename: hellopods
