@@ -5,7 +5,7 @@
 ## Desription: initial the environment for Reliability testing
 ## 
 ################################################
-cur_dir=`pwd`
+#cur_dir=`pwd`
 #clients=`cat config/config.ini |egrep 'client *=' | awk -F= '{print $2}'`
 clients=""  # Disable clients until the feature is ready 
 master=`sed -n 's/master: //p' config/config.yaml`
@@ -18,14 +18,17 @@ etcds=`sed -n 's/etcds: //p' config/config.yaml`
 etcds=${etcds//,/ }
 gituser=`sed -n 's/gituser: //p' config/config.yaml`
 gituser=${gituser// /}
+pbenchserver=`sed -n 's/pbenchserver: //p' config/config.yaml`
+pbenchserver=${pbenchserver// /}
 
 function config_local_env()
 {
-  echo "#) Config Local Environment"
-   yum install ruby -y
-   yum install atomic-openshift -y
-   gem install net-ssh
-   gem install net-scp
+   #Delete generated files from last run if exist.
+   rm -rf logs
+   rm -rf runtime
+   cat /dev/null > config/users.data
+
+   echo "#) Config Local Environment"
    config_runtime_template
 }
 
@@ -84,22 +87,22 @@ function config_pb_reg_tool_set
   pbench-cleanup
   pbench-clear-tools
   for host in ${nodes//,/ } ; do
-    pbench-register-tool --name=sar --remote=$host -- --interval=3600
-    pbench-register-tool --name=pidstat --remote=$host -- --interval=3600
+    pbench-register-tool --name=sar --remote=$host -- --interval=3
+    pbench-register-tool --name=pidstat --remote=$host -- --interval=3
     # --patterns=openshift,docker
-    pbench-register-tool --name=iostat --remote=$host -- --interval=3600
+    pbench-register-tool --name=iostat --remote=$host -- --interval=3
   done
   for host in ${masters//,/ } ; do
-    pbench-register-tool --name=sar --remote=$host -- --interval=3600
-    pbench-register-tool --name=pidstat --remote=$host -- --interval=3600
+    pbench-register-tool --name=sar --remote=$host -- --interval=3
+    pbench-register-tool --name=pidstat --remote=$host -- --interval=3
     # --patterns=openshift,docker
-    pbench-register-tool --name=iostat --remote=$host -- --interval=3600
+    pbench-register-tool --name=iostat --remote=$host -- --interval=3
   done
   for host in ${etcds//,/ } ; do
-    pbench-register-tool --name=sar --remote=$host -- --interval=3600
-    pbench-register-tool --name=pidstat --remote=$host -- --interval=3600
+    pbench-register-tool --name=sar --remote=$host -- --interval=3
+    pbench-register-tool --name=pidstat --remote=$host -- --interval=3
     # --patterns=openshift,docker
-    pbench-register-tool --name=iostat --remote=$host -- --interval=3600
+    pbench-register-tool --name=iostat --remote=$host -- --interval=3
   done
 }
 

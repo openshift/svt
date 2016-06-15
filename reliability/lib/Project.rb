@@ -166,38 +166,38 @@ module OpenshiftReliability
     end
   
     def scale_up()
-     get_rc()
-     @rcs.each do |rc|
-       array=rc.split(/\s+/)
+     get_dc()
+     @dcs.each do |dc|
+       array=dc.split(/\s+/)
        name=array[0]
-       number=array[1].to_i
+       number=array[2].to_i
   
        # I want to skip db,amq and etc, need to find a better way to do this
-       if name !~ /.*database.*/ && number>0
+       if (name != 'database' && name != 'mysql' && name != 'eap-app-mysql') && number>0
           number=number+1
-          @user.exec("oc scale rc #{name} --replicas=#{number}")
+          @user.exec("oc scale dc #{name} --replicas=#{number}")
        end
      end
-     #wait for a min to scale
-     sleep 30
+     #wait for few secs
+     sleep 10
     end
   
     def scale_down()
-     get_rc()
-     @rcs.each do |rc|
-       array=rc.split(/\s+/)
+     get_dc()
+     @dcs.each do |dc|
+       array=dc.split(/\s+/)
        name=array[0]
-       number=array[1].to_i
+       number=array[2].to_i
   
        # I want to skip db,amq and etc
-       if name !~ /.*database.*/ && number > 1
+       if (name != 'database' && name != 'mysql' && name != 'eap-app-mysql') && number>0
           number=number-1
-          @user.exec("oc scale rc #{name} --replicas=#{number}")
+          @user.exec("oc scale dc #{name} --replicas=#{number}")
        end
        
      end
-     #wait for a min to scale
-     sleep 30
+     #wait for few secs
+     sleep 10
     end
   
     def wait_until_ready()
