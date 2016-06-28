@@ -9,5 +9,6 @@ The image provisioner will support AWS and OpenStack, and be automated with Ansi
 - docker-config (setup storage)
 - repo-install (setup custom repos)
 - pbench-install (install and configure [pbench](https://github.com/distributed-system-analysis/pbench))
+  - needs template for pbench-config and keys
 - aos-ansible (pull down supporting container images)
 - openshift-rpm-install (install openshift RPMs, but do not configure)
