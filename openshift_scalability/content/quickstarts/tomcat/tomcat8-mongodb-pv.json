@@ -1,0 +1,722 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+        "annotations": {
+            "iconClass": "icon-tomcat",
+            "description": "Application template for JWS MongoDB applications with persistent storage built using S2I.",
+            "tags": "tomcat,tomcat8,mongodb,java,database,jboss,xpaas",
+	    "source": "https://github.com/jboss-openshift/application-templates/blob/master/webserver/jws30-tomcat8-mongodb-persistent-s2i.json",
+            "version": "1.2.0"
+        },
+        "name": "jws30-tomcat8-mongodb-persistent-s2i"
+    },
+    "labels": {
+        "template": "jws30-tomcat8-mongodb-persistent-s2i",
+        "xpaas": "1.2.0"
+    },
+    "parameters": [
+	{
+	    "name": "MEMORY_LIMIT",
+	    "displayName": "Memory limit",
+	    "description": "Maximum amount of memory the Tomcat container can use",
+	    "value": "512Mi"
+	},
+	{
+	    "name": "MEMORY_MONGODB_LIMIT",
+	    "displayName": "MongoDB Memory Limit",
+	    "description": "Maximum amount of memory the MongoDB container can use",
+	    "value": "512Mi"
+	},
+        {
+	    "displayName": "Application Name",
+            "name": "APPLICATION_NAME",
+            "value": "jws-app",
+            "required": true
+        },
+        {
+            "description": "Custom hostname for http service route.  Leave blank for default hostname, e.g.: <application-name>-<project>.<default-domain-suffix>",
+	    "displayName": "HTTP Hostname",
+            "name": "HOSTNAME_HTTP",
+            "value": "",
+            "required": false
+        },
+        {
+            "description": "Custom hostname for https service route.  Leave blank for default hostname, e.g.: secure-<application-name>-<project>.<default-domain-suffix>",
+	    "displayName": "HTTPS Hostname",
+            "name": "HOSTNAME_HTTPS",
+            "value": "",
+            "required": false
+        },
+        {
+            "description": "Git source URI for application",
+	    "displayName": "Source Repository URL",
+            "name": "SOURCE_REPOSITORY_URL",
+            "value": "https://github.com/jboss-openshift/openshift-quickstarts",
+            "required": true
+        },
+        {
+            "description": "Git branch/tag reference",
+	    "displayName": "Source Repository Reference",
+            "name": "SOURCE_REPOSITORY_REF",
+            "value": "1.2",
+            "required": false
+        },
+        {
+            "description": "Path within Git project to build; empty for root project directory.",
+	    "displayName": "Context Directory",
+            "name": "CONTEXT_DIR",
+            "value": "todolist/todolist-mongodb",
+            "required": false
+        },
+        {
+            "description": "Database JNDI name used by application to resolve the datasource, e.g. java:/jboss/datasources/mongodb",
+	    "displayName": "JNDI Name",
+            "name": "DB_JNDI",
+            "value": "",
+            "required": false
+        },
+        {
+            "displayName": "Database Name",
+            "name": "DB_DATABASE",
+            "value": "root",
+            "required": true
+        },
+        {
+            "description": "Size of persistent storage for database volume.",
+	    "displayName": "Volume Capacity",
+            "name": "VOLUME_CAPACITY",
+            "value": "1Gi",
+            "required": true
+        },
+        {
+            "description": "The name of the secret containing the certificate files",
+	    "displayName": "HTTPS Secret",
+            "name": "JWS_HTTPS_SECRET",
+            "value": "jws-app-secret",
+            "required": true
+        },
+        {
+            "description": "The name of the certificate file within the secret",
+	    "displayName": "HTTPS Certificate",
+            "name": "JWS_HTTPS_CERTIFICATE",
+            "value": "server.crt",
+            "required": false
+        },
+        {
+            "description": "The name of the certificate key file within the secret",
+	    "displayName": "HTTPS Certificate Key",
+            "name": "JWS_HTTPS_CERTIFICATE_KEY",
+            "value": "server.key",
+            "required": false
+        },
+        {
+            "displayName": "HTTPS Certificate Password",
+            "name": "JWS_HTTPS_CERTIFICATE_PASSWORD",
+            "value": "",
+            "required": false
+        },
+        {
+            "description": "Sets xa-pool/min-pool-size for the configured datasource.",
+	    "displayName": "Minimum Database Pool Size",
+            "name": "DB_MIN_POOL_SIZE",
+            "required": false
+        },
+        {
+	    "displayName": "Maximum Database Pool Size",
+            "description": "Sets xa-pool/max-pool-size for the configured datasource.",
+            "name": "DB_MAX_POOL_SIZE",
+            "required": false
+        },
+        {
+            "description": "Sets transaction-isolation for the configured datasource.",
+	    "displayName": "Database Transaction Isolation",
+            "name": "DB_TX_ISOLATION",
+            "required": false
+        },
+        {
+            "displayName": "Disable Data File Preallocation.",
+            "name": "MONGODB_NOPREALLOC",
+            "required": false
+        },
+        {
+            "displayName": "Enable Smaller File Size Default.",
+            "description": "Set MongoDB to use a smaller default data file size.",
+            "name": "MONGODB_SMALLFILES",
+            "required": false
+        },
+        {
+            "displayName": "Enable Quite Mode.",
+            "description": "Runs MongoDB in a quiet mode that attempts to limit the amount of output.",
+            "name": "MONGODB_QUIET",
+            "required": false
+        },
+        {
+            "displayName": "Database Username",
+            "name": "DB_USERNAME",
+            "from": "user[a-zA-Z0-9]{3}",
+            "generate": "expression",
+            "required": true
+        },
+        {
+            "displayName": "Database User Password",
+            "name": "DB_PASSWORD",
+            "from": "[a-zA-Z0-9]{8}",
+            "generate": "expression",
+            "required": true
+        },
+        {
+            "displayName": "Database Administrator Password",
+            "name": "DB_ADMIN_PASSWORD",
+            "from": "[a-zA-Z0-9]{8}",
+            "generate": "expression",
+            "required": true
+        },
+        {
+            "displayName": "Admininstrator Username",
+            "name": "JWS_ADMIN_USERNAME",
+            "from": "[a-zA-Z0-9]{8}",
+            "generate": "expression",
+            "required": true
+        },
+        {
+            "displayName": "Administrator Password",
+            "name": "JWS_ADMIN_PASSWORD",
+            "from": "[a-zA-Z0-9]{8}",
+            "generate": "expression",
+            "required": true
+        },
+        {
+            "displayName": "GitHub Webhook Secret",
+            "name": "GITHUB_WEBHOOK_SECRET",
+            "from": "[a-zA-Z0-9]{8}",
+            "generate": "expression",
+            "required": true
+        },
+        {
+            "displayName": "Generic Build Webhook Secret",
+            "name": "GENERIC_WEBHOOK_SECRET",
+            "from": "[a-zA-Z0-9]{8}",
+            "generate": "expression",
+            "required": true
+        },
+        {
+            "description": "Namespace in which the ImageStreams for Red Hat Middleware images are installed. These ImageStreams are normally installed in the openshift namespace. You should only need to modify this if you've installed the ImageStreams in a different namespace/project.",
+	    "displayName": "ImageStream Namespace",
+            "name": "IMAGE_STREAM_NAMESPACE",
+            "value": "openshift",
+            "required": true
+        }
+    ],
+    "objects": [
+	{
+            "kind": "ServiceAccount",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "jws-service-account"
+            },
+            "secrets": [
+                {
+                    "name": "jws-app-secret"
+                }
+            ]
+        },
+        {
+            "kind": "Secret",
+            "apiVersion": "v1",
+            "metadata": {
+                "annotations": {
+                    "description": "Default server certificate 'server.crt' and private key 'server.key' with no certificate password"
+                },
+                "name": "jws-app-secret"
+            },
+            "data": {
+                "server.crt": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURhakNDQWxLZ0F3SUJBZ0lKQUlTd2g5UGtlUUhNTUEwR0NTcUdTSWIzRFFFQkJRVUFNQ3d4Q3pBSkJnTlYKQkFZVEFrTkJNUXN3Q1FZRFZRUUlFd0pDUXpFUU1BNEdBMVVFQ2hNSFVtVmtJRWhoZERBZUZ3MHhOVEE1TVRZeQpNRFEzTXpSYUZ3MHhPREE1TVRVeU1EUTNNelJhTUN3eEN6QUpCZ05WQkFZVEFrTkJNUXN3Q1FZRFZRUUlFd0pDClF6RVFNQTRHQTFVRUNoTUhVbVZrSUVoaGREQ0NBU0l3RFFZSktvWklodmNOQVFFQkJRQURnZ0VQQURDQ0FRb0MKZ2dFQkFLVWRnNFhkSXhONVBFQlZGOG1GcXZCZk12Z3JaOXEveVJLZnNNdGVIdjdPNjJsdVNFSmhyalFCNnRULwpxODkxL3FnbnYvN2RuamlBek5udU5OeVFmMHIzTTNjV3dkRzhLY0pQUmVzcmF3TUZUaVo3KzRnTUlSa3lsOUZkCno4Z05rYktWOTBjQjZteWpNZ2hkTVY0aGh4K0Y4VHA5dGh2ek5kVmcrNHpPQkNTUkdkYWNHTFoxbzJadjZzVjMKb2tqSzRLNVBuVllFR0R3ODFoeE5NRnVGMXAwN1ViQjlVQitadjI0SmUxTXpFWWxtbmZiTSsybVNoSXNxWlJrUgp3NTErUVJnWDlrNXQzL0I3MzZ2QUdZU3BuUktnc3ZPQUFpdmY4NnQ4MWVFSExFY3NnQjZUWUwyamJoVW1yVGFPCmpDcS9RZ1lIbzdVdnlSVTNrRTg2bWlFdW5ia0NBd0VBQWFPQmpqQ0JpekFkQmdOVkhRNEVGZ1FVL2V4QlppRGYKaU9ISHhscmczZzdPMkYvelU4Y3dYQVlEVlIwakJGVXdVNEFVL2V4QlppRGZpT0hIeGxyZzNnN08yRi96VThlaApNS1F1TUN3eEN6QUpCZ05WQkFZVEFrTkJNUXN3Q1FZRFZRUUlFd0pDUXpFUU1BNEdBMVVFQ2hNSFVtVmtJRWhoCmRJSUpBSVN3aDlQa2VRSE1NQXdHQTFVZEV3UUZNQU1CQWY4d0RRWUpLb1pJaHZjTkFRRUZCUUFEZ2dFQkFIbm8KUU1aeXYzTEQzNi9WV1JOOHMyYm5ZVzN2N3Y5YUNJNUNBbyswQklsZExyaTNVWlR3M0NQaVdpbHVwTUxweENQZQpVbGF0RHJ3Nkx2NVdRajlyN3EzR0tHQW1ZS3hva2VKMmZuL2wweVF2R1grVkRKZW9kTWgyZXl3YW1yLytjdjllCnhWOGtpeWozVFNSNC9hUWgwUUxlUytaMjhoanp3bFBiVkxpTW90L083R3dmM042WDhtWGs5ODczK3psT1FPZncKN0NQeEl4SStYNnNmMlkvOXlkV05jdWdnYStkK3JOam5Rd1ViZ1hWUytxWjZGc1FjQk8wMm5WbDBSMmFDS3pMUQpWd0tXZUJLRlN6Q2lKKy9lUmlaREQ2VHh3K3B1WERVR1hjNWR0TE5leEhrR1dmdUx5T1hmNzNvbEgzTVRsZW8wClcxZzJVeEVJdXRuWU5qQWpwT1E9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K",
+                "server.key": "LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBcFIyRGhkMGpFM2s4UUZVWHlZV3E4Rjh5K0N0bjJyL0pFcCt3eTE0ZS9zN3JhVzVJClFtR3VOQUhxMVArcnozWCtxQ2UvL3QyZU9JRE0yZTQwM0pCL1N2Y3pkeGJCMGJ3cHdrOUY2eXRyQXdWT0pudjcKaUF3aEdUS1gwVjNQeUEyUnNwWDNSd0hxYktNeUNGMHhYaUdISDRYeE9uMjJHL00xMVdEN2pNNEVKSkVaMXB3WQp0bldqWm0vcXhYZWlTTXJncmsrZFZnUVlQRHpXSEUwd1c0WFduVHRSc0gxUUg1bS9iZ2w3VXpNUmlXYWQ5c3o3CmFaS0VpeXBsR1JIRG5YNUJHQmYyVG0zZjhIdmZxOEFaaEttZEVxQ3k4NEFDSzkvenEzelY0UWNzUnl5QUhwTmcKdmFOdUZTYXRObzZNS3I5Q0JnZWp0Uy9KRlRlUVR6cWFJUzZkdVFJREFRQUJBb0lCQUJ4ZnJBQk85ZjRjc1V2awowNGVmM3JZYnhlaDduUWNzT2VObmFid28ybTZ6SkNVai9HcmIybEc1bXA4cnFGeW9URENkVkJMNkJueHpOY0NsCmZKUUNpTDFiS1k3bmJEc2NlSmlaZ3N4YzA3RGJNb2pPZVhUeGtLYUIyVER6VEFkMnZYalE2SU5kUXVtVVNiN0MKTlArV0IyQlZaaFRGRVl4UUNRbzM5a0pHRE5RempFL0NQSXl3UVVIYXJkYmMra1F4cVRlSGt3endXWjZGV0UweApDb1hiWHR5U2pxYThTQzRxVFZOZHNTNWt4RzR3VjdudUlkWVBOeGd2eEZkR0NJR2Nid09kakd6eDB6cjNmWC83ClQxaEdUL0FOQnpqWlZnSWFUMHNSYUFsdWl1WGdRNjNvMzJWWXYrMG5qU0JaVVNleW9EZWttUEdLZko0S0hSUGsKNmNTUDRoa0NnWUVBMnFFejVoSnJPaW1sOWkrWDFjMTdyVzlvZFU4aHUvaVhxMnJkK2N1eW8rdUpZR20yZ0RNRwpNR2JDMlpyMTREd2FjLzU0V0VZeFBOTy9UK0laUWNiTUxoNU8vTnowcTJRUWdxOUw4TkY0MkRzcE5oQ0s5THYvCmRLcEVNR2RzRUY4cEtZSEJhNXJ2T24yVDNWcGtFN0QwVE1YQ2lXMEZBUi9BZUhVaUtIcTZheThDZ1lFQXdWYWcKczJwVWo5VXVXQVhJM0NQQUFaNXlpQlBtY0htdHBrczBOWXFOd3FGTDJlRVoyZ0cwbnlFMlFMTlVpcWpqR2cxSwp4dlZaRWhXTlFqNlpsaFBkN213em9QWTM5bUlUeXFkcmxQUzF2Z09XeUZ0M1NJMGFLQXlHaTFDaGd3R0pYMHEvCllROFBqVzJyT0JBSFZ0c1dlUzF1RFJnM2pXKytOMzVseUpZdnE1Y0NnWUVBa0lTSW91ZS8rNFYyVUFMcjBnZHYKWHBqTEt1Z3crMmo3RVBPbVlhMjFtMGRoMnRwbUtkNFFsRVFKUHdDQTBVWEprcTArYmRPUVRvNEY0MDhvdE9NdApLcnNjS1dnQlQ1M29rQXBDSDZESHlkOXBnWFJ6OWd5amMwSHRxelZpS0h4TzRFSUdVaFByV1BXVG5YbFh0L0I3CnZKZm8zU0MwY3liQytwMHJCQ2tFT3o4Q2dZQUdzOW9lWGpGUVN6T3dHWU05SG9BcGpqU3FRd1phSDkzRlJoWXAKUlFSbEd2Sm1PMGVLSjBUN3Ywc0NNelZiR1QvR1IyK3dOaEZBYno3V2JSVWwvc3BTMmExd2h4aXBrZnpkcWJBeApHY3F6SzZ5dWhYMDlKcWNoZkUydHhyM1NyTnIyVXNFUHZGWHRzVCtlVWUvdk11azBpajZtZFpCM2RzaEJaRUJqCkU5SFRRUUtCZ0VSUFVoNFFvZnI1Wk9JWjMwMXhjazFVTjRuSzFNOGl5cU9vSHREZzg1OFNoTEUvZ2pZL0xvWHgKNi9vUmhTdjFtT2ZRUUYzS1ZZek5FbE5YLzhzbUF6M2s1U3I2RDNhM1BSQk9MUzc0aTgyd083aWFiU1JHbk41YQpSaktYMXhJaGkzTjhMK0ttOUgwUDhIK01SdnIxMkplV09GNU9sdGtuSSthN1VRUkxvK3RRCi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg=="
+            }
+        },
+        {
+            "kind": "Service",
+            "apiVersion": "v1",
+            "spec": {
+                "ports": [
+                    {
+                        "port": 8080,
+                        "targetPort": 8080
+                    }
+                ],
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}"
+                }
+            },
+            "metadata": {
+                "name": "${APPLICATION_NAME}",
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "annotations": {
+                    "description": "The web server's http port."
+                }
+            }
+        },
+        {
+            "kind": "Service",
+            "apiVersion": "v1",
+            "spec": {
+                "ports": [
+                    {
+                        "port": 8443,
+                        "targetPort": 8443
+                    }
+                ],
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}"
+                }
+            },
+            "metadata": {
+                "name": "secure-${APPLICATION_NAME}",
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "annotations": {
+                    "description": "The web server's https port."
+                }
+            }
+        },
+        {
+            "kind": "Service",
+            "apiVersion": "v1",
+            "spec": {
+                "ports": [
+                    {
+                        "port": 27017,
+                        "targetPort": 27017
+                    }
+                ],
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}-mongodb"
+                }
+            },
+            "metadata": {
+                "name": "${APPLICATION_NAME}-mongodb",
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "annotations": {
+                    "description": "The database server's port."
+                }
+            }
+        },
+        {
+            "kind": "Route",
+            "apiVersion": "v1",
+            "id": "${APPLICATION_NAME}-http",
+            "metadata": {
+                "name": "${APPLICATION_NAME}",
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "annotations": {
+                    "description": "Route for application's http service."
+                }
+            },
+            "spec": {
+                "host": "${HOSTNAME_HTTP}",
+                "to": {
+                    "name": "${APPLICATION_NAME}"
+                }
+            }
+        },
+        {
+            "kind": "Route",
+            "apiVersion": "v1",
+            "id": "${APPLICATION_NAME}-https",
+            "metadata": {
+                "name": "secure-${APPLICATION_NAME}",
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "annotations": {
+                    "description": "Route for application's https service."
+                }
+            },
+            "spec": {
+                "host": "${HOSTNAME_HTTPS}",
+                "to": {
+                    "name": "secure-${APPLICATION_NAME}"
+                },
+                "tls": {
+                    "termination": "passthrough"
+                }
+            }
+        },
+        {
+            "kind": "ImageStream",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${APPLICATION_NAME}",
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                }
+            }
+        },
+        {
+            "kind": "BuildConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${APPLICATION_NAME}",
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                }
+            },
+            "spec": {
+                "source": {
+                    "type": "Git",
+                    "git": {
+                        "uri": "${SOURCE_REPOSITORY_URL}",
+                        "ref": "${SOURCE_REPOSITORY_REF}"
+                    },
+                    "contextDir": "${CONTEXT_DIR}"
+                },
+                "strategy": {
+                    "type": "Source",
+                    "sourceStrategy": {
+                        "forcePull": true,
+                        "from": {
+                            "kind": "ImageStreamTag",
+                            "namespace": "${IMAGE_STREAM_NAMESPACE}",
+                            "name": "jboss-webserver30-tomcat8-openshift:1.2"
+                        }
+                    }
+                },
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "${APPLICATION_NAME}:latest"
+                    }
+                },
+                "triggers": [
+                    {
+                        "type": "GitHub",
+                        "github": {
+                            "secret": "${GITHUB_WEBHOOK_SECRET}"
+                        }
+                    },
+                    {
+                        "type": "Generic",
+                        "generic": {
+                            "secret": "${GENERIC_WEBHOOK_SECRET}"
+                        }
+                    },
+                    {
+                        "type": "ImageChange",
+                        "imageChange": {}
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ]
+            }
+        },
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${APPLICATION_NAME}",
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                }
+            },
+            "spec": {
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "triggers": [
+                    {
+                        "type": "ImageChange",
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "${APPLICATION_NAME}"
+                            ],
+                            "from": {
+                                "kind": "ImageStream",
+                                "name": "${APPLICATION_NAME}"
+                            }
+                        }
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ],
+                "replicas": 1,
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}"
+                },
+                "template": {
+                    "metadata": {
+                        "name": "${APPLICATION_NAME}",
+                        "labels": {
+                            "deploymentConfig": "${APPLICATION_NAME}",
+                            "application": "${APPLICATION_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "serviceAccount": "jws-service-account",
+                        "terminationGracePeriodSeconds": 60,
+                        "containers": [
+                            {
+                                "name": "${APPLICATION_NAME}",
+                                "image": "${APPLICATION_NAME}",
+                                "imagePullPolicy": "Always",
+                                "readinessProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "/bin/bash",
+                                            "-c",
+                                            "curl -s -u ${JWS_ADMIN_USERNAME}:${JWS_ADMIN_PASSWORD} 'http://localhost:8080/manager/jmxproxy/?get=Catalina%3Atype%3DServer&att=stateName' |grep -iq 'stateName *= *STARTED'"
+                                        ]
+                                    }
+                                },
+                                "volumeMounts": [
+                                    {
+                                        "name": "jws-certificate-volume",
+                                        "mountPath": "/etc/jws-secret-volume",
+                                        "readOnly": true
+                                    }
+                                ],
+                                "ports": [
+                                    {
+                                        "name": "jolokia",
+                                        "containerPort": 8778,
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "name": "http",
+                                        "containerPort": 8080,
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "name": "https",
+                                        "containerPort": 8443,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "env": [
+                                    {
+                                        "name": "DB_SERVICE_PREFIX_MAPPING",
+                                        "value": "${APPLICATION_NAME}-mongodb=DB"
+                                    },
+                                    {
+                                        "name": "DB_JNDI",
+                                        "value": "${DB_JNDI}"
+                                    },
+                                    {
+                                        "name": "DB_USERNAME",
+                                        "value": "${DB_USERNAME}"
+                                    },
+                                    {
+                                        "name": "DB_PASSWORD",
+                                        "value": "${DB_PASSWORD}"
+                                    },
+                                    {
+                                        "name": "DB_DATABASE",
+                                        "value": "${DB_DATABASE}"
+                                    },
+                                    {
+                                        "name": "DB_ADMIN_PASSWORD",
+                                        "value": "${DB_ADMIN_PASSWORD}"
+                                    },
+                                    {
+                                        "name": "DB_MIN_POOL_SIZE",
+                                        "value": "${DB_MIN_POOL_SIZE}"
+                                    },
+                                    {
+                                        "name": "DB_MAX_POOL_SIZE",
+                                        "value": "${DB_MAX_POOL_SIZE}"
+                                    },
+                                    {
+                                        "name": "DB_TX_ISOLATION",
+                                        "value": "${DB_TX_ISOLATION}"
+                                    },
+                                    {
+                                        "name": "JWS_HTTPS_CERTIFICATE_DIR",
+                                        "value": "/etc/jws-secret-volume"
+                                    },
+                                    {
+                                        "name": "JWS_HTTPS_CERTIFICATE",
+                                        "value": "${JWS_HTTPS_CERTIFICATE}"
+                                    },
+                                    {
+                                        "name": "JWS_HTTPS_CERTIFICATE_KEY",
+                                        "value": "${JWS_HTTPS_CERTIFICATE_KEY}"
+                                    },
+                                    {
+                                        "name": "JWS_HTTPS_CERTIFICATE_PASSWORD",
+                                        "value": "${JWS_HTTPS_CERTIFICATE_PASSWORD}"
+                                    },
+                                    {
+                                        "name": "JWS_ADMIN_USERNAME",
+                                        "value": "${JWS_ADMIN_USERNAME}"
+                                    },
+                                    {
+                                        "name": "JWS_ADMIN_PASSWORD",
+                                        "value": "${JWS_ADMIN_PASSWORD}"
+                                    }
+                                ],
+				"resources": {
+				    "limits": {
+					"memory": "${MEMORY_LIMIT}"
+				    }
+				}
+                            }
+                        ],
+                        "volumes": [
+                            {
+                                "name": "jws-certificate-volume",
+                                "secret": {
+                                    "secretName": "${JWS_HTTPS_SECRET}"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "${APPLICATION_NAME}-mongodb",
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                }
+            },
+            "spec": {
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "triggers": [
+                    {
+                        "type": "ImageChange",
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "${APPLICATION_NAME}-mongodb"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "namespace": "${IMAGE_STREAM_NAMESPACE}",
+                                "name": "mongodb:latest"
+                            }
+                        }
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ],
+                "replicas": 1,
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}-mongodb"
+                },
+                "template": {
+                    "metadata": {
+                        "name": "${APPLICATION_NAME}-mongodb",
+                        "labels": {
+                            "deploymentConfig": "${APPLICATION_NAME}-mongodb",
+                            "application": "${APPLICATION_NAME}"
+                        }
+                    },
+                    "spec": {
+                        "terminationGracePeriodSeconds": 60,
+                        "containers": [
+                            {
+                                "name": "${APPLICATION_NAME}-mongodb",
+                                "image": "mongodb",
+                                "imagePullPolicy": "Always",
+                                "ports": [
+                                    {
+                                        "containerPort": 27017,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/var/lib/mongodb/data",
+                                        "name": "${APPLICATION_NAME}-mongodb-pvol"
+                                    }
+                                ],
+                                "env": [
+                                    {
+                                        "name": "MONGODB_USER",
+                                        "value": "${DB_USERNAME}"
+                                    },
+                                    {
+                                        "name": "MONGODB_PASSWORD",
+                                        "value": "${DB_PASSWORD}"
+                                    },
+                                    {
+                                        "name": "MONGODB_DATABASE",
+                                        "value": "${DB_DATABASE}"
+                                    },
+                                    {
+                                        "name": "MONGODB_ADMIN_PASSWORD",
+                                        "value": "${DB_ADMIN_PASSWORD}"
+                                    },
+                                    {
+                                        "name": "MONGODB_NOPREALLOC",
+                                        "value": "${MONGODB_NOPREALLOC}"
+                                    },
+                                    {
+                                        "name": "MONGODB_SMALLFILES",
+                                        "value": "${MONGODB_SMALLFILES}"
+                                    },
+                                    {
+                                        "name": "MONGODB_QUIET",
+                                        "value": "${MONGODB_QUIET}"
+                                    }
+                                ],
+				"resources": {
+				    "limits": {
+					"memory": "${MEMORY_MONGODB_LIMIT}"
+				    }
+				}
+                            }
+                        ],
+                        "volumes": [
+                            {
+                                "name": "${APPLICATION_NAME}-mongodb-pvol",
+                                "persistentVolumeClaim": {
+                                    "claimName": "${APPLICATION_NAME}-mongodb-claim"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "PersistentVolumeClaim",
+            "metadata": {
+                "name": "${APPLICATION_NAME}-mongodb-claim",
+		"annotations": {
+		    "volume.alpha.kubernetes.io/storage-class": "foo"
+		},
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                }
+            },
+            "spec": {
+                "accessModes": [
+                    "ReadWriteOnce"
+                ],
+                "resources": {
+                    "requests": {
+                        "storage": "${VOLUME_CAPACITY}"
+                    }
+                }
+            }
+        }
+    ]
+}

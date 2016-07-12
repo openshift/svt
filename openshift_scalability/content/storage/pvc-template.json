@@ -1,0 +1,47 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+	"name": "pvc",
+	"annotations": {
+	    "description": "Template for creating a persistent volume claim",
+	    "tags": "pvc"
+	}
+    },
+    "labels": {
+	"template": "pvc"
+    },
+    "objects": [
+	{
+	    "kind": "PersistentVolumeClaim",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "${NAME}"
+	    },
+	    "spec": {
+		"accessModes": [
+		    "ReadWriteOnce"
+		],
+		"resources": {
+		    "requests": {
+			"storage": "${VOLUME_CAPACITY}"
+		    }
+		}
+	    }
+	}
+    ],
+    "parameters": [
+	{
+	    "name": "NAME",
+	    "description": "Name for the PVC",
+	    "value": "v1",
+	    "required": true
+	},
+	{
+	    "name": "VOLUME_CAPACITY",
+	    "description": "Storage capacity of the EBS volume, units in either Gi or Mi",
+	    "value": "1Gi",
+	    "required": true
+	}
+    ]
+}

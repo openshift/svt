@@ -1,0 +1,116 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+	"name": "nodejs-mongodb-example",
+	"annotations": {
+	    "description": "An example Node.js application with a MongoDB database",
+	    "tags": "quickstart,nodejs,mongodb",
+	    "iconClass": "icon-nodejs",
+	    "source": "https://github.com/openshift/online/blob/master/templates/examples/nodejs-mongodb.json"
+	}
+    },
+    "labels": {
+	"template": "nodejs-mongodb-example"
+    },
+    "objects": [
+	{
+	    "kind": "ImageStream",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "nodejs-mongodb-example",
+		"annotations": {
+		    "description": "Keeps track of changes in the application image"
+		}
+	    }
+	},
+	{
+	    "kind": "BuildConfig",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "nodejs-mongodb-example",
+		"annotations": {
+		    "description": "Defines how to build the application"
+		}
+	    },
+	    "spec": {
+		"source": {
+		    "type": "Git",
+		    "git": {
+			"uri": "${SOURCE_REPOSITORY_URL}",
+			"ref": "${SOURCE_REPOSITORY_REF}"
+		    },
+		    "contextDir": "${CONTEXT_DIR}"
+		},
+		"strategy": {
+		    "type": "Source",
+		    "sourceStrategy": {
+			"from": {
+			    "kind": "ImageStreamTag",
+			    "namespace": "openshift",
+			    "name": "nodejs:0.10"
+			}
+		    }
+		},
+		"output": {
+		    "to": {
+			"kind": "ImageStreamTag",
+			"name": "nodejs-mongodb-example:latest"
+		    }
+		},
+		"triggers": [
+		    {
+			"type": "ImageChange"
+		    },
+		    {
+			"type": "ConfigChange"
+		    },
+		    {
+			"type": "GitHub",
+			"github": {
+			    "secret": "${GITHUB_WEBHOOK_SECRET}"
+			}
+		    },
+		    {
+			"type": "Generic",
+			"generic": {
+			    "secret": "${GENERIC_WEBHOOK_SECRET}"
+			}
+		    }
+		]
+	    }
+	}
+    ],
+    "parameters": [
+	{
+	    "name": "SOURCE_REPOSITORY_URL",
+	    "displayName": "Git Repository URL",
+	    "description": "The URL of the repository with your application source code.",
+	    "value": "https://github.com/openshift/nodejs-ex.git"
+	},
+	{
+	    "name": "SOURCE_REPOSITORY_REF",
+	    "displayName": "Git Reference",
+	    "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch."
+	},
+	{
+	    "name": "CONTEXT_DIR",
+	    "displayName": "Context Directory",
+	    "description": "Set this to the relative path to your project if it is not in the root of your repository."
+	},
+	{
+	    "name": "GITHUB_WEBHOOK_SECRET",
+	    "displayName": "GitHub Webhook Secret",
+	    "description": "A secret string used to configure the GitHub webhook.",
+	    "generate": "expression",
+	    "from": "[a-zA-Z0-9]{40}"
+	},
+	{
+	    "name": "GENERIC_WEBHOOK_SECRET",
+	    "displayName": "Generic Webhook Secret",
+	    "description": "A secret string used to configure the Generic webhook.",
+	    "generate": "expression",
+	    "from": "[a-zA-Z0-9]{40}"
+	}
+    ]
+}
