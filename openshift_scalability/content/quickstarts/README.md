@@ -26,7 +26,7 @@ In the cluster-loader config directory there are corresponding cluster-loader co
 
 Example usage:
 ```
-# python cluster-loader.py -f config/master-vert-pv.json
+# python cluster-loader.py -f config/master-vert-pv.yaml
 ```
 
 ## Requirements and Recommendations 
@@ -142,6 +142,10 @@ Example HTTP request to write data:
 
 The following quickstarts need to be forked from their upstream repos to enable the database example to work:
 
-- [cakephp](https://github.com/ofthecurerh/cakephp-ex)
+- [cakephp](https://github.com/redhat-performance/cakephp-ex)
 
-- [dancer](https://github.com/ofthecurerh/dancer-ex)
+- [dancer](https://github.com/redhat-performance/dancer-ex)
+
+### Poor Performance with Java Based Apps
+
+The Tomcat and EAP based apps handle a considerably lower number of requests per second compared to the other quickstart apps. During preliminary testing, these apps could only handle about 4.1 requests per second before returning errors. This may be due to requests being blocked on disk access, increasing memory utilization until the pod memory limit is reached. This causes the pod to be repeatedly restarted during the test and the majority of requests fail. 

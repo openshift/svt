@@ -356,7 +356,7 @@
 	    "name": "SOURCE_REPOSITORY_URL",
 	    "displayName": "Git Repository URL",
 	    "description": "The URL of the repository with your application source code.",
-	    "value": "https://github.com/ofthecurerh/dancer-ex.git"
+	    "value": "https://github.com/redhat-performance/dancer-ex.git"
 	},
 	{
 	    "name": "SOURCE_REPOSITORY_REF",
