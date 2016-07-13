@@ -6,7 +6,7 @@ pbench-clear-tools
 
 # Intended to run on the master and list nodes here:
 #NODES="ose3-master.example.com ose-node1.example.com ose-node2.example.com" passed as first parameter to script
-NODES=$1
+NODES=$*
 
 pbench-register-tool-set --interval=10
 pbench-register-tool --name=oc
