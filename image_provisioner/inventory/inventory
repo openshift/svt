@@ -3,14 +3,14 @@ config_type=ose
 graphite_host=
 graphite_prefix=ose
 collectd_interval=10
-openshift_version=3.2.0.44
+openshift_version=3.3.0.4
 docker_storage_device=/dev/sdb
 docker_storage_vgname=docker_vg
 docker_login_file_path=config.json
-aos_ansible_path=/storage/repos/aos-ansible
+aos_ansible_path=/root/aos-ansible
 ansible_ssh_user=root
 aos_repo=https://mirror.example.com/enterprise/enterprise-3.2/latest/RH7-RHAOS-3.2/x86_64/os
-qe_repo_image_versions=v3.2.0.44
+qe_repo_image_versions=v3.3.0.4
 qe_repo_image_type=ose
 
 [all]
