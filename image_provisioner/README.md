@@ -2,6 +2,11 @@
 
 To reduce the time it takes to build out an OpenShift environment, and facilitate automated testing we need to bake several packages, configurations and containers into a RHEL instance.
 
+You may want to resize the VM image root disk:
+
+qemu-img resize rhel-guest-image-7.2-20160302.0.x86_64.qcow2 +20G
+virt-import ... 
+
 The image provisioner will support AWS and OpenStack, and be automated with Ansible.  The following Ansible roles are run on an instance:
 
 - provide cloud-init config
