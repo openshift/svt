@@ -1,5 +1,0 @@
-[3.2.0.14_and_origin8395_and_sdn277]
-name=pr8395
-baseurl=http://perf-infra.ec2.breakage.org/pr8395_and_277
-gpgcheck=0
-enabled=1
