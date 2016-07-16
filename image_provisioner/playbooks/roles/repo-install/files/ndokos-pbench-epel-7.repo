@@ -4,5 +4,5 @@ baseurl=https://copr-be.cloud.fedoraproject.org/results/ndokos/pbench/epel-7-$ba
 skip_if_unavailable=True
 gpgcheck=1
 gpgkey=https://copr-be.cloud.fedoraproject.org/results/ndokos/pbench/pubkey.gpg
-enabled=0
+enabled=1
 enabled_metadata=1
