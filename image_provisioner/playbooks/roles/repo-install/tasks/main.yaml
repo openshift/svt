@@ -1,9 +1,9 @@
 ---
-- name: ensure we have the perf-dept.repo file properly in place
+- name: install perf-dept repo
   template: src=etc/yum.repos.d/perf-dept.repo.j2 dest=/etc/yum.repos.d/perf-dept.repo owner=root group=root mode=0644
 
-- name: install RHEL repo
-  copy: src=rhel7-latest.repo dest=/etc/yum.repos.d/
+- name: install rhel7-latest repo
+  template: src=etc/yum.repos.d/rhel7-latest.repo.j2 dest=/etc/yum.repos.d/rhel7-latest.repo owner=root group=root mode=0644
 
 - name: install EPEL repo
   copy: src=epel.repo dest=/etc/yum.repos.d/
