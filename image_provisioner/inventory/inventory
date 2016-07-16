@@ -3,15 +3,21 @@ config_type=ose
 graphite_host=
 graphite_prefix=ose
 collectd_interval=10
+<<<<<<< 3e201a6f75e0deb24391f69d5a5171a11f7cf063
 <<<<<<< a8977e464996aee0cc5fbc8a48d6af0fe7fb7cc0
 <<<<<<< d2dcb7d6b0db9d3b1303aac9a5f9d4652c5ea8f1
 openshift_version=3.3.0.4
+=======
+collectd_status=started
+openshift_version=3.3.0.5
+>>>>>>> update inventory file
 docker_storage_device=/dev/sdb
 docker_storage_vgname=docker_vg
 docker_login_file_path=config.json
 aos_ansible_path=/root/aos-ansible
 ansible_ssh_user=root
 aos_repo=https://mirror.example.com/enterprise/enterprise-3.2/latest/RH7-RHAOS-3.2/x86_64/os
+<<<<<<< 3e201a6f75e0deb24391f69d5a5171a11f7cf063
 qe_repo_image_versions=v3.3.0.4
 =======
 openshift_version=3.2.0.44
@@ -30,7 +36,11 @@ qe_repo_image_versions=v3.2.0.44
 =======
 qe_repo_image_versions=v3.3.0.4
 >>>>>>> update inventory
+=======
+qe_repo_image_versions=v3.3.0.5
+>>>>>>> update inventory file
 qe_repo_image_type=ose
+rhel_repo_hostname=download.devel.redhat.com
 
 [all]
 localhost
