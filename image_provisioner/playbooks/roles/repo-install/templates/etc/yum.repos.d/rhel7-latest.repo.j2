@@ -1,0 +1,46 @@
+[rhel-7-latest]
+name=rhel7-latest
+baseurl=http://{{ rhel_repo_hostname }}/rel-eng/latest-RHEL-7/compose/Server/x86_64/os/
+enabled=1
+gpgcheck=0
+priority=0
+skip_if_unavailable=1
+
+[rhel7-latest-opt]
+name=rhel7-latest-opt
+baseurl=http://{{ rhel_repo_hostname }}/rel-eng/latest-RHEL-7/compose/Server-optional/x86_64/os/
+enabled=1
+gpgcheck=0
+priority=0
+skip_if_unavailable=1
+
+[rhel7-latest-debuginfo]
+name=rhel7-latest-debuginfo
+baseurl=http://{{ rhel_repo_hostname }}/rel-eng/latest-RHEL-7/compose/Server/x86_64/debug/tree/
+enabled=0
+gpgcheck=0
+priority=0
+skip_if_unavailable=1
+
+[rhel7-scl]
+name=rhel7-scl
+baseurl=http://{{ rhel_repo_hostname }}/rel-eng/RHSCL-2.0-RHEL-7-Beta-1.0/compose/Server/x86_64/os/
+enabled=0
+gpgcheck=0
+priority=0
+skip_if_unavailable=1
+
+[rhel7-realtime]
+name=rhel7-realtime
+baseurl=http://{{ rhel_repo_hostname }}/rel-eng/latest-RHEL-7/compose/Server-RT/x86_64/os/
+enabled=1
+gpgcheck=0
+priority=1
+skip_if_unavailable=1
+
+[rhel72-extras-candidate]
+name=rhel72-extras-candidate
+baseurl=http://{{ rhel_repo_hostname }}/brewroot/repos/extras-rhel-7.2-candidate/latest/$basearch/
+enabled=1
+gpgcheck=0
+priority=1
