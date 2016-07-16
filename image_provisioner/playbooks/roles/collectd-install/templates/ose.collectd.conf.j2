@@ -1,6 +1,3 @@
-# Installed by Browbeat Ansible Installer
-# Config type: {{config_type}}
-
 # Interval default is 10s
 Interval {{collectd_interval}}
 
@@ -17,7 +14,6 @@ LoadPlugin contextswitch
 LoadPlugin cpu
 LoadPlugin df
 LoadPlugin disk
-# LoadPlugin exec
 LoadPlugin ethstat
 LoadPlugin interface
 LoadPlugin irq
@@ -27,17 +23,7 @@ LoadPlugin network
 LoadPlugin numa
 LoadPlugin processes
 LoadPlugin swap
-#LoadPlugin turbostat
-#LoadPlugin unixsock
 LoadPlugin uptime
-
-# Open unix domain socket for collectdctl
-#<Plugin unixsock>
-#  SocketFile "/var/run/collectd-unixsock"
-#  SocketGroup "collectd"
-#  SocketPerms "0770"
-#  DeleteSocket true
-#</Plugin>
 
 # Graphite Host Configuration
 <Plugin write_graphite>
