@@ -8,6 +8,12 @@
 - name: install EPEL repo
   copy: src=epel.repo dest=/etc/yum.repos.d/
 
+- name: install pbench-internal repo
+  template: src=etc/yum.repos.d/pbench.repo.j2 dest=/etc/yum.repos.d/pbench.repo owner=root group=root mode=0644
+
+- name: install pbench-external repo
+  copy: src=ndokos-pbench-epel-7.repo dest=/etc/yum.repos.d/
+
 - name: remove beaker repo files
   shell: rm -rf /etc/yum.repos.d/beaker*repo
 
