@@ -37,4 +37,7 @@
   yum: name=* state=latest
 
 - name: stop cloud-init from disabling root ssh
-  - 
+  replace: dest=/etc/cloud/cloud.cfg regexp='^disable_root: 1' replace='disable_root=0' backup=yes
+
+- name: allow password auth over ssh
+  replace: dest=/etc/cloud/cloud.cfg regexp='^ssh_pwauth: 0' replace='ssh_pwauth: 1' backup=yes
