@@ -1,7 +1,4 @@
 ---
-- name: install perf-dept repo
-  template: src=etc/yum.repos.d/perf-dept.repo.j2 dest=/etc/yum.repos.d/perf-dept.repo owner=root group=root mode=0644
-
 - name: install rhel7-latest repo
   template: src=etc/yum.repos.d/rhel7-latest.repo.j2 dest=/etc/yum.repos.d/rhel7-latest.repo owner=root group=root mode=0644
 
@@ -14,8 +11,5 @@
 - name: install pbench-external repo
   copy: src=ndokos-pbench-epel-7.repo dest=/etc/yum.repos.d/
 
-- name: remove beaker repo files
-  shell: rm -rf /etc/yum.repos.d/beaker*repo
-
 - name: disable requiretty
-  shell: sed -i 's/Defaults    requiretty/Defaults    !requiretty/g' /etc/sudoers
+  replace: dest=/etc/sudoers regexp='^Defaults    requiretty' replace='Defaults    !requiretty' backup=yes
