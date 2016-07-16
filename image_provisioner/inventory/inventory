@@ -1,4 +1,5 @@
 [all:vars]
+ansible_ssh_private_key_file = $HOME/.ssh/id_rsa_perf
 config_type=ose
 graphite_host=
 graphite_prefix=ose
