@@ -15,6 +15,7 @@ docker_storage_device=/dev/sdb
 docker_storage_vgname=docker_vg
 docker_login_file_path=config.json
 aos_ansible_path=/root/aos-ansible
+<<<<<<< 71c86312027b4222bfa683ffb21c83a07145fb69
 ansible_ssh_user=root
 aos_repo=https://mirror.example.com/enterprise/enterprise-3.2/latest/RH7-RHAOS-3.2/x86_64/os
 <<<<<<< 3e201a6f75e0deb24391f69d5a5171a11f7cf063
@@ -37,13 +38,18 @@ qe_repo_image_versions=v3.2.0.44
 qe_repo_image_versions=v3.3.0.4
 >>>>>>> update inventory
 =======
+=======
+#ansible_ssh_user=root
+aos_repo=https://mirror.example.com/enterprise/enterprise-3.3/latest/RH7-RHAOS-3.3/x86_64/os
+>>>>>>> update for 3.3
 qe_repo_image_versions=v3.3.0.5
 >>>>>>> update inventory file
 qe_repo_image_type=ose
-rhel_repo_hostname=download.devel.redhat.com
+rhel_repo_hostname=
+pbench_internal_hostname=
 
 [all]
-localhost
+# 127.0.0.1
 
 [servers]
-localhost
+# 127.0.0.1
