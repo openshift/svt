@@ -1,2 +1,3 @@
 playbooks/test.yaml
+playbooks/test.retry
 inventory/test
