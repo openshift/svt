@@ -15,6 +15,7 @@ openshift_version=3.3.0.5
 docker_storage_device=/dev/sdb
 docker_storage_vgname=docker_vg
 docker_login_file_path=config.json
+github_token=
 aos_ansible_path=/root/aos-ansible
 <<<<<<< 71c86312027b4222bfa683ffb21c83a07145fb69
 ansible_ssh_user=root
