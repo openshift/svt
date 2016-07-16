@@ -4,6 +4,7 @@ To reduce the time it takes to build out an OpenShift environment, and facilitat
 
 The image provisioner will support AWS and OpenStack, and be automated with Ansible.  The following Ansible roles are run on an instance:
 
+- provide cloud-init config
 - RHEL OS setup (install latest packages, ssh keys)
 - collectd-install (install and configure collectd)
 - docker-config (setup storage)
