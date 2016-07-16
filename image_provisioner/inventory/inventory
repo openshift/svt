@@ -9,6 +9,7 @@ openshift_version=3.3.0.5
 docker_storage_device=/dev/sdb
 docker_storage_vgname=docker_vg
 docker_login_file_path=config.json
+github_token=
 aos_ansible_path=/root/aos-ansible
 #ansible_ssh_user=root
 aos_repo=https://mirror.example.com/enterprise/enterprise-3.3/latest/RH7-RHAOS-3.3/x86_64/os
