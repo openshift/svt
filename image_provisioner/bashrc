@@ -1,0 +1,84 @@
+if [ -f /etc/bashrc ]; then
+	. /etc/bashrc
+fi
+
+PS1="\u@\h: \w "
+case `id -u` in
+      0) PS1="${PS1}# ";;
+      *) PS1="${PS1}$ ";;
+esac
+
+## lennart poettering http://lkml.org/lkml/2010/11/16/330
+#if [ "$PS1" ] ; then  
+#          mkdir -m 0700 /cgroup/cpu/user/$$
+#          echo $$ > /cgroup/cpu/user/$$/tasks
+#fi
+
+PATH=$PATH:/sbin:/usr/sbin
+
+shopt -s -q cmdhist                         # Save all lines of a multi-line cmd
+shopt -s -q lithist                         # above w/ embedded newlines
+shopt -s -q histappend                      # append to HISTFILE on exit
+shopt -s -q cdspell                         # check for spelling mistakes in dir names
+shopt -s -q extglob                         # egrep style pattern matching
+shopt -s checkwinsize                       # check window size after process complete
+shopt -s -q nocaseglob
+unset PROMPT_COMMAND
+HISTSIZE=10485760
+
+alias l='ls -al --color=auto'
+alias lr='ls -altr --color=auto'
+alias c='clear'
+alias e='exit'
+alias p='ping'
+alias t1='turbostat -i1'
+alias t2='turbostat sleep 2'
+alias cl='clear ; ls -al'
+alias ur='uname -r'
+alias rehash='source ~/.bashrc'
+alias rs='rsync -avz --progress --stats'
+alias vi='vim'
+alias iftop='sudo iftop'
+export SVN_EDITOR=vim
+alias sshr='ssh root@'
+alias packages='cd /mnt/redhat/brewroot/packages'
+alias less='less -FiX'
+
+alias k5='cd /mnt/redhat/brewroot/packages/kernel/2.6.18'
+alias k6='cd /mnt/redhat/brewroot/packages/kernel/2.6.32'
+alias k7='cd /mnt/redhat/brewroot/packages/kernel/3.10.0'
+alias pdgit='git config --global http.sslVerify false ; git clone https://code.engineering.redhat.com/gerrit/p/perf-dept.git /root/perf-dept'
+alias pbgit='git config --global http.sslVerify false ; git clone https://code.engineering.redhat.com/gerrit/p/pbench.git /root/pbench'
+alias ur='uname -r'
+alias t1='turbostat -i1'
+
+function kx {
+
+function kinfo {
+        echo
+        echo "grub config:  $GRUB"
+        echo "current kernel:  `uname -r`"
+        echo "cmdline: `cat /proc/cmdline`"
+        echo
+}
+
+if [ -e /boot/grub/grub.conf ]; then
+	GRUB=/boot/grub/grub.conf
+	kinfo
+	for i in `grep title /boot/grub/grub.conf | awk -F\( '{print $2}'|grep 32|sed -e 's/)//g'`
+		do
+		export KERNEL=$i
+		echo "kexec -l /boot/vmlinuz-$KERNEL --initrd=/boot/initramfs-$KERNEL.img --reuse-cmdline"
+	done
+else
+	GRUB=/boot/grub2/grub.cfg
+	kinfo
+	for i in `grep menuentry /boot/grub2/grub.cfg | grep el | awk '{print $9}' | grep -v with | sed -e 's/(//g'|sed -e 's/)//g' | sed -e "s/'//g"`
+		do
+		export KERNEL=$i
+		echo "kexec -l /boot/vmlinuz-$KERNEL --initrd=/boot/initramfs-$KERNEL.img --reuse-cmdline ; history -a"
+	done
+fi
+
+echo "date ; history -a ; kexec -e"
+}
