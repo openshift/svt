@@ -14,8 +14,13 @@ openshift_version=3.3.0.4
 =======
 collectd_status=started
 openshift_version=3.3.0.5
+<<<<<<< d8d429ab871bd4c04aed481215087fd7792184d6
 >>>>>>> update inventory file
 docker_storage_device=/dev/sdb
+=======
+# sda2 for openstack sdb for ec2
+docker_storage_device=/dev/sda2
+>>>>>>> quick comment about disk device paths
 docker_storage_vgname=docker_vg
 docker_login_file_path=config.json
 github_token=
