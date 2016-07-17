@@ -1,0 +1,24 @@
+---
+- name: ensure local machine has necessary virt packages
+  yum: name=libguestfs-tools-c state=latest
+
+- name: download base image file
+  get_url: url={{ base_image_url }} dest=/tmp/
+
+- name: add 20G empty space to disk image
+  shell: qemu-img resize /tmp/{{ base_image_filename }} +20G
+
+- name: create tmp disk for first resize pass
+  shell: qemu-img create -f qcow2 -o preallocation=metadata /tmp/osptmp1.qcow2 31G
+
+- name: resize root partition from 6 to 10G
+  shell: virt-resize --quiet --resize /dev/sda1=+4G /tmp/{{ base_image_filename }} /tmp/osptmp1.qcow2
+
+- name: create tmp disk for adding second partition for docker thinpool
+  shell: qemu-img create -f qcow2 -o preallocation=metadata /tmp/{{ base_image_filename }}_resized.qcow2 32G
+
+- name: resize second partition to use all free space
+  shell: virt-resize --quiet --expand /dev/sda2 /tmp/osptmp1.qcow2 /tmp/{{ base_image_filename }}_resized.qcow2
+
+- name: compress disk image
+  shell: tar cvzf /tmp/{{ base_image_filename }}_resized.qcow2.tar.gz /tmp/{{ base_image_filename }}_resized.qcow2
