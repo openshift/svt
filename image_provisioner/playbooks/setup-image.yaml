@@ -1,0 +1,7 @@
+---
+- name: setup base image
+  user: root
+  hosts: localhost
+
+  roles:
+    - setup-image
