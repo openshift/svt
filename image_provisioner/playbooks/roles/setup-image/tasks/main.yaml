@@ -15,10 +15,10 @@
   shell: virt-resize --quiet --resize /dev/sda1=+4G /tmp/{{ base_image_filename }} /tmp/osptmp1.qcow2
 
 - name: create tmp disk for adding second partition for docker thinpool
-  shell: qemu-img create -f qcow2 -o preallocation=metadata /tmp/{{ base_image_filename }}_resized.qcow2 32G
+  shell: qemu-img create -f qcow2 -o preallocation=metadata /tmp/{{ base_image_filename }}_resized_{{ image_tag }}.qcow2 32G
 
 - name: resize second partition to use all free space
-  shell: virt-resize --quiet --expand /dev/sda2 /tmp/osptmp1.qcow2 /tmp/{{ base_image_filename }}_resized.qcow2
+  shell: virt-resize --quiet --expand /dev/sda2 /tmp/osptmp1.qcow2 /tmp/{{ base_image_filename }}_resized_{{ image_tag }}.qcow2
 
 - name: compress disk image
-  shell: tar cvzf /tmp/{{ base_image_filename }}_resized.qcow2.tar.gz /tmp/{{ base_image_filename }}_resized.qcow2
+  shell: tar cvzf /tmp/{{ base_image_filename }}_resized.qcow2.tar.gz /tmp/{{ base_image_filename }}_resized_{{ image_tag }}.qcow2
