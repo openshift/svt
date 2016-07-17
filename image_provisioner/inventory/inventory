@@ -1,5 +1,8 @@
 [all:vars]
 ansible_ssh_private_key_file = $HOME/.ssh/id_rsa_perf
+# size is in 512b sectors.  20971520 = 10G
+root_partition_size=20971520
+base_image_url=http://download.devel.redhat.com/brewroot/packages/rhel-guest-image/7.2/20160302.0/images/rhel-guest-image-7.2-20160302.0.x86_64.qcow2
 config_type=ose
 graphite_host=
 graphite_prefix=ose
