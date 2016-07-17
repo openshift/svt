@@ -8,4 +8,4 @@
     - os-kickstart
     - collectd-install
     - docker-config
-#    - aos-ansible
+    - clone-repos
