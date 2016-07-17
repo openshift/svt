@@ -1,9 +1,20 @@
 ---
 - name: copy docker-storage-setup config
-  template: src=etc/sysconfig/docker-storage-setup dest=/etc/sysconfig/docker-storage-setup
+  template: src=etc/sysconfig/docker-storage-setup.j2 dest=/etc/sysconfig/docker-storage-setup
 
-- name: mkdir /root/.docker
-  shell: mkdir /root/.docker
+- name: create docker config directory
+#  shell:  mkdir /root/.docker
+  file: path=/root/.docker state=directory
 
-- name: copy docker login config.json
-  copy: src={{ docker_login_file_path }} dest=/root/.docker/config.json
+- name: download docker login config.json
+#  get_url: url=https://{{ github_token }}@github.com/openshift/{{ config_repo }}/image_provisioner/config.json dest=/root/.docker/
+  get_url: url=http://10.12.20.141/config.json dest=/root/.docker/
+
+- name: install docker
+  yum: name=docker state=latest
+
+- name: run docker-storage-setup
+  shell: docker-storage-setup
+
+- name: enable docker service and start it
+  service: name=docker state=restarted enabled=yes
