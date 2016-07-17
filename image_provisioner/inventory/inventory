@@ -3,6 +3,7 @@ ansible_ssh_private_key_file = $HOME/.ssh/id_rsa_perf
 # size is in 512b sectors.  20971520 = 10G
 root_partition_size=20971520
 base_image_url=http://download.devel.redhat.com/brewroot/packages/rhel-guest-image/7.2/20160302.0/images/rhel-guest-image-7.2-20160302.0.x86_64.qcow2
+image_tag=2016-07-17
 config_type=ose
 graphite_host=
 graphite_prefix=ose
@@ -22,7 +23,7 @@ docker_storage_device=/dev/sdb
 docker_storage_device=/dev/sda2
 >>>>>>> quick comment about disk device paths
 docker_storage_vgname=docker_vg
-docker_login_file_path=config.json
+docker_config_url=https://github.com/openshift/repo/image_provisioner/config.json
 github_token=
 aos_ansible_path=/root/aos-ansible
 <<<<<<< 71c86312027b4222bfa683ffb21c83a07145fb69
