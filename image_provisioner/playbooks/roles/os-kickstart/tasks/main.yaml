@@ -3,16 +3,17 @@
   yum: name={{ item }} state=latest
   with_items:
     - blktrace
-    - dropwatch
     - ethtool
     - findutils
     - git
     - gnuplot
+    - golang
     - hwloc
     - iotop
     - kernel
     - ltrace
     - mailx
+    - maven
     - netsniff-ng
     - net-tools
     - ntp
@@ -20,6 +21,9 @@
     - numactl
     - pciutils
     - perf
+    - python-pip
+    - python-rbd
+    - python2-boto3
     - powertop
     - psmisc
     - rpm-build
@@ -28,6 +32,7 @@
     - strace
     - tar
     - tcpdump
+    - tmux
     - vim-enhanced
     - xauth
     - wget
