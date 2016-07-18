@@ -20,5 +20,8 @@
 - name: resize second partition to use all free space
   shell: virt-resize --quiet --expand /dev/sda2 /tmp/osptmp1.qcow2 /tmp/{{ base_image_filename }}_resized_{{ image_tag }}.qcow2
 
+- name: set root password in image
+  shell: virt-customize --root-password password:{{ root_password }} -a /tmp/{{ base_image_filename }}_resized_{{ image_tag }}.qcow2
+
 - name: compress disk image
   shell: tar cvzf /tmp/{{ base_image_filename }}_resized.qcow2.tar.gz /tmp/{{ base_image_filename }}_resized_{{ image_tag }}.qcow2
