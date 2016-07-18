@@ -16,6 +16,7 @@ docker_storage_vgname=docker_vg
 docker_config_url=https://github.com/openshift/repo/image_provisioner/config.json
 github_token=
 aos_ansible_path=/root/aos-ansible
+aos_ansible_inventory=/root/aos-ansible/inventory/hosts
 docker_daemon_options='--selinux-enabled --log-driver=journald'
 #ansible_ssh_user=root
 aos_repo=https://mirror.example.com/enterprise/enterprise-3.3/latest/RH7-RHAOS-3.3/x86_64/os
@@ -23,6 +24,7 @@ qe_repo_image_versions=v3.3.0.5
 qe_repo_image_type=ose
 rhel_repo_hostname=
 pbench_internal_hostname=
+root_password=
 
 [all]
 # 127.0.0.1
