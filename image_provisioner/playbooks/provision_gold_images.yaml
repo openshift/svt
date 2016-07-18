@@ -9,4 +9,5 @@
     - collectd-install
     - clone-repos
     - pbench-config
-#    - docker-config
+    - docker-config
+    - aos-ansible
