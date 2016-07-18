@@ -13,6 +13,12 @@
 - name: install docker
   yum: name=docker state=latest
 
+- name: create LVM pv
+  shell: pvcreate {{ docker_storage_device }}
+
+- name: create VG for docker thin pool
+  lvg: vg=docker_vg pvs={{ docker_storage_device }}
+
 - name: run docker-storage-setup
   shell: docker-storage-setup
 
