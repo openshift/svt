@@ -1,3 +1,4 @@
 playbooks/test.yaml
 playbooks/test.retry
+playbooks/provision_gold_images.retry
 inventory/test
