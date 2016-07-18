@@ -66,6 +66,7 @@ qe_repo_image_versions=v3.3.0.5
 qe_repo_image_type=ose
 rhel_repo_hostname=
 pbench_internal_hostname=
+pbench_alternate_hostname=
 root_password=
 
 [all]
