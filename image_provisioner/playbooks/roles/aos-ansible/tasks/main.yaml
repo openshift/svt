@@ -1,0 +1,6 @@
+---
+- name: customize aos-ansible inventory file
+  template: src=hosts.j2 dest={{ aos_ansible_inventory }}
+
+- name: run aos-ansible
+  shell: ansible-playbook -i {{ aos_ansible_inventory }} {{ aos_ansible_path }}/playbooks/aws_install_prep.yml --connection=local
