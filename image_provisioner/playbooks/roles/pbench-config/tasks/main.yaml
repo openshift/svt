@@ -1,6 +1,6 @@
 ---
 - name: configure pbench target
-  replace: dest=/opt/pbench-agent/config/pbench-agent.cfg regexp='pbench.perf.lab.eng.bos.redhat.com' replace='perf-infra.ec2.breakage.org' backup=yes
+  replace: dest=/opt/pbench-agent/config/pbench-agent.cfg regexp='{{ pbench_internal_hostname }}' replace='{{ pbench_alternate_hostname }}' backup=yes
 
 - name: register tools
   shell:  pbench-register-tool-set
