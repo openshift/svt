@@ -26,6 +26,7 @@ docker_storage_vgname=docker_vg
 docker_config_url=https://github.com/openshift/repo/image_provisioner/config.json
 github_token=
 aos_ansible_path=/root/aos-ansible
+<<<<<<< 82a17cdf7241e7b0b43cda654d7e18b149b1d31e
 <<<<<<< 649474c8b483b17cba9f700c8704d43d43b77d8c
 <<<<<<< 71c86312027b4222bfa683ffb21c83a07145fb69
 ansible_ssh_user=root
@@ -52,6 +53,9 @@ qe_repo_image_versions=v3.3.0.4
 =======
 =======
 =======
+=======
+aos_ansible_inventory=/root/aos-ansible/inventory/hosts
+>>>>>>> add new flags to inventory
 docker_daemon_options='--selinux-enabled --log-driver=journald'
 >>>>>>> add new variable
 #ansible_ssh_user=root
@@ -62,6 +66,7 @@ qe_repo_image_versions=v3.3.0.5
 qe_repo_image_type=ose
 rhel_repo_hostname=
 pbench_internal_hostname=
+root_password=
 
 [all]
 # 127.0.0.1
