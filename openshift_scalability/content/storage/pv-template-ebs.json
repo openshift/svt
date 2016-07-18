@@ -1,0 +1,56 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+	"name": "ebs-pv",
+	"annotations": {
+	    "description": "Template for creating an EBS persistent volume",
+	    "tags": "ebs,pv"
+	}
+    },
+    "labels": {
+	"template": "ebs-pv"
+    },
+    "objects": [
+	{
+	    "kind": "PersistentVolume",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "ebs-pv-${VOLUME_ID}",
+		"annotations": {
+		    "description": "EBS persistent volume"
+		}
+	    },
+	    "spec": {
+		"capacity": {
+		    "storage": "${VOLUME_CAPACITY}"
+		},
+		"accessModes": [
+		    "ReadWriteOnce"
+		],
+		"persistentVolumeReclaimPolicy": "Delete",
+		"awsElasticBlockStore": {
+		    "fsType": "${FS_TYPE}",
+		    "volumeID": "${VOLUME_ID}"
+		}
+	    }
+	}
+    ],
+    "parameters": [
+	{
+	    "name": "VOLUME_ID",
+	    "description": "The volume id for the EBS volume",
+	    "required": true
+	},
+	{
+	    "name": "VOLUME_CAPACITY",
+	    "description": "Storage capacity of the EBS volume, units in either Gi or Mi",
+	    "value": "1Gi"
+	},
+	{
+	    "name": "FS_TYPE",
+	    "description": "Filesystem type for the volume",
+	    "value": "xfs"
+	}
+    ]
+}
