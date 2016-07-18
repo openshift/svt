@@ -2,6 +2,7 @@
 - name: install packages
   yum: name={{ item }} state=latest
   with_items:
+    - ansible1.9
     - blktrace
     - ethtool
     - findutils
