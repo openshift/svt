@@ -7,5 +7,6 @@
     - repo-install
     - os-kickstart
     - collectd-install
-    - docker-config
     - clone-repos
+    - pbench-config
+#    - docker-config
