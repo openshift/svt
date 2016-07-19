@@ -2,6 +2,9 @@
 - name: clone aos-ansible repo
   git: repo=https://{{ github_token }}@github.com/openshift/aos-ansible dest=/root/aos-ansible update=yes
 
+- name: temp fixup for aos-ansible #27
+  replace: dest=/root/aos-ansible/playbooks/roles/qe_registry_bootstrap/tasks/main.yml regexp='^-shell: docker login' replace='#-shell: docker login' backup=yes
+
 - name: clone svt repo
   git: repo=https://github.com/openshift/svt dest=/root/svt update=yes
 
