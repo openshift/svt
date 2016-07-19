@@ -56,7 +56,6 @@ globalvars["cleanoption"] = options.cleanall
 globalvars["debugoption"] = options.debug
 globalvars["kubeopt"] = options.kube
 globalvars["env"] = []
-globalvars["quotas"] = testconfig["quotas"]
 globalvars["kubeconfig"] = options.kubeconfig
 globalvars["processes"] = options.processes
 globalvars["forcedelete"] = options.forcedelete
@@ -65,6 +64,9 @@ user = options.oseuser
 passwd = options.osepass
 master=options.osemaster
 
+if "quotas" in testconfig:
+    globalvars["quotas"] = testconfig["quotas"]
+    
 if "tuningsets" in testconfig:
     globalvars["tuningsets"] = testconfig["tuningsets"]
 
