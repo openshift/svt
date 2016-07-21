@@ -12,12 +12,17 @@ def run(cmd,config=""):
 
 def login(url, user, passwd):
     run("oc login --insecure-skip-tls-verify=true -u " + user + " -p " + passwd + " " + url)
-
+    #run("oc login https://api.dev-preview-int.openshift.com --token=yPeDkR0b0ESwbX2WlC4AGWqQIHJHIeRbrEOOua9HEoQ")
 
 def run_build(build_def, start_build):
     global build_stats
 
-    date_fmt = "%H:%M:%S"
+    push_date_fmt = "%H:%M:%S"
+    start_stop_date_fmt = "%Y-%m-%dT%H:%M:%SZ"
+#3.2    start_regex = re.compile(".*(\d\d:\d\d:\d\d).\d+\s+\d\s\S+\sPushing",re.MULTILINE)
+#3.2    end_regex = re.compile(".*(\d\d:\d\d:\d\d).\d+\s+\d\s\S+\s(Successfully pushed|Push successful)", re.MULTILINE)
+    start_regex = re.compile(".*(\d\d:\d\d:\d\d).\d+Z\sPushing")
+    end_regex = re.compile(".*(\d\d:\d\d:\d\d).\d+Z\s(Successfully pushed|Push successful)")
 
     namespace = build_def["namespace"]
     name = build_def["name"]
@@ -40,20 +45,31 @@ def run_build(build_def, start_build):
             build_info = json.loads(result)
             if build_info and build_info["status"] and build_info["status"]["phase"]:
                 if build_info["status"]["phase"] == "Complete":
+                    # Don't use duration until BZ https://bugzilla.redhat.com/show_bug.cgi?id=1318403 fixed
+                    #if "duration" in build_info["status"]:
+                    #    build_time = build_info["status"]["duration"]/1000000000
+                    #else:
+                    #    build_time = 0
+                    #    print "ERROR: Duration missing from " + build_qname
                     build_completed=True
-                    if "duration" in build_info["status"]:
-                        build_time = build_info["status"]["duration"]/1000000000
+
+                    if build_info["metadata"]["creationTimestamp"] and build_info["status"]["completionTimestamp"]:
+                        creation_time = datetime.datetime.strptime(build_info["metadata"]["creationTimestamp"],start_stop_date_fmt)
+                        completion_time = datetime.datetime.strptime(build_info["status"]["completionTimestamp"],start_stop_date_fmt)
+                        build_time = (completion_time - creation_time).total_seconds()
                     else:
+                        print "ERROR: creation/completion times missing from build"
                         build_time = 0
-                        print "ERROR: Duration missing from " + build_qname
-                    result = run("oc logs -n " + namespace + " build/" + build_name)
+
+                    result = run("oc logs --timestamps -n " + namespace + " build/" + build_name)
 
                     # timestamps for start and end of push.  End of push message different for non-s2i builds
-                    push_start = re.search(".*(\d\d:\d\d:\d\d).\d+\s+\d\s\S+\sPushing",result).group(1)
-                    push_end = re.search(".*(\d\d:\d\d:\d\d).\d+\s+\d\s\S+\s(Successfully pushed|Push successful)",result).group(1)
+
+                    push_start = start_regex.search(result).group(1)
+                    push_end = end_regex.search(result).group(1)
 
                     #calculate and record stats
-                    push_time_delta = datetime.datetime.strptime(push_end, date_fmt) - datetime.datetime.strptime(push_start, date_fmt)
+                    push_time_delta = datetime.datetime.strptime(push_end, push_date_fmt) - datetime.datetime.strptime(push_start, push_date_fmt)
                     push_time = push_time_delta.total_seconds()
 
                     print "\nBuild completed: " + build_qname + " Build time: " + str(build_time) + " Push time: " + str(push_time)
@@ -63,6 +79,7 @@ def run_build(build_def, start_build):
                         print "Invalid data - not included in summary statistics"
                         build_stats[idx]["invalid"] += 1
                     else:
+                        build_time -= push_time
                         build_stats[idx]["num"] += 1
                         build_stats[idx]["total_time"] += build_time
                         build_stats[idx]["push_time"] += push_time
@@ -190,12 +207,13 @@ if __name__ ==  "__main__":
 
     print "Gathering build info..."
 
-    if globalconfig["all_builds"] == True:
-        all_builds = get_build_configs()
-    elif globalconfig["build_file"] :
+
+    if globalconfig["build_file"] :
         with open(globalconfig["build_file"]) as f:
             builds = f.read().replace('\n', '')
             all_builds = json.loads(builds)
+    else:
+        all_builds = get_build_configs()
 
 
     print "Build info gathered."
