@@ -114,7 +114,7 @@ function join { local IFS="$1"; shift; echo "$*"; }
 
 export KUBECONFIG=${KUBECONFIG:-/etc/origin/master/admin.kubeconfig}
 export KUBERNETES_PROVIDER=${KUBERNETES_PROVIDER:-aws}
-export KUBE_REPO_ROOT=${KUBE_REPO_ROOT_PATH:-/root/kubernetes}
+export KUBE_REPO_ROOT=${KUBE_REPO_ROOT_PATH:-/root/origin/vendor/k8s.io/kubernetes}
 export EXTENDED_TEST_PATH=${EXTENDED_TEST_PATH:-/root/origin/test/extended}
 
 svt_exclude=( "${EXCLUDED_TESTS[@]}" )
