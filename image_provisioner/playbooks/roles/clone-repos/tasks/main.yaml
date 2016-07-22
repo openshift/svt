@@ -7,3 +7,6 @@
 
 - name: clone svt-private repo
   git: repo=https://{{ github_token }}@github.com/openshift/svt-private dest=/root/svt-private update=yes
+
+- name: clone openshift-ansible repo
+  git: repo=https://@github.com/openshift/openshift-ansible dest=/root/openshift-ansible update=yes
