@@ -11,3 +11,4 @@
     - pbench-config
     - docker-config
     - aos-ansible
+    - openshift-package-install
