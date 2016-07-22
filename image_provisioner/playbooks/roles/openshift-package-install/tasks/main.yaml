@@ -1,0 +1,6 @@
+---
+- name: install openshift packages
+  yum: name={{ item }} state=latest
+# master package drags in everything else
+  with_items:
+    - atomic-openshift-master
