@@ -2,7 +2,7 @@
 - name: install packages
   yum: name={{ item }} state=latest
   with_items:
-    - ansible1.9
+    - ansible
     - blktrace
     - ethtool
     - findutils
@@ -47,6 +47,9 @@
 
 - name: install bashrc file
   copy: src=bashrc dest=/root/.bashrc force=yes
+
+- name: never expire yum metadata
+  shell: echo metadata_expire=never >> /etc/yum.conf
 
 #- name: stop cloud-init from disabling root ssh
 #  replace: dest=/etc/cloud/cloud.cfg regexp='^disable_root: 1' replace='disable_root=0' backup=yes
