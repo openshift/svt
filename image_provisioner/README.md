@@ -2,6 +2,7 @@
 
 To reduce the time it takes to build out an OpenShift environment, and facilitate automated testing we need to bake several packages, configurations and containers into a RHEL instance.
 
+<<<<<<< HEAD
 <<<<<<< f210d795a55efcf3266ba21b2d3f91f5088966b8
 You may want to resize the VM image root disk:
 
@@ -27,6 +28,8 @@ The image provisioner will support AWS and OpenStack, and be automated with Ansi
 - aos-ansible (pull down supporting container images)
 - openshift-rpm-install (install openshift RPMs, but do not configure)
 =======
+=======
+>>>>>>> 30512e1f7fae0883d333b34f7f34cfa42b39d20e
 This repo includes a set of playbooks that work in two phases, depending on what type of image you're generating.
 
 1) generate an image (openstack/kvm/ec2)
@@ -73,4 +76,7 @@ Shutdown the guest and sync it to your target environment.  Compression steps ar
 ```
 
 EC2 instructions coming soon.
+<<<<<<< HEAD
 >>>>>>> update readme
+=======
+>>>>>>> 30512e1f7fae0883d333b34f7f34cfa42b39d20e
