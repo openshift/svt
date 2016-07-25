@@ -101,6 +101,11 @@
 	    "description": "A secret string used to configure the GitHub webhook.",
 	    "generate": "expression",
 	    "from": "[a-zA-Z0-9]{40}"
-	}
+	},
+    {
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1"
+    }
     ]
 }

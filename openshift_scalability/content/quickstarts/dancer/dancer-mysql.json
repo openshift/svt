@@ -427,6 +427,11 @@
 	    "description": "Your secret key for verifying the integrity of signed cookies.",
 	    "generate": "expression",
 	    "from": "[a-z0-9]{127}"
-	}
+	},
+    {
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1"
+    }
     ]
 }

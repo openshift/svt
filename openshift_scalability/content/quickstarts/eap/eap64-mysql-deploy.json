@@ -211,6 +211,11 @@
             "from": "[a-zA-Z0-9]{8}",
             "generate": "expression",
             "required": true
+        },
+        { 
+         "name": "IDENTIFIER",
+         "description": "Number to append to the name of resources",
+         "value": "1"
         }
     ],
     "objects": [

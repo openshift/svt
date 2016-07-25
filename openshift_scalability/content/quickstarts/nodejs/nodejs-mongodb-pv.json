@@ -456,6 +456,11 @@
 	    "description": "Password for the database admin user.",
 	    "generate": "expression",
 	    "from": "[a-zA-Z0-9]{16}"
-	}
+	},
+    {
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1"
+    }
     ]
 }

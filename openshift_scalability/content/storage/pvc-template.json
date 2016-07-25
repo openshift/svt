@@ -42,6 +42,11 @@
 	    "description": "Storage capacity of the EBS volume, units in either Gi or Mi",
 	    "value": "1Gi",
 	    "required": true
-	}
+	},
+    {
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1"
+    }	
     ]
 }

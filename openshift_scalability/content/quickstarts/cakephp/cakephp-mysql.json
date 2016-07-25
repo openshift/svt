@@ -467,6 +467,11 @@
 	    "displayName": "OPcache Revalidation Frequency",
 	    "description": "How often to check script timestamps for updates, in seconds. 0 will result in OPcache checking for updates on every request.",
 	    "value": "2"
-	}
+	},
+    {
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1"
+    }
     ]
 }
