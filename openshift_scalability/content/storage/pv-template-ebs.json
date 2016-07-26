@@ -51,6 +51,11 @@
 	    "name": "FS_TYPE",
 	    "description": "Filesystem type for the volume",
 	    "value": "xfs"
-	}
+	},
+	{
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1"
+    }
     ]
 }

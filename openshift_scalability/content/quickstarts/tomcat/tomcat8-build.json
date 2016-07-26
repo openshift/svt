@@ -133,6 +133,11 @@
             "name": "APPLICATION_NAME",
             "value": "jws-app",
             "required": true
+        },
+        {
+         "name": "IDENTIFIER",
+         "description": "Number to append to the name of resources",
+         "value": "1"
         }
     ]
 }

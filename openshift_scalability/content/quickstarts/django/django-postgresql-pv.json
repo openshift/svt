@@ -458,6 +458,11 @@
 	    "description": "Set this to a long random string.",
 	    "generate": "expression",
 	    "from": "[\\w]{50}"
-	}
+	},
+    {
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1"
+    }
     ]
 }

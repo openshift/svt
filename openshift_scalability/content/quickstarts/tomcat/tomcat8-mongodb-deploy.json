@@ -163,6 +163,11 @@
             "name": "IMAGE_STREAM_NAMESPACE",
             "value": "openshift",
             "required": true
+        },
+        {
+         "name": "IDENTIFIER",
+         "description": "Number to append to the name of resources",
+         "value": "1"
         }
     ],
     "objects": [

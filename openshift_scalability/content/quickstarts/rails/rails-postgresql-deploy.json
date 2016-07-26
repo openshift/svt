@@ -397,6 +397,11 @@
 	    "name": "POSTGRESQL_SHARED_BUFFERS",
 	    "displayName": "Shared Buffer Amount",
 	    "value": "12MB"
-	}
+	},
+    {
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1"
+    }
     ]
 }
