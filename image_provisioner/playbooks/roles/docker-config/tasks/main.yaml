@@ -7,7 +7,7 @@
   file: path=/root/.docker state=directory
 
 - name: download docker login config.json
-  get_url: url=https://{{ github_token }}@github.com/openshift/{{ config_repo }}/image_provisioner/config.json dest=/root/.docker/
+  copy: src=/root/{{ config_repo }}/image_provisioner/config.json dest=/root/.docker/ remote_src=true
 
 - name: install docker
   yum: name=docker state=latest
