@@ -10,6 +10,8 @@ graphite_prefix=ose
 collectd_interval=10
 collectd_status=started
 openshift_version=3.3.0.8
+# vda1 for openstack. Only necessary for image resize for RHEL cloud image.
+#root_partition=/dev/vda1
 ## vda2 for openstack sdb for ec2
 #docker_storage_device=/dev/vda2
 docker_storage_vgname=docker_vg
