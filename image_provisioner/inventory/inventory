@@ -1,83 +1,25 @@
 [all:vars]
-ansible_ssh_private_key_file = $HOME/.ssh/id_rsa_perf
-# size is in 512b sectors.  20971520 = 10G
-root_partition_size=20971520
-base_image_url=http://download.devel.redhat.com/brewroot/packages/rhel-guest-image/7.2/20160302.0/images/rhel-guest-image-7.2-20160302.0.x86_64.qcow2
-image_tag=2016-07-17
+#ansible_ssh_private_key_file = $HOME/.ssh/id_rsa_perf
+ansible_ssh_private_key_file = /root/.ssh/id_rsa_perf
+base_image_url=http://download.url/rhel-guest-image-7.2-20160302.0.x86_64.qcow2
+base_image_filename=rhel-guest-image-7.2-20160302.0.x86_64.qcow2
+image_tag=2016-07-27
 config_type=ose
 graphite_host=
 graphite_prefix=ose
 collectd_interval=10
-<<<<<<< HEAD
-<<<<<<< 3e201a6f75e0deb24391f69d5a5171a11f7cf063
-<<<<<<< a8977e464996aee0cc5fbc8a48d6af0fe7fb7cc0
-<<<<<<< d2dcb7d6b0db9d3b1303aac9a5f9d4652c5ea8f1
-openshift_version=3.3.0.4
-=======
 collectd_status=started
-openshift_version=3.3.0.5
-<<<<<<< d8d429ab871bd4c04aed481215087fd7792184d6
->>>>>>> update inventory file
-docker_storage_device=/dev/sdb
-=======
-# sda2 for openstack sdb for ec2
-docker_storage_device=/dev/sda2
->>>>>>> quick comment about disk device paths
-=======
-collectd_status=started
-openshift_version=3.3.0.5
-# sda2 for openstack sdb for ec2
-docker_storage_device=/dev/sda2
->>>>>>> 30512e1f7fae0883d333b34f7f34cfa42b39d20e
+openshift_version=3.3.0.8
+## vda2 for openstack sdb for ec2
+#docker_storage_device=/dev/vda2
 docker_storage_vgname=docker_vg
-docker_config_url=https://github.com/openshift/repo/image_provisioner/config.json
+docker_login=no
 github_token=
+config_repo=svt-private
 aos_ansible_path=/root/aos-ansible
-<<<<<<< HEAD
-<<<<<<< 82a17cdf7241e7b0b43cda654d7e18b149b1d31e
-<<<<<<< 649474c8b483b17cba9f700c8704d43d43b77d8c
-<<<<<<< 71c86312027b4222bfa683ffb21c83a07145fb69
-ansible_ssh_user=root
-aos_repo=https://mirror.example.com/enterprise/enterprise-3.2/latest/RH7-RHAOS-3.2/x86_64/os
-<<<<<<< 3e201a6f75e0deb24391f69d5a5171a11f7cf063
-qe_repo_image_versions=v3.3.0.4
-=======
-openshift_version=3.2.0.44
-=======
-openshift_version=3.3.0.4
->>>>>>> update inventory
-docker_storage_device=/dev/sdb
-docker_storage_vgname=docker_vg
-docker_login_file_path=config.json
-aos_ansible_path=/root/aos-ansible
-ansible_ssh_user=root
-aos_repo=https://mirror.example.com/enterprise/enterprise-3.2/latest/RH7-RHAOS-3.2/x86_64/os
-<<<<<<< a8977e464996aee0cc5fbc8a48d6af0fe7fb7cc0
-qe_repo_image_versions=v3.2.0.44
->>>>>>> initial commit of image provisioner for fast scale-out prototyping
-=======
-qe_repo_image_versions=v3.3.0.4
->>>>>>> update inventory
-=======
-=======
-=======
-=======
-aos_ansible_inventory=/root/aos-ansible/inventory/hosts
->>>>>>> add new flags to inventory
-docker_daemon_options='--selinux-enabled --log-driver=journald'
->>>>>>> add new variable
-#ansible_ssh_user=root
-aos_repo=https://mirror.example.com/enterprise/enterprise-3.3/latest/RH7-RHAOS-3.3/x86_64/os
->>>>>>> update for 3.3
-qe_repo_image_versions=v3.3.0.5
->>>>>>> update inventory file
-=======
-aos_ansible_inventory=/root/aos-ansible/inventory/hosts
-docker_daemon_options='--selinux-enabled --log-driver=journald'
-#ansible_ssh_user=root
-aos_repo=https://mirror.example.com/enterprise/enterprise-3.3/latest/RH7-RHAOS-3.3/x86_64/os
-qe_repo_image_versions=v3.3.0.5
->>>>>>> 30512e1f7fae0883d333b34f7f34cfa42b39d20e
+aos_ansible_inventory=/root/aos-ansible/inventory/hosts   
+aos_repo=
+version=v3.3.0.8
 qe_repo_image_type=ose
 rhel_repo_hostname=
 pbench_internal_hostname=
@@ -85,7 +27,4 @@ pbench_alternate_hostname=
 root_password=
 
 [all]
-# 127.0.0.1
-
-[servers]
 # 127.0.0.1
