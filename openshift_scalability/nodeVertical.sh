@@ -1,34 +1,35 @@
 #!/bin/sh
 
 if [ "$#" -ne 1 ]; then
-                echo "syntax: $0 <TESTNAME>"
-                exit 1
+  echo "syntax: $0 <TESTNAME>"
+  exit 1
 fi
 
 TESTNAME=$1
-SLEEP=180
-MYCONFIG=config/nodeVertical.yaml
-CLEAN="oc delete project clusterproject0"
+MY_CONFIG=config/nodeVertical.yaml
+
+long_sleep() {
+  local sleep_time=180
+  echo "Sleeping for $sleep_time"
+  sleep $sleep_time
+}
+
+clean() { echo "Cleaning environment"; oc delete project clusterproject0; }
 
 # sleeping to gather some steady-state metrics, pre-test
-sleep $SLEEP
+long_sleep
 
 # loading cluster based on yaml config file
-./cluster-loader.py --file=$MYCONFIG
+./cluster-loader.py --file=$MY_CONFIG
 
 # sleeping again to gather steady-state metrics after environment is loaded
-echo sleeping for $SLEEP
-sleep $SLEEP
+long_sleep
 
 # clean up environment
-echo Cleaning environment
-$CLEAN
+clean
 
-# --clean function is broken, himanshu is working on fixing it
+# TODO(himanshu): fix clean function
 #./cluster-loader.py --clean
 
-oc delete project clusterproject0
-
 # sleep after test is complete to gather post-test metrics...these should be the same as pre-test
-echo sleeping for $SLEEP
-sleep $SLEEP
+long_sleep
