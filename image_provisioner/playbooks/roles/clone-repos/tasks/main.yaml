@@ -10,3 +10,9 @@
 
 - name: clone openshift-ansible repo
   git: repo=https://@github.com/openshift/openshift-ansible dest=/root/openshift-ansible update=yes
+
+- name: clone kubernetes repo
+  git: repo=https://github.com/kubernetes/kubernetes dest=/root/kubernetes/kubernetes update=yes
+
+- name: clone kubernetes contrib repo
+  git: repo=https://github.com/kubernetes/contrib dest=/root/kubernetes/contrib update=yes
