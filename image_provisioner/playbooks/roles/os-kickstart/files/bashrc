@@ -1,0 +1,38 @@
+if [ -f /etc/bashrc ]; then
+	. /etc/bashrc
+fi
+
+PS1="\u@\h: \w "
+case `id -u` in
+      0) PS1="${PS1}# ";;
+      *) PS1="${PS1}$ ";;
+esac
+
+PATH=$PATH:/sbin:/usr/sbin
+
+shopt -s -q cmdhist                         # Save all lines of a multi-line cmd
+shopt -s -q lithist                         # above w/ embedded newlines
+shopt -s -q histappend                      # append to HISTFILE on exit
+shopt -s -q cdspell                         # check for spelling mistakes in dir names
+shopt -s -q extglob                         # egrep style pattern matching
+shopt -s checkwinsize                       # check window size after process complete
+shopt -s -q nocaseglob
+unset PROMPT_COMMAND
+HISTSIZE=10485760
+
+alias l='ls -al --color=auto'
+alias lr='ls -altr --color=auto'
+alias c='clear'
+alias e='exit'
+alias p='ping'
+alias t1='turbostat -i1'
+alias t2='turbostat sleep 2'
+alias cl='clear ; ls -al'
+alias ur='uname -r'
+alias rehash='source ~/.bashrc'
+alias rs='rsync -avz --progress --stats'
+alias vi='vim'
+alias iftop='sudo iftop'
+export SVN_EDITOR=vim
+alias less='less -FiX'
+alias ur='uname -r'

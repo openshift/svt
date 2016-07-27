@@ -1,0 +1,58 @@
+---
+- name: install packages
+  yum: name={{ item }} state=latest
+  with_items:
+    - ansible
+    - blktrace
+    - ethtool
+    - findutils
+    - git
+    - gnuplot
+    - golang
+    - hwloc
+    - iotop
+    - kernel
+    - ltrace
+    - mailx
+    - maven
+    - netsniff-ng
+    - net-tools
+    - ntp
+    - ntpdate
+    - numactl
+    - pciutils
+    - perf
+    - python-pip
+    - python-rbd
+    - python2-boto3
+    - powertop
+    - psmisc
+    - rpm-build
+    - screen
+    - sos
+    - strace
+    - tar
+    - tcpdump
+    - tmux
+    - vim-enhanced
+    - xauth
+    - wget
+    - yum-utils
+
+- name: yum update
+  yum: name=* state=latest
+
+- name: install pbench
+  yum: name=pbench-agent-internal state=latest
+
+- name: install bashrc file
+  copy: src=bashrc dest=/root/.bashrc force=yes
+
+- name: never expire yum metadata
+  shell: echo metadata_expire=never >> /etc/yum.conf
+
+#- name: stop cloud-init from disabling root ssh
+#  replace: dest=/etc/cloud/cloud.cfg regexp='^disable_root: 1' replace='disable_root=0' backup=yes
+#
+#- name: allow password auth over ssh
+#  replace: dest=/etc/cloud/cloud.cfg regexp='^ssh_pwauth: 0' replace='ssh_pwauth: 1' backup=yes

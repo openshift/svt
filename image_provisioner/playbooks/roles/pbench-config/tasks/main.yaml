@@ -1,0 +1,17 @@
+---
+- name: configure pbench target
+  replace: dest=/opt/pbench-agent/config/pbench-agent.cfg regexp='{{ pbench_internal_hostname }}' replace='{{ pbench_alternate_hostname }}' backup=yes
+
+- name: register tools
+  shell:  pbench-register-tool-set
+  # ignore errors because the turobstat tool cannot be registered in a VM
+  ignore_errors: yes
+
+- name: run a quick pbench test
+  shell: pbench-user-benchmark -C pbench_test_{{ image_tag }} -- sleep 10
+
+- name: test pbench-copy-results
+  shell: pbench-copy-results
+
+- name: clean up pbench
+  shell: pbench-clear-tools ; pbench-clear-results

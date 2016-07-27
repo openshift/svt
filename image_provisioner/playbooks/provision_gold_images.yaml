@@ -1,0 +1,14 @@
+---
+- name: provision gold images
+  user: root
+  hosts: all
+
+  roles:
+    - repo-install
+    - os-kickstart
+    - collectd-install
+    - clone-repos
+    - pbench-config
+    - docker-config
+    - aos-ansible
+    - openshift-package-install

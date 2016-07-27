@@ -1,0 +1,12 @@
+---
+- name: clean yum cache
+  shell:  yum clean all
+
+- name: disable most yum repos when running with custom content mirrors
+# this is for cncf usage...
+  shell: yum-config-manager --disable \*
+  when: content_mirror | default(false) | bool
+
+- name: install cncf mirror file
+  get_url: https://{{ github_token }}@github.com/openshift/{{ config_repo }}/cncf_mirrors.repo dest=/etc/yum.repos.d/cncf_mirrors.repo
+  when: content_mirror | default(false) | bool
