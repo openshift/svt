@@ -4,7 +4,7 @@ masters
 [OSEv3:vars]
 qe_openshift_kerberos_user=user@domain.com
 ansible_ssh_user=root
-aos_repo=https://mirror.openshift.com/enterprise/enterprise-3.3/latest/RH7-RHAOS-3.3/x86_64/os
+aos_repo={{ puddle_url }}
 #prerelease_rhel7_repo_enable=False (Optional, True by default)
 
 # You can specify the docker images versions to pull. To skip image pull,
@@ -15,7 +15,7 @@ aos_repo=https://mirror.openshift.com/enterprise/enterprise-3.3/latest/RH7-RHAOS
 #qe_repo_aep_image_prepull=False (Optional, False by default)
 #qe_repo_image_versions=v3.1.1.6
 #qe_repo_image_versions=v3.1.1.900
-#qe_repo_image_versions=v3.3.0.5
+qe_repo_image_versions={{ image_version }}
 docker_login=no
 
 [masters]
