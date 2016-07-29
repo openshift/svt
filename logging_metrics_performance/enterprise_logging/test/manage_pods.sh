@@ -4,23 +4,33 @@
 # Simple utility that uses ssh to check, run or kill the logger script
 # on every node of the cluster.
 # Automatically obtains the cluster nodes and writes them to a hostsfile.
-# NOTE: Runs in sequence not in paralell.
+# NOTE: Runs in sequence not in paralell. 
 #
-#
+# 
 # EXAMPLES:
+# 
+# Runs 3 busybox containers per each node. 
+# export TIMES=3;export MODE=1; ./manage_pods.sh -r 128
+#
+#
+# Runs 5 standalone logger.sh processes logging forever
+# export TIMES=5;export MODE=2; ./manage_pods.sh -r 128
+#
+# Both the above methods should log output to be picked up by the fluentd pods.
+#
 #
 # Check for running pods.
 # ./manage_pods.sh -c 1
 #
-# Run pods in every node.
+# Run pods in every node. 
 # The argument to '-r' is the log line length.
 # This is the only arg that takes a value different than 1
 #
-# ./manage_pods.sh -r 250
+# export TIMES=5;export MODE=2; ./manage_pods.sh -r 250 
 #
 #
-# Kill pod in every node
-# ./manage_pods.sh -k 1
+# Kill pods in every node.
+# export MODE=1; ./manage_pods.sh -k 1
 #
 # ./manage_pods.sh -c 1
 #
@@ -40,7 +50,6 @@ WORKDIR=$SCRIPTDIR
 HOSTSFILE=$WORKDIR/hostlist.txt
 declare -a NODELIST
 
-MODE=1
 
 function cp_logger() {
 for host in ${NODELIST[@]}
@@ -111,20 +120,51 @@ else
   echo "Done."
 fi
 
+
+# for process mode
+if [[ ${MODE} -eq 2 ]]; then
 while getopts ":s:r:c:k:q:" option; do
-      case "${option}" in
-	      s) x=${OPTARG} && [[ $x -eq 1 ]] && cp_logger ;;
-          r) x=${OPTARG} && [[ $x -ne 0 ]] && run_logger $x ;;
-          c) x=${OPTARG} && [[ $x -eq 1 ]] && check_pods ;;
-	      k) x=${OPTARG} && [[ $x -eq 1 ]] && kill_pods ;;
-	      q) x=${OPTARG} && [[ $x -eq 1 ]] && kill_logger ;;
-	      '*')
+        case "${option}" in
+          s) x=${OPTARG} && [[ $x -eq 1 ]] && cp_logger ;;
+          r)
+             x=${OPTARG}
+             if [[ $x -ne 0 ]]; then
+                while [ ${TIMES} -ne 0 ]
+                do
+                  run_logger $x
+                  ((TIMES--))
+                done
+             fi
+          ;;
+          c) x=${OPTARG} && [[ $x -eq 1 ]] && check_logger ;;
+          k) x=${OPTARG} && [[ $x -eq 1 ]] && kill_logger ;;
+          q) x=${OPTARG} && [[ $x -eq 1 ]] && kill_logger ;;
+          '*')
             echo -e "Invalid option / usage: ${option}\nExiting."
             exit 1
-	      ;;
-      esac
+          ;;
+        esac
 done
 shift $((OPTIND-1))
+fi
+
+# container mode
+if [[ ${MODE} -eq 1 ]]; then
+while getopts ":s:r:c:k:q:" option; do
+        case "${option}" in
+          s) x=${OPTARG} && [[ $x -eq 1 ]] && cp_logger ;;
+          r) x=${OPTARG} && [[ $x -ne 0 ]] && run_logger $x ;;
+          c) x=${OPTARG} && [[ $x -eq 1 ]] && check_pods ;;
+          k) x=${OPTARG} && [[ $x -eq 1 ]] && kill_pods ;;
+          q) x=${OPTARG} && [[ $x -eq 1 ]] && kill_logger ;;
+          '*')
+            echo -e "Invalid option / usage: ${option}\nExiting."
+            exit 1
+          ;;
+        esac
+done
+shift $((OPTIND-1))
+fi
 
 echo -e "\nDone."
 exit 0
