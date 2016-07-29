@@ -1,0 +1,16 @@
+[
+  {
+    "_id": "jmeter",
+    "_type": "dashboard",
+    "_source": {
+      "title": "jmeter",
+      "hits": 0,
+      "description": "Main jmeter dashboard",
+      "panelsJSON": "[{\"col\":1,\"id\":\"Assertions-(-jmeter-)\",\"row\":15,\"size_x\":6,\"size_y\":5,\"type\":\"visualization\"},{\"col\":3,\"id\":\"Errors-(-jmeter-)\",\"row\":1,\"size_x\":2,\"size_y\":2,\"type\":\"visualization\"},{\"col\":7,\"id\":\"Failure-Assertations-(-jmeter-)\",\"row\":15,\"size_x\":6,\"size_y\":5,\"type\":\"visualization\"},{\"col\":1,\"id\":\"Overview-per-Samples-(-jmeter-)\",\"row\":20,\"size_x\":12,\"size_y\":6,\"type\":\"visualization\"},{\"col\":5,\"id\":\"Response-Code-(-jmeter-)\",\"row\":26,\"size_x\":3,\"size_y\":2,\"type\":\"visualization\"},{\"col\":1,\"id\":\"Response-Message-(-jmeter-)\",\"row\":26,\"size_x\":4,\"size_y\":2,\"type\":\"visualization\"},{\"col\":1,\"id\":\"Response-time-by-Samples-(-jmeter-)\",\"row\":9,\"size_x\":12,\"size_y\":3,\"type\":\"visualization\"},{\"col\":1,\"id\":\"Status-Code-(-jmeter-)\",\"row\":12,\"size_x\":12,\"size_y\":3,\"type\":\"visualization\"},{\"col\":1,\"id\":\"Success-transaction-(-jmeter-)\",\"row\":6,\"size_x\":12,\"size_y\":3,\"type\":\"visualization\"},{\"col\":8,\"id\":\"Target-URL-(-jmeter-)\",\"row\":26,\"size_x\":5,\"size_y\":2,\"type\":\"visualization\"},{\"col\":1,\"id\":\"Threads-by-Sample-(-jmeter-)\",\"row\":3,\"size_x\":12,\"size_y\":3,\"type\":\"visualization\"},{\"col\":1,\"id\":\"Transactions-(-jmeter-)\",\"row\":1,\"size_x\":2,\"size_y\":2,\"type\":\"visualization\"}]",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"filter\":[{\"query\":{\"query_string\":{\"analyze_wildcard\":true,\"query\":\"*\"}}}]}"
+      }
+    }
+  }
+]
