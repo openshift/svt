@@ -10,29 +10,31 @@
 # EXAMPLES:
 # 
 # Runs 3 busybox containers per each node. 
-# export TIMES=3;export MODE=1; ./manage_pods.sh -r 128
+# export TIMES=3; export MODE=1; ./manage_pods.sh -r 128
 #
 #
 # Runs 5 standalone logger.sh processes logging forever
-# export TIMES=5;export MODE=2; ./manage_pods.sh -r 128
+# export TIMES=5; export MODE=2; ./manage_pods.sh -r 128
 #
 # Both the above methods should log output to be picked up by the fluentd pods.
 #
 #
+# 
 # Check for running pods.
-# ./manage_pods.sh -c 1
+# export MODE=1; ./manage_pods.sh -c 1
 #
-# Run pods in every node. 
+#
+# Run 5 pods in every node. 
 # The argument to '-r' is the log line length.
 # This is the only arg that takes a value different than 1
 #
-# export TIMES=5;export MODE=2; ./manage_pods.sh -r 250 
-#
+# export TIMES=5; export MODE=1; ./manage_pods.sh -r 250 
 #
 # Kill pods in every node.
 # export MODE=1; ./manage_pods.sh -k 1
 #
-# ./manage_pods.sh -c 1
+# Check pods.
+# export MODE=1; ./manage_pods.sh -c 1
 #
 
 set -o pipefail
