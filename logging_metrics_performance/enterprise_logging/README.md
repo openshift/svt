@@ -32,12 +32,12 @@ cd $HOME && git clone https://github.com/openshift/openshift-ansible && cd -
 4. As sudo / root.
    Run 5 docker containers per each cluster node logging at 30kbs.
 ```
-    export TIMES=5; ./test/manage_pods.sh -r 512
+    export TIMES=5; export MODE=1; ./manage_pods.sh -r 512
 ```
 
 6. Confirm they are running with:
 ```
-    ./test/manage_pods.sh -c 1
+    export MODE=1; ./test/manage_pods.sh -c 1
 ```
 
 7. Define your target hosts inside the pbench_perftest.sh script and 
@@ -50,7 +50,7 @@ cd $HOME && git clone https://github.com/openshift/openshift-ansible && cd -
 
 8. Docker kill all the containers from the cluster nodes.
 ```
-    ./test/manage_pods.sh -k 1
+    export MODE=1; ./test/manage_pods.sh -k 1
 ```
 
 
