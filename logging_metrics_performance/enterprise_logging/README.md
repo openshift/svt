@@ -32,15 +32,15 @@ cd $HOME && git clone https://github.com/openshift/openshift-ansible && cd -
 4. As sudo / root.
    Run 5 docker containers per each cluster node logging at 30kbs.
 ```
-    export TIMES=5; export MODE=1; ./manage_pods.sh -r 512
+    export TIMES=5; export MODE=1; ./test/manage_pods.sh -r 512
 ```
 
-6. Confirm they are running with:
+5. Confirm they are running with:
 ```
     export MODE=1; ./test/manage_pods.sh -c 1
 ```
 
-7. Define your target hosts inside the pbench_perftest.sh script and 
+6. Define your target hosts inside the pbench_perftest.sh script and 
    start recording metrics.
    
    Example for a 600 seconds run (10 minutes).
@@ -48,13 +48,13 @@ cd $HOME && git clone https://github.com/openshift/openshift-ansible && cd -
     nohup ./pbench_perftest.sh -n logger_10n_5ppn_30kbs_10m -m 600
 ```
 
-8. Docker kill all the containers from the cluster nodes.
+7. Docker kill all the containers from the cluster nodes.
 ```
     export MODE=1; ./test/manage_pods.sh -k 1
 ```
 
 
-E2E
+# E2E
 
 Currently there are two ways we can execute the e2e test harness.
 
