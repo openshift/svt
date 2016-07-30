@@ -1,0 +1,6 @@
+---
+- name: pull containers used by svt tests
+  docker_image: "name='{{ item }}' state=present"
+  with_items:
+    - openshift/hello-openshift
+    - kubernetes/pause
