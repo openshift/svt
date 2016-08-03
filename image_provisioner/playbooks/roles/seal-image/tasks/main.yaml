@@ -10,3 +10,9 @@
 - name: install cncf mirror file
   get_url: https://{{ github_token }}@github.com/openshift/{{ config_repo }}/cncf_mirrors.repo dest=/etc/yum.repos.d/cncf_mirrors.repo
   when: content_mirror | default(false) | bool
+
+- name: install iptables-services package
+  yum: name=iptables-services state=latest
+
+- name: ensure openshift-ansible is not installed
+  yum: name=openshift-ansible state=absent
