@@ -306,26 +306,33 @@ def delete_project(projname, globalvars) :
         raise RuntimeError("Failed to delete project " + projname)
 
 def single_project(testconfig, projname, globalvars):
+    globalvars["createproj"] = True
     if project_exists(projname,globalvars) :
-        if globalvars["forcedelete"] :
+        if testconfig["ifexists"] == "delete" :
             delete_project(projname,globalvars)
-        else :
-            print "ERROR: Project " + projname + " already exists.  Use -x option to force deletion"
+        elif testconfig["ifexists"] == "reuse" :
+            globalvars["createproj"] = False
+        else:
+            print "ERROR: Project " + projname + " already exists. \
+                Use ifexists=reuse/delete in config"
             return
 
-    if globalvars["kubeopt"]:
-        tmpfile=tempfile.NamedTemporaryFile()
-        with open("content/namespace-default.yaml") as infile:
-            nsconfig = yaml.load(infile)
-        nsconfig["metadata"]["name"] = projname
-        with open(tmpfile.name, 'w+') as f:
-            yaml.dump(nsconfig, f, default_flow_style=False)
-        tmpfile.flush()
-        oc_command("kubectl create -f %s" % tmpfile.name,globalvars)
-        oc_command("kubectl label --overwrite namespace " + projname +" purpose=test", globalvars)
+    if globalvars["createproj"]:
+        if globalvars["kubeopt"]:
+            tmpfile=tempfile.NamedTemporaryFile()
+            with open("content/namespace-default.yaml") as infile:
+                nsconfig = yaml.load(infile)
+            nsconfig["metadata"]["name"] = projname
+            with open(tmpfile.name, 'w+') as f:
+                yaml.dump(nsconfig, f, default_flow_style=False)
+            tmpfile.flush()
+            oc_command("kubectl create -f %s" % tmpfile.name,globalvars)
+            oc_command("kubectl label --overwrite namespace " + projname +" purpose=test", globalvars)
+        else:
+            oc_command("oc new-project " + projname,globalvars)      
+            oc_command("oc label --overwrite namespace " + projname +" purpose=test", globalvars)
     else:
-        oc_command("oc new-project " + projname,globalvars)      
-        oc_command("oc label --overwrite namespace " + projname +" purpose=test", globalvars)
+        pass
     
     time.sleep(1)
     projenv={}
@@ -373,7 +380,10 @@ def project_handler(testconfig, globalvars):
                 children.append(pid)
                 i = i + 1
             else:
-                projname = basename + str(i)
+                projname = basename
+                if testconfig["ifexists"] != "reuse" :
+                    projname = basename + str(i)
+
                 print "forking %s"%projname
                 single_project(testconfig, projname, globalvars)
                 os._exit(0)
