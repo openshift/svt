@@ -381,6 +381,9 @@ def project_handler(testconfig, globalvars):
                 i = i + 1
             else:
                 projname = basename
+                if "ifexists" not in testconfig:
+                    print "Parameter 'ifexists' not specified. Using 'default' value."
+                    testconfig["ifexists"] = "default"
                 if testconfig["ifexists"] != "reuse" :
                     projname = basename + str(i)
 
