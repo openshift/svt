@@ -22,6 +22,7 @@
     - numactl
     - pciutils
     - perf
+    - python-docker-py
     - python-pip
     - python-rbd
     - python2-boto3
