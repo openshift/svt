@@ -4,6 +4,8 @@ ansible_ssh_private_key_file = /root/.ssh/id_rsa_perf
 base_image_url=http://download.url/rhel-guest-image-7.2-20160302.0.x86_64.qcow2
 base_image_filename=rhel-guest-image-7.2-20160302.0.x86_64.qcow2
 image_tag=2016-07-27
+# amount of GB to extend root partition by.  default size is 10G so extend that by an additional # gb:
+extend_disk_gb=15
 config_type=ose
 graphite_host=
 graphite_prefix=ose

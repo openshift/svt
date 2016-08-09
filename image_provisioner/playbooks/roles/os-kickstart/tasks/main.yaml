@@ -3,12 +3,14 @@
   yum: name={{ item }} state=latest
   with_items:
     - ansible
+    - bind-utils
     - blktrace
     - ethtool
     - findutils
     - git
     - gnuplot
     - golang
+    - httpd-tools
     - hwloc
     - iotop
     - kernel
@@ -45,6 +47,13 @@
 
 - name: install pbench
   yum: name=pbench-agent-internal state=latest
+
+- name: install gluster and ceph clients
+  yum: name={{ item }} state=latest
+  with_items:
+# these two rpms pull in the rest...
+    - ceph-common
+    - glusterfs-fuse
 
 - name: install bashrc file
   copy: src=bashrc dest=/root/.bashrc force=yes
