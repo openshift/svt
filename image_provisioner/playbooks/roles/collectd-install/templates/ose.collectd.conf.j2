@@ -2,7 +2,7 @@
 Interval {{collectd_interval}}
 
 # Hostname for this machine, if not defined, use gethostname(2) system call
-Hostname "{{inventory_hostname}}"
+#Hostname "{{inventory_hostname}}"
 
 # Allow collectd to log
 LoadPlugin syslog
@@ -49,6 +49,8 @@ LoadPlugin uptime
 
 <Plugin processes>
   ProcessMatch "openshift master" "/usr/bin/openshift.+start.+master"
+  ProcessMatch "openshift master api" "/usr/bin/openshift.+start.+master+api"
+  ProcessMatch "openshift master controllers" "/usr/bin/openshift.+start.+master+controllers"
   ProcessMatch "openshift node" "/usr/bin/openshift.+start.+node"
   ProcessMatch "etcd" "/usr/bin/etcd"
   ProcessMatch "ovsdb-vswitchd" "ovs-vswitchd.+unix:/var/run/openvswitch/db.sock"
