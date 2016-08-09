@@ -76,6 +76,12 @@ Example HTTP request to write data:
 # curl -XPOST -d "name=perf" -d "email=perf@redhat.com" http://dancer-mysql-example-dancer-mysql0.cloudapps.ose.com/
 ```
 
+### DayTrader
+
+Source: https://github.com/siamaksade/daytrader
+
+DayTrader is benchmark application built around the paradigm of an online stock trading system.  The application needs to be first [configured](http://<app_route_host>/daytrader/configure.html). 
+
 ### Django
 
 Source: https://github.com/openshift/django-ex
