@@ -308,25 +308,25 @@ def delete_project(projname, globalvars) :
 def single_project(testconfig, projname, globalvars):
     if project_exists(projname,globalvars) :
         if globalvars["forcedelete"] :
-            delete_project(projname,globalvars)
+            pass
         else :
-            print "ERROR: Project " + projname + " already exists.  Use -x option to force deletion"
-            return
+            print "OK: Project " + projname + " already exists.  Use -x option to force deletion"
+            #return
 
-    if globalvars["kubeopt"]:
-        tmpfile=tempfile.NamedTemporaryFile()
-        with open("content/namespace-default.yaml") as infile:
-            nsconfig = yaml.load(infile)
-        nsconfig["metadata"]["name"] = projname
-        with open(tmpfile.name, 'w+') as f:
-            yaml.dump(nsconfig, f, default_flow_style=False)
-        tmpfile.flush()
-        oc_command("kubectl create -f %s" % tmpfile.name,globalvars)
-        oc_command("kubectl label --overwrite namespace " + projname +" purpose=test", globalvars)
-    else:
-        oc_command("oc new-project " + projname,globalvars)      
-        oc_command("oc label --overwrite namespace " + projname +" purpose=test", globalvars)
-    
+#    if globalvars["kubeopt"]:
+#        tmpfile=tempfile.NamedTemporaryFile()
+#        with open("content/namespace-default.yaml") as infile:
+#            nsconfig = yaml.load(infile)
+#        nsconfig["metadata"]["name"] = projname
+#        with open(tmpfile.name, 'w+') as f:
+#            yaml.dump(nsconfig, f, default_flow_style=False)
+#        tmpfile.flush()
+#        oc_command("kubectl create -f %s" % tmpfile.name,globalvars)
+#        oc_command("kubectl label --overwrite namespace " + projname +" purpose=test", globalvars)
+#    else:
+#        oc_command("oc new-project " + projname,globalvars)      
+#        oc_command("oc label --overwrite namespace " + projname +" purpose=test", globalvars)
+#    
     time.sleep(1)
     projenv={}
 
@@ -375,7 +375,8 @@ def project_handler(testconfig, globalvars):
             else:
                 projname = basename + str(i)
                 print "forking %s"%projname
-                single_project(testconfig, projname, globalvars)
+                #single_project(testconfig, projname, globalvars)
+		single_project(testconfig, "logging", globalvars)
                 os._exit(0)
         for k, child in enumerate(children):
             os.waitpid(child, 0)

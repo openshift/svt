@@ -3,23 +3,19 @@ projects:
     basename: clusterproject
     tuning: default
     pods:
-      - total: 500
+      - total: 5
       - num: 100
-        image: gcr.io/google_containers/pause-amd64:3.0
-        basename: pausepods
-        file: content/pod-pause.json
+        image: gcr.io/google_containers/busybox:1.24
+        basename: busypods
+        file: content/pod-busy.json
         storage:
           - type: none
           
-quotas:
-  - name: default
-    file: default
-
 tuningsets:
   - name: default
     pods:
       stepping:
-        stepsize: 40
-        pause: 180 s
+        stepsize: 2
+        pause: 10 s
       rate_limit:
-        delay: 0 ms
+        delay: 100 ms

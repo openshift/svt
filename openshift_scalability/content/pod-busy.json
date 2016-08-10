@@ -1,0 +1,38 @@
+{
+  "kind": "Pod",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "busy-amd",
+    "creationTimestamp": null,
+    "labels": {
+      "name": "busy-amd"
+    }
+  },
+  "spec": {
+    "containers": [
+      {
+        "name": "busy-amd",
+        "image": "gcr.io/google_containers/busybox:1.24",
+        "command": [ "date" ],
+        "ports": [
+          {
+            "containerPort": 8080,
+            "protocol": "TCP"
+          }
+        ],
+        "terminationMessagePath": "/dev/termination-log",
+        "imagePullPolicy": "IfNotPresent",
+        "capabilities": {},
+        "securityContext": {
+          "capabilities": {},
+          "privileged": false
+        }
+      }
+    ],
+    "restartPolicy": "Always",
+    "dnsPolicy": "ClusterFirst",
+    "serviceAccount": ""
+  },
+  "status": {}
+}
+
