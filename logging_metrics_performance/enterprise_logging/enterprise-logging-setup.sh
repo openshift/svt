@@ -1,108 +1,137 @@
-### Create from zero, not idempotent.
-set -x
-set -e
-
-echo "... Hit enter to proceed"
-read x
-
-oc new-project logging
-
-oc create -f $HOME/openshift-ansible/roles/openshift_examples/files/examples/v1.2/infrastructure-templates/origin/logging-deployer.yaml
-
-### Make sure to delete any old secret, and use a new empty secret.
-### This secret will be used by kibana to talk to ES servers, and scrape the logs.  very important that its in sync.
-sudo oc delete secret logging-deployer || echo "could not delete secret" ; sleep 5
-sudo oc secrets new logging-deployer nothing=/dev/null
-
-## Now create svc/roles
-
-oc create -f - <<API
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: logging-deployer
-secrets:
-- name: logging-deployer
-API
-
-oc policy add-role-to-user edit --serviceaccount logging-deployer
-
-oadm policy add-scc-to-user privileged system:serviceaccount:logging:aggregated-logging-fluentd
-
-oadm policy add-cluster-role-to-user cluster-reader system:serviceaccount:logging:aggregated-logging-fluentd
-
-### Finally start deploying the logging components.
-oc process logging-deployer-template -v KIBANA_HOSTNAME=kibana.example.com,ES_CLUSTER_SIZE=1,PUBLIC_MASTER_URL=https://localhost:8443,IMAGE_VERSION=3.1.0,IMAGE_PREFIX=registry.access.redhat.com/openshift3/ | oc create -f -
-
-
-# edit this template to add 'hostPort: 1234' under any of the ports sections.
-# This forces ES spreading.
-# for example:
-#           ports:
-#           - containerPort: 9200
-#             hostPort: 1234
-#             name: restapi
-#           - containerPort: 9300
-#            purpose: to prevent more than one per node
+#!/usr/bin/env bash
 #
-# template "logging-es-template" edited
-echo "now, edit the port for spreading, containerPort: 9200 , hostPort: 1234.... sleeping first..."
-sleep 10
+# Sets up logging from scratch based on the local openshift-ansible template.
+#
+# To create from the latest template:
+# oc create -n openshift -f \
+# https://raw.githubusercontent.com/openshift/origin-aggregated-logging/master/deployer/deployer.yaml &> /dev/null
+#
+# It's safe to ignore any warnings/errors about already existing API types or resources (roles/templates etc...)
+#
 
-until oc get pods | grep -q Completed
-do
-	oc get pods
-	echo "waiting for completion..."
-	sleep 1
-done
-oc edit template logging-es-template
+if [[ `id -u` -ne 0 ]]
+then
+        echo -e "\n[-] Please run as root / sudo -s \n"
+        echo -e "Exit."
+        exit 1
+fi
 
-oc process logging-support-template | oc create -f -
+if [ $# -eq 2 ]
+  then
+    :
+  else
+    echo -e "\nTwo arguments reguired. Check /etc/origin/master/master-config.yaml"
+    echo "1) https://MASTER_URL:8443"
+    echo "2) https://PUBLIC_MASTER_URL:8443"
+    echo
+    echo "Example:"
+    echo "MU=https://ip-xxx-xx-xx-xxx.us-xxxx-x.compute.internal:8443"
+    echo "PMU=https://ec2-xx-xxx-xxx-xxx.us-xxxx-x.compute.amazonaws.com:8443"
+    echo
+    echo "./$(basename $0)" '$MU' '$PMU'
+    echo
+    exit 1
+fi
 
-### You should see some ELK pods by now
+SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+OSEANSIBLE=$HOME/openshift-ansible
 
-oc get pods --all-namespaces
+# local ose-ansible template install
+if [[ ! -d $OSEANSIBLE ]]; then
+  echo -e "\n[-] Cloning the openshift-ansible git repo first."
+  echo
+  cd $HOME && git clone https://github.com/openshift/openshift-ansible && cd -
+  echo "Done. Resuming..."
+fi
 
-echo "Not guaranteed that everything will pass w/ exit code 0 below, so unsetting -e"
-echo "For example: Some creates may fail but probably its nothing to worry about (yet) :)"
-unset -e
+function _wait() {
+        echo -e "\nSleeping for $1 secs..."
+        sleep $1
+        echo -e "Resuming...\n"
+}
 
-### Now deploy the rest of the infra
+function add_roles() {
+        oc policy add-role-to-user edit --serviceaccount logging-deployer
+        oc policy add-role-to-user daemonset-admin --serviceaccount logging-deployer
+        oadm policy add-cluster-role-to-user oauth-editor system:serviceaccount:logging:logging-deployer
+        oadm policy add-scc-to-user privileged system:serviceaccount:logging:aggregated-logging-fluentd
+        oadm policy add-cluster-role-to-user cluster-reader system:serviceaccount:logging:aggregated-logging-fluentd
+}
 
-oc process logging-support-template | oc create -f -
+function pre_clean() {
+        # logging-deployer-template and logging-deployer-account-template should
+	# already exist under the openshift namespace. Delete them first.
+        oc delete project logging &> /dev/null
+        for template in 'logging-deployer-template' 'logging-deployer-account-template'
+        do
+          oc delete template $template -n openshift &> /dev/null
+        done
+}
+
+function tear_down() {
+        oc delete all --selector logging-infra=kibana
+        oc delete all,daemonsets --selector logging-infra=fluentd
+        oc delete all --selector logging-infra=elasticsearch
+        oc delete all --selector logging-infra=curator
+        oc delete all,sa,oauthclient --selector logging-infra=support
+
+        oc delete secret logging-fluentd logging-elasticsearch \
+        logging-es-proxy logging-kibana logging-kibana-proxy \
+        logging-kibana-ops-proxy
+}
+
+T=20
+MASTER_URL=${1:-"https://MASTER_URL:8443"}
+PUBLIC_MASTER_URL=${2:-"https://PUBLIC_MASTER_URL:8443"}
+CLUSTER_SIZE=${3:-"1"}
+
+echo -e "\n\n[+] Setting up EFK Logging.\n"
+echo
+echo "MASTER_URL: $MASTER_URL"
+echo "PUBLIC_MASTER_URL: $PUBLIC_MASTER_URL"
+echo "CLUSTER_SIZE: $CLUSTER_SIZE"
+
+pre_clean
+
+_wait $T
+
+oadm new-project logging --node-selector=""
+oc project logging
+
+# create from the local template for now
+oc create -f ${OSEANSIBLE}/roles/openshift_examples/files/examples/v1.2/infrastructure-templates/origin/logging-deployer.yaml
+
+# the logging pod will try to mount the secrets below
+oc delete secret logging-deployer &> /dev/null
+oc secrets new logging-deployer nothing=/dev/null
+
+oc new-app logging-deployer-account-template
+
+_wait $T
+
+echo -e "\nAdding required roles"
+add_roles
+
+oc delete oauthclient kibana-proxy
+oc new-app logging-deployer-template \
+                        --param ES_CLUSTER_SIZE=$CLUSTER_SIZE \
+                        --param PUBLIC_MASTER_URL=$PUBLIC_MASTER_URL \
+                        --param MASTER_URL=$MASTER_URL
+
+_wait $T
+
+# fluentd pod spreading
+oc label nodes --all logging-infra-fluentd=true &> /dev/null
+
+echo
+
+cat << EOF
+[+] Check your logging project with these commands:
 
 oc get dc --selector logging-infra=elasticsearch
+oc get pods --selector='component=es'
+oc get pods --selector='component=kibana'
+oc get pods --selector='component=fluentd'
 
-# Now scale up the ES instances...
-oc process logging-es-template | oc create -f -
-
-oc get pods --all-namespaces
-
-### Finally, create FluentD replicas...
-
-oc scale dc/logging-fluentd --replicas=10
-
-### You should see something like this...
-
-
-#default     docker-registry-1-35gi9       1/1       Running     0          11d
-#default     redorouter-3-w964o            1/1       Running     0          11d
-#logging     logging-deployer-4e0l0        0/1       Completed   0          23m
-#logging     logging-es-2e42h1qh-1-jl5k7   1/1       Running     0          13m
-#logging     logging-es-7sxulsdb-1-3dxoo   1/1       Running     0          4m
-#logging     logging-es-ddwewixj-1-1qoid   1/1       Running     0          4m
-#logging     logging-es-uyod2c2e-1-0xsq9   1/1       Running     0          6m
-#logging     logging-fluentd-1-2xmmt       1/1       Running     0          3m
-#logging     logging-fluentd-1-4rsfy       1/1       Running     0          3m
-#logging     logging-fluentd-1-9u13m       1/1       Running     0          3m
-#logging     logging-fluentd-1-cfn06       1/1       Running     0          3m
-#logging     logging-fluentd-1-kwhnq       1/1       Running     0          3m
-#logging     logging-fluentd-1-m0hzm       1/1       Running     0          3m
-#logging     logging-fluentd-1-qe2qb       1/1       Running     0          3m
-#logging     logging-fluentd-1-vy0t3       1/1       Running     0          3m
-
-### SMOKE TEST of kibana logs w/o need for a router
-export LOGGING_ES=logging-es
-# or LOGGING_ES=logging-es-ops
-# example:
-# oc exec logging-kibana-1-8pip6 -- curl --connect-timeout 2 -s -k --cert /etc/kibana/keys/cert --key /etc/kibana/keys/key https://$LOGGING_ES:9200/.operations*/_search
+oc get all
+EOF

@@ -9,7 +9,12 @@ trap sig_handler SIGINT
 
 # oc get pods -o wide -l component=es
 # need to use bash4 hashmap here: [podname] [nodeip]
-NODELIST=("192.1.11.83 192.1.11.226 192.1.11.66")
+
+# .234 registryrouter_fluentd
+# .247 clustermaster1_fluentd
+# .73 fluentd73
+
+NODELIST=("172.31.32.234 172.31.10.247 172.31.28.73")
 
 setup_globals
 parse_opts $@
