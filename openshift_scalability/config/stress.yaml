@@ -1,0 +1,25 @@
+projects:
+  - num: 1
+    basename: centos-stress
+    tuning: default
+    templates:
+      - num: 1
+        file: ./content/quickstarts/stress/stress-pod.json
+        parameters: 
+         - RUN: "jmeter"
+         - ROUTER_IP: "172.31.20.3"
+         - TARGET_HOST: "django-psql-example-django-postgresql0.router.default.svc.cluster.local" 
+         - JMETER_SIZE: "3"
+         - JMETER_RAMP: "30"
+         - RUN_TIME: "120"
+         - JMETER_TPS: "60"
+
+tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 5
+        pause: 0 min
+      rate_limit:
+        delay: 0 ms
+

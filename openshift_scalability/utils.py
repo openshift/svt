@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-import json, subprocess, time, copy, sys, os, yaml, tempfile, shutil
+import json, subprocess, time, copy, sys, os, yaml, tempfile, shutil, math
 from datetime import datetime
 from clusterloaderstorage import *
+from multiprocessing import Process
+from flask import Flask, request
 
 def calc_time(timestr):
     tlist = timestr.split()
@@ -17,7 +19,6 @@ def calc_time(timestr):
     else:
         print "Invalid delay in rate_limit\nExitting ........"
         sys.exit()
-
 
 def oc_command(args, globalvars):
     tmpfile=tempfile.NamedTemporaryFile()
@@ -34,12 +35,40 @@ def oc_command(args, globalvars):
 def login(user,passwd,master):
     return subprocess.check_output("oc login --insecure-skip-tls-verify=true -u " + user + " -p " + passwd + " " + master,shell=True)
 
+def get_route():
+    default_proj = subprocess.check_output("oc project default", shell=True)
+    localhost = subprocess.check_output("ip addr show eth0 | awk '/inet / {print $2;}' | cut -d/ -f1", shell=True).rstrip()
+    router_name = subprocess.check_output("oc get pod --no-headers | awk '/^router-/ {print $1;}'", shell=True).rstrip()
+    router_ip = subprocess.check_output("oc describe pod %s | awk '/^IP:/ {print $2}'" % router_name, shell=True).rstrip()
+    routes_output = subprocess.check_output("oc get route --all-namespaces --no-headers | awk '/example/ {print $3;}'", shell=True)
+    routes_list = [y for y in (x.strip() for x in routes_output.splitlines()) if y]
+    return localhost, router_ip, routes_list
+
 
 def create_template(templatefile, num, parameters, globalvars):
     if globalvars["debugoption"]:
         print "create_template function called"
 
-    namespace = globalvars["namespace"]
+    if globalvars["autogen"] and parameters:
+        localhost, router_ip, jmeter_ips = get_route()
+        extra_param = {}
+        extra_param['PBENCH_DIR'] = os.environ.get('benchmark_run_dir','/tmp/')
+
+        gun_set = any(param for param in parameters if param.get('GUN'))
+        if not gun_set:
+            extra_param['GUN'] = localhost
+        
+        parameters.append(extra_param.copy())
+
+        jmeter = any(param for param in parameters if param.get('RUN') == 'jmeter')
+        if jmeter:
+            for parameter in parameters:
+                for key, value in parameter.iteritems():
+                    if key == "JMETER_SIZE":
+                        size = int(value)
+            num = math.ceil(float(len(jmeter_ips))/size)
+        globalvars["podnum"] += num
+
     data = {}
     timings = {}
     i = 0
@@ -51,6 +80,12 @@ def create_template(templatefile, num, parameters, globalvars):
         if parameters:
             for parameter in parameters:
                 for key, value in parameter.iteritems():
+                    if globalvars["autogen"] and jmeter:
+                        if key == "TARGET_HOST":
+                            value = ":".join(jmeter_ips[(size*i):(size*(i+1))])
+                        elif key == "ROUTER_IP":
+                            value = router_ip
+                    
                     cmdstring += " -v %s=%s" % (key, value)
         cmdstring += " -v IDENTIFIER=%i" % i
 
@@ -60,10 +95,10 @@ def create_template(templatefile, num, parameters, globalvars):
         tmpfile.flush()
         if globalvars["kubeopt"]:
             check = oc_command("kubectl create -f "+tmpfile.name + \
-                " --namespace %s" % namespace, globalvars)
+                " --namespace %s" % globalvars["namespace"], globalvars)
         else:
             check = oc_command("oc create -f "+ tmpfile.name + \
-                " --namespace %s" % namespace, globalvars)
+                " --namespace %s" % globalvars["namespace"], globalvars)
         if "tuningset" in globalvars:
             if "templates" in globalvars["tuningset"]:
                 templatestuningset = globalvars["tuningset"]["templates"]
@@ -357,7 +392,54 @@ def single_project(testconfig, projname, globalvars):
         pod_handler(testconfig["pods"], globalvars)
     if "rcs" in testconfig:
         rc_handler(testconfig["rcs"], globalvars)
+    if globalvars["autogen"]:
+        autogen_pod_handler(globalvars)
 
+def autogen_pod_handler(globalvars):
+   num_expected = int(globalvars["podnum"])
+   pods_running = []
+   pods_running = autogen_pod_wait(pods_running, num_expected)
+
+   for pod in pods_running:
+       rsync = subprocess.check_output(
+               "oc rsync --namespace=%s /root/.ssh %s:/root/" \
+               % (pod[0], pod[1]), shell=True)
+
+   app = Flask(__name__)
+
+   @app.route("/")
+   def hello():
+       return "GOTIME"
+
+   @app.route("/shutdown", methods=["POST"])
+   def shutdown_server():
+       func = request.environ.get("werkzeug.server.shutdown")
+       if func is None:
+           raise RuntimeError("Not running with the Werkzeug Server")
+       func()
+
+   def start_ws():
+       app.run(host="0.0.0.0", port=9090, threaded=True)
+
+   proc = Process(target=start_ws)
+   proc.start()
+
+   autogen_pod_wait(pods_running, 0)
+
+   if proc.is_alive():
+       proc.terminate()
+       proc.join()
+
+   print "Load completed"
+
+def autogen_pod_wait(pods_running, num_expected):
+    while len(pods_running) != num_expected: 
+        pods_running = subprocess.check_output(
+            "oc get pods --all-namespaces --selector=test --no-headers | "
+            " awk '/1\/1/ && /Running/ {print $1,$2;}'", shell=True).splitlines()
+        time.sleep(5)
+    pods_running = [pod.split() for pod in pods_running]
+    return pods_running
 
 def project_handler(testconfig, globalvars):
     if globalvars["debugoption"]:

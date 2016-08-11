@@ -40,6 +40,9 @@ cliparser.add_option("--kubeconfig", dest="kubeconfig",
 cliparser.add_option("-p", "--processes", dest="processes",
                      default="10",
                      help="The maximum number of concurrent processes used to create projects")
+cliparser.add_option("-a", "--auto-gen",
+                     action="store_true", dest="autogen", default=False,
+                     help="Override config parameters with live OpenShift data.")
 
 (options, args) = cliparser.parse_args()
 
@@ -55,10 +58,12 @@ globalvars["kubeopt"] = options.kube
 globalvars["env"] = []
 globalvars["kubeconfig"] = options.kubeconfig
 globalvars["processes"] = options.processes
+globalvars["autogen"] = options.autogen
+globalvars["podnum"] = 0
 
 user = options.oseuser
 passwd = options.osepass
-master=options.osemaster
+master = options.osemaster
 
 if "quotas" in testconfig:
     globalvars["quotas"] = testconfig["quotas"]

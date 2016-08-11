@@ -1,0 +1,170 @@
+{
+    "apiVersion": "v1",
+    "kind": "Template",
+    "metadata": {
+        "name": "centos-stress-template"
+    },
+    "objects": [
+        {
+            "apiVersion": "v1",
+            "kind": "Pod",
+            "metadata": {
+                "generateName": "centos-stress-",
+                "labels": {
+                    "run": "centos-stress",
+		    "test": "centos-stress"
+                }
+            },
+            "spec": {
+		"nodeSelector": {
+		    "region": "secondary"
+		},
+                "containers": [
+                    {
+                        "env": [
+                            {
+                                "name": "RUN",
+				"value": "${RUN}"
+                            },
+                            {
+                                "name": "STRESS_CPU",
+				"value": "${STRESS_CPU}"
+                            },
+                            {
+                                "name": "RUN_TIME",
+				"value": "${RUN_TIME}"
+                            },
+                            {
+                                "name": "TARGET_HOST",
+				"value": "${TARGET_HOST}"
+                            },
+                            {
+                                "name": "TARGET_PORT",
+				"value": "${TARGET_PORT}"
+                            },
+                            {
+                                "name": "JMETER_SIZE",
+				"value": "${JMETER_SIZE}"
+                            },
+                            {
+                                "name": "JMETER_RAMP",
+				"value": "${JMETER_RAMP}"
+                            },
+                            {
+                                "name": "JMETER_TPS",
+				"value": "${JMETER_TPS}"
+                            },
+                            {
+                                "name": "PBENCH_DIR",
+				"value": "${PBENCH_DIR}"
+                            },
+                            {
+                                "name": "GUN",
+				"value": "${GUN}"
+                            }
+                        ],
+                        "image": "sjug/centos-stress:latest",
+                        "imagePullPolicy": "Always",
+                        "name": "centos-stress",
+                        "resources": {},
+                        "securityContext": {
+                            "capabilities": {
+                                "drop": [
+                                    "KILL",
+                                    "MKNOD",
+                                    "SETGID",
+                                    "SETUID",
+                                    "SYS_CHROOT"
+                                ]
+                            },
+                            "privileged": false,
+                            "seLinuxOptions": {
+                                "level": "s0:c9,c4"
+                            }
+                        },
+                        "terminationMessagePath": "/dev/termination-log"
+                    }
+                ],
+                "imagePullSecrets": [
+                    {
+                        "name": "default-dockercfg-ukomu"
+                    }
+                ],
+		"restartPolicy": "Never"
+            }
+        }
+    ],
+    "parameters": [
+	{
+	    "name": "RUN",
+	    "displayName": "Run App Name",
+	    "description": "Tells the container which app to execute",
+	    "value": "jmeter"
+	},
+	{
+	    "name": "STRESS_CPU",
+	    "displayName": "STRESS CPU Threads",
+	    "description": "How many stress CPU worker threads to spawn",
+	    "value": "6"
+	},
+	{
+	    "name": "RUN_TIME",
+	    "displayName": "Run timeout",
+	    "description": "The duration that tools will run before ending",
+	    "value": "60"
+	},
+	{
+	    "name": "TARGET_HOST",
+	    "displayName": "JMeter IP",
+	    "description": "The target IP for HTTP requests in JMeter",
+	    "value": "127.0.0.1"
+	},
+	{
+	    "name": "TARGET_PORT",
+	    "displayName": "JMeter Port",
+	    "description": "The target port for HTTP requests in JMeter",
+	    "value": "80"
+	},
+	{
+	    "name": "JMETER_SIZE",
+	    "displayName": "JMeter instance size",
+	    "description": "Number of hosts to stress per Jmeter instance",
+	    "value": "3"
+	},
+	{
+	    "name": "JMETER_RAMP",
+	    "displayName": "JMeter Ramp-up Time",
+	    "description": "The ramp-up period of the thread group in JMeter",
+	    "value": "30"
+	},
+	{
+	    "name": "JMETER_TPS",
+	    "displayName": "JMeter throughput",
+	    "description": "Thread throuput rate for JMeter",
+	    "value": "60"
+	},
+	{
+	    "name": "ROUTER_IP",
+	    "displayName": "Router IP",
+	    "description": "The IP of the OpenShift router to direct requests through",
+	    "value": "127.0.0.1"
+	},
+	{
+	    "name": "PBENCH_DIR",
+	    "displayName": "The results directory of pbench on the GUN",
+	    "description": "Where the results of the test will be copied to",
+	    "value": "default"
+	},
+	{
+	    "name": "GUN",
+	    "displayName": "GUN IP Addr",
+	    "description": "The IP of the machine running cluster loader",
+	    "value": "127.0.0.1"
+	},
+    	{
+      	    "name": "IDENTIFIER",
+            "description": "Number to append to the name of resources",
+            "value": "1"
+    	}
+    ]
+}
