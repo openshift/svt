@@ -1,6 +1,7 @@
 ---
 - name: clean yum cache
   shell:  yum clean all
+  ignore_errors: true
 
 - name: disable most yum repos when running with custom content mirrors
 # this is for cncf usage...
@@ -8,11 +9,8 @@
   when: content_mirror | default(false) | bool
 
 - name: install cncf mirror file
-  get_url: https://{{ github_token }}@github.com/openshift/{{ config_repo }}/cncf_mirrors.repo dest=/etc/yum.repos.d/cncf_mirrors.repo
+  copy: src=/root/{{ config_repo }}/image_provisioner/cncf_mirrors.repo dest=/etc/yum.repos.d/cncf_mirrors.repo remote_src=true
   when: content_mirror | default(false) | bool
-
-- name: install iptables-services package
-  yum: name=iptables-services state=latest
 
 - name: ensure openshift-ansible is not installed
   yum: name=openshift-ansible state=absent
