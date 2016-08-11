@@ -13,3 +13,4 @@
     - aos-ansible
     - svt-setup
     - openshift-package-install
+    - seal-image
