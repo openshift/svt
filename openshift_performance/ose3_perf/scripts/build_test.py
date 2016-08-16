@@ -23,6 +23,7 @@ def run_build(build_def, start_build):
 #3.2    end_regex = re.compile(".*(\d\d:\d\d:\d\d).\d+\s+\d\s\S+\s(Successfully pushed|Push successful)", re.MULTILINE)
     start_regex = re.compile(".*(\d\d:\d\d:\d\d).\d+Z\sPushing")
     end_regex = re.compile(".*(\d\d:\d\d:\d\d).\d+Z\s(Successfully pushed|Push successful)")
+    build_regex = re.compile("build \"(.*)\" started")
 
     namespace = build_def["namespace"]
     name = build_def["name"]
@@ -32,6 +33,7 @@ def run_build(build_def, start_build):
         # wait at starting line for other builder threads
         start_build.wait()
         build_name = run("oc start-build -n " + namespace + " " + name).rstrip()
+        build_name = build_regex.search(build_name).group(1)
         build_qname = namespace + ":" + build_name
         print "\nBuild is: " + namespace + ":" + build_name
         build_completed = False
