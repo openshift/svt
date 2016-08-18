@@ -20,6 +20,7 @@ Note:
 projects:
   - num: 2
     basename: clusterproject
+    ifexists: default
     tuning: default
     templates:
       - num: 1
@@ -77,15 +78,19 @@ tuningsets:
 
 ```
 
-Note :
-* In the "pods" section, the field - "num" stands for percentage, i.e., the number of pods will be "num" percentage of the "total" pods
-* One more thing that you should note for the "pods" section is that the number of pods calculated are rounded down, when they are not exact integers.
- * For example : total pods = 35, num = 30, 40, 30 . In this case the pods will be 11, 12 and 11 respectively.
- * Note that the 11+12+11 = 34
-* The template files defined in the "templates" section must have the parameter 'IDENTIFIER'. This will be an integer that should be used in the name of the template and in the name of the resources to ensure that no naming conflicts occur.
-* The Tuning parameters have following function:
- * stepping : This feature makes sure that after each "stepsize" pod requests are submitted, they enter the "Running" state. After all the pods in the given step are Running, then there is a delay = "pause" , before the next step.
- * rate_limit : This makes sure that there is a delay of "rate_limit.delay" between each pod request submission.
+> Note :
+> * ***ifexists*** parameter accepts values : ***reuse/delete/default***. This specifies the action to take if a namespace/project already exists. 
+>  * ***reuse*** : Reuse the existing project and create all the specified objects under it.
+>  * ***delete*** : Delete the existing project and proceed.
+>  * ***default*** : An error will be raised saying that the project already exists.
+> * ***In the "pods" section, the field - "num" stands for percentage***, i.e., the number of pods will be "num" percentage of the "total" pods
+> * One more thing that you should note for the "pods" section is that the number of pods calculated are rounded down, when they are not exact integers.
+>  * For example : total pods = 35, num = 30, 40, 30 . In this case the pods will be 11, 12 and 11 respectively.
+>  * Note that the 11+12+11 = 34
+> * The template files defined in the "templates" section must have the parameter 'IDENTIFIER'. This will be an integer that should be used in the name of the template and in the name of the resources to ensure that no naming conflicts occur.
+> * The ***Tuning parameters*** have following function:
+>  * ***stepping*** : This feature makes sure that after each "stepsize" pod requests are submitted, they enter the "Running" state. After all the pods in the given step are Running, then there is a delay = "pause" , before the next step.
+>  * ***rate_limit*** : This makes sure that there is a delay of "rate_limit.delay" between each pod request submission.
 
 ```
 This Config file will create the following objects :
@@ -93,7 +98,7 @@ This Config file will create the following objects :
    Each project has :
     2 users : demo0 , demo1  -- each with role as "admin"
     3 services : testservice0, testservice1, testservice2
-    2 resplication controllers : testrc0, testrc1   -- with 5 replicas each
+    2 replication controllers : testrc0, testrc1   -- with 5 replicas each
     5 pods : hellopods0, hellopods1, pyrhelpods0, pyrhelpods1, pyrhelpods2
     1 quota: demo  -- see content/quota-default.json for reference
   1 Project : testproject0

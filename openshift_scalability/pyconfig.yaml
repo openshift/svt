@@ -1,6 +1,7 @@
 projects:
   - num: 1
     basename: clusterproject
+    ifexists: default
     tuning: default
     quota: default
     users:
