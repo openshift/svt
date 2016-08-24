@@ -20,9 +20,9 @@ Write -r lines per minute of -l length to the systemd journal.
     -r          rate (lines per minute)
     -l          length of each line (in characters)
     -t          number of logger pods per node
-    -m		      run mode:
-			           1 - container mode
-		             2 - standalone process mode
+    -m          run mode:
+                  1 - container mode
+                  2 - standalone process mode
 
 Example:
 Values of -r 60 -l 512 would yield 30KB of log data every minute.
@@ -68,31 +68,31 @@ done
 shift "$((OPTIND-1))"
 
 minute=60
-delay=$(( $minute/$rate ))
+udelay=$(( ($minute*1000000)/$rate ))
 id=`hostname -s`
 charset="[:alnum:]"
 string=`cat /dev/urandom | tr -cd "$charset" | head -c $length`
 
 if [ "$verbose" > 0 ]; then
-echo "Config: $rate lines per minute, $length characters per line, string is $string"
+  echo "Config: $rate lines per minute, $length characters per line, string is $string"
 fi
 
 
 # MAIN loop
 i=0
 if [[ $mode -eq 1 ]]; then
- echo -e "\nRunning in container mode."
- while [ $i -lt ${xtimes} ]
- do
-        echo "Container ${i} :"
-	docker run -d gcr.io/google_containers/busybox:1.24 "/bin/sh" "-c" "while true ; do logger ${string} ; sleep ${delay}; done"
-        ((i++))
- done
- echo
+  echo -e "\nRunning in container mode."
+  while [ $i -lt ${xtimes} ]
+  do
+    echo "Container ${i} :"
+    docker run -d gcr.io/google_containers/busybox:1.24 "/bin/sh" "-c" "while true ; do logger ${string} ; usleep ${udelay}; done"
+    ((i++))
+  done
+  echo
 elif [[ $mode -eq 2 ]]; then
- echo -e "\nRunning in logger process mode."
- while true ; do logger ${string} ; sleep ${delay}; done
- ((i++)); echo
+  echo -e "\nRunning in logger process mode."
+  while true ; do logger ${string} ; usleep ${udelay}; done
+  ((i++)); echo
 else
   echo -e "\nInvalid mode. Should be \"1\" (container mode) or \"2\" (standalone process mode). Exiting."
   exit 1

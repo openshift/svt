@@ -16,10 +16,8 @@ then
         exit 1
 fi
 
-if [ $# -eq 2 ]
-  then
-    :
-  else
+if [ $# -lt 2 ]
+then
     echo -e "\nTwo arguments reguired. Check /etc/origin/master/master-config.yaml"
     echo "1) https://MASTER_URL:8443"
     echo "2) https://PUBLIC_MASTER_URL:8443"
@@ -116,6 +114,7 @@ oc delete oauthclient kibana-proxy
 oc new-app logging-deployer-template \
                         --param ES_CLUSTER_SIZE=$CLUSTER_SIZE \
                         --param PUBLIC_MASTER_URL=$PUBLIC_MASTER_URL \
+                        --param KIBANA_HOSTNAME=`hostname` \
                         --param MASTER_URL=$MASTER_URL
 
 _wait $T
