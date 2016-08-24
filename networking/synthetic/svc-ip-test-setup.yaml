@@ -125,10 +125,10 @@
     shell: "{{ item }}"
     with_items: oc_exec_cmds.stdout_lines
     
-  - name: Patch pbench-uperf
-    patch: >
-      src=content/pbench-uperf.patch
-      dest=/opt/pbench-agent/bench-scripts/pbench-uperf
+#  - name: Patch pbench-uperf
+#    patch: >
+#      src=content/pbench-uperf.patch
+#      dest=/opt/pbench-agent/bench-scripts/pbench-uperf
       
   - name: Register pbench tools on master
     shell: pbench-register-tool-set --label={{ pbench_label }}
@@ -154,7 +154,7 @@
   - name: Run pbench-uperf for UDP benchmarks
     shell: >
       pbench-uperf
-      --test-types=rr
+      --test-types=stream,rr
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=udp
