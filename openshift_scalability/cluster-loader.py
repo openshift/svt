@@ -66,23 +66,16 @@ if "quotas" in testconfig:
 if "tuningsets" in testconfig:
     globalvars["tuningsets"] = testconfig["tuningsets"]
 
-if globalvars["cleanoption"] :
-    clean_all(globalvars)
-    sys.exit()
-else:
-    if user and passwd and master:
-        login = login(user, passwd, master)
+if user and passwd and master:
+    login = login(user, passwd, master)
 
-    for config in testconfig["projects"]:
-        if "tuning" in config:
-            globalvars["tuningset"] = find_tuning(testconfig["tuningsets"],\
-                config["tuning"])
+for config in testconfig["projects"]:
+    if "tuning" in config:
+        globalvars["tuningset"] = find_tuning(testconfig["tuningsets"],\
+            config["tuning"])
 
-        if "quota" in config:
-            globalvars["quota"] = find_quota(testconfig["quotas"],\
-                config["quota"])
+    if "quota" in config:
+        globalvars["quota"] = find_quota(testconfig["quotas"],\
+            config["quota"])
 
-        project_handler(config,globalvars)
-
-    with open("current_environment.json", "w") as outfile:
-        json.dump(globalvars["env"], outfile)
+    project_handler(config,globalvars)
