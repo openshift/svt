@@ -205,11 +205,6 @@
 					"path": "/pagecount",
 					"port": 8080
 				    }
-				},
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_LIMIT}"
-				    }
 				}
 			    }
 			]
@@ -342,11 +337,6 @@
 				    "initialDelaySeconds": 30,
 				    "tcpSocket": {
 					"port": 27017
-				    }
-				},
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_MONGODB_LIMIT}"
 				    }
 				},
 				"volumeMounts": [

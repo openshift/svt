@@ -210,12 +210,7 @@
 					"name": "DJANGO_SECRET_KEY",
 					"value": "${DJANGO_SECRET_KEY}"
 				    }
-				],
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_LIMIT}"
-				    }
-				}
+				]
 			    }
 			]
 		    }
@@ -343,11 +338,6 @@
 				    "initialDelaySeconds": 30,
 				    "tcpSocket": {
 					"port": 5432
-				    }
-				},
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_POSTGRESQL_LIMIT}"
 				    }
 				},
 				"volumeMounts": [
