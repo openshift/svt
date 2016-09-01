@@ -675,7 +675,6 @@
                                         "value": "${JGROUPS_CLUSTER_PASSWORD}"
                                     }
                                 ]
-				}
                             }
                         ],
                         "volumes": [
@@ -793,7 +792,6 @@
                                         "value": "${MYSQL_AIO}"
                                     }
                                 ]
-				}
                             }
                         ],
                         "volumes": [

@@ -569,7 +569,6 @@
                                         "value": "${JWS_ADMIN_PASSWORD}"
                                     }
                                 ]
-				}
                             }
                         ],
                         "volumes": [
@@ -677,7 +676,6 @@
                                         "value": "${MONGODB_QUIET}"
                                     }
                                 ]
-				}
                             }
                         ],
                         "volumes": [
