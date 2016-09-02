@@ -10,45 +10,56 @@ cd $HOME && git clone https://github.com/openshift/openshift-ansible && cd -
 
 ### Logging project setup
 
-1. Clone this repository.
+Clone this repository.
 ```
     git clone https://github.com/openshift/svt.git
 ```
 
-2. Install logging with:
+
+Install logging with:
+
 ```
     MASTER_URL="https://ip-xxx-xx-xx-xxx.us-xxxx-x.compute.internal:8443"
     PUBLIC_MASTER_URL="https://ec2-xx-xxx-xxx-xxx.us-xxxx-x.compute.amazonaws.com:8443"
     ./enterprise-logging-setup.sh ${MASTER_URL} ${PUBLIC_MASTER_URL} 
 ```
 
-3. Verify with:
+
+Verify with:
+
 ``` 
     oc status
     oc get all 
     oc get pods -o wide
 ```
 
-4. As sudo / root.
-   Run 5 docker containers per each cluster node logging at 30kbs.
+
+As sudo / root.
+
+   Run 5 docker containers, each of them logging at 30 KB/min, per cluster node.
 ```
     export TIMES=5; export MODE=1; ./test/manage_pods.sh -r 512
 ```
 
-5. Confirm they are running with:
+
+Confirm they are running with:
+
 ```
     export MODE=1; ./test/manage_pods.sh -c 1
 ```
 
-6. Define your target hosts inside the pbench_perftest.sh script and 
-   start recording metrics.
+
+Define your pbench target hosts inside a file called "nodes.lst".
+Start recording metrics.
    
    Example for a 600 seconds run (10 minutes).
+   Note: -m stands for Mock test.
+
 ```
-    nohup ./pbench_perftest.sh -n logger_10n_5ppn_30kbs_10m -m 600
+    nohup ./pbench_perftest.sh -n logger_10n_5ppn_30KBm_10m -m 600
 ```
 
-7. Docker kill all the containers from the cluster nodes.
+Docker kill all the containers from the cluster nodes.
 ```
     export MODE=1; ./test/manage_pods.sh -k 1
 ```
