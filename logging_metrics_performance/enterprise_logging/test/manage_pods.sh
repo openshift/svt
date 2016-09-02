@@ -1,22 +1,24 @@
 #!/usr/bin/env bash
 
+function usage() {
+cat << EOF
 #
 # Simple utility that uses ssh to check, run or kill the logger script
 # on every node of the cluster.
-# Automatically obtains the cluster nodes and writes them to a hostsfile.
-# NOTE: Runs in sequence not in paralell. 
+# Automatically obtains the cluster nodes and writes them to a hosts file.
+# NOTE: Runs in sequence not in parallel, although ssh -f is "non-blocking". 
 #
 # 
 # EXAMPLES:
 # 
-# Runs 3 busybox containers per each node. 
+# Run 3 busybox containers per each node logging at 128B/s. 
 # export TIMES=3; export MODE=1; ./manage_pods.sh -r 128
 #
 #
-# Runs 5 standalone logger.sh processes logging forever
+# Run 5 standalone logger.sh processes logging forever
 # export TIMES=5; export MODE=2; ./manage_pods.sh -r 128
 #
-# Both the above methods should log output to be picked up by the fluentd pods.
+# Both the above methods should log output to be picked up by the Fluentd pods.
 #
 #
 # 
@@ -26,7 +28,7 @@
 #
 # Run 5 pods in every node. 
 # The argument to '-r' is the log line length.
-# This is the only arg that takes a value different than 1
+# This is the only argument that takes a value different than 1
 #
 # export TIMES=5; export MODE=1; ./manage_pods.sh -r 250 
 #
@@ -36,72 +38,87 @@
 # Check pods.
 # export MODE=1; ./manage_pods.sh -c 1
 #
-
-set -o pipefail
+EOF
+exit 0
+}
 
 if [[ `id -u` -ne 0 ]]
 then
-        echo -e "Please run as root/sudo.\n"
-        echo -e "Terminated."
-        exit 1
+    echo -e "Please run as root/sudo.\n"
+    echo -e "Terminated."
+    exit 1
 fi
+
+[[ $1 =~ "-h" ]] && usage
 
 SCRIPTNAME=$(basename ${0%.*})
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 WORKDIR=$SCRIPTDIR
+UTILS=$WORKDIR/../utils
 HOSTSFILE=$WORKDIR/hostlist.txt
+DEFAULT_CONTAINER="gcr.io/google_containers/busybox:1.24"
+DEFAULT_LOGGING_DRIVER=journald
+
 declare -a NODELIST
+source $UTILS/functions.sh
+trap sig_handler SIGINT
+set -o pipefail
 
 
+# 'StrictHostKeyChecking no' should be set in the appropriate sshd cfg files.
+# -o here is just for testing purposes.
 function cp_logger() {
-for host in ${NODELIST[@]}
-do
-  scp $WORKDIR/logger.sh $host:
-done
+	for host in ${NODELIST[@]}
+	do
+		scp -o StrictHostKeyChecking=no $WORKDIR/logger.sh $host:
+	done
 }
 
+
 function run_logger() {
-for host in ${NODELIST[@]}
-do
-  echo -e "\n\n[+] Line length ${x}: $host"
-  ssh -f $host "/root/logger.sh -r 60 -l ${x} -t ${TIMES} -m ${MODE}"
-done
+	logdriver=${2:-$DEFAULT_LOGGING_DRIVER}
+
+	for host in ${NODELIST[@]}
+	do
+		echo -e "\n\n[+] $host\nLine length: $x\nLogging driver: $logdriver"
+		ssh -f -o StrictHostKeyChecking=no $host "/root/logger.sh -r 60 -l ${x} -t ${TIMES} -m ${MODE} -d $logdriver -i $DEFAULT_CONTAINER"
+	done
 }
 
 function check_pods() {
-for host in ${NODELIST[@]}
-do
-  ssh $host "echo $host; docker ps | grep busybox; echo"
-done
+	for host in ${NODELIST[@]}
+	do
+		ssh -o StrictHostKeyChecking=no $host "echo $host; docker ps | grep $DEFAULT_CONTAINER; echo"
+	done
 }
 
 function kill_pods() {
-for host in ${NODELIST[@]}
-do
-  echo -e "\n$host"
-  ssh $host "docker kill \$(docker ps | grep busybox | awk '{print \$1}' ;echo)"
-done
+	for host in ${NODELIST[@]}
+	do
+		echo -e "\n$host: $i"
+  		ssh -f -o StrictHostKeyChecking=no $host "docker kill \$(docker ps | grep $DEFAULT_CONTAINER | awk '{print \$1}') 2>/dev/null"
+	done
 }
 
 function check_logger() {
-for host in ${NODELIST[@]}
-do
-  echo -e "\n$host"
-  ssh $host "ps -ef | grep [l]ogger.sh"
-done
+	for host in ${NODELIST[@]}
+	do
+  		echo -e "\n$host"
+  		ssh $host "ps -ef | grep [l]ogger.sh"
+	done
 }
 
 function kill_logger() {
-for host in ${NODELIST[@]}
-do
-  echo -e "\n$host"
-  ssh $host "pkill -f logger.sh"
-done
+	for host in ${NODELIST[@]}
+	do
+  		echo -e "\n$host"
+  		ssh $host "pkill -f logger.sh"
+	done
 }
 
 function read_hosts() {
-  hf=${1}
-  while read line; do NODELIST+=($line); done < $hf
+	hf=${1}
+	while read line; do NODELIST+=($line); done < $hf
 }
 
 
@@ -109,17 +126,16 @@ function read_hosts() {
 # MAIN
 if [[ -f $HOSTSFILE ]]
 then
-  echo -e "Hosts file exists.\n"
-  read_hosts $HOSTSFILE
+  	read_hosts $HOSTSFILE
 else
-  echo "First run:"
-  echo "Creating $HOSTSFILE ..."
-  oc get nodes | awk '{print $1}' | grep -v 'NAME' > $HOSTSFILE
-  [[ $? -eq 0 ]] && echo -e "Done.\n" || (echo 'Fatal: "oc get nodes failed."' ; exit 1)
-  read_hosts $HOSTSFILE
-  echo "Copying logger.sh to cluster nodes."
-  cp_logger
-  echo "Done."
+  	echo "First run:"
+  	echo "Creating $HOSTSFILE ..."
+  	oc get nodes | awk '{print $1}' | grep -v 'NAME' > $HOSTSFILE
+  	[[ $? -eq 0 ]] && echo -e "Done.\n" || (echo 'Fatal: "oc get nodes failed."' ; exit $ERR)
+  	read_hosts $HOSTSFILE
+  	echo "Copying logger.sh to cluster nodes."
+  	cp_logger
+  	echo "Done."
 fi
 
 
@@ -152,12 +168,13 @@ fi
 
 # container mode
 if [[ ${MODE} -eq 1 ]]; then
-while getopts ":s:r:c:k:q:" option; do
+while getopts ":s:r:c:k:q:d:" option; do
         case "${option}" in
           s) x=${OPTARG} && [[ $x -eq 1 ]] && cp_logger ;;
-          r) x=${OPTARG} && [[ $x -ne 0 ]] && run_logger $x ;;
-          c) x=${OPTARG} && [[ $x -eq 1 ]] && check_pods ;;
-          k) x=${OPTARG} && [[ $x -eq 1 ]] && kill_pods ;;
+          r) x=${OPTARG} ;;
+          d) d=${OPTARG} ;;
+          c) c=${OPTARG} && [[ $c -eq 1 ]] && check_pods ;;
+          k) k=${OPTARG} && [[ $k -eq 1 ]] && kill_pods ;;
           q) x=${OPTARG} && [[ $x -eq 1 ]] && kill_logger ;;
           '*')
             echo -e "Invalid option / usage: ${option}\nExiting."
@@ -168,5 +185,9 @@ done
 shift $((OPTIND-1))
 fi
 
+# x => log line_length 
+# d => docker logging driver (journald, json-file, fluentd)
+[[ $x -ne 0 ]] && run_logger $x $d
+
 echo -e "\nDone."
-exit 0
+exit $OK
