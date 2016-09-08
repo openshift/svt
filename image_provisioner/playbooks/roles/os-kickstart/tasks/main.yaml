@@ -48,21 +48,16 @@
 - name: install pbench
   yum: name=pbench-agent-internal state=latest
 
-- name: install gluster and ceph clients
+- name: install persistent storage clients
   yum: name={{ item }} state=latest
   with_items:
 # these two rpms pull in the rest...
     - ceph-common
     - glusterfs-fuse
+    - iscsi-initiators-utils
 
 - name: install bashrc file
   copy: src=bashrc dest=/root/.bashrc force=yes
 
 - name: never expire yum metadata
   shell: echo metadata_expire=never >> /etc/yum.conf
-
-#- name: stop cloud-init from disabling root ssh
-#  replace: dest=/etc/cloud/cloud.cfg regexp='^disable_root: 1' replace='disable_root=0' backup=yes
-#
-#- name: allow password auth over ssh
-#  replace: dest=/etc/cloud/cloud.cfg regexp='^ssh_pwauth: 0' replace='ssh_pwauth: 1' backup=yes
