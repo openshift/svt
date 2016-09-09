@@ -1,4 +1,18 @@
 ---
+- name: download aos-ansible tarball
+  get_url:
+    url: https://api.github.com/repos/openshift/aos-ansible/tarball/master 
+    dest: /root/aos-ansible.tar.gz
+    headers: 'Authorization:token {{ github_token }},Accept:application/vnd.github.v3.raw'
+
+- name: create aos-ansible directory
+  file:
+    path: "{{ aos_ansible_path }}"
+    state: directory
+
+- name: extract aos-ansible tarball
+  command: /usr/bin/tar xzf /root/aos-ansible.tar.gz --strip=1 -C {{ aos_ansible_path }}
+
 - name: install internal rhel7-cdn repo
   template:
     src: etc/yum.repos.d/rhel7-internal-cdn.repo.j2
@@ -10,8 +24,9 @@
 
 - name: install external rhel-cdn repo
   copy:
-    src: {{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/rhel72.repo
+    src: "{{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/rhel72.repo"
     dest: /etc/yum.repos.d/
+    remote_src: true
   when: not (internal_image | bool)
 
 - name: install EPEL repo
@@ -35,10 +50,12 @@
 
 - name: copy aos yum repository certificate
   copy:
-    src: {{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/client-cert.pem
+    src: "{{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/client-cert.pem"
     dest: /var/lib/yum/
+    remote_src: true
 
 - name: copy aos yum repository key
   copy:
-    src: {{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/client-key.pem
+    src: "{{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/client-key.pem"
     dest: /var/lib/yum/
+    remote_src: true

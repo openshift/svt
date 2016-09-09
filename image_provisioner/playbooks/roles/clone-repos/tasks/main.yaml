@@ -1,7 +1,4 @@
 ---
-- name: clone aos-ansible repo
-  git: repo=https://{{ github_token }}@github.com/openshift/aos-ansible dest=/root/aos-ansible update=yes
-
 - name: clone svt repo
   git: repo=https://github.com/openshift/svt dest=/root/svt update=yes
 

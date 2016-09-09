@@ -39,6 +39,8 @@
 
 - hosts: just_created
   remote_user: root
+  vars:
+    internal_image: false
   roles:
     - repo-install
     - os-kickstart

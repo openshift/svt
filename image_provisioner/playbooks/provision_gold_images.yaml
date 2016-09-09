@@ -2,6 +2,8 @@
 - name: provision gold images
   user: root
   hosts: all
+  vars:
+    internal_image: true
 
   roles:
     - clone-repos

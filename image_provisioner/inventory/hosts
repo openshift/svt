@@ -12,7 +12,6 @@ instance_type=m4.xlarge
 vpc_subnet_id=
 base_image=
 # repo install
-internal_image=false
 rhel_int_repo_hostname=
 # collectd install
 config_type=ose
