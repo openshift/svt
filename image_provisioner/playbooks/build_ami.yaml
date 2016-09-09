@@ -18,10 +18,9 @@
       image: "{{ base_image }}"
       volumes:
         - device_name: /dev/sdb
-          volume_type: io1
+          volume_type: gp2
           volume_size: 30
           delete_on_termination: true
-          iops: 900
       wait: yes
       user_data: "{{ lookup('file', '../cloud-init/user-data-aws') }}"
       exact_count: 1
