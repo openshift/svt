@@ -3,7 +3,7 @@
   template: src=etc/sysconfig/docker-storage-setup.j2 dest=/etc/sysconfig/docker-storage-setup
 
 - name: create docker config directory
-#  shell:  mkdir /root/.docker
+  #shell:  mkdir /root/.docker
   file: path=/root/.docker state=directory
 
 - name: download docker login config.json
@@ -12,8 +12,13 @@
 - name: install docker
   yum: name=docker state=latest
 
+- name: check for existing PV
+  command: pvdisplay
+  register: pv_result
+
 - name: create LVM pv
   shell: pvcreate {{ docker_storage_device }}
+  when: pv_result.rc != 0
 
 - name: create VG for docker thin pool
   lvg: vg=docker_vg pvs={{ docker_storage_device }}
@@ -26,3 +31,4 @@
 
 - name: docker version override
   shell: yum --disablerepo=* localinstall -y http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/docker-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/docker-common-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/docker-forward-journald-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/docker-rhel-push-plugin-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/docker-selinux-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/oci-register-machine-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/oci-systemd-hook-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/selinux-policy/3.13.1/92.el7/noarch/selinux-policy-3.13.1-92.el7.noarch.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/selinux-policy/3.13.1/92.el7/noarch/selinux-policy-targeted-3.13.1-92.el7.noarch.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/policycoreutils/2.5/5.1.el7/x86_64/policycoreutils-2.5-5.1.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/libsemanage/2.5/3.el7/x86_64/libsemanage-2.5-3.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/policycoreutils/2.5/5.1.el7/x86_64/policycoreutils-python-2.5-5.1.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/setools/3.3.8/1.1.el7/x86_64/setools-libs-3.3.8-1.1.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/libsepol/2.5/4.el7/x86_64/libsepol-2.5-4.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/libsemanage/2.5/3.el7/x86_64/libsemanage-python-2.5-3.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/libselinux/2.5/4.el7/x86_64/libselinux-2.5-4.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/libselinux/2.5/4.el7/x86_64/libselinux-utils-2.5-4.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/systemd/219/24.el7/x86_64/systemd-219-24.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/systemd/219/24.el7/x86_64/systemd-libs-219-24.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/systemd/219/24.el7/x86_64/systemd-sysv-219-24.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/systemd/219/24.el7/x86_64/libgudev1-219-24.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/libselinux/2.5/4.el7/x86_64/libselinux-python-2.5-4.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/iptables/1.4.21/17.el7/x86_64/iptables-services-1.4.21-17.el7.x86_64.rpm
+  when: internal_image | bool

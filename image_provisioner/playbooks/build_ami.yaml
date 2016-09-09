@@ -1,0 +1,77 @@
+- hosts: localhost
+  connection: local
+  become: no
+  tasks:
+
+  - name: launch temporary instance
+    connection: local
+    become: no
+    ec2:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      assign_public_ip: yes
+      region: "{{ region }}"
+      key_name: "{{ key_name }}"
+      group_id: "{{ group_id }}"
+      instance_type: "{{ instance_type }}"
+      vpc_subnet_id: "{{ vpc_subnet_id }}"
+      image: "{{ base_image }}"
+      volumes:
+        - device_name: /dev/sdb
+          volume_type: io1
+          volume_size: 30
+          delete_on_termination: true
+          iops: 900
+      wait: yes
+      user_data: "{{ lookup('file', '../cloud-init/user-data-aws') }}"
+      exact_count: 1
+      count_tag:
+         role: ami_builder
+      instance_tags:
+         role: ami_builder
+    register: ami_instance
+
+  - name: waiting for ssh to start
+    wait_for: port=22 host={{ ami_instance.tagged_instances.0.public_ip }} timeout=300
+              search_regex=OpenSSH
+
+  - name: add host to group
+    add_host: name={{ ami_instance.tagged_instances.0.public_dns_name }} groups=just_created
+
+- hosts: just_created
+  remote_user: root
+  roles:
+    - repo-install
+    - os-kickstart
+    - collectd-install
+    - clone-repos
+    - pbench-config
+    - docker-config
+    - aos-ansible
+    - openshift-package-install
+
+- hosts: localhost
+  connection: local
+  become: no
+  tasks:
+
+  - name: bundle ami
+    action: 
+      module: ec2_ami
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      instance_id: "{{ ami_instance.tagged_instances.0.id }}"
+      region: "{{ region }}"
+      state: present
+      description: This was provisioned {{ ansible_date_time.iso8601 }}
+      name: ocp-{{ openshift_version }}-gold
+      wait: yes
+    register: amioutput
+
+  - name: terminate temporary instance
+    action:
+      module: ec2
+      state: absent
+      region: "{{ region }}"
+      instance_ids: "{{ ami_instance.tagged_instances.0.id }}"
+

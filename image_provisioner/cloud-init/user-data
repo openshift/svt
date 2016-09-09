@@ -9,3 +9,5 @@ user: root
 password: 100yard-
 growpart:
   mode: off
+runcmd:
+  - [ sed, -i, "'s/requiretty/!requiretty/'", /etc/sudoers ]

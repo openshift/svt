@@ -1,0 +1,29 @@
+[rhel-72]
+name=Prerelease version of RHEL7.2
+baseurl=https://mirror.openshift.com/enterprise/rhel/rhel7next/os
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0
+sslclientcert=/var/lib/yum/client-cert.pem
+sslclientkey=/var/lib/yum/client-key.pem
+
+[rhel-72-optional]
+name=Prerelease version of RHEL7.2 Optional
+baseurl=https://mirror.openshift.com/enterprise/rhel/rhel7next/optional
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0
+sslclientcert=/var/lib/yum/client-cert.pem
+sslclientkey=/var/lib/yum/client-key.pem
+
+[rhel-72-extras]
+name=Prerelease version of RHEL7.2 Extras
+baseurl=https://mirror.openshift.com/enterprise/rhel/rhel7next/extras
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0
+sslclientcert=/var/lib/yum/client-cert.pem
+sslclientkey=/var/lib/yum/client-key.pem

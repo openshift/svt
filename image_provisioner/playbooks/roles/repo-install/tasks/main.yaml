@@ -1,15 +1,44 @@
 ---
-- name: install rhel7-cdn repo
-  copy: src=rhel7-internal-cdn.repo dest=/etc/yum.repos.d/rhel7-internal-cdn.repo owner=root group=root mode=0644
+- name: install internal rhel7-cdn repo
+  template:
+    src: etc/yum.repos.d/rhel7-internal-cdn.repo.j2
+    dest: /etc/yum.repos.d/rhel7-internal-cdn.repo
+    owner: root
+    group: root
+    mode: 0644
+  when: internal_image | bool
+
+- name: install external rhel-cdn repo
+  copy:
+    src: rhel72.repo
+    dest: /etc/yum.repos.d/
+  when: not (internal_image | bool)
 
 - name: install EPEL repo
-  copy: src=epel.repo dest=/etc/yum.repos.d/
+  copy:
+    src: epel.repo
+    dest: /etc/yum.repos.d/
 
 - name: install pbench-internal repo
-  template: src=etc/yum.repos.d/pbench.repo.j2 dest=/etc/yum.repos.d/pbench.repo owner=root group=root mode=0644
+  template:
+    src: etc/yum.repos.d/pbench.repo.j2
+    dest: /etc/yum.repos.d/pbench.repo
+    owner: root
+    group: root
+    mode: 0644
+  when: internal_image | bool
 
 - name: install pbench-external repo
-  copy: src=ndokos-pbench-epel-7.repo dest=/etc/yum.repos.d/
+  copy:
+    src: ndokos-pbench-epel-7.repo
+    dest: /etc/yum.repos.d/
 
-- name: disable requiretty
-  replace: dest=/etc/sudoers regexp='^Defaults    requiretty' replace='Defaults    !requiretty' backup=yes
+- name: copy aos yum repository certificate
+  copy:
+    src: client-cert.pem
+    dest: /var/lib/yum/
+
+- name: copy aos yum repository key
+  copy:
+    src: client-key.pem
+    dest: /var/lib/yum/

@@ -24,6 +24,8 @@
     - numactl
     - pciutils
     - perf
+    - pbench-agent
+    - pbench-sysstat
     - python-docker-py
     - python-pip
     - python-rbd
@@ -45,16 +47,16 @@
 - name: yum update
   yum: name=* state=latest
 
-- name: install pbench
+- name: install pbench internal
   yum: name=pbench-agent-internal state=latest
+  when: internal_image | bool
 
 - name: install persistent storage clients
   yum: name={{ item }} state=latest
   with_items:
-# these two rpms pull in the rest...
     - ceph-common
     - glusterfs-fuse
-    - iscsi-initiators-utils
+    - iscsi-initiator-utils
 
 - name: install bashrc file
   copy: src=bashrc dest=/root/.bashrc force=yes
