@@ -10,7 +10,7 @@
 
 - name: install external rhel-cdn repo
   copy:
-    src: rhel72.repo
+    src: {{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/rhel72.repo
     dest: /etc/yum.repos.d/
   when: not (internal_image | bool)
 
@@ -35,10 +35,10 @@
 
 - name: copy aos yum repository certificate
   copy:
-    src: {{aos_ansible_path}}/playbooks/roles/ops_mirror_bootstrap/files/client-cert.pem
+    src: {{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/client-cert.pem
     dest: /var/lib/yum/
 
 - name: copy aos yum repository key
   copy:
-    src: {{aos_ansible_path}}/playbooks/roles/ops_mirror_bootstrap/files/client-key.pem
+    src: {{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/client-key.pem
     dest: /var/lib/yum/
