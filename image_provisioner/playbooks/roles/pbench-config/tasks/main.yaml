@@ -22,7 +22,7 @@
   ignore_errors: yes
 
 - name: run a quick pbench test
-  shell: pbench-user-benchmark -C pbench_test_{{ image_tag }} -- sleep 10
+  shell: pbench-user-benchmark -C pbench_test_{{ ansible_date_time.date }} -- sleep 10
 
 - name: test pbench-copy-results
   shell: pbench-copy-results

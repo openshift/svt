@@ -23,7 +23,6 @@ graphite_prefix=ose
 # clone repos
 github_token=
 # pbench config
-image_tag=2016-09-09
 pbench_internal_hostname=pbench\..*com$
 pbench_alternate_hostname=
 # docker config
