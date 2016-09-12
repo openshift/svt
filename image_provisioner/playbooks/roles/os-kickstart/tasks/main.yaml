@@ -61,5 +61,15 @@
 - name: install bashrc file
   copy: src=bashrc dest=/root/.bashrc force=yes
 
+- name: download ssh keys
+  get_url:
+    url: https://api.github.com/repos/redhat-performance{{ ssh_repo }}
+    dest: /root/.ssh/id_rsa
+    mode: 0600
+    headers: 'Authorization:token {{ github_token }},Accept:application/vnd.github.v3.raw'
+
+- name: disable strict host checking
+  lineinfile: dest=/etc/ssh/ssh_config line="StrictHostKeyChecking no"
+
 - name: never expire yum metadata
-  shell: echo metadata_expire=never >> /etc/yum.conf
+  lineinfile: dest=/etc/yum.conf line="metadata_expire=never"

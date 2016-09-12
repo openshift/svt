@@ -13,6 +13,8 @@ vpc_subnet_id=
 base_image=
 # repo install
 rhel_int_repo_hostname=
+# os kickstart
+ssh_repo=
 # collectd install
 config_type=ose
 collectd_interval=10
@@ -42,7 +44,7 @@ openshift_version=3.3.0.30-1
 
 # qcow specific
 #ansible_ssh_private_key_file = $HOME/.ssh/id_rsa_perf
-ansible_ssh_private_key_file = /root/.ssh/id_rsa_perf
+ansible_ssh_private_key_file = 
 base_image_url=http://download.url/rhel-guest-image-7.2-20160302.0.x86_64.qcow2
 base_image_filename=rhel-guest-image-7.2-20160302.0.x86_64.qcow2
 content_mirror=false
