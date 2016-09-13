@@ -27,6 +27,7 @@
     - pbench-agent
     - pbench-sysstat
     - python-docker-py
+    - python-flask
     - python-pip
     - python-rbd
     - python2-boto3
@@ -73,3 +74,6 @@
 
 - name: never expire yum metadata
   lineinfile: dest=/etc/yum.conf line="metadata_expire=never"
+
+- name: add iptables rule for cluster-loader
+  iptables: chain=INPUT protocol=tcp match=tcp ctstate=NEW destination_port=9090 jump=ACCEPT
