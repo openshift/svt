@@ -25,9 +25,9 @@
       user_data: "{{ lookup('file', '../cloud-init/user-data-aws') }}"
       exact_count: 1
       count_tag:
-         role: ami_builder
+         Name: ami_builder
       instance_tags:
-         role: ami_builder
+         Name: ami_builder
     register: ami_instance
 
   - name: waiting for ssh to start

@@ -1,4 +1,7 @@
 ---
+- name: yum update
+  yum: name=* state=latest
+
 - name: install packages
   yum: name={{ item }} state=latest
   with_items:
@@ -13,6 +16,7 @@
     - httpd-tools
     - hwloc
     - iotop
+    - iptables-services
     - kernel
     - ltrace
     - mailx
@@ -45,9 +49,6 @@
     - wget
     - yum-utils
 
-- name: yum update
-  yum: name=* state=latest
-
 - name: install pbench internal
   yum: name=pbench-agent-internal state=latest
   when: internal_image | bool
@@ -75,5 +76,3 @@
 - name: never expire yum metadata
   lineinfile: dest=/etc/yum.conf line="metadata_expire=never"
 
-- name: add iptables rule for cluster-loader
-  iptables: chain=INPUT protocol=tcp match=tcp ctstate=NEW destination_port=9090 jump=ACCEPT
