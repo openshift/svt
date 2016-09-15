@@ -4,6 +4,8 @@
   hosts: all
 
   roles:
+    - clone-repos
+    - aos-ansible
     - repo-install
     - os-kickstart
     - collectd-install
