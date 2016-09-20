@@ -1,16 +1,18 @@
 # vim:ft=ansible:
-localhost ansible_connection=local ansible_python_interpreter=/usr/bin/python
+[all]
+# 127.0.0.1
 
 [all:vars]
-# AWS vars
-aws_access_key=
-aws_secret_key=
-region=us-west-2
-key_name=
-group_id=
-instance_type=m4.xlarge
-vpc_subnet_id=
-base_image=
+# qcow specific
+#ansible_ssh_private_key_file= $HOME/.ssh/id_rsa_perf
+ansible_ssh_private_key_file= 
+base_image_url=http://dseownload.url/rhel-guest-image-7.2-20160302.0.x86_64.qcow2
+base_image_filename=rhel-guest-image-7.2-20160302.0.x86_64.qcow2
+content_mirror=false
+# amount of GB to extend root partition by.  default size is 10G so extend that by an additional # gb:
+extend_disk_gb=15
+rhel_repo_hostname=download.devel.redhat.com
+root_password=
 # repo install
 rhel_int_repo_hostname=
 # os kickstart
@@ -41,15 +43,3 @@ image_version=v3.3.0.30
 # image naming
 # set openshift_version to the rpm version, sometimes with a trailing -N
 openshift_version=3.3.0.30-1
-
-# qcow specific
-#ansible_ssh_private_key_file = $HOME/.ssh/id_rsa_perf
-ansible_ssh_private_key_file = 
-base_image_url=http://download.url/rhel-guest-image-7.2-20160302.0.x86_64.qcow2
-base_image_filename=rhel-guest-image-7.2-20160302.0.x86_64.qcow2
-content_mirror=false
-# amount of GB to extend root partition by.  default size is 10G so extend that by an additional # gb:
-extend_disk_gb=15
-rhel_repo_hostname=download.devel.redhat.com
-root_password=
-
