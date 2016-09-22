@@ -4,10 +4,10 @@
   hosts: all
 
   roles:
+    - os-kickstart
     - clone-repos
     - aos-ansible
     - repo-install
-    - os-kickstart
     - collectd-install
     - clone-repos
     - pbench-config
