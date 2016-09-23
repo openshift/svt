@@ -44,8 +44,6 @@ module OpenshiftReliability
 
     def modify_app()
       start_build()
-      scale_up
-      scale_down
     end
 
     def status_app()
@@ -127,7 +125,27 @@ module OpenshiftReliability
       end
       @bcs.each do |bc|
         bcname=bc.split(/\s+/)[0]
-        @user.exec("oc start-build #{bcname} --follow")
+        res=@user.exec("oc start-build #{bcname} --follow")
+
+        if res[:stderr] =~ /.*Timeout.*/
+            wait_minute_num=10
+            i = 0
+            while i < wait_minute_num
+               res=@user.exec("oc logs bc/#{bcname} --follow")
+               if res[:stderr] =~ /.*Timeout.*/
+                 $logger.info("Build is still running waiting  #{bcname}")
+                 sleep 60
+                 i = i + 1
+               else
+                 break
+               end
+               
+               if i == wait_minute_num-1
+                 $logger.info("Last attempt to wait for build  #{bcname}")
+                 res=@user.exec("oc get builds | grep Running")
+               end
+            end
+        end
       end
     end
   
