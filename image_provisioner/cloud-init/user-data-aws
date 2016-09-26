@@ -1,5 +1,6 @@
 #cloud-config
 disable_root: 0
 runcmd:
-  - [ sed, -i, "'/^#PermitRootLogin/s/^#//g'", /etc/ssh/sshd_config ] 
-  - [ sed, -i, "'s/requiretty/!requiretty/'", /etc/sudoers ]
+  - [ sed, -i, '/^#PermitRootLogin/s/^#//g', /etc/ssh/sshd_config ] 
+  - [ sed, -i, 's/requiretty/!requiretty/', /etc/sudoers ]
+  - [ sed, -i, 's/disable_root: 1/disable_root: 0/', /etc/cloud/cloud.cfg ]
