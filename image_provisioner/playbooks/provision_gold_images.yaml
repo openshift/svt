@@ -6,15 +6,14 @@
     internal_image: true
 
   roles:
-    - clone-repos
-    - aos-ansible
     - repo-install
     - os-kickstart
     - collectd-install
-    - clone-repos
     - pbench-config
+    - clone-repos
     - docker-config
     - aos-ansible
     - svt-setup
     - openshift-package-install
     - seal-image
+

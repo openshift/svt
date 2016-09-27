@@ -1,5 +1,5 @@
 import re, subprocess, json, time, threading
-import datetime,random
+import datetime,random,sys
 from optparse import OptionParser
 
 
@@ -33,6 +33,7 @@ def run_build(build_def, start_build):
         # wait at starting line for other builder threads
         start_build.wait()
         build_name = run("oc start-build -n " + namespace + " " + name).rstrip()
+#3.2 Comment out following line
         build_name = build_regex.search(build_name).group(1)
         build_qname = namespace + ":" + build_name
         print "\nBuild is: " + namespace + ":" + build_name
@@ -81,14 +82,17 @@ def run_build(build_def, start_build):
                         print "Invalid data - not included in summary statistics"
                         build_stats[idx]["invalid"] += 1
                     else:
-                        build_time -= push_time
                         build_stats[idx]["num"] += 1
-                        build_stats[idx]["total_time"] += build_time
+                        build_stats[idx]["build_time"] += build_time
                         build_stats[idx]["push_time"] += push_time
-                        if build_time > build_stats[idx]["max_total"]:
-                            build_stats[idx]["max_total"] = build_time
+                        if build_time > build_stats[idx]["max_build"]:
+                            build_stats[idx]["max_build"] = build_time
+                        if build_time < build_stats[idx]["min_build"]:
+                            build_stats[idx]["min_build"] = build_time
                         if push_time > build_stats[idx]["max_push"]:
                             build_stats[idx]["max_push"] = push_time
+                        if push_time < build_stats[idx]["min_push"]:
+                            build_stats[idx]["min_push"] = push_time
                 elif (build_info["status"]["phase"] == "Failed") or (build_info["status"]["phase"] == "Cancelled"):
                     print build_qname + " FAILED"
                     idx = namespace + ":" + name
@@ -223,7 +227,7 @@ if __name__ ==  "__main__":
     #init statistics
     for build in all_builds:
         idx=build["namespace"] + ":" + build["name"]
-        build_stats[idx]={"num":0, "total_time": 0, "max_total":0, "push_time": 0, "max_push":0, "total_time_variance":0, "push_time_variance":0, "failed":0, "invalid":0}
+        build_stats[idx]={"num":0, "build_time": 0, "max_build":0, "min_build":sys.maxint, "push_time": 0, "max_push":0, "min_push": sys.maxint, "build_time_variance":0, "push_time_variance":0, "failed":0, "invalid":0}
 
     run_builds(all_builds)
 
@@ -233,16 +237,31 @@ if __name__ ==  "__main__":
     total_failed=0
     total_invalid=0
     total_builds=0
+    max_all_builds=-1
+    min_all_builds=sys.maxint
+    max_all_pushes=-1
+    min_all_pushes=sys.maxint
+
     for build in all_builds:
         idx = build["namespace"] + ":" + build["name"]
         num = build_stats[idx]["num"]
         print "\nBuild: " + idx
         if num > 0:
             print "\tTotal builds: " + str(build_stats[idx]["num"]) + " Failures: " + str(build_stats[idx]["failed"])
-            print "\tAvg build time: " + str(build_stats[idx]["total_time"]/num) +  " Max build time: " + str(build_stats[idx]["max_total"])
-            print "\tAvg push time: " + str(build_stats[idx]["push_time"]/num)+  " Max push time: " + str(build_stats[idx]["max_push"])
-            total_all_builds += build_stats[idx]["total_time"]
+            print "\tAvg build time: " + str(build_stats[idx]["build_time"]/num) +  " Max build time: " + str(build_stats[idx]["max_build"]) + " Min build time: " + str(build_stats[idx]["min_build"])
+            print "\tAvg push time: " + str(build_stats[idx]["push_time"]/num)+  " Max push time: " + str(build_stats[idx]["max_push"]) +  " Min push time: " + str(build_stats[idx]["min_push"])
+            total_all_builds += build_stats[idx]["build_time"]
+            if build_stats[idx]["max_build"] > max_all_builds:
+                max_all_builds = build_stats[idx]["max_build"]
+            if build_stats[idx]["min_build"] < min_all_builds:
+                min_all_builds = build_stats[idx]["min_build"]
+
             total_all_pushes += build_stats[idx]["push_time"]
+            if build_stats[idx]["max_push"] > max_all_pushes:
+                max_all_pushes = build_stats[idx]["max_push"]
+            if build_stats[idx]["min_push"] < min_all_pushes:
+                min_all_pushes = build_stats[idx]["min_push"]
+
             total_builds += build_stats[idx]["num"]
         else:
             print "\tNo successful builds"
@@ -250,8 +269,12 @@ if __name__ ==  "__main__":
         total_invalid += build_stats[idx]["invalid"]
 
     if total_builds > 0:
-        print "\n\nFailed builds: " + str(total_failed)
-        print "\nInvalid builds: " + str(total_invalid)
-        print "\nGood builds included in stats: " + str(total_builds)
+        print "\nFailed builds: " + str(total_failed)
+        print "Invalid builds: " + str(total_invalid)
+        print "Good builds included in stats: " + str(total_builds)
         print "\nAverage build time, all good builds: " + str(total_all_builds/total_builds)
+        print "Minimum build time, all good builds: " + str(min_all_builds)
+        print "Maximum build time, all good builds: " + str(max_all_builds)
         print "\nAverage push time, all good builds: " + str(total_all_pushes/total_builds)
+        print "Minimum push time, all good builds: " + str(min_all_pushes)
+        print "Maximum push time, all good builds: " + str(max_all_pushes)
