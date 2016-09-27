@@ -51,10 +51,10 @@
 - name: install persistent storage clients
   yum: name={{ item }} state=latest
   with_items:
-# these two rpms pull in the rest...
+# these three rpms pull in the rest...
     - ceph-common
     - glusterfs-fuse
-    - iscsi-initiators-utils
+    - iscsi-initiator-utils
 
 - name: install bashrc file
   copy: src=bashrc dest=/root/.bashrc force=yes
