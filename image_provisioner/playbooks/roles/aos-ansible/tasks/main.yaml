@@ -4,3 +4,12 @@
 
 - name: run aos-ansible
   shell: ansible-playbook -i {{ aos_ansible_inventory }} {{ aos_ansible_path }}/playbooks/aws_install_prep.yml --connection=local
+
+- name: add iptables rule for cluster-loader
+  iptables: chain=INPUT protocol=tcp match=tcp ctstate=NEW destination_port=9090 jump=ACCEPT
+
+- name: save iptables rules
+  shell: iptables-save > /etc/sysconfig/iptables
+
+- name: enable iptables service
+  service: name=iptables state=started enabled=yes

@@ -3,7 +3,7 @@
   template: src=etc/sysconfig/docker-storage-setup.j2 dest=/etc/sysconfig/docker-storage-setup
 
 - name: create docker config directory
-#  shell:  mkdir /root/.docker
+  #shell:  mkdir /root/.docker
   file: path=/root/.docker state=directory
 
 - name: download docker login config.json
@@ -12,8 +12,13 @@
 - name: install docker
   yum: name=docker state=latest
 
+- name: check for existing PV
+  command: pvdisplay
+  register: pv_result
+
 - name: create LVM pv
   shell: pvcreate {{ docker_storage_device }}
+  when: pv_result.rc != 0
 
 - name: create VG for docker thin pool
   lvg: vg=docker_vg pvs={{ docker_storage_device }}
