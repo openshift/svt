@@ -1,4 +1,7 @@
 ---
+- name: yum update
+  yum: name=* state=latest
+
 - name: install packages
   yum: name={{ item }} state=latest
   with_items:
@@ -13,6 +16,7 @@
     - httpd-tools
     - hwloc
     - iotop
+    - iptables-services
     - kernel
     - ltrace
     - mailx
@@ -24,7 +28,10 @@
     - numactl
     - pciutils
     - perf
+    - pbench-agent
+    - pbench-sysstat
     - python-docker-py
+    - python-flask
     - python-pip
     - python-rbd
     - python2-boto3
@@ -42,16 +49,13 @@
     - wget
     - yum-utils
 
-- name: yum update
-  yum: name=* state=latest
-
-- name: install pbench
+- name: install pbench internal
   yum: name=pbench-agent-internal state=latest
+  when: internal_image | bool
 
 - name: install persistent storage clients
   yum: name={{ item }} state=latest
   with_items:
-# these three rpms pull in the rest...
     - ceph-common
     - glusterfs-fuse
     - iscsi-initiator-utils
@@ -59,5 +63,16 @@
 - name: install bashrc file
   copy: src=bashrc dest=/root/.bashrc force=yes
 
+- name: download ssh keys
+  get_url:
+    url: https://api.github.com/repos/redhat-performance{{ ssh_repo }}
+    dest: /root/.ssh/id_rsa
+    mode: 0600
+    headers: 'Authorization:token {{ github_token }},Accept:application/vnd.github.v3.raw'
+
+- name: disable strict host checking
+  lineinfile: dest=/etc/ssh/ssh_config line="StrictHostKeyChecking no"
+
 - name: never expire yum metadata
-  shell: echo metadata_expire=never >> /etc/yum.conf
+  lineinfile: dest=/etc/yum.conf line="metadata_expire=never"
+
