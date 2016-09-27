@@ -3,14 +3,5 @@
   shell:  yum clean all
   ignore_errors: true
 
-- name: disable most yum repos when running with custom content mirrors
-# this is for cncf usage...
-  shell: yum-config-manager --disable \*
-  when: content_mirror | default(false) | bool
-
-- name: install cncf mirror file
-  copy: src=/root/{{ config_repo }}/image_provisioner/cncf_mirrors.repo dest=/etc/yum.repos.d/cncf_mirrors.repo remote_src=true
-  when: content_mirror | default(false) | bool
-
 - name: ensure openshift-ansible is not installed
   yum: name=openshift-ansible state=absent
