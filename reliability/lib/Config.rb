@@ -1,13 +1,38 @@
 require 'yaml'
 require 'pathname'
+require 'filewatcher'
 
 module OpenshiftReliability
   class Config
 
     attr_reader  :home,:tasks,:keys,:masters,:master,:nodes,:etcds,:routers,:gituser,:authtype,:htpasswd,:templates,:prefix,:projectload,:tasknum
     def initialize(config:nil)
+      filewatcher = FileWatcher.new([Pathname.new(File.dirname(__FILE__)).realpath.to_s+"/../config/config.yaml"])
+      thread = Thread.new(filewatcher){
+        |fw| fw.watch{
+          |f| puts "Reloading configs : " + f
+          load_config()
+        }
+      }
+
+      load_config()
+      @taskfile=@home+"/runtime/tasknum"
+      @seqnum=1
+      @tasknum=1
+      if File.file?(@taskfile); then
+        file=File.open(@taskfile, "r")
+        @tasknum=file.readline.to_i
+      else
+        file=File.new(@taskfile, "w+")
+        file.puts(1)
+      end
+      file.close
+    end
+
+    def load_config()
+      puts "Inside load_config"
       @home=Pathname.new(File.dirname(__FILE__)).realpath.to_s+"/../"
-      @config=@home+"config/config.yaml" if config.nil?
+      @config=@home+"config/config.yaml"
       @tasks=@home+"config/tasks/"
       @keys=@home+"runtime/keys/"
       @configs = YAML.load_file(@config)
@@ -22,17 +47,6 @@ module OpenshiftReliability
       @templates=@configs["exection"]["templates"].split(',')
       @projectload=@configs["exection"]["projectload"]
       @prefix= @configs["exection"]["userprefix"]
-      @taskfile=@home+"/runtime/tasknum"
-      @seqnum=1
-      @tasknum=1
-      if File.file?(@taskfile); then
-        file=File.open(@taskfile, "r")
-        @tasknum=file.readline.to_i
-      else
-        file=File.new(@taskfile, "w+")
-        file.puts(1)
-      end
-      file.close
     end
 
     def save()
