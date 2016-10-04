@@ -27,6 +27,7 @@ module OpenshiftReliability
 
     def create()
       exec("oc new-project #{@name}")
+      exec("oc label namespace #{@name} purpose=reliability")
     end
 
     def delete()
@@ -115,7 +116,7 @@ module OpenshiftReliability
         return
       end
       @template=template if template 
-      @user.exec("oc new-app --template=#{@template}")
+      @user.exec("oc new-app --template=#{@template} --labels=\"purpose=reliability\"")
       wait_until_ready
     end
   
