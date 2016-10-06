@@ -81,6 +81,7 @@ tuningsets:
 > Note :
 > * ***ifexists*** parameter accepts values : ***reuse/delete/default***. This specifies the action to take if a namespace/project already exists. 
 >  * ***reuse*** : Reuse the existing project and create all the specified objects under it.
+>    * ***Note*** : in this case, provide the ***basename*** = name of project you want to reuse. So, basically per project parameter only one project can be reused.
 >  * ***delete*** : Delete the existing project and proceed.
 >  * ***default*** : An error will be raised saying that the project already exists.
 > * ***In the "pods" section, the field - "num" stands for percentage***, i.e., the number of pods will be "num" percentage of the "total" pods
