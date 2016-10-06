@@ -17,7 +17,7 @@
             },
             "spec": {
 		"nodeSelector": {
-		    "region": "secondary"
+		    "placement": "test"
 		},
                 "containers": [
                     {
@@ -57,6 +57,10 @@
                             {
                                 "name": "PBENCH_DIR",
 				"value": "${PBENCH_DIR}"
+                            },
+                            {
+                                "name": "ROUTER_IP",
+				"value": "${ROUTER_IP}"
                             },
                             {
                                 "name": "GUN",
