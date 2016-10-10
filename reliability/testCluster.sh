@@ -26,13 +26,13 @@ do
     break
   fi
 
-  if [[ $counter == 8 ]]
+  if [[ $counter == 16 ]]
   then
     error_exit "Ruby app took more then 4 mins to deploy"
   fi
   ((counter++))
 
-  sleep 30
+  sleep 15
 done
 content=$(curl -k https://$(oc get routes -n p1 --no-headers | awk '{print$2}'))
 
@@ -59,13 +59,13 @@ do
     break
   fi
 
-  if [[ $counter == 8 ]]
+  if [[ $counter == 20 ]]
   then
     error_exit "Dancer app took more then 4 mins to deploy"
   fi
   ((counter++))
 
-  sleep 30
+  sleep 15
 done
 
 content=$(curl -k http://$(oc get routes -n p2 --no-headers | awk '{print$2}'))
@@ -93,13 +93,13 @@ do
     break
   fi
 
-  if [[ $counter == 8 ]]
+  if [[ $counter == 16 ]]
   then
     error_exit "cakephp app took more then 4 mins to deploy"
   fi
   ((counter++))
 
-  sleep 30
+  sleep 15
 done
 
 content=$(curl -k http://$(oc get routes -n p3 --no-headers | awk '{print$2}'))
@@ -128,13 +128,13 @@ do
     break
   fi
 
-  if [[ $counter == 12 ]]
+  if [[ $counter == 30 ]]
   then
     error_exit "eap app took more then 6 mins to deploy"
   fi
   ((counter++))
 
-  sleep 30
+  sleep 15
 done
 
 content=$(curl -k http://$(oc get routes -n p4 --no-headers | grep -v secure | awk '{print$2}'))
