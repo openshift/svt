@@ -26,8 +26,14 @@ module OpenshiftReliability
     end
 
     def create()
+      # To save on project name length - remove the string example and truncate if needed 
+      @name = @name.gsub("-example","")
+      if @name.length > 40 then
+         old_name = @name
+         @name = "#{old_name[0...39]}"
+         $logger.info("Project name #{old_name} truncated to #{@name}")
+      end     
       exec("oc new-project #{@name}")
-      exec("oc label namespace #{@name} purpose=reliability")
     end
 
     def delete()
