@@ -78,6 +78,44 @@ module OpenshiftReliability
     end
   end
   
+  class Nodejs_mongodb < Project
+    def initialize(project_name,user)
+      super(project_name, user, template:"nodejs-mongodb-example" )
+      @counter=0
+    end
+  
+    def access_route()
+  
+      if @routes.length == 0
+         get_route()
+      end
+      @routes.each do |route|
+        fqdn=route.split(/\s+/)[1]
+        cmd="curl --resolve #{fqdn}:80:#{$config.routers.first} http://#{fqdn}|grep 'count-value'"
+        $exec.shell_exec(cmd)
+      end
+    end
+  end
+   
+  class Django_psql < Project
+    def initialize(project_name,user)
+      super(project_name, user, template:"django-psql-example" )
+      @counter=0
+    end
+  
+    def access_route()
+  
+      if @routes.length == 0
+         get_route()
+      end
+      @routes.each do |route|
+        fqdn=route.split(/\s+/)[1]
+        cmd="curl --resolve #{fqdn}:80:#{$config.routers.first} http://#{fqdn}|grep 'count-value'"
+        $exec.shell_exec(cmd)
+      end
+    end
+  end
+  
  class EAP_app_mysql < Project
     def initialize(project_name,user)
       super(project_name,user, template:"eap64-mysql-s2i" )
