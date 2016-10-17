@@ -55,7 +55,6 @@
                 "generateName": "hello-pod-",
                 "labels": {
                     "name": "hello-openshift-${IDENTIFIER}",
-                    "test": "hello-openshift"
                 }
             },
             "spec": {
