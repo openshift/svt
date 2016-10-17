@@ -54,7 +54,7 @@
             "metadata": {
                 "generateName": "hello-pod-",
                 "labels": {
-                    "name": "hello-openshift-${IDENTIFIER}",
+                    "name": "hello-openshift-${IDENTIFIER}"
                 }
             },
             "spec": {
