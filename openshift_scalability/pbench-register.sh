@@ -10,13 +10,13 @@ NODES=$*
 
 pbench-register-tool-set --interval=10
 pbench-register-tool --name=oc
-pbench-register-tool --name=pprof -- --profile=cpu --osecomponent=master
+pbench-register-tool --name=pprof -- --osecomponent=master
 
 # setup pbench on nodes
 for NODE in $NODES
   do
     pbench-register-tool-set --remote=$NODE --interval=10
-    pbench-register-tool --name=pprof --remote=$NODE -- --profile=cpu --osecomponent=node
+    pbench-register-tool --name=pprof --remote=$NODE -- --osecomponent=node
 done
 
 pbench-list-tools

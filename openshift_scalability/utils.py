@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-import json, subprocess, time, copy, sys, os, yaml, tempfile, shutil
+import json, subprocess, time, copy, sys, os, yaml, tempfile, shutil, math
 from datetime import datetime
 from clusterloaderstorage import *
+from multiprocessing import Process
+from flask import Flask, request
 
 def calc_time(timestr):
     tlist = timestr.split()
@@ -17,7 +19,6 @@ def calc_time(timestr):
     else:
         print "Invalid delay in rate_limit\nExitting ........"
         sys.exit()
-
 
 def oc_command(args, globalvars):
     tmpfile=tempfile.NamedTemporaryFile()
@@ -34,12 +35,40 @@ def oc_command(args, globalvars):
 def login(user,passwd,master):
     return subprocess.check_output("oc login --insecure-skip-tls-verify=true -u " + user + " -p " + passwd + " " + master,shell=True)
 
+def get_route():
+    default_proj = subprocess.check_output("oc project default", shell=True)
+    localhost = subprocess.check_output("ip addr show eth0 | awk '/inet / {print $2;}' | cut -d/ -f1", shell=True).rstrip()
+    router_name = subprocess.check_output("oc get pod --no-headers | awk '/^router-/ {print $1;}'", shell=True).rstrip()
+    router_ip = subprocess.check_output("oc describe pod %s | awk '/^IP:/ {print $2}'" % router_name, shell=True).rstrip()
+    routes_output = subprocess.check_output("oc get route --all-namespaces --no-headers | awk '/example/ {print $3;}'", shell=True)
+    routes_list = [y for y in (x.strip() for x in routes_output.splitlines()) if y]
+    return localhost, router_ip, routes_list
+
 
 def create_template(templatefile, num, parameters, globalvars):
     if globalvars["debugoption"]:
         print "create_template function called"
 
-    namespace = globalvars["namespace"]
+    if globalvars["autogen"] and parameters:
+        localhost, router_ip, jmeter_ips = get_route()
+        extra_param = {}
+        extra_param['PBENCH_DIR'] = os.environ.get('benchmark_run_dir','/tmp/')
+
+        gun_set = any(param for param in parameters if param.get('GUN'))
+        if not gun_set:
+            extra_param['GUN'] = localhost
+        
+        parameters.append(extra_param.copy())
+
+        jmeter = any(param for param in parameters if param.get('RUN') == 'jmeter')
+        if jmeter:
+            for parameter in parameters:
+                for key, value in parameter.iteritems():
+                    if key == "JMETER_SIZE":
+                        size = int(value)
+            num = math.ceil(float(len(jmeter_ips))/size)
+        globalvars["podnum"] += num
+
     data = {}
     timings = {}
     i = 0
@@ -51,6 +80,12 @@ def create_template(templatefile, num, parameters, globalvars):
         if parameters:
             for parameter in parameters:
                 for key, value in parameter.iteritems():
+                    if globalvars["autogen"] and jmeter:
+                        if key == "TARGET_HOST":
+                            value = ":".join(jmeter_ips[(size*i):(size*(i+1))])
+                        elif key == "ROUTER_IP":
+                            value = router_ip
+                    
                     cmdstring += " -v %s=%s" % (key, value)
         cmdstring += " -v IDENTIFIER=%i" % i
 
@@ -60,10 +95,10 @@ def create_template(templatefile, num, parameters, globalvars):
         tmpfile.flush()
         if globalvars["kubeopt"]:
             check = oc_command("kubectl create -f "+tmpfile.name + \
-                " --namespace %s" % namespace, globalvars)
+                " --namespace %s" % globalvars["namespace"], globalvars)
         else:
             check = oc_command("oc create -f "+ tmpfile.name + \
-                " --namespace %s" % namespace, globalvars)
+                " --namespace %s" % globalvars["namespace"], globalvars)
         if "tuningset" in globalvars:
             if "templates" in globalvars["tuningset"]:
                 templatestuningset = globalvars["tuningset"]["templates"]
@@ -306,26 +341,33 @@ def delete_project(projname, globalvars) :
         raise RuntimeError("Failed to delete project " + projname)
 
 def single_project(testconfig, projname, globalvars):
+    globalvars["createproj"] = True
     if project_exists(projname,globalvars) :
-        if globalvars["forcedelete"] :
+        if testconfig["ifexists"] == "delete" :
             delete_project(projname,globalvars)
-        else :
-            print "ERROR: Project " + projname + " already exists.  Use -x option to force deletion"
+        elif testconfig["ifexists"] == "reuse" :
+            globalvars["createproj"] = False
+        else:
+            print "ERROR: Project " + projname + " already exists. \
+                Use ifexists=reuse/delete in config"
             return
 
-    if globalvars["kubeopt"]:
-        tmpfile=tempfile.NamedTemporaryFile()
-        with open("content/namespace-default.yaml") as infile:
-            nsconfig = yaml.load(infile)
-        nsconfig["metadata"]["name"] = projname
-        with open(tmpfile.name, 'w+') as f:
-            yaml.dump(nsconfig, f, default_flow_style=False)
-        tmpfile.flush()
-        oc_command("kubectl create -f %s" % tmpfile.name,globalvars)
-        oc_command("kubectl label --overwrite namespace " + projname +" purpose=test", globalvars)
+    if globalvars["createproj"]:
+        if globalvars["kubeopt"]:
+            tmpfile=tempfile.NamedTemporaryFile()
+            with open("content/namespace-default.yaml") as infile:
+                nsconfig = yaml.load(infile)
+            nsconfig["metadata"]["name"] = projname
+            with open(tmpfile.name, 'w+') as f:
+                yaml.dump(nsconfig, f, default_flow_style=False)
+            tmpfile.flush()
+            oc_command("kubectl create -f %s" % tmpfile.name,globalvars)
+            oc_command("kubectl label --overwrite namespace " + projname +" purpose=test", globalvars)
+        else:
+            oc_command("oc new-project " + projname,globalvars)      
+            oc_command("oc label --overwrite namespace " + projname +" purpose=test", globalvars)
     else:
-        oc_command("oc new-project " + projname,globalvars)      
-        oc_command("oc label --overwrite namespace " + projname +" purpose=test", globalvars)
+        pass
     
     time.sleep(1)
     projenv={}
@@ -350,7 +392,54 @@ def single_project(testconfig, projname, globalvars):
         pod_handler(testconfig["pods"], globalvars)
     if "rcs" in testconfig:
         rc_handler(testconfig["rcs"], globalvars)
+    if globalvars["autogen"]:
+        autogen_pod_handler(globalvars)
 
+def autogen_pod_handler(globalvars):
+   num_expected = int(globalvars["podnum"])
+   pods_running = []
+   pods_running = autogen_pod_wait(pods_running, num_expected)
+
+   for pod in pods_running:
+       rsync = subprocess.check_output(
+               "oc rsync --namespace=%s /root/.ssh %s:/root/" \
+               % (pod[0], pod[1]), shell=True)
+
+   app = Flask(__name__)
+
+   @app.route("/")
+   def hello():
+       return "GOTIME"
+
+   @app.route("/shutdown", methods=["POST"])
+   def shutdown_server():
+       func = request.environ.get("werkzeug.server.shutdown")
+       if func is None:
+           raise RuntimeError("Not running with the Werkzeug Server")
+       func()
+
+   def start_ws():
+       app.run(host="0.0.0.0", port=9090, threaded=True)
+
+   proc = Process(target=start_ws)
+   proc.start()
+
+   autogen_pod_wait(pods_running, 0)
+
+   if proc.is_alive():
+       proc.terminate()
+       proc.join()
+
+   print "Load completed"
+
+def autogen_pod_wait(pods_running, num_expected):
+    while len(pods_running) != num_expected: 
+        pods_running = subprocess.check_output(
+            "oc get pods --all-namespaces --selector=test --no-headers | "
+            " awk '/1\/1/ && /Running/ {print $1,$2;}'", shell=True).splitlines()
+        time.sleep(5)
+    pods_running = [pod.split() for pod in pods_running]
+    return pods_running
 
 def project_handler(testconfig, globalvars):
     if globalvars["debugoption"]:
@@ -373,7 +462,13 @@ def project_handler(testconfig, globalvars):
                 children.append(pid)
                 i = i + 1
             else:
-                projname = basename + str(i)
+                projname = basename
+                if "ifexists" not in testconfig:
+                    print "Parameter 'ifexists' not specified. Using 'default' value."
+                    testconfig["ifexists"] = "default"
+                if testconfig["ifexists"] != "reuse" :
+                    projname = basename + str(i)
+
                 print "forking %s"%projname
                 single_project(testconfig, projname, globalvars)
                 os._exit(0)
@@ -718,156 +813,6 @@ def user_handler(inputusers, globalvars):
         create_user(user, globalvars)
 
 
-def clean_all(globalvars):
-    if globalvars["debugoption"]:
-        print "clean_all function called"
-
-    with open("current_environment.json","r") as infile:
-        environment = json.load(infile)
-
-    for project in environment:
-        globalvars["namespace"] = project["name"]
-        if "tuning" in project:
-            globalvars["tuning"] = True
-            globalvars["tuningset"] = find_tuning(globalvars["tuningsets"],\
-                project["tuning"])
-#        if "templates" in project:
-#            clean_templates(project["templates"],globalvars)
-        if "services" in project:
-            clean_services(project["services"], globalvars)
-        if "pods" in project:
-            clean_pods(project["pods"], globalvars)
-        if "rcs" in project:
-            clean_rcs(project["rcs"], globalvars)
-        if "users" in project:
-            clean_users(project["users"], globalvars)
-        if "quota" in project:
-            clean_quotas(project["quota"], globalvars)
-
-        if globalvars["kubeopt"]:
-            oc_command("kubectl delete project " + project["name"], globalvars)
-        else:
-            oc_command("oc delete project " + project["name"], globalvars)
-
-
-#def clean_templates(templates,globalvars):
-#    print "Cleaning all templates!!"
-#    for template in templates:
-#        data = {}
-#        num = len(templates)
-#        i = 0
-#        while i < int(num):
-#            tmpfile=tempfile.NamedTemporaryFile()
-#            templatejson = copy.deepcopy(data)
-#            cmdstring = "oc process -f %s" % templatefile
-#            for parameter in parameters:
-#                for key, value in parameter.iteritems():
-#                    cmdstring += " -v %s=%s" % (key, value)
-#                cmdstring += " -v IDENTIFIER=%i" % i
-#
-#            processedstr = oc_command(cmdstring, globalvars)
-#            templatejson = json.loads(processedstr)
-#            json.dump(templatejson, tmpfile)
-#            tmpfile.flush()
-#            if globalvars["kubeopt"]:
-#                oc_command("kubectl delete -f "+ tmpfile.name, globalvars)
-#            else:
-#                oc_command("oc delete -f "+ tmpfile.name, globalvars)
-#            tmpfile.close()
-
-
-def clean_services(services, globalvars):
-    for service in services:
-        if globalvars["kubeopt"]:
-            oc_command("kubectl delete service " + service + " --namespace " + \
-                globalvars["namespace"], globalvars)
-        else:
-            oc_command("oc delete service " + service + " -n " + \
-                globalvars["namespace"], globalvars)
-
-
-def clean_pods(pods, globalvars):
-    if "tuningset" in globalvars:
-        if "pods" in globalvars["tuningset"]:
-            globalvars["podtuningset"] = globalvars["tuningset"]["pods"]
-    if "podtuningset" in globalvars:
-        if "stepping" in globalvars["podtuningset"]:
-            step = 0
-            pend_pods = []
-            pause = globalvars["podtuningset"]["stepping"]["pause"]
-            stepsize = globalvars["podtuningset"]["stepping"]["stepsize"]
-    for pod in pods:
-        if "podtuningset" in globalvars:
-            if "stepping" in globalvars["podtuningset"]:
-                pend_pods.append(pod)
-                if step >= stepsize:
-                    delete_pod(pend_pods,globalvars)
-                    step = 0
-                    time.sleep(calc_time(pause))
-                step = step + 1
-            if "rate_limit" in globalvars["podtuningset"]:
-                delay = globalvars["podtuningset"]["rate_limit"]["delay"]
-                time.sleep(calc_time(delay))
-
-        if globalvars["kubeopt"]:
-            oc_command("kubectl delete pod " + pod + " --namespace " + \
-                globalvars["namespace"], globalvars)
-        else:
-            oc_command("oc delete pod " + pod + " -n " + \
-                globalvars["namespace"], globalvars)
-
-
-def clean_rcs(rcs, globalvars):
-    for rc in rcs:
-        if globalvars["kubeopt"]:
-            oc_command("kubectl delete rc " + rc + " --namespace " + \
-                globalvars["namespace"], globalvars)
-        else:
-            oc_command("oc delete rc " + rc + " -n " + \
-                globalvars["namespace"], globalvars)
-
-
-def clean_users(users, globalvars):
-    for user in users:
-        if globalvars["kubeopt"]:
-            oc_command("kubectl delete user " + user + " --namespace " +\
-                globalvars["namespace"], globalvars)
-        else:
-            oc_command("oc delete user " + user + " -n " + \
-                globalvars["namespace"], globalvars)
-
-
-def clean_quotas(quota, globalvars):
-    if globalvars["kubeopt"]:
-        oc_command("kubectl delete quota " + quota + " --namespace " +\
-            globalvars["namespace"], globalvars)
-    else:
-        oc_command("oc delete quota " + quota + " -n " +\
-            globalvars["namespace"], globalvars)
-
-
-def delete_pod(podlist,globalvars):
-    namespace = globalvars["namespace"]
-    
-    while len(podlist) > 0 :
-        if globalvars["kubeopt"]:
-            getpods = oc_command("kubectl get pods --namespace " +\
-                namespace, globalvars )
-        else:   
-            getpods = oc_command("oc get pods -n " + namespace,\
-            globalvars )
-        all_status = getpods.split("\n")
-        all_status = filter(None, all_status)
-        plist = []
-        for elem in all_status[1:]:
-            elemlist = elem.split()
-            if elemlist[0] in podlist:
-                podlist.remove(elemlist[0])
-            else:
-                continue
-        time.sleep(5)
-
-
 def find_tuning(tuningsets, name):
     for tuningset in tuningsets:
         if tuningset["name"] == name:
@@ -877,6 +822,7 @@ def find_tuning(tuningsets, name):
 
     print "Failed to find tuningset: " + name + "\nExiting....."
     sys.exit()
+
 
 def find_quota(quotaset, name):
     for quota in quotaset:

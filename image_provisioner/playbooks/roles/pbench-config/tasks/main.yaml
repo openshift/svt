@@ -1,0 +1,31 @@
+---
+- name: check if pbench config is present
+  stat: path=/opt/pbench-agent/config/pbench-agent.cfg.example
+  register: pbench_conf
+
+- name: rename pbench config
+  command: mv /opt/pbench-agent/config/pbench-agent.cfg.example /opt/pbench-agent/config/pbench-agent.cfg
+  when: pbench_conf.stat.exists
+
+- name: configure pbench target
+  replace: dest=/opt/pbench-agent/config/pbench-agent.cfg regexp='{{ pbench_internal_hostname }}' replace='{{ pbench_alternate_hostname }}' backup=yes
+
+- name: fix pbench config typo 
+  replace: dest=/opt/pbench-agent/config/pbench-agent.cfg regexp='swebserver\)' replace='(webserver)' backup=yes
+
+- name: copy ssh key to pbench directory
+  copy: src=id_rsa dest=/opt/pbench-agent/id_rsa owner=pbench group=pbench mode=0600
+
+- name: register tools
+  shell:  pbench-register-tool-set
+  # ignore errors because the turobstat tool cannot be registered in a VM
+  ignore_errors: yes
+
+- name: run a quick pbench test
+  shell: pbench-user-benchmark -C pbench_test_{{ ansible_date_time.date }} -- sleep 10
+
+- name: test pbench-copy-results
+  shell: pbench-copy-results
+
+- name: clean up pbench
+  shell: pbench-clear-tools ; pbench-clear-results

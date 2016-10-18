@@ -20,6 +20,7 @@ Note:
 projects:
   - num: 2
     basename: clusterproject
+    ifexists: default
     tuning: default
     templates:
       - num: 1
@@ -77,15 +78,20 @@ tuningsets:
 
 ```
 
-Note :
-* In the "pods" section, the field - "num" stands for percentage, i.e., the number of pods will be "num" percentage of the "total" pods
-* One more thing that you should note for the "pods" section is that the number of pods calculated are rounded down, when they are not exact integers.
- * For example : total pods = 35, num = 30, 40, 30 . In this case the pods will be 11, 12 and 11 respectively.
- * Note that the 11+12+11 = 34
-* The template files defined in the "templates" section must have the parameter 'IDENTIFIER'. This will be an integer that should be used in the name of the template and in the name of the resources to ensure that no naming conflicts occur.
-* The Tuning parameters have following function:
- * stepping : This feature makes sure that after each "stepsize" pod requests are submitted, they enter the "Running" state. After all the pods in the given step are Running, then there is a delay = "pause" , before the next step.
- * rate_limit : This makes sure that there is a delay of "rate_limit.delay" between each pod request submission.
+> Note :
+> * ***ifexists*** parameter accepts values : ***reuse/delete/default***. This specifies the action to take if a namespace/project already exists. 
+>  * ***reuse*** : Reuse the existing project and create all the specified objects under it.
+>    * ***Note*** : in this case, provide the ***basename*** = name of project you want to reuse. So, basically per project parameter only one project can be reused.
+>  * ***delete*** : Delete the existing project and proceed.
+>  * ***default*** : An error will be raised saying that the project already exists.
+> * ***In the "pods" section, the field - "num" stands for percentage***, i.e., the number of pods will be "num" percentage of the "total" pods
+> * One more thing that you should note for the "pods" section is that the number of pods calculated are rounded down, when they are not exact integers.
+>  * For example : total pods = 35, num = 30, 40, 30 . In this case the pods will be 11, 12 and 11 respectively.
+>  * Note that the 11+12+11 = 34
+> * The template files defined in the "templates" section must have the parameter 'IDENTIFIER'. This will be an integer that should be used in the name of the template and in the name of the resources to ensure that no naming conflicts occur.
+> * The ***Tuning parameters*** have following function:
+>  * ***stepping*** : This feature makes sure that after each "stepsize" pod requests are submitted, they enter the "Running" state. After all the pods in the given step are Running, then there is a delay = "pause" , before the next step.
+>  * ***rate_limit*** : This makes sure that there is a delay of "rate_limit.delay" between each pod request submission.
 
 ```
 This Config file will create the following objects :
@@ -93,7 +99,7 @@ This Config file will create the following objects :
    Each project has :
     2 users : demo0 , demo1  -- each with role as "admin"
     3 services : testservice0, testservice1, testservice2
-    2 resplication controllers : testrc0, testrc1   -- with 5 replicas each
+    2 replication controllers : testrc0, testrc1   -- with 5 replicas each
     5 pods : hellopods0, hellopods1, pyrhelpods0, pyrhelpods1, pyrhelpods2
     1 quota: demo  -- see content/quota-default.json for reference
   1 Project : testproject0
@@ -174,6 +180,72 @@ pvpermissions and pvcpermissions can be per [access modes](https://docs.openshif
 some combintations of access modes will not work. Eg. having for PV `ReadWriteMany` and for PVC `ReadWriteOnce` will not work. To check is this feature of bug.
 
 Example of config file with storage extension is `storagepyconf.yaml` 
+
+## Using cluster-loader with --auto-gen for dynamic JMeter pod creation
+
+Cluster Loader has the functionality to dynamically create load generating pods that target pre-existing applications
+on the OSE cluster. There are only a few minor changes to make to the config so the correct parameters are present,
+as well as the command line flag.
+
+The JMeter pods will be deployed to the nodeSelector of 'placement=test'. A basic configuration would have 1 master and 4 nodes: the master would be a standalone, non-schedulable node, one node infra, one node primary and lastly the last node secondary. This makes it easier to analyze the result datasets when different nodes have different purposes, the purpose of these tests would be to investigate the infra nodes in particular. Please ensure that the defaultNodeSelector is not set in the master-config.yaml, as this will cause conflict with the nodeSelector which currently set at the template level.
+
+As part of the `--auto-gen` functionality once the project is fully deployed, a small webservice is created using Flask. There are two endpoints exposed on the host which is running Cluster Loader: `/` and `/shutdown`. Once Cluster Loader detects that all the pods that it created are running and ready to execute it will start the webservice. The pods are looking for the `/` endpoint in order to start their tests, this way all pods start generating load within seconds of each other. Once the JMeter test completes it will make a HTTP request to the `/shutdown` endpoint and terminate Cluster Loader. In some cases the application in the container may not have the capability to send a termination request upon completion. The autogen functionality will also wait for the pods that it created to no longer be in the running state before terminating Cluster Loader. In order to detect the test pods for lock waiting (start & stop), please ensure the template has a metadata label key of "test", otherwise Cluster Loader will not see your pods. This ensures that when we wrap Cluster Loader with the pbench-user-benchmark that the full test duration is recorded.
+
+### Sample Command
+```
+ $ python cluster-loader.py -af ./config/stress.yaml
+
+```
+
+To utilize the environment detection function you must pass the -a/--auto-gen flag (as above).
+
+
+### Sample Config File
+```
+projects:
+  - num: 1
+    basename: centos-stress
+    tuning: default
+    templates:
+      - num: 1
+        file: ./content/quickstarts/stress/stress-pod.json
+        parameters: 
+         - RUN: "jmeter"
+         - ROUTER_IP: "172.31.20.3"
+         - TARGET_HOST: "django-psql-example-django-postgresql0.router.default.svc.cluster.local" 
+	 - JMETER_SIZE: "3"
+         - JMETER_RAMP: "30"
+         - RUN_TIME: "120"
+         - JMETER_TPS: "60"
+
+tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 5
+        pause: 0 min
+      rate_limit:
+        delay: 0 ms
+
+```
+
+This is the basic config that is available in the config subdirectory. The basic format should be kept the same, 
+however, many fields will be auto-generated by the script. Auto-generated fields: templates.num, parameters.ROUTER_IP,
+ and parameters.TARGET_HOST.
+
+The JMETER parameters do have defaults set in the template so they are not mandatory but the user will likely want to
+customize these.
+
+The basename is a docker image that is currently on Docker hub. (GitHub)[https://github.com/sjug/centos-stress]
+
+Cluster Loader will generate N number of JMeter pods (JMETER_SIZE/app endpoints) based on the centos-stress image,
+each pod will have environment variables passed to it on creation that JMeter needs to run correctly. Inside the
+centos-stress image there is a docker-entrypoint.sh shell script that drives the command execution. We can follow
+the mapping from the cluster-loader config though to the OSE template file, that will in the end populate the docker
+entrypoint image.
+
+The JMeter generated graphs and result data will be pushed from the pods back into the host that is running Cluster Loader under the currently active pbench results directory (if there is one). This will make it easy to `pbench-move-results` and have the JMeter data along for the ride and analysis.
+
 
 ## Todo stuff related to cluster-storage and persitant storage backends 
 

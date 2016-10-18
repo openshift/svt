@@ -33,12 +33,8 @@ module OpenshiftReliability
       end
       @routes.each do |route|
         fqdn=route.split(/\s+/)[1]
-        postcmd="curl -k --resolve #{fqdn}:80:#{$config.routers.first} https://#{fqdn}/keys/#{key} -X POST -d 'value=#{value}' | grep 'Key created'"
-        getcmd="curl -k --resolve #{fqdn}:80:#{$config.routers.first} https://#{fqdn}/keys/#{key} -X GET | grep '#{value}'"
-        delcmd="curl -k --resolve #{fqdn}:80:#{$config.routers.first} https://#{fqdn}/keys/#{key} -X DELETE | grep 'Key deleted'"
-        $exec.shell_exec(postcmd)
-        $exec.shell_exec(getcmd)
-        $exec.shell_exec(delcmd)
+        cmd="curl -k --resolve #{fqdn}:80:#{$config.routers.first} https://#{fqdn} | grep 'Welcome to an OpenShift v3 Demo App'"
+        $exec.shell_exec(cmd)
       end
     end
   end
@@ -66,6 +62,44 @@ module OpenshiftReliability
   class Dancer_mysql < Project
     def initialize(project_name,user)
       super(project_name, user, template:"dancer-mysql-example" )
+      @counter=0
+    end
+  
+    def access_route()
+  
+      if @routes.length == 0
+         get_route()
+      end
+      @routes.each do |route|
+        fqdn=route.split(/\s+/)[1]
+        cmd="curl --resolve #{fqdn}:80:#{$config.routers.first} http://#{fqdn}|grep 'count-value'"
+        $exec.shell_exec(cmd)
+      end
+    end
+  end
+  
+  class Nodejs_mongodb < Project
+    def initialize(project_name,user)
+      super(project_name, user, template:"nodejs-mongodb-example" )
+      @counter=0
+    end
+  
+    def access_route()
+  
+      if @routes.length == 0
+         get_route()
+      end
+      @routes.each do |route|
+        fqdn=route.split(/\s+/)[1]
+        cmd="curl --resolve #{fqdn}:80:#{$config.routers.first} http://#{fqdn}|grep 'count-value'"
+        $exec.shell_exec(cmd)
+      end
+    end
+  end
+   
+  class Django_psql < Project
+    def initialize(project_name,user)
+      super(project_name, user, template:"django-psql-example" )
       @counter=0
     end
   

@@ -1,0 +1,7 @@
+---
+- name: clean yum cache
+  shell:  yum clean all
+  ignore_errors: true
+
+- name: ensure openshift-ansible is not installed
+  yum: name=openshift-ansible state=absent

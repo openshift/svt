@@ -40,9 +40,9 @@ cliparser.add_option("--kubeconfig", dest="kubeconfig",
 cliparser.add_option("-p", "--processes", dest="processes",
                      default="10",
                      help="The maximum number of concurrent processes used to create projects")
-cliparser.add_option("-x", "--forcedelete", dest="forcedelete", default=False,
-                    action="store_true",
-                    help="Force deletion of existing projects")
+cliparser.add_option("-a", "--auto-gen",
+                     action="store_true", dest="autogen", default=False,
+                     help="Override config parameters with live OpenShift data.")
 
 (options, args) = cliparser.parse_args()
 
@@ -58,11 +58,12 @@ globalvars["kubeopt"] = options.kube
 globalvars["env"] = []
 globalvars["kubeconfig"] = options.kubeconfig
 globalvars["processes"] = options.processes
-globalvars["forcedelete"] = options.forcedelete
+globalvars["autogen"] = options.autogen
+globalvars["podnum"] = 0
 
 user = options.oseuser
 passwd = options.osepass
-master=options.osemaster
+master = options.osemaster
 
 if "quotas" in testconfig:
     globalvars["quotas"] = testconfig["quotas"]
@@ -70,23 +71,16 @@ if "quotas" in testconfig:
 if "tuningsets" in testconfig:
     globalvars["tuningsets"] = testconfig["tuningsets"]
 
-if globalvars["cleanoption"] :
-    clean_all(globalvars)
-    sys.exit()
-else:
-    if user and passwd and master:
-        login = login(user, passwd, master)
+if user and passwd and master:
+    login = login(user, passwd, master)
 
-    for config in testconfig["projects"]:
-        if "tuning" in config:
-            globalvars["tuningset"] = find_tuning(testconfig["tuningsets"],\
-                config["tuning"])
+for config in testconfig["projects"]:
+    if "tuning" in config:
+        globalvars["tuningset"] = find_tuning(testconfig["tuningsets"],\
+            config["tuning"])
 
-        if "quota" in config:
-            globalvars["quota"] = find_quota(testconfig["quotas"],\
-                config["quota"])
+    if "quota" in config:
+        globalvars["quota"] = find_quota(testconfig["quotas"],\
+            config["quota"])
 
-        project_handler(config,globalvars)
-
-    with open("current_environment.json", "w") as outfile:
-        json.dump(globalvars["env"], outfile)
+    project_handler(config,globalvars)

@@ -1,9 +1,9 @@
-echo "WARNING THIS TEST IS RIDICULOSLY STUPID AND BREAKS YOUR ENTIRE NODE OR DOCKER DAEMON OR POSSIBLY BOTH"
-read x
+echo "WARNING: This test runs a container which logs a string to syslog forever."
+read -p "Press any key to proceed:" x
 
 # Log something infinitely long
 function startlog() {
-        docker run -d gcr.io/google_containers/busybox:1.24 '/bin/sh' '-c' 'while true ; do echo "aasd asdfjsdofijsdofi  ojfodfijdofij oi jo ijoaijoaisjdoaijsdoij oaisj oasjdoasijda oisjdao sijsaoid j" ; done'
+        docker run -d gcr.io/google_containers/busybox:1.24 '/bin/sh' '-c' 'while true ; do logger "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"; done'
 }
 
 startlog

@@ -1,0 +1,22 @@
+[OSEv3:children]
+masters
+
+[OSEv3:vars]
+qe_openshift_kerberos_user=user@domain.com
+ansible_ssh_user=root
+aos_repo={{ puddle_url }}
+#prerelease_rhel7_repo_enable=False (Optional, True by default)
+
+# You can specify the docker images versions to pull. To skip image pull,
+#   then specify empty variable value. Otherwise `yum list atomic-openshift` is
+#   used to obtain a matching images versions. In the event yum cannot find
+#   that RPM, then `latest` version is used.
+#qe_repo_image_prepull=True (Optional, True by default)
+#qe_repo_aep_image_prepull=False (Optional, False by default)
+#qe_repo_image_versions=v3.1.1.6
+#qe_repo_image_versions=v3.1.1.900
+qe_repo_image_versions={{ image_version }}
+docker_login=no
+
+[masters]
+localhost

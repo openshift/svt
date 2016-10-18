@@ -1,0 +1,78 @@
+---
+- name: yum update
+  yum: name=* state=latest
+
+- name: install packages
+  yum: name={{ item }} state=latest
+  with_items:
+    - ansible
+    - bind-utils
+    - blktrace
+    - ethtool
+    - findutils
+    - git
+    - gnuplot
+    - golang
+    - httpd-tools
+    - hwloc
+    - iotop
+    - iptables-services
+    - kernel
+    - ltrace
+    - mailx
+    - maven
+    - netsniff-ng
+    - net-tools
+    - ntp
+    - ntpdate
+    - numactl
+    - pciutils
+    - perf
+    - pbench-agent
+    - pbench-sysstat
+    - python-docker-py
+    - python-flask
+    - python-pip
+    - python-rbd
+    - python2-boto3
+    - powertop
+    - psmisc
+    - rpm-build
+    - screen
+    - sos
+    - strace
+    - tar
+    - tcpdump
+    - tmux
+    - vim-enhanced
+    - xauth
+    - wget
+    - yum-utils
+
+- name: install pbench internal
+  yum: name=pbench-agent-internal state=latest
+  when: internal_image | bool
+
+- name: install persistent storage clients
+  yum: name={{ item }} state=latest
+  with_items:
+    - ceph-common
+    - glusterfs-fuse
+    - iscsi-initiator-utils
+
+- name: install bashrc file
+  copy: src=bashrc dest=/root/.bashrc force=yes
+
+- name: download ssh keys
+  get_url:
+    url: https://api.github.com/repos/redhat-performance{{ ssh_repo }}
+    dest: /root/.ssh/id_rsa
+    mode: 0600
+    headers: 'Authorization:token {{ github_token }},Accept:application/vnd.github.v3.raw'
+
+- name: disable strict host checking
+  lineinfile: dest=/etc/ssh/ssh_config line="StrictHostKeyChecking no"
+
+- name: never expire yum metadata
+  lineinfile: dest=/etc/yum.conf line="metadata_expire=never"
+
