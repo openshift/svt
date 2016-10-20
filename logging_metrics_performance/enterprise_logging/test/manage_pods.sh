@@ -1,19 +1,21 @@
 #!/usr/bin/env bash
 
+function usage() {
+cat << EOF
 #
 # Simple utility that uses ssh to check, run or kill the logger script
 # on every node of the cluster.
 # Automatically obtains the cluster nodes and writes them to a hosts file.
-# NOTE: Runs in sequence not in parallel, although ssh -f sends everything to the background. 
+# NOTE: Runs in sequence not in parallel, although ssh -f is "non-blocking". 
 #
 # 
 # EXAMPLES:
 # 
-# Runs 3 busybox containers per each node. 
+# Run 3 busybox containers per each node logging at 128B/s. 
 # export TIMES=3; export MODE=1; ./manage_pods.sh -r 128
 #
 #
-# Runs 5 standalone logger.sh processes logging forever
+# Run 5 standalone logger.sh processes logging forever
 # export TIMES=5; export MODE=2; ./manage_pods.sh -r 128
 #
 # Both the above methods should log output to be picked up by the Fluentd pods.
@@ -36,14 +38,18 @@
 # Check pods.
 # export MODE=1; ./manage_pods.sh -c 1
 #
-
+EOF
+exit 0
+}
 
 if [[ `id -u` -ne 0 ]]
 then
-        echo -e "Please run as root/sudo.\n"
-        echo -e "Terminated."
-        exit 1
+    echo -e "Please run as root/sudo.\n"
+    echo -e "Terminated."
+    exit 1
 fi
+
+[[ $1 =~ "-h" ]] && usage
 
 SCRIPTNAME=$(basename ${0%.*})
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -60,57 +66,59 @@ set -o pipefail
 
 
 function cp_logger() {
-for host in ${NODELIST[@]}
-do
-  scp -o StrictHostKeyChecking=no $WORKDIR/logger.sh $host:
-done
+	for host in ${NODELIST[@]}
+	do
+		scp -o StrictHostKeyChecking=no $WORKDIR/logger.sh $host:
+	done
 }
 
 
 function run_logger() {
-logdriver=${2:-$DEFAULT_LOGGING_DRIVER}
+	logdriver=${2:-$DEFAULT_LOGGING_DRIVER}
 
-for host in ${NODELIST[@]}
-do
-  echo -e "\n\n[+] $host: Line length: $x  logging_driver: $logdriver"
-  ssh -f -o StrictHostKeyChecking=no $host "/root/logger.sh -r 60 -l ${x} -t ${TIMES} -m ${MODE} -d $logdriver -i $DEFAULT_CONTAINER"
-done
+	# 'StrictHostKeyChecking no' should be set in the appropriate sshd cfg files.
+	# -o here is just for testing purposes.
+	for host in ${NODELIST[@]}
+	do
+		echo -e "\n\n[+] $host: Line length: $x  logging_driver: $logdriver"
+		ssh -f -o StrictHostKeyChecking=no $host "/root/logger.sh -r 60 -l ${x} -t ${TIMES} -m ${MODE} -d $logdriver -i $DEFAULT_CONTAINER"
+	done
 }
 
 function check_pods() {
-for host in ${NODELIST[@]}
-do
-  ssh -o StrictHostKeyChecking=no $host "echo $host; docker ps | grep $DEFAULT_CONTAINER; echo"
-done
+	for host in ${NODELIST[@]}
+	do
+		ssh -o StrictHostKeyChecking=no $host "echo $host; docker ps | grep $DEFAULT_CONTAINER; echo"
+	done
 }
 
 function kill_pods() {
-for host in ${NODELIST[@]}
-do
-  echo -e "\n$host: $i"
-  ssh -f -o StrictHostKeyChecking=no $host "docker kill \$(docker ps | grep $DEFAULT_CONTAINER | awk '{print \$1}' ;echo)"
-done
+	for host in ${NODELIST[@]}
+	do
+		echo -e "\n$host: $i"
+  		ssh -f -o StrictHostKeyChecking=no $host "docker kill \$(docker ps | grep $DEFAULT_CONTAINER | awk '{print \$1}' ;echo)"
+	done
 }
 
 function check_logger() {
-for host in ${NODELIST[@]}
-do
-  echo -e "\n$host"
-  ssh $host "ps -ef | grep [l]ogger.sh"
-done
+	for host in ${NODELIST[@]}
+	do
+  		echo -e "\n$host"
+  		ssh $host "ps -ef | grep [l]ogger.sh"
+	done
 }
 
 function kill_logger() {
-for host in ${NODELIST[@]}
-do
-  echo -e "\n$host"
-  ssh $host "pkill -f logger.sh"
-done
+	for host in ${NODELIST[@]}
+	do
+  		echo -e "\n$host"
+  		ssh $host "pkill -f logger.sh"
+	done
 }
 
 function read_hosts() {
-  hf=${1}
-  while read line; do NODELIST+=($line); done < $hf
+	hf=${1}
+	while read line; do NODELIST+=($line); done < $hf
 }
 
 
@@ -118,17 +126,17 @@ function read_hosts() {
 # MAIN
 if [[ -f $HOSTSFILE ]]
 then
-  echo -e "Hosts file exists.\n"
-  read_hosts $HOSTSFILE
+	echo -e "Hosts file exists.\n"
+  	read_hosts $HOSTSFILE
 else
-  echo "First run:"
-  echo "Creating $HOSTSFILE ..."
-  oc get nodes | awk '{print $1}' | grep -v 'NAME' > $HOSTSFILE
-  [[ $? -eq 0 ]] && echo -e "Done.\n" || (echo 'Fatal: "oc get nodes failed."' ; exit 1)
-  read_hosts $HOSTSFILE
-  echo "Copying logger.sh to cluster nodes."
-  cp_logger
-  echo "Done."
+  	echo "First run:"
+  	echo "Creating $HOSTSFILE ..."
+  	oc get nodes | awk '{print $1}' | grep -v 'NAME' > $HOSTSFILE
+  	[[ $? -eq 0 ]] && echo -e "Done.\n" || (echo 'Fatal: "oc get nodes failed."' ; exit 1)
+  	read_hosts $HOSTSFILE
+  	echo "Copying logger.sh to cluster nodes."
+  	cp_logger
+  	echo "Done."
 fi
 
 

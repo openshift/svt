@@ -123,7 +123,7 @@ function pbench_perftest() {
         echo -e "\n[*] Starting $RUN_TYPE test"
         pbench-start-tools -d $PB_RES/$TESTNAME
 
-	# Run test
+	# Phase 2 - Run test
         eval ${CMD}
 
 	# Phase 3 - after
@@ -277,8 +277,7 @@ system_logs() {
   grep "messages lost due to rate-limiting" /var/log/messages >> ${log_dir}/rate-limiting.log
 }
 
-oc_logs()
-{
+oc_logs() {
   local log_dir=${PB_DIR_LOG}/${1-oc}
 
   echo "Saving OpenShift logs." >&2
