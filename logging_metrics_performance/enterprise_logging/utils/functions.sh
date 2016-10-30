@@ -252,6 +252,7 @@ _cluster/pending_tasks?pretty	_cluster_pending_tasks
 _nodes?pretty			_nodes
 _nodes/stats?pretty		_nodes_stats
 _cat/allocation?v		_cat_allocation
+_cat/thread_pool?v		_thread_pool
 _cat/health?v			_cat_health
 _cat/plugins?v			_cat_plugins
 _cat/recovery?v			_cat_recovery
