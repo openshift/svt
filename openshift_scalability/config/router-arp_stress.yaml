@@ -1,0 +1,24 @@
+# This template aims to trigger the ARP table overflow issue when using the default
+# Linux kernel's neigh/default/gc_thresh[1-3] settings.  Tested on a 6 node EC2 instance. 
+
+projects:
+  - num: 10
+    basename: arp
+    tuning: default
+    ifexists: delete
+    templates:
+      - num: 100
+        file: content/router/router-arp_stress.json
+
+quotas:
+  - name: default
+    file: default
+
+tuningsets:
+  - name: default
+    templates:
+      stepping:
+        stepsize: 5
+        pause: 10 s
+      rate_limit:
+        delay: 3 s
