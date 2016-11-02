@@ -67,28 +67,13 @@ function parse_opts() {
                     RUN_TYPE="Mock testing... ${MOCK} seconds"
                     TESTBIN="sleep ${MOCK}"
                     CMD="$TESTBIN"
-                    ;;
-
-                e)
-                    E2E=${OPTARG}
-                    RUN_TYPE="E2E Logging Soak"
-                    TESTBIN=$KUBEREPO/_output/local/bin/linux/amd64/e2e.test
-                    CMD="$TESTBIN --repo-root=./ --ginkgo.focus=\"Logging\" --kubeconfig=$HOME/.kube/config --scale=$E2E"
-
-                    ;;
-                s)
-                    SCALE=${OPTARG}
-                    RUN_TYPE="Fluentd scale"
-                    TESTBIN="EXPORT FD=$SCALE ; EXPORT ES=10 ; $TESTDIR/fluentd_autoscaler.sh"
-                    CMD="$TESTBIN"
-                    ;;
+                    ;;		    
                 j)
                     JOURNALD=${OPTARG}
                     RUN_TYPE="Journalctl spammer"
                     TESTBIN="$TESTDIR/logger.sh"
-                    CMD="$TESTBIN -r $JOURNALD -l 512"
+                    CMD="$TESTBIN -r $JOURNALD -l 256"
                     ;;
-
                 *)
                     echo -e "Invalid option / usage: ${option}\nExiting."
                     usage
@@ -251,11 +236,13 @@ _cluster/state?pretty		_cluster_state
 _cluster/pending_tasks?pretty	_cluster_pending_tasks
 _nodes?pretty			_nodes
 _nodes/stats?pretty		_nodes_stats
+_stats				_stats
 _cat/allocation?v		_cat_allocation
 _cat/thread_pool?v		_thread_pool
 _cat/health?v			_cat_health
 _cat/plugins?v			_cat_plugins
 _cat/recovery?v			_cat_recovery
+_cat/count?v			_cat_count
 _EOF_
 #https://gist.github.com/rflorenc/f7f86078ee412c33fffc4f9ccb9ff5f1
 
@@ -384,8 +371,6 @@ function usage() {
         [*] are required
 
         -n <test name> [*]
-        -e <e2e scale>
-        -s <scale>
         -j <journalctl>
 
         Examples:
