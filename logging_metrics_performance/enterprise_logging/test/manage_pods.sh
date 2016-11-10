@@ -6,14 +6,15 @@ cat << EOF
 # Simple utility that uses ssh to check, run or kill the logger script
 # on every node of the cluster.
 # Automatically obtains the cluster nodes and writes them to a hosts file.
-# NOTE: Runs in sequence not in parallel, although ssh -f is "non-blocking". 
+#
+# NOTE: Runs in sequence not in parallel
+# although ssh -f is "non-blocking". 
 #
 # 
-# EXAMPLES:
+# BASIC EXAMPLES:
 # 
 # Run 3 busybox containers per each node logging at 128B/s. 
 # export TIMES=3; export MODE=1; ./manage_pods.sh -r 128
-#
 #
 # Run 5 standalone logger.sh processes logging forever
 # export TIMES=5; export MODE=2; ./manage_pods.sh -r 128
@@ -21,13 +22,12 @@ cat << EOF
 # Both the above methods should log output to be picked up by the Fluentd pods.
 #
 #
-# 
 # Check for running pods.
 # export MODE=1; ./manage_pods.sh -c 1
 #
 #
 # Run 5 pods in every node. 
-# The argument to '-r' is the log line length.
+# '-r' is the log line length.
 # This is the only argument that takes a value different than 1
 #
 # export TIMES=5; export MODE=1; ./manage_pods.sh -r 250 
@@ -171,12 +171,10 @@ fi
 if [[ ${MODE} -eq 1 ]]; then
 while getopts ":s:r:c:k:q:d:" option; do
         case "${option}" in
-          s) x=${OPTARG} && [[ $x -eq 1 ]] && cp_logger ;;
-          r) x=${OPTARG} ;;
-          d) d=${OPTARG} ;;
-          c) c=${OPTARG} && [[ $c -eq 1 ]] && check_pods ;;
-          k) k=${OPTARG} && [[ $k -eq 1 ]] && kill_pods ;;
-          q) x=${OPTARG} && [[ $x -eq 1 ]] && kill_logger ;;
+          r) bytes_per_sec=${OPTARG} ;;
+          d) docker_logging_driver=${OPTARG} ;;
+          c) check=${OPTARG} && [[ $check -eq 1 ]] && check_pods ;;
+          k) kill_ppn=${OPTARG} && [[ $kill_ppn -eq 1 ]] && kill_pods ;;
           '*')
             echo -e "Invalid option / usage: ${option}\nExiting."
             exit 1
@@ -186,9 +184,9 @@ done
 shift $((OPTIND-1))
 fi
 
-# x => log line_length 
+# r => bytes per sec (random log line length to be sent every second)
 # d => docker logging driver (journald, json-file, fluentd)
-[[ $x -ne 0 ]] && run_logger $x $d
+[[ $bytes_per_sec -ne 0 ]] && run_logger $bytes_per_sec $docker_logging_driver
 
 echo -e "\nDone."
 exit 0

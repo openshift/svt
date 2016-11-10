@@ -7,7 +7,7 @@
 # https://raw.githubusercontent.com/openshift/origin-aggregated-logging/master/deployer/deployer.yaml &> /dev/null
 #
 # It's safe to ignore any warnings/errors about already existing API types or resources (roles/templates etc...)
-#
+# 
 
 if [[ `id -u` -ne 0 ]]
 then
@@ -17,6 +17,7 @@ then
 fi
 
 MASTERCFG=/etc/origin/master/master-config.yaml
+VERSION="v1.2"
 
 if [[ $1 =~ "auto" ]]
   then
@@ -50,7 +51,7 @@ trap sig_handler SIGINT
 T=20
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 OSEANSIBLE=$HOME/openshift-ansible
-TBASE=${OSEANSIBLE}/roles/openshift_examples/files/examples/v1.2/infrastructure-templates/enterprise
+TBASE=${OSEANSIBLE}/roles/openshift_examples/files/examples/${VERSION}/infrastructure-templates/enterprise
 ANSIBLE_TEMPLATE=${TBASE}/logging-deployer.yaml
 
 # local ose-ansible template install
@@ -62,7 +63,7 @@ if [[ ! -d $OSEANSIBLE ]]; then
 fi
 
 
-CLUSTER_SIZE=${3:-2}
+CLUSTER_SIZE=${3:-3}
 KIBANA_HOSTNAME=${4:-kibana.example.com}
 
 echo -e "\n\n[+] Setting up EFK Logging.\n"
@@ -110,7 +111,7 @@ _wait $T
 
 # fluentd pod spreading
 # in large clusters this can be adjusted to label certain nodes only
-#oc label nodes --all logging-infra-fluentd=true &> /dev/null
+oc label nodes --all logging-infra-fluentd=true &> /dev/null
 
 echo
 
@@ -124,3 +125,5 @@ oc get pods --selector='component=fluentd'
 
 oc get all
 EOF
+
+exit $OK
