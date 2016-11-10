@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #set -x
 
+
 ERR=1
 OK=0
 
@@ -18,7 +19,7 @@ function setup_globals() {
         export PB_RES=${2:-'/var/lib/pbench-agent'}
 
 	# pbench node file
-	export PBENCH_NODESFILE="pbench_nodes.lst"
+	PBENCH_NODESFILE="pbench_nodes.lst"
 	
       	# openshift-ansible
       	export OSEANSIBLE=${3:-'/root/openshift-ansible'}
@@ -70,7 +71,7 @@ function parse_opts() {
                 j)
                     JOURNALD=${OPTARG}
                     RUN_TYPE="Journalctl spammer"
-                    TESTBIN="$TESTDIR/manage_pods.sh"
+                    TESTBIN="$TESTDIR/logger.sh"
                     CMD="$TESTBIN -r $JOURNALD -l 256"
                     ;;
                 *)
@@ -150,16 +151,6 @@ function get_es_pods() {
   oc get pods -l component=es | grep ^logging-es | awk '{print $1}'
 }
 
-function oc_execute {
-  local espod=$1
-  local http_verb=${2:-GET}
-  local operation=$3
-  local logdir=$4
-  
-  oc exec $espod -- curl -s -k --cert $ES_ADMIN_CERT --key $ES_ADMIN_KEY --cacert $ES_ADMIN_CA \
-      -X ${http_verb} "$ES_URL/${operation}" >> ${logdir}
-}
-
 function disk_usage() {
         local nodename=$1
         local log_dir=${PB_DIR_LOG}/du/${nodename-du}
@@ -187,12 +178,13 @@ function es_delete_indices() {
 
   for es_pod in $es_pods
   do
-    oc_execute $es_pod DELETE '*' ${log_dir}/${es_pod}.log
+    oc exec $es_pod -- curl -s -k --cert $ES_ADMIN_CERT --key $ES_ADMIN_KEY --cacert $ES_ADMIN_CA \
+      -XDELETE "$ES_URL/*" >> ${log_dir}/${es_pod}.log
   done
 }
 
 # https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-optimize.html
-# Optimizes the index for faster search operations.
+# The optimize process basically optimizes the index for faster search operations. Also, performs a "flush".
 es_optimize() {
   local log_dir=${PB_DIR_LOG}/${1-es}
   local es_pods=$(get_es_pods)
@@ -202,8 +194,10 @@ es_optimize() {
 
   for es_pod in $es_pods
   do
-    oc_execute $es_pod POST '_refresh' ${log_dir}/${es_pod}-refresh.log
-    oc_execute $es_pod POST '_optimize?only_expunge_deletes=true&flush=true' ${log_dir}/${es_pod}-refresh.log
+    oc exec $es_pod -- curl -s -k --cert $ES_ADMIN_CERT --key $ES_ADMIN_KEY --cacert $ES_ADMIN_CA \
+      -XPOST "$ES_URL/_refresh" >> ${log_dir}/${es_pod}-refresh.log
+    oc exec $es_pod -- curl -s -k --cert $ES_ADMIN_CERT --key $ES_ADMIN_KEY --cacert $ES_ADMIN_CA \
+      -XPOST "$ES_URL/_optimize?only_expunge_deletes=true&flush=true" >> ${log_dir}/${es_pod}-optimize.log
   done
 }
 
@@ -216,7 +210,8 @@ es_get_stats() {
 
   for es_pod in $es_pods
   do
-    oc_execute $es_pod GET '_stats?pretty' ${log_dir}/${es_pod}.log
+    oc exec $es_pod -- curl -s -k --cert $ES_ADMIN_CERT --key $ES_ADMIN_KEY --cacert $ES_ADMIN_CA \
+      $ES_URL/_stats?pretty >> ${log_dir}/${es_pod}.log
   done
 }
 
@@ -228,7 +223,7 @@ es_logs() {
   mkdir -p ${log_dir}
 
   test -t 9 && {
-    echo "es_logs(): Cannot save logs." >&1
+    echo "ProgramName: file descriptor 9 already opened, cannot save logs." >&1
     return 1
   }
 
@@ -251,10 +246,11 @@ _cat/count?v			_cat_count
 _EOF_
 #https://gist.github.com/rflorenc/f7f86078ee412c33fffc4f9ccb9ff5f1
 
-    while read -u9 -r api_endpoint save rest
+    while read -u9 -r api save rest
     do
-      echo "# $ES_URL/$api_endpoint:" >> ${log_dir}/${es_pod}/${save}.log
-      oc_execute $es_pod GET $api_endpoint ${log_dir}/${es_pod}/${save}.log
+      echo "# $ES_URL/$api:" >> ${log_dir}/${es_pod}/${save}.log
+      oc exec $es_pod -- curl -s -k --cert $ES_ADMIN_CERT --key $ES_ADMIN_KEY --cacert $ES_ADMIN_CA \
+        $ES_URL/$api >> ${log_dir}/${es_pod}/${save}.log
     done
   done
 }
