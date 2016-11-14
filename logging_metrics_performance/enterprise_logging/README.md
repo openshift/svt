@@ -1,6 +1,6 @@
 # EFK - Aggregate logging test harness
 
-**Requires:** [https://github.com/openshift/openshift-ansible](openshift-ansible)
+**Requires:** [https://github.com/openshift/openshift-ansible]
 
 As root:
 ```
@@ -96,8 +96,9 @@ Docker kill all the containers from the cluster nodes.
 ```
 
 
-**Other logging drivers are also supported through the -d parameter.**
-[https://docs.docker.com/engine/admin/logging/overview/](logging drivers)
+**Other logging drivers are also supported through the -d parameter.** 
+
+[https://docs.docker.com/engine/admin/logging/overview/]
 
 Run 2 docker containers, each of them logging (json-file logging driver) at 15 KB/min.
 ```
