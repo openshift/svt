@@ -41,8 +41,8 @@ if [ $NUMARGS -eq 0 ]; then
 fi
 
 modeflag=false
-
 verbose=0
+
 OPTIND=1
 while getopts "hvr:m:l:t:d:i:" opt; do
     case "$opt" in
@@ -50,7 +50,7 @@ while getopts "hvr:m:l:t:d:i:" opt; do
             show_help
             exit 0
             ;;
-        v)  verbose=$((verbose+1))
+        v)  verbose=$verbose
             ;;
         r)  rate=$OPTARG
             ;;
@@ -79,17 +79,16 @@ charset="[:alnum:]"
 string=`cat /dev/urandom | tr -cd "$charset" | head -c $length`
 
 if [ "$verbose" > 0 ]; then
-    echo "Config: $rate lines per minute, $length characters per line, string is $string"
+    echo -e "\nConfig: $rate lines per minute\n$length characters per line\nString: $string"
 fi
 
 # MAIN loop
-i=0
+i=1
 if [[ $mode -eq 1 ]]; then
     echo -e "\nRunning in container mode."
-    sleep 1
-    while [ $i -lt ${xtimes} ]
+    while [ $i -le ${xtimes} ]
     do
-        echo "Container ${i}: $log_driver: $container_image"
+        echo -e "Container ${i}: $log_driver\n $container_image"
 
         docker run -v /dev/log:/dev/log -it --privileged -d --log-driver=${log_driver} ${container_image} \
         "/bin/sh" "-c" "while true ; do logger -s -t EFK: ${string} ; usleep ${udelay}; done  " 

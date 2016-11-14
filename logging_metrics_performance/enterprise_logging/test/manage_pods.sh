@@ -65,6 +65,8 @@ trap sig_handler SIGINT
 set -o pipefail
 
 
+# 'StrictHostKeyChecking no' should be set in the appropriate sshd cfg files.
+# -o here is just for testing purposes.
 function cp_logger() {
 	for host in ${NODELIST[@]}
 	do
@@ -76,11 +78,9 @@ function cp_logger() {
 function run_logger() {
 	logdriver=${2:-$DEFAULT_LOGGING_DRIVER}
 
-	# 'StrictHostKeyChecking no' should be set in the appropriate sshd cfg files.
-	# -o here is just for testing purposes.
 	for host in ${NODELIST[@]}
 	do
-		echo -e "\n\n[+] $host: Line length: $x  logging_driver: $logdriver"
+		echo -e "\n\n[+] $host\nLine length: $x\nLogging driver: $logdriver"
 		ssh -f -o StrictHostKeyChecking=no $host "/root/logger.sh -r 60 -l ${x} -t ${TIMES} -m ${MODE} -d $logdriver -i $DEFAULT_CONTAINER"
 	done
 }
@@ -96,7 +96,7 @@ function kill_pods() {
 	for host in ${NODELIST[@]}
 	do
 		echo -e "\n$host: $i"
-  		ssh -f -o StrictHostKeyChecking=no $host "docker kill \$(docker ps | grep $DEFAULT_CONTAINER | awk '{print \$1}' ;echo)"
+  		ssh -f -o StrictHostKeyChecking=no $host "docker kill \$(docker ps | grep $DEFAULT_CONTAINER | awk '{print \$1}') 2>/dev/null"
 	done
 }
 
@@ -126,13 +126,12 @@ function read_hosts() {
 # MAIN
 if [[ -f $HOSTSFILE ]]
 then
-	echo -e "Hosts file exists.\n"
   	read_hosts $HOSTSFILE
 else
   	echo "First run:"
   	echo "Creating $HOSTSFILE ..."
   	oc get nodes | awk '{print $1}' | grep -v 'NAME' > $HOSTSFILE
-  	[[ $? -eq 0 ]] && echo -e "Done.\n" || (echo 'Fatal: "oc get nodes failed."' ; exit 1)
+  	[[ $? -eq 0 ]] && echo -e "Done.\n" || (echo 'Fatal: "oc get nodes failed."' ; exit $ERR)
   	read_hosts $HOSTSFILE
   	echo "Copying logger.sh to cluster nodes."
   	cp_logger
@@ -191,4 +190,4 @@ fi
 [[ $x -ne 0 ]] && run_logger $x $d
 
 echo -e "\nDone."
-exit 0
+exit $OK
