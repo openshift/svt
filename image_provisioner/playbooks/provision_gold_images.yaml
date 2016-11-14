@@ -9,8 +9,8 @@
     - repo-install
     - os-kickstart
     - collectd-install
-    - pbench-config
     - clone-repos
+    - pbench-config
     - docker-config
     - aos-ansible
     - svt-setup
