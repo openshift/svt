@@ -1,4 +1,0 @@
-ip-172-31-30-100.us-west-2.compute.internal
-ip-172-31-31-193.us-west-2.compute.internal
-ip-172-31-31-194.us-west-2.compute.internal
-ip-172-31-5-178.us-west-2.compute.internal
