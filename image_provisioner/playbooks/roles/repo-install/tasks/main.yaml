@@ -24,24 +24,34 @@
 
 - name: install external rhel-cdn repo
   copy:
-    src: "{{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/rhel72.repo"
+    src: "{{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/rhel7next.repo"
     dest: /etc/yum.repos.d/
     remote_src: true
   when: not (internal_image | bool)
+
+- name: install oso-rhui-rhel-server-releases
+  copy:
+    src: oso-rhui-rhel-server-releases.repo
+    dest: /etc/yum.repos.d
+
+- name: install oso-rhui-rhel-server-extras
+  copy:
+    src: oso-rhui-rhel-server-extras.repo
+    dest: /etc/yum.repos.d
 
 - name: install EPEL repo
   copy:
     src: epel.repo
     dest: /etc/yum.repos.d/
 
-- name: install pbench-internal repo
-  template:
-    src: etc/yum.repos.d/pbench.repo.j2
-    dest: /etc/yum.repos.d/pbench.repo
-    owner: root
-    group: root
-    mode: 0644
-  when: internal_image | bool
+#- name: install pbench-internal repo
+#  template:
+#    src: etc/yum.repos.d/pbench.repo.j2
+#    dest: /etc/yum.repos.d/pbench.repo
+#    owner: root
+#    group: root
+#    mode: 0644
+#  when: internal_image | bool
 
 - name: install pbench-external repo
   copy:
