@@ -110,7 +110,7 @@ module OpenshiftReliability
       end
       @routes.each do |route|
         fqdn=route.split(/\s+/)[1]
-        cmd="curl --resolve #{fqdn}:80:#{$config.routers.first} http://#{fqdn}|grep 'count-value'"
+        cmd="curl --resolve #{fqdn}:80:#{$config.routers.first} http://#{fqdn}|grep 'Page views'"
         $exec.shell_exec(cmd)
       end
     end
