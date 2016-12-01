@@ -19,16 +19,16 @@ public class PerfReportDataByHits implements Comparator<PerfReportData> {
 	    }else if (dataOne.getTestAppName().compareTo(dataTwo.getTestAppName())>0){
 	    	returnValue= AFTER;
 	    }else{
-		    if (dataOne.getNumOfUsers()<dataTwo.getNumOfUsers()){
-		    	returnValue= BEFORE;
-		    }else if (dataOne.getNumOfUsers()>dataTwo.getNumOfUsers()){
-		    	returnValue= AFTER;
-		    }else{
-		    	if(dataOne.getNumOfAppLoops()<dataTwo.getNumOfAppLoops()){
-		    		returnValue= BEFORE;	
-		    	}else if(dataOne.getNumOfAppLoops()>dataTwo.getNumOfAppLoops()){
-		    		returnValue= AFTER;
-		    	}
+	    	if(dataOne.getNumOfAppLoops()<dataTwo.getNumOfAppLoops()){
+	    		returnValue= BEFORE;	
+	    	}else if(dataOne.getNumOfAppLoops()>dataTwo.getNumOfAppLoops()){
+	    		returnValue= AFTER;
+	    	}else{
+			    if (dataOne.getNumOfUsers()<dataTwo.getNumOfUsers()){
+			    	returnValue= BEFORE;
+			    }else if (dataOne.getNumOfUsers()>dataTwo.getNumOfUsers()){
+			    	returnValue= AFTER;
+			    }
 		    }
 	    }
 	    return returnValue;
