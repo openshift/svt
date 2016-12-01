@@ -42,6 +42,14 @@ public class PostPerfTests {
 	}
 	
 	@Test
+	public void createGraphImageForApps(){
+		LOG.info("Creating Graphs for all the Tests");
+//		GraphCreator creator = new GraphCreator();
+		GraphCreator3D creator = new GraphCreator3D();
+		creator.createMultipleLineChartForApps();
+	}
+	
+	@Test
 	public void writeResultsToFile(){
 		LOG.info("Writing the consolidated test results into a txt file");
 		

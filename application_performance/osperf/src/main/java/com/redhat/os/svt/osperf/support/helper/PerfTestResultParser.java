@@ -103,4 +103,24 @@ public class PerfTestResultParser {
 		}
 		return users;
 	}
+	/**
+	 * Returns a list of unique apps in the report data list.
+	 * 
+	 * @return list of unique apps in the test results.
+	 */
+	public static List<String> getUniqueAppsFromReportData(List<PerfReportData> reportData){
+		
+		List<String> apps = new ArrayList<>();
+		String prevApp=null;
+		String currApp=null;
+		
+		for (PerfReportData perfReportData : reportData) {
+			currApp = perfReportData.getTestAppName(); 
+		     if(! currApp.equals(prevApp)){
+		    	 apps.add(currApp);
+		     }
+		     prevApp =currApp;
+		}
+		return apps;
+	}
 }
