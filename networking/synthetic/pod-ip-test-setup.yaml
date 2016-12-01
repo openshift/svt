@@ -1,4 +1,11 @@
 ---
+- hosts: all
+  sudo: yes
+  user: root
+  tasks:
+    - name: Copy ssh public key to local systems
+      copy: src=id_rsa.pub dest=/root/.ssh/id_rsa.pub
+
 - hosts: sender:receiver
   remote_user: root
   tasks:
@@ -55,7 +62,8 @@
   - name: Create sender pods
     shell: >
       oc process
-      -v REGION={{ sender_region }},ROLE=sender
+      -v REGION={{ sender_region }}
+      -v ROLE=sender
       -f /tmp/origin/uperf-rc-template.json |
       oc create --namespace=uperf-{{ item }} -f -
     with_sequence: start=1 end={{ uperf_pod_number }}
@@ -66,7 +74,8 @@
   - name: Create receiver pods
     shell: >
       oc process
-      -v REGION={{ receiver_region }},ROLE=receiver
+      -v REGION={{ receiver_region }}
+      -v ROLE=receiver
       -f /tmp/origin/uperf-rc-template.json |
       oc create --namespace=uperf-{{ item }} -f -
     with_sequence: start=1 end={{ uperf_pod_number }}
@@ -90,10 +99,10 @@
     uperf_servers: "{{ (oc_get_receivers.stdout | from_json)['items'] | join(',', attribute='status.podIP') }}"
 
   tasks:
-  - name: Patch pbench-uperf
-    patch: >
-      src=content/pbench-uperf.patch
-      dest=/opt/pbench-agent/bench-scripts/pbench-uperf
+#  - name: Patch pbench-uperf
+#    patch: >
+#      src=content/pbench-uperf.patch
+#      dest=/opt/pbench-agent/bench-scripts/pbench-uperf
       
   - name: Register pbench tools on master
     shell: pbench-register-tool-set --label={{ pbench_label }}
