@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.jfree.chart.ChartFactory;
@@ -23,6 +24,7 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import com.redhat.os.svt.osperf.appperf.PerfReportData;
+import com.redhat.os.svt.osperf.appperf.PerfReportDataByHits;
 import com.redhat.os.svt.osperf.appperf.PerfTestPlanCreator;
 import com.redhat.os.svt.osperf.support.configuration.AppPerfConfig;
 import com.redhat.os.svt.osperf.support.helper.PerfTestResultParser;
@@ -163,6 +165,46 @@ public class GraphCreator3D extends GraphCreator {
 		return dataSetList;
 	}
 	
+	private List<XYDataset> getXYDatasetForApps(List<PerfReportData> reportData, String measurable){
+		
+		List<XYDataset> dataSetList = new ArrayList<>();
+		XYSeriesCollection chartDataset = null;
+		XYSeries aTotalHitsSeries = null;
+		PerfReportData prevRecord=null;
+		
+		for (PerfReportData currRecord : reportData) {
+			// first record processing
+			if(prevRecord==null){
+				chartDataset = new XYSeriesCollection();
+				aTotalHitsSeries = new XYSeries(currRecord.getNumOfAppLoops());
+				addToDatasetSeries(aTotalHitsSeries, currRecord, measurable);
+			}else{
+				if(currRecord.getTestAppName().compareTo(prevRecord.getTestAppName())==0){
+					if(currRecord.getNumOfAppLoops()==prevRecord.getNumOfAppLoops()){
+						addToDatasetSeries(aTotalHitsSeries, currRecord, measurable);
+					}else{
+						chartDataset.addSeries(aTotalHitsSeries);
+						aTotalHitsSeries = new XYSeries(currRecord.getNumOfAppLoops());
+						addToDatasetSeries(aTotalHitsSeries, currRecord, measurable);
+					}
+				}else {
+					chartDataset.addSeries(aTotalHitsSeries);
+					dataSetList.add(chartDataset);
+					chartDataset = new XYSeriesCollection();
+					aTotalHitsSeries = new XYSeries(currRecord.getNumOfAppLoops());
+					addToDatasetSeries(aTotalHitsSeries, currRecord, measurable);
+				}
+			}
+			// last record processing
+			if(reportData.indexOf(currRecord)==(reportData.size()-1)){
+				chartDataset.addSeries(aTotalHitsSeries);
+				dataSetList.add(chartDataset);
+			}
+			prevRecord = currRecord;
+		}
+		return dataSetList;
+	}
+	
 	private void createPNGGraphs(List<XYDataset> dataSetList, List<String> users, String measurable){
 		
 		for (XYDataset lineChartDataset : dataSetList) {
@@ -255,4 +297,23 @@ public class GraphCreator3D extends GraphCreator {
 		List<XYDataset> user90PercDataSetList = getXYDataset(reportData, PERCENTILE_90_TIME);
 		createPNGGraphs(user90PercDataSetList, users, PERCENTILE_90_TIME);
 	}
+	
+	/**
+	 * 
+	 */
+	public void createMultipleLineChartForApps(){
+
+		List<PerfReportData> reportData = PerfTestResultParser.getReportData();
+        Collections.sort(reportData, new PerfReportDataByHits());
+
+		List<String> apps = PerfTestResultParser.getUniqueAppsFromReportData(reportData);
+		
+		// create Average graphs 
+		List<XYDataset> appAvgRespDataSetList = getXYDatasetForApps(reportData, AVEGRAGE_RESPONSE_TIME);
+		createPNGGraphs(appAvgRespDataSetList, apps, AVEGRAGE_RESPONSE_TIME);
+		
+		// create Percentile Graphs
+		List<XYDataset> app90PercDataSetList = getXYDatasetForApps(reportData, PERCENTILE_90_TIME);
+		createPNGGraphs(app90PercDataSetList, apps, PERCENTILE_90_TIME);
+	}	
 }
