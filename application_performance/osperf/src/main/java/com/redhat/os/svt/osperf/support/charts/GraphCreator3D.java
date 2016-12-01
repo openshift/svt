@@ -125,6 +125,31 @@ public class GraphCreator3D extends GraphCreator {
 		}
 	}
 	
+	private void addToDatasetSeriesForApps(XYSeries aTestAppSeries, PerfReportData currRecord, String measurable){
+		
+		try{
+		Integer users=new Integer(currRecord.getNumOfUsers());
+		Integer avgRespTime=new Integer(Integer.parseInt(currRecord.getAvgResponseTime()));
+		Integer ninetyTime=new Integer(Integer.parseInt(currRecord.getNinetyPercentileTime()));
+		
+		switch (measurable) {
+			case AVEGRAGE_RESPONSE_TIME:
+				aTestAppSeries.add(users, avgRespTime );
+				break;
+				
+			case PERCENTILE_90_TIME:
+				aTestAppSeries.add(users, ninetyTime);
+				break;
+		}
+		}catch (NumberFormatException e) {
+			LOG.debug("Number format exception");
+			e.printStackTrace();
+		}catch (Exception e) {
+			LOG.debug("Exception");
+			e.printStackTrace();
+		}
+	}
+	
 	private List<XYDataset> getXYDataset(List<PerfReportData> reportData, String measurable){
 		
 		List<XYDataset> dataSetList = new ArrayList<>();
@@ -177,22 +202,22 @@ public class GraphCreator3D extends GraphCreator {
 			if(prevRecord==null){
 				chartDataset = new XYSeriesCollection();
 				aTotalHitsSeries = new XYSeries(currRecord.getNumOfAppLoops());
-				addToDatasetSeries(aTotalHitsSeries, currRecord, measurable);
+				addToDatasetSeriesForApps(aTotalHitsSeries, currRecord, measurable);
 			}else{
 				if(currRecord.getTestAppName().compareTo(prevRecord.getTestAppName())==0){
 					if(currRecord.getNumOfAppLoops()==prevRecord.getNumOfAppLoops()){
-						addToDatasetSeries(aTotalHitsSeries, currRecord, measurable);
+						addToDatasetSeriesForApps(aTotalHitsSeries, currRecord, measurable);
 					}else{
 						chartDataset.addSeries(aTotalHitsSeries);
 						aTotalHitsSeries = new XYSeries(currRecord.getNumOfAppLoops());
-						addToDatasetSeries(aTotalHitsSeries, currRecord, measurable);
+						addToDatasetSeriesForApps(aTotalHitsSeries, currRecord, measurable);
 					}
 				}else {
 					chartDataset.addSeries(aTotalHitsSeries);
 					dataSetList.add(chartDataset);
 					chartDataset = new XYSeriesCollection();
 					aTotalHitsSeries = new XYSeries(currRecord.getNumOfAppLoops());
-					addToDatasetSeries(aTotalHitsSeries, currRecord, measurable);
+					addToDatasetSeriesForApps(aTotalHitsSeries, currRecord, measurable);
 				}
 			}
 			// last record processing
@@ -279,6 +304,80 @@ public class GraphCreator3D extends GraphCreator {
 		}
 	}
 	
+	private void createPNGGraphsForApps(List<XYDataset> dataSetList, List<String> apps, String measurable){
+		
+		for (XYDataset lineChartDataset : dataSetList) {
+			String app = apps.get(dataSetList.indexOf(lineChartDataset));
+			LOG.info("Creating Multiple Line Graphs for App: {}", app		);
+			JFreeChart lineChartObject = null;
+			File lineChartPNG = null;
+			
+			switch (measurable) {
+				case AVEGRAGE_RESPONSE_TIME:
+					lineChartObject = ChartFactory.createXYLineChart(
+				            AVG_RESPONSE_TIME_GRAPH_TITLE_FOR_APPS + app,
+				            AVG_RESPONSE_TIME_GRAPH_X_AXIS_TITLE_FOR_APPS,
+				            AVG_RESPONSE_TIME_GRAPH_Y_AXIS_TITLE,
+				            lineChartDataset,
+				            PlotOrientation.VERTICAL,
+				            true,                     
+				            true,                     
+				            false                     
+				        );
+				    lineChartPNG = 
+				    		new File( AppPerfConfig.AVERAGE_RESPONSE_GRAPH_FILE_NAME + 
+				    				  app+ 
+						              AppPerfConfig.GRAPH_FILE_EXTENTION
+						  			);
+					break;
+				case PERCENTILE_90_TIME:
+					lineChartObject = ChartFactory.createXYLineChart(
+				            NINETY_PERCENTILE_GRAPH_TITLE_FOR_APPS + app,
+				            NINETY_PERCENTILE_GRAPH_X_AXIS_TITLE_FOR_APPS,
+				            NINETY_PERCENTILE_GRAPH_Y_AXIS_TITLE,
+				            lineChartDataset,
+				            PlotOrientation.VERTICAL,
+				            true,                     
+				            true,                     
+				            false                     
+				        );
+				    lineChartPNG = 
+				    		new File( AppPerfConfig.PERCENTILE_90_GRAPH_FILE_NAME + 
+		  				              app+ 
+		  				              AppPerfConfig.GRAPH_FILE_EXTENTION
+		  				             );				
+					break;
+			}
+
+			XYPlot plot = lineChartObject.getXYPlot();
+			XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer();
+			plot.setRenderer(renderer);
+			
+			for (int i = 0; i < lineChartDataset.getSeriesCount(); i++) {
+				// sets paint color for each series
+				//	renderer.setSeriesPaint(0, Color.RED);
+				// sets thickness for series (using strokes)
+				renderer.setSeriesStroke(i, new BasicStroke(2.75f));
+			}
+				// plot.setOutlinePaint(Color.BLUE);
+				// plot.setOutlineStroke(new BasicStroke(2.0f));
+				// plot.setBackgroundPaint(Color.DARK_GRAY);
+				// plot.setRangeGridlinesVisible(true);
+				// plot.setRangeGridlinePaint(Color.BLACK);
+				// plot.setDomainGridlinesVisible(true);
+				// plot.setDomainGridlinePaint(Color.BLACK);
+			
+		    int width = AppPerfConfig.GRAPH_CHART_WIDTH;
+		    int height = AppPerfConfig.GRAPH_CHART_HEIGHT; 
+
+		    try {
+				ChartUtilities.saveChartAsPNG(lineChartPNG ,lineChartObject, width ,height);
+			}catch (IOException e) {
+				LOG.debug("Exception in file manipulation");
+			}
+		}
+	}
+	
 	/**
 	 * Creates Multiple Line Graphs for the Average Response Time and 90 Percentile Times 
 	 * for all the users - hits combinations for all the test urls that are performance tested.
@@ -310,10 +409,10 @@ public class GraphCreator3D extends GraphCreator {
 		
 		// create Average graphs 
 		List<XYDataset> appAvgRespDataSetList = getXYDatasetForApps(reportData, AVEGRAGE_RESPONSE_TIME);
-		createPNGGraphs(appAvgRespDataSetList, apps, AVEGRAGE_RESPONSE_TIME);
+		createPNGGraphsForApps(appAvgRespDataSetList, apps, AVEGRAGE_RESPONSE_TIME);
 		
 		// create Percentile Graphs
 		List<XYDataset> app90PercDataSetList = getXYDatasetForApps(reportData, PERCENTILE_90_TIME);
-		createPNGGraphs(app90PercDataSetList, apps, PERCENTILE_90_TIME);
+		createPNGGraphsForApps(app90PercDataSetList, apps, PERCENTILE_90_TIME);
 	}	
 }
