@@ -7,6 +7,7 @@ The following uperf tests are run:
 - UDP request/response
 
 ## Assumptions
+- You have copied a public ssh key for use by all nodes and pods to svt/networking/synthetic/id_rsa.pub 
 - You already have a running OpenShift cluster
 - The master node has the `oc` tool installed
 - The `oc` tool is logged in as user `system:admin`
