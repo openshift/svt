@@ -122,7 +122,7 @@
   - name: Generate oc exec commands
     shell: >
       oc get pods --all-namespaces --no-headers --selector="test=uperf" |
-      awk '{printf "oc exec %s --namespace=%s -- sysctl net.ipv4.ip_local_port_range=\"20000 20002\"\n",$2, $1}'
+      awk '{printf "oc exec %s --namespace=%s -- sysctl net.ipv4.ip_local_port_range=\"20010 20012\"\n",$2, $1}'
     register: oc_exec_cmds
 
   vars:

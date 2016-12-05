@@ -33,32 +33,32 @@
                     },
 		    {
 			"name": "uperf-1-tcp",
-			"port": 20000,
+			"port": 20010,
 			"protocol": "TCP"
 		    },
 		    {
 			"name": "uperf-2-tcp",
-			"port": 20001,
+			"port": 20011,
 			"protocol": "TCP"
 		    },
 		    {
 			"name": "uperf-3-tcp",
-			"port": 20002,
+			"port": 20012,
 			"protocol": "TCP"
 		    },
 		    {
 			"name": "uperf-1-udp",
-			"port": 20000,
+			"port": 20010,
 			"protocol": "UDP"
 		    },
 		    {
 			"name": "uperf-2-udp",
-			"port": 20001,
+			"port": 20011,
 			"protocol": "UDP"
 		    },
 		    {
 			"name": "uperf-3-udp",
-			"port": 20002,
+			"port": 20012,
 			"protocol": "UDP"
 		    }
                 ],
