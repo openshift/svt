@@ -1,0 +1,57 @@
+{
+    "kind": "List",
+    "apiVersion": "v1",
+    "metadata": {},
+    "items": [
+        {
+            "apiVersion": "v1",
+            "kind": "DeploymentConfig",
+            "metadata": {
+                "labels": {
+                    "template": "deploymentConfigTemplate",
+                    "purpose" : "test"
+                },
+                "name": "hello1"
+            },
+            "spec": {
+                "replicas": 1,
+                "selector": {
+                    "name": "replicationcontroller1"
+                },
+                "strategy": {
+                    "type": "Rolling"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "name": "replicationcontroller1"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "capabilities": {},
+                                "image": "openshift/hello-openshift",
+                                "imagePullPolicy": "IfNotPresent",
+                                "name": "helloworld1",
+                                "ports": [
+                                    {
+                                        "containerPort": 8080,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "resources": {},
+                                "securityContext": {
+                                    "capabilities": {},
+                                    "privileged": false
+                                }
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "serviceAccount": ""
+                    }
+                }
+            }
+        }
+    ]
+}

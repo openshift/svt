@@ -90,8 +90,8 @@ tuningsets:
 >  * Note that the 11+12+11 = 34
 > * The template files defined in the "templates" section must have the parameter 'IDENTIFIER'. This will be an integer that should be used in the name of the template and in the name of the resources to ensure that no naming conflicts occur.
 > * The ***Tuning parameters*** have following function:
->  * ***stepping*** : This feature makes sure that after each "stepsize" pod requests are submitted, they enter the "Running" state. After all the pods in the given step are Running, then there is a delay = "pause" , before the next step.
->  * ***rate_limit*** : This makes sure that there is a delay of "rate_limit.delay" between each pod request submission.
+>  * ***stepping*** : This feature makes sure that after each "stepsize" pod/template requests are submitted, they enter the "Running" state. After all the pods/templates in the given step are Running, then there is a delay = "pause" , before the next step.
+>  * ***rate_limit*** : This makes sure that there is a delay of "rate_limit.delay" between each pod/template request submission.
 
 ```
 This Config file will create the following objects :

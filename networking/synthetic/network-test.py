@@ -13,7 +13,7 @@ from ansible                 import utils
 
 class NetworkTest(object):
     def __init__(self, playbook):
-        self.inventory = Inventory()
+        self.inventory = Inventory(host_list=[])
         self.playbook = playbook
         
         self.sender_group = Group(name = 'sender')

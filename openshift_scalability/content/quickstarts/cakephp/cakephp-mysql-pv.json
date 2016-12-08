@@ -292,7 +292,7 @@
 		    {
 			"type": "ImageChange",
 			"imageChangeParams": {
-			    "automatic": false,
+			    "automatic": true,
 			    "containerNames": [
 				"mysql"
 			    ],

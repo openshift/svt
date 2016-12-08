@@ -87,22 +87,19 @@ function config_pb_reg_tool_set
   pbench-cleanup
   pbench-clear-tools
   for host in ${nodes//,/ } ; do
-    pbench-register-tool --name=sar --remote=$host -- --interval=3
-    pbench-register-tool --name=pidstat --remote=$host -- --interval=3
-    # --patterns=openshift,docker
-    pbench-register-tool --name=iostat --remote=$host -- --interval=3
+    pbench-register-tool --name=sar --remote=$host -- --interval=3600
+    pbench-register-tool --name=pidstat --remote=$host -- --interval=3600 --patterns=openshift,docker
+    pbench-register-tool --name=iostat --remote=$host -- --interval=3600
   done
   for host in ${masters//,/ } ; do
-    pbench-register-tool --name=sar --remote=$host -- --interval=3
-    pbench-register-tool --name=pidstat --remote=$host -- --interval=3
-    # --patterns=openshift,docker
-    pbench-register-tool --name=iostat --remote=$host -- --interval=3
+    pbench-register-tool --name=sar --remote=$host -- --interval=3600
+    pbench-register-tool --name=pidstat --remote=$host -- --interval=3600 --patterns=openshift,docker
+    pbench-register-tool --name=iostat --remote=$host -- --interval=3600
   done
   for host in ${etcds//,/ } ; do
-    pbench-register-tool --name=sar --remote=$host -- --interval=3
-    pbench-register-tool --name=pidstat --remote=$host -- --interval=3
-    # --patterns=openshift,docker
-    pbench-register-tool --name=iostat --remote=$host -- --interval=3
+    pbench-register-tool --name=sar --remote=$host -- --interval=3600
+    pbench-register-tool --name=pidstat --remote=$host -- --interval=3600 --patterns=openshift,docker
+    pbench-register-tool --name=iostat --remote=$host -- --interval=3600
   done
 }
 

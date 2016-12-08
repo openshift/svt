@@ -3,14 +3,14 @@
   user: root
   hosts: all
   vars:
-    internal_image: true
+    internal_image: false
 
   roles:
     - repo-install
     - os-kickstart
     - collectd-install
-    - pbench-config
     - clone-repos
+    - pbench-config
     - docker-config
     - aos-ansible
     - svt-setup

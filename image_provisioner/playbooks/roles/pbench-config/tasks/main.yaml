@@ -14,7 +14,13 @@
   replace: dest=/opt/pbench-agent/config/pbench-agent.cfg regexp='swebserver\)' replace='(webserver)' backup=yes
 
 - name: copy ssh key to pbench directory
-  copy: src=id_rsa dest=/opt/pbench-agent/id_rsa owner=pbench group=pbench mode=0600
+  command: cp /root/svt-private/image_provisioner/id_rsa /opt/pbench-agent/id_rsa
+
+- name: chown ssh key in pbench directory
+  command: chown pbench:pbench /opt/pbench-agent/id_rsa
+
+- name: chmod ssh key in pbench directory
+  command: chmod 600 /opt/pbench-agent/id_rsa
 
 - name: register tools
   shell:  pbench-register-tool-set

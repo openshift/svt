@@ -3,20 +3,20 @@
 SCRIPTNAME=$(basename ${0%.*})
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 UTILS=$SCRIPTDIR/utils
-source $UTILS/functions.sh
 
+source $UTILS/functions.sh
 trap sig_handler SIGINT
 
-# oc get pods -o wide -l component=es
-# need to use bash4 hashmap here: [podname] [nodeip]
-
-# .234 registryrouter_fluentd
-# .247 clustermaster1_fluentd
-# .73 fluentd73
-
-NODELIST=("172.31.32.234 172.31.10.247 172.31.28.73")
 
 setup_globals
+
+if [[ ! -f $PBENCH_NODESFILE ]]; then
+  echo -e "$PBENCH_NODESFILE file, not found. Please create one.\nExit."
+  exit $ERR
+else
+  mapfile -t NODELIST < $PBENCH_NODESFILE
+fi
+
 parse_opts $@
 check_required $@
 clean_pbench
