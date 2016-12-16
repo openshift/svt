@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: tuned-daemonset
+spec:
+  template:
+    metadata:
+      labels:
+        app: tuned
+    spec:
+      containers:
+      - name: node-problem-detector
+        image: gcr.io/google_containers/node-problem-detector:v0.2
+        imagePullPolicy: Always
+        securityContext:
+          privileged: true
