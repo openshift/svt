@@ -40,8 +40,13 @@ def get_route():
     localhost = subprocess.check_output("ip addr show eth0 | awk '/inet / {print $2;}' | cut -d/ -f1", shell=True).rstrip()
     router_name = subprocess.check_output("oc get pod --no-headers | head -1 | awk '/^router-/ {print $1;}'", shell=True).rstrip()
     router_ip = subprocess.check_output("oc get pod --template=\"{{{{ .status.podIP }}}}\" {0}".format(router_name), shell=True).rstrip()
-    routes_output = subprocess.check_output("oc get route --all-namespaces --no-headers | awk '/example/ {print $3;}'", shell=True)
-    routes_list = [y for y in (x.strip() for x in routes_output.splitlines()) if y]
+    spawned_project_list = subprocess.check_output("oc get projects -l purpose=test --no-headers | awk '{print $1;}'", shell=True)
+
+    routes_list = []
+    for project in test_project_list.splitlines():
+        project_routes = subprocess.check_output("oc get routes --no-headers -n {0} | awk '{{ print $2 }}'".format(project), shell=True)
+        routes_list.extend([y for y in (x.strip() for x in project_routes.splitlines()) if y])
+
     return localhost, router_ip, routes_list
 
 
