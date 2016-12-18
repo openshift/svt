@@ -59,10 +59,26 @@ def create_template(templatefile, num, parameters, globalvars):
         extra_param = {}
         extra_param['PBENCH_DIR'] = os.environ.get('benchmark_run_dir','/tmp/')
 
-        gun_set = any(param for param in parameters if param.get('GUN'))
-        if not gun_set:
-            extra_param['GUN'] = localhost
+        gun_env = os.environ.get('GUN')
+
+        if gun_env:
+            extra_param['GUN'] = gun_env
+        else:
+            gun_param = any(param for param in parameters if param.get('GUN'))
+            
+            if not gun_param:
+                extra_param['GUN'] = localhost
+
+        gun_port_env = os.environ.get('GUN_PORT')
         
+        if gun_port_env:
+            extra_param['GUN_PORT'] = gun_port_env
+        else:
+            gun_port_set = any(param for param in parameters if param.get('GUN_PORT'))
+
+            if not gun_port_set:
+                extra_param['GUN_PORT'] = 9090
+
         parameters.append(extra_param.copy())
 
         jmeter = any(param for param in parameters if param.get('RUN') == 'jmeter')
