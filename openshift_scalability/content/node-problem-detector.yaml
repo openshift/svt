@@ -1,0 +1,19 @@
+# https://github.com/kubernetes/node-problem-detector
+# below slightly differs from example in doc above.
+
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: node-problem-detector
+spec:
+  template:
+    metadata:
+      labels:
+        app: node-problem-detector
+    spec:
+      containers:
+      - name: node-problem-detector
+        image: gcr.io/google_containers/node-problem-detector:v0.2
+        imagePullPolicy: Always
+        securityContext:
+          privileged: true

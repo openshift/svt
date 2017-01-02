@@ -1,0 +1,53 @@
+apiVersion: extensions/v1beta1
+kind: Job
+metadata:
+  name: foo
+spec:
+  activeDeadlineSeconds: 40
+  completions: 4
+  parallelism: 2
+  template:
+    metadata:
+      labels:
+        somekey: somevalue
+    spec:
+      containers:
+      - command:
+        - sleep
+        - "1000000"
+        image: gcr.io/google_containers/busybox:1.24
+        imagePullPolicy: IfNotPresent
+        name: c
+        volumeMounts:
+        - mountPath: /data
+          name: data
+      restartPolicy: Never
+      volumes:
+      - emptyDir: {}
+        name: data
+
+$ cat fakeis.json
+{
+    "kind": "ImageStream",
+    "apiVersion": "v1",
+    "metadata": {
+      "name": "pyfake",
+      "creationTimestamp": null
+    },
+    "spec": {
+       "dockerImageRepository": "wsun/non-existen-image",
+           "tags":[
+                      { "name": "3.3",
+                         "annotations":
+                              { "description": "wsun tests" },
+                          "from":
+                           {
+                               "kind": "DockerImage",
+                                "name": "wsun/pythonlol-33-centos"
+                           }
+
+                        }
+             ]
+       }
+
+}
