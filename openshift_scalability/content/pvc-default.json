@@ -2,7 +2,8 @@
     "apiVersion": "v1",
     "kind": "PersistentVolumeClaim",
     "metadata": {
-        "name": "pvclaimname"
+        "name": "pvclaimname",
+        "namespace" : ""
     },
     "spec": {
         "accessModes": [ "ReadWriteOnce" ],
