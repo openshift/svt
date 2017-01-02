@@ -117,7 +117,7 @@ in order to be able to reach the storage system you intended to use
 
 ## Using cluster-loader with EBS storage backend 
 [openshift documentation](https://docs.openshift.com/container-platform/3.3/install_config/configuring_aws.html) gives explanation what is necessary to do 
-prior to starting pods with persitant storage residing at EBS.Please follow these steps and configure openshift master / node(s)
+prior to starting pods with persistent storage residing at EBS.Please follow these steps and configure openshift master / node(s)
 cluster-loader supports `region` option which will create EBSes in region specified. Per openshift documentation, `region` parameter which is configured with 
 `awscli` tool. 
 `aswcli configure` and answer on questions afterwards. 
@@ -135,7 +135,7 @@ Every EBS volume will be tagged with tag specified in `ebstagprefix` field
 
 - ebstagprefix: ebs_amazon_my_test 
 
-It is stronly recommended to tag EBS voluems, it is much easier to delete them later. 
+It is strongly recommended to tag EBS voluems, it is much easier to delete them later. 
 
 After test, deleting the project will delete PVC and pods associated with it. However, PVs and EBS volumes will remain. 
 To delete EBS volumes after test and not leave them associated with account, one can use `delete_ebs.py` script 
