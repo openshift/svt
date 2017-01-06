@@ -120,6 +120,17 @@ public class PerfReportData implements Comparable<PerfReportData>{
 				return false;
 		} else if (!testPlanName.equals(other.testPlanName))
 			return false;
+
+		if (numOfUsers == 0) {
+			if (other.numOfUsers != 0)
+				return false;
+		} else if (numOfUsers!=other.numOfUsers)
+			return false;
+		if (numOfAppLoops == 0) {
+			if (other.numOfAppLoops != 0)
+				return false;
+		} else if (numOfAppLoops!=other.numOfAppLoops)
+			return false;
 		return true;
 	}
 	
