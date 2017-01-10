@@ -577,6 +577,7 @@ def ebs_create(globalvars):
     with open("content/pvc-default.json", "r") as pvcstream:
         pvcjson = json.load(pvcstream)
     pvcjson["metadata"]["name"] = ebsvolumeid 
+    pvcjson["metadata"]["namespace"] = namespace 
     pvcjson["spec"]["resources"]["requests"]["storage"] = str(ebsvolumesize) + "Gi"
     pvcjson["spec"]["accessModes"] = [pvcpermissions]
     pvctmpfile = tempfile.NamedTemporaryFile(delete=True)
