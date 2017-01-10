@@ -1,4 +1,10 @@
-#!/bin/bash
+#/!/bin/bash
+#set -x
+################################################
+## Auth=vlaad@redhat.com
+## Desription: Script for running concurrent 
+## projects test.
+################################################
 
 old_i=1
 sed -i "s/num: .*/num: 1/g" ../content/conc_proj.yaml
