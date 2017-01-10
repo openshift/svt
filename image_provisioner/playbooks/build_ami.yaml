@@ -65,7 +65,7 @@
       region: "{{ region }}"
       state: present
       description: This was provisioned {{ ansible_date_time.iso8601 }}
-      name: ocp-{{ openshift_version }}-gold
+      name: ocp-{{ openshift_version }}-gold-auto
       wait: yes
     register: amioutput
 
