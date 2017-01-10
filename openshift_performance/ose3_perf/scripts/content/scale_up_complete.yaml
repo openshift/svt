@@ -1,0 +1,96 @@
+---
+- hosts: master
+  remote_user: root
+  tasks:
+    - name: Create redhat user
+      shell: htpasswd -b /etc/origin/htpasswd redhat redhat
+      ignore_errors: yes
+    - name: Give redhat user cluster-admin
+      shell: oadm policy add-cluster-role-to-user cluster-admin redhat
+    - name: Run cluster loader to create all projects
+      args: 
+         chdir: /root/svt/openshift_scalability
+      shell: > 
+         python -u /root/svt/openshift_scalability/cluster-loader.py 
+         -f /root/svt/openshift_scalability/config/all-quickstarts-no-limits.yaml
+         > /tmp/cluster-loader.out 2>/tmp/cluster-loader.err
+    - name: Wait for all applications to be ready
+      shell: > 
+         python -u /root/svt/openshift_performance/ose3_perf/scripts/check_app.py
+         cakephp-mysql0:cakephp-mysql-example
+         rails-postgresql0:rails-postgresql-example
+         dancer-mysql0:dancer-mysql-example
+         eap64-mysql0:eap-app
+         rails-postgresql0:rails-postgresql-example
+         django-postgresql0:django-psql-example
+         nodejs-mongodb0:nodejs-mongodb-example
+         tomcat8-mongodb0:jws-app
+         > /tmp/check_app.out 2>/tmp/check_app.err
+    - name: Scale all applications to zero
+      shell: oc scale --replicas=0 -n {{ item.namespace }} dc/{{ item.dc }}
+      with_items:
+         - { namespace: 'cakephp-mysql0', dc: 'cakephp-mysql-example'}  
+         - { namespace: 'dancer-mysql0', dc: 'dancer-mysql-example'}
+         - { namespace: 'eap64-mysql0', dc: 'eap-app'}
+         - { namespace: 'rails-postgresql0', dc: 'rails-postgresql-example'}
+         - { namespace: 'django-postgresql0', dc: 'django-psql-example'}
+         - { namespace: 'nodejs-mongodb0', dc: 'nodejs-mongodb-example'}
+         - { namespace: 'tomcat8-mongodb0', dc: 'jws-app'}
+    - name: Run scale-up test for cakephp
+      shell: >
+         python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
+         -m localhost:8443 
+         -u redhat 
+         -p redhat 
+         -n cakephp-mysql0 
+         -d cakephp-mysql-example 
+         -r 10
+         -s 2 
+         -w 10 
+         -z
+         -0
+         > /tmp/cakephp.out 2>/tmp/cakephp.err
+    - name: Run scale-up test for rails  
+      shell: >
+         python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
+         -m localhost:8443 
+         -u redhat 
+         -p redhat 
+         -n rails-postgresql0
+         -d rails-postgresql-example 
+         -r 4 
+         -s 2 
+         -w 10 
+         -z
+         -0
+         > /tmp/rails.out 2>/tmp/rails.err
+    - name: Run scale-up test for django  
+      shell: >
+         python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
+         -m localhost:8443 
+         -u redhat 
+         -p redhat 
+         -n django-postgresql0
+         -d django-psql-example
+         -r 8 
+         -s 2 
+         -w 10 
+         -z
+         -0
+         > /tmp/django.out 2>/tmp/django.err
+    - name: Run scale-up test for dancer  
+      shell: >
+         python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
+         -m localhost:8443 
+         -u redhat 
+         -p redhat 
+         -n dancer-mysql0
+         -d dancer-mysql-example
+         -r 3 
+         -s 1 
+         -w 10 
+         -z
+         -0
+         > /tmp/dancer.out 2>/tmp/dancer.err
+    - name: Delete test projects
+      shell: oc delete project -l purpose=test
