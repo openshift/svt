@@ -1,5 +1,5 @@
 ---
-- hosts: master
+- hosts: all
   remote_user: root
   tasks:
     - name: Create redhat user
@@ -49,7 +49,7 @@
          -w 10 
          -z
          -0
-         > /tmp/cakephp.out 2>/tmp/cakephp.err
+         > /tmp/scale_test.out 2>/tmp/scale_test.err
     - name: Run scale-up test for rails  
       shell: >
          python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
@@ -63,7 +63,7 @@
          -w 10 
          -z
          -0
-         > /tmp/rails.out 2>/tmp/rails.err
+         >> /tmp/scale_test.out 2>/tmp/scale_test.err
     - name: Run scale-up test for django  
       shell: >
          python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
@@ -77,7 +77,7 @@
          -w 10 
          -z
          -0
-         > /tmp/django.out 2>/tmp/django.err
+         >> /tmp/scale_test.out 2>/tmp/scale_test.err
     - name: Run scale-up test for dancer  
       shell: >
          python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
@@ -91,6 +91,15 @@
          -w 10 
          -z
          -0
-         > /tmp/dancer.out 2>/tmp/dancer.err
+         >> /tmp/scale_test.out 2>/tmp/scale_test.err
     - name: Delete test projects
       shell: oc delete project -l purpose=test
+    - name: Fetch cluster_loader output
+      fetch: src={{ item }} dest=.
+      with_items:
+       - "/tmp/cluster_loader.out"
+       - "/tmp/cluster_loader.err"
+       - "/tmp/check_app.out"
+       - "/tmp/check_app.err"
+       - "/tmp/scale_test.out"
+       - "/tmp/scale_test.err"
