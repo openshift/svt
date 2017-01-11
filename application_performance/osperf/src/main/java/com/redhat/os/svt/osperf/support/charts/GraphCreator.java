@@ -27,11 +27,15 @@ public class GraphCreator {
 	protected final Logger LOG = LoggerFactory.getLogger(GraphCreator.class);
 	
 	protected static final String AVG_RESPONSE_TIME_GRAPH_TITLE = "NUMBER OF USERS - ";
+	protected static final String AVG_RESPONSE_TIME_GRAPH_TITLE_FOR_APPS = "APP NAME: ";
 	protected static final String AVG_RESPONSE_TIME_GRAPH_X_AXIS_TITLE = "TotalHits";
+	protected static final String AVG_RESPONSE_TIME_GRAPH_X_AXIS_TITLE_FOR_APPS = "Number of Users";
 	protected static final String AVG_RESPONSE_TIME_GRAPH_Y_AXIS_TITLE = "AvgTime(ms)";
 
-	protected static final String NINETY_PERCENTILE_GRAPH_TITLE = "TotalHits vs 90PercentileTime";
+	protected static final String NINETY_PERCENTILE_GRAPH_TITLE = "NUMBER OF USERS - ";
+	protected static final String NINETY_PERCENTILE_GRAPH_TITLE_FOR_APPS = "APP NAME: ";
 	protected static final String NINETY_PERCENTILE_GRAPH_X_AXIS_TITLE = "TotalHits";
+	protected static final String NINETY_PERCENTILE_GRAPH_X_AXIS_TITLE_FOR_APPS = "Number of Users";
 	protected static final String NINETY_PERCENTILE_GRAPH_Y_AXIS_TITLE = "90PercentileTime(ms)";
 
 	public void createSimpleLineChart(){
