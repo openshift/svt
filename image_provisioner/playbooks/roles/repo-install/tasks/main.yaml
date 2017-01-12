@@ -1,4 +1,8 @@
 ---
+- name: clean yum cache
+  shell:  yum clean all
+  ignore_errors: true
+
 - name: download aos-ansible tarball
   get_url:
     url: https://api.github.com/repos/openshift/aos-ansible/tarball/master 
