@@ -200,12 +200,7 @@
 					"name": "PERL_APACHE2_RELOAD",
 					"value": "${PERL_APACHE2_RELOAD}"
 				    }
-				],
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_LIMIT}"
-				    }
-				}
+				]
 			    }
 			]
 		    }
@@ -335,11 +330,6 @@
 					"value": "${DATABASE_NAME}"
 				    }
 				],
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_MYSQL_LIMIT}"
-				    }
-				},
 				"volumeMounts": [
 				    {
 					"name": "${DATABASE_SERVICE_NAME}-data",

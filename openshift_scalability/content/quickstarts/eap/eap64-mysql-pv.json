@@ -674,12 +674,7 @@
                                         "name": "JGROUPS_CLUSTER_PASSWORD",
                                         "value": "${JGROUPS_CLUSTER_PASSWORD}"
                                     }
-                                ],
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_LIMIT}"
-				    }
-				}
+                                ]
                             }
                         ],
                         "volumes": [
@@ -796,12 +791,7 @@
                                         "name": "MYSQL_AIO",
                                         "value": "${MYSQL_AIO}"
                                     }
-                                ],
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_MYSQL_LIMIT}"
-				    }
-				}
+                                ]
                             }
                         ],
                         "volumes": [
