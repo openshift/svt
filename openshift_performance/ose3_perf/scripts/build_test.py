@@ -19,8 +19,8 @@ def run_build(build_def, start_build):
 
     push_date_fmt = "%H:%M:%S"
     start_stop_date_fmt = "%Y-%m-%dT%H:%M:%SZ"
-#3.2    start_regex = re.compile(".*(\d\d:\d\d:\d\d).\d+\s+\d\s\S+\sPushing",re.MULTILINE)
-#3.2    end_regex = re.compile(".*(\d\d:\d\d:\d\d).\d+\s+\d\s\S+\s(Successfully pushed|Push successful)", re.MULTILINE)
+#    start_regex = re.compile(".*(\d\d:\d\d:\d\d).\d+\s+\d\s\S+\sPushing",re.MULTILINE)
+#    end_regex = re.compile(".*(\d\d:\d\d:\d\d).\d+\s+\d\s\S+\s(Successfully pushed|Push successful)", re.MULTILINE)
     start_regex = re.compile(".*(\d\d:\d\d:\d\d).\d+Z\sPushing")
     end_regex = re.compile(".*(\d\d:\d\d:\d\d).\d+Z\s(Successfully pushed|Push successful)")
     build_regex = re.compile("build \"(.*)\" started")
@@ -144,25 +144,40 @@ def run_builds(all_builds):
             selected_builds = select_random_builds(all_builds, globalconfig["random"])
         else:
             selected_builds = all_builds
+
+        if globalconfig["shuffle"]:
+            selected_builds = random.sample(selected_builds, len(selected_builds))
+
         thread_list=[]
         start_all_builds.clear()
 
-        for build in selected_builds:
-            t = threading.Thread(target=run_build,args=(build,start_all_builds,))
-            thread_list.append(t)
-            try:
-                t.start()
-            except Exception as errtxt:
-                print errtxt
+        if globalconfig["batch"] == 0:
+            batch_size=len(selected_builds)
+        else:
+            batch_size = globalconfig["batch"]
 
-        #final sleep before triggering the start event, probably not necessary
-        time.sleep(5)
-        print "All threads started, starting builds and joining"
-        start_all_builds.set()
-        for t in thread_list:
-            t.join()
-        print "All threads joined.  Sleeping " + str(globalconfig["sleep_time"]) + " before next iteration\n"
-        time.sleep(int(globalconfig["sleep_time"]))
+
+        while len(selected_builds) > 0:
+            this_batch_count = 0
+            thread_list=[]
+            while this_batch_count < batch_size and len(selected_builds) > 0:
+                build = selected_builds.pop()
+                this_batch_count += 1
+                t = threading.Thread(target=run_build,args=(build,start_all_builds,))
+                thread_list.append(t)
+                try:
+                    t.start()
+                except Exception as errtxt:
+                    print errtxt
+
+            #final sleep before triggering the start event, probably not necessary
+            time.sleep(5)
+            print "All threads started, starting builds and joining"
+            start_all_builds.set()
+            for t in thread_list:
+                t.join()
+            print "All threads joined.  Sleeping " + str(globalconfig["sleep_time"]) + " before next iteration\n"
+            time.sleep(int(globalconfig["sleep_time"]))
 
 def get_build_configs():
     all_builds=[]
@@ -184,9 +199,13 @@ if __name__ ==  "__main__":
                      help="OpenShift password for login")
     parser.add_option("-a", "--all", dest="allbuilds", action="store_true",
                      help="Run all builds in all projects")
+    parser.add_option("-l", "--shuffle", dest="shuffle", action="store_true",
+                     help="Shuffle the order of the selected builds")
     parser.add_option("-f", "--file", dest="buildfile",
                      help="JSON file with builds to run")
     parser.add_option("-n", "--numiter", dest="num", default=1,
+                     help="Number of iterations")
+    parser.add_option("-b", "--batch", dest="batch", default=0,
                      help="Number of iterations")
     parser.add_option("-s", "--sleep", dest="sleep", default=0,
                      help="Seconds to sleep between iterations")
@@ -208,6 +227,8 @@ if __name__ ==  "__main__":
     globalconfig["sleep_time"] = int(options.sleep)
     globalconfig["debug"] = options.debug
     globalconfig["random"] = int(options.random)
+    globalconfig["batch"] = int(options.batch)
+    globalconfig["shuffle"] = options.shuffle
 
     login(globalconfig["master"],globalconfig["oseuser"],globalconfig["password"])
 

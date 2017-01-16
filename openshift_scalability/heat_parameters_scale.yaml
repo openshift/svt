@@ -1,0 +1,119 @@
+parameters:
+   os_username: my_username
+   os_password: my_password
+   os_auth_url: http://<controller_ip>:5000/v2.0
+   os_tenant_name: my_tenant
+   os_region_name: regionOne
+
+   deployment_type: openshift-enterprise
+   # set SSH access to VMs
+   ssh_user: cloud-user
+   ssh_key_name: id_rsa_perf
+   # Set the image type and size for the VMs
+   # instances sizes below are created to match EC2 naming/sizing conventions wrt CPU/RAM
+   bastion_image: <image_glance_UUID>
+   bastion_flavor: m4.4xlarge
+   master_image: <image_glance_UUID>
+   master_flavor: m4.10xlarge
+   etcd_image: <image_glance_UUID>
+   etcd_flavor: m4.4xlarge
+   infra_image: <image_glance_UUID>
+   infra_flavor: m4.4xlarge
+   node_image: <image_glance_UUID>
+   node_flavor: t2.medium
+   loadbalancer_image: <image_glance_UUID>
+   loadbalancer_flavor: m4.4xlarge
+
+   # Set an existing network for inbound and outbound traffic
+   external_network: public
+   dns_nameserver: <local_dns_ip>,8.8.4.4,8.8.8.8
+
+   # Define the host name templates for master and nodes
+   # This will end up with FQDNs like my-openshift-openshift-master-0.example.com
+   domain_name: "example.com"
+   master_hostname: "ocpXX-master"
+   node_hostname: "ocpXX-node"
+   etcd_hostname: "ocpXX-etcd"
+
+   # Allocate additional space for Docker images.  This is not used if base image was created with image_provisioner, because those images have a 2nd partition for docker-storage.
+   master_docker_volume_size_gb: 15
+   infra_docker_volume_size_gb: 15
+   node_docker_volume_size_gb: 10
+
+   # Specify the (initial) number of nodes to deploy
+   master_count: 3
+   etcd_count: 3
+   infra_count: 2
+   node_count: NNNN
+   # openshift_nodes_max:  Maximum number of openshift nodes if autoscaling is enabled.
+   openshift_nodes_max: NNNN
+
+   # Cinder volumes for the root partition.
+   bastion_volume_size: 30
+   master_volume_size: 30
+   infra_volume_size: 30
+   node_volume_size: 30
+   etcd_volume_size: 30
+
+  # This allows HA testing on a single node.  This should be set to anti-affinity (which is the default if not specified).  Only used for single OpenStack-node development of heat templats.
+   #master_server_group_policies: affinity
+   #infra_server_group_policies: affinity
+   #etcd_server_group_policies: affinity
+
+   # Don't run yum update on nodes.  Image provisioner-based images are fully updated.
+   system_update: False
+
+   # Custom docker registry.  This is where we get pre-released images that correspond with pre-release puddles.  Here we pass in any knobs we use in openshift-ansible that are not directly exposed in the heat template capabilities.
+   #   extra_openshift_ansible_params: '{"openshift_pkg_version":"3.4.0.NN","openshift_docker_additional_registries":"secondary.registry.fqdn", "openshift_docker_insecure_registries": "secondary.registry.fqdn", "openshift_node_kubelet_args": "{\"max-pods\": [\"250\"], \"pods-per-core\":[\"0\"]}", "osm_cluster_network_cidr": "10.128.0.0/10", "openshift_portal_net": "10.192.0.0/10", "flannel_min_network": "10.192.5.0", "osm_host_subnet_length": "8"}'
+
+   # Add auxiliary services: OpenStack router and internal Docker registry
+   deploy_router: True
+   deploy_registry: True
+   prepare_registry: True
+   registry_volume_size: 100
+   registry_volume_fs: xfs
+
+   # If using RHEL image, add RHN credentials for RPM installation on VMs
+   #rhn_username: "rhn-username"
+   #rhn_password: ""
+   #rhn_pool: '' # OPTIONAL
+   
+   # Location of local mirror: 
+   extra_repository_urls: http://undercloud.host.fqdn/scale_lab.repo
+
+   # Defaults to openshift-sdn but we will set it to Flannel for now to test non-double-encapsulated network performance (at loss of multitenant security).
+   openshift_sdn: flannel
+
+   openshift_ansible_git_url: https://github.com/openshift/openshift-ansible.git
+   # Point to test branches of openshift-ansible if you're prototyping/fixing.
+   #openshift_ansible_git_url: https://github.com/X/openshift-ansible.git
+   #openshift_ansible_git_rev: master
+
+   # Neutron is default, specifying here for clarity.
+   loadbalancer_type: dedicated
+
+   registry_volume_id: <uuid_of_glance_storage_for_registry_volume>
+
+   # increase network ranges:
+   # these aren't used because of what's passed in using extra_openshift_ansible_params above.
+   internal_subnet: 192.168.0.0/16
+   container_subnet: 10.0.0.0/16
+
+resource_registry:
+  # use neutron LBaaS for master api and openshift router for apps
+  OOShift::LoadBalancer: loadbalancer_dedicated.yaml
+  # use openshift SDN
+  # OOShift::ContainerPort: sdn_openshift_sdn.yaml
+  # or use Flannel
+  # Remember that flannel does not support multitenant security
+  OOShift::ContainerPort: sdn_flannel.yaml
+  # enable ipfailover for router setup
+  OOShift::IPFailover: ipfailover_none.yaml
+  # create dedicated volume for docker storage
+  #OOShift::DockerVolume: volume_docker.yaml
+  #OOShift::DockerVolumeAttachment: volume_attachment_docker.yaml
+  OOShift::DockerVolume: volume_noop.yaml
+  OOShift::DockerVolumeAttachment: volume_attachment_noop.yaml
+  # use ephemeral cinder volume for openshift registry
+  #OOShift::RegistryVolume: registry_ephemeral.yaml
+  OOShift::RegistryVolume: registry_persistent.yaml

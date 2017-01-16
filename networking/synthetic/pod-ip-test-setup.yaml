@@ -1,10 +1,10 @@
 ---
-- hosts: all
+- hosts: master:sender:receiver
   sudo: yes
   user: root
   tasks:
     - name: Copy ssh public key to local systems
-      copy: src=id_rsa.pub dest=/root/.ssh/id_rsa.pub
+      copy: src=id_rsa.pub dest=/root/.ssh/.
 
 - hosts: sender:receiver
   remote_user: root
@@ -118,7 +118,7 @@
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=tcp
-      --instances=1,2
+      --instances=2
       --samples=3
       --max-stddev=10
       --clients={{ uperf_clients }}
@@ -132,7 +132,7 @@
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=udp
-      --instances=1,2
+      --instances=2
       --samples=3
       --max-stddev=10
       --clients={{ uperf_clients }}

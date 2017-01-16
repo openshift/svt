@@ -56,6 +56,10 @@ LoadPlugin match_regex
   ProcessMatch "etcd" "/usr/bin/etcd"
   ProcessMatch "ovsdb-vswitchd" "ovs-vswitchd.+unix:/var/run/openvswitch/db.sock"
   ProcessMatch "docker daemon" "/usr/bin/docker.+daemon"
+  ProcessMatch "iptables" "iptables"
+  ProcessMatch "cassandra" "/usr/lib/jvm/java-1.8.0/bin/java"
+  ProcessMatch "hawkular" "jboss.node.name=hawkular-metrics"
+  ProcessMatch "heapster" "heapster"
 </Plugin>
 
 <Plugin swap>

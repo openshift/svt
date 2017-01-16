@@ -577,6 +577,7 @@ def ebs_create(globalvars):
     with open("content/pvc-default.json", "r") as pvcstream:
         pvcjson = json.load(pvcstream)
     pvcjson["metadata"]["name"] = ebsvolumeid 
+    pvcjson["metadata"]["namespace"] = namespace 
     pvcjson["spec"]["resources"]["requests"]["storage"] = str(ebsvolumesize) + "Gi"
     pvcjson["spec"]["accessModes"] = [pvcpermissions]
     pvctmpfile = tempfile.NamedTemporaryFile(delete=True)
@@ -615,7 +616,7 @@ def ceph_secret_create(cephsecret,globalvars):
 def ceph_image_create(i,globalvars):
     """
     This function will prepare pv/pvc file for case when pods 
-    will use gluster volume for persistant storage
+    will use gluster volume for persistent storage
     """ 
     namespace = globalvars["namespace"]
     globalvars["curprojenv"]["services"] = []
@@ -689,7 +690,7 @@ def pod_handler(inputpods, globalvars):
 
     if storage[0]["type"] in ("none", "None", "n"):
         storagetype = storage[0]["type"]
-        print ("If storage type is set to None, then pods will not have persistant storage")
+        print ("If storage type is set to None, then pods will not have persistent storage")
 
     elif storage[0]["type"] in ("ebs", "EBS"):
         storagetype = storage[0]["type"]

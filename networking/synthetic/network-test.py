@@ -124,6 +124,8 @@ def set_sender_region(master, nodes):
     if nodes is None:
         return 'both'
     else:
+        if len(nodes) == 2 and nodes[0] == nodes[1]:
+            return 'both'
         return 'sender'
     
 
@@ -131,6 +133,8 @@ def set_receiver_region(master, nodes):
     if nodes is None:
         return 'both'
     else:
+        if len(nodes) == 2 and nodes[0] == nodes[1]:
+            return 'both'
         return 'receiver'
 
     
