@@ -118,7 +118,7 @@
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=tcp
-      --instances=1,2
+      --instances=2
       --samples=3
       --max-stddev=10
       --clients={{ uperf_clients }}
@@ -128,11 +128,11 @@
   - name: Run pbench-uperf for UDP benchmarks
     shell: >
       pbench-uperf
-      --test-types=rr
+      --test-types=stream,rr
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=udp
-      --instances=1,2
+      --instances=2
       --samples=3
       --max-stddev=10
       --clients={{ uperf_clients }}
