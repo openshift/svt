@@ -159,7 +159,7 @@
       --max-stddev=10
       --clients={{ uperf_clients }}
       --servers={{ uperf_servers }}
-      --config={{ pbench_label }}_TCP_NN
+      --config={{ pbench_label }}_TCP
 
   - name: Run pbench-uperf for UDP benchmarks
     shell: >
@@ -173,7 +173,7 @@
       --max-stddev=10
       --clients={{ uperf_clients }}
       --servers={{ uperf_servers }}
-      --config={{ pbench_label }}_UDP_NN
+      --config={{ pbench_label }}_UDP
 
   - name: Copy pbench results
     shell: pbench-copy-results
