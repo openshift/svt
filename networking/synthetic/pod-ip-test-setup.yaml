@@ -118,7 +118,7 @@
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=tcp
-      --instances=2
+      --instances=1
       --samples=3
       --max-stddev=10
       --clients={{ uperf_clients }}
@@ -132,7 +132,7 @@
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=udp
-      --instances=2
+      --instances=1
       --samples=3
       --max-stddev=10
       --clients={{ uperf_clients }}
