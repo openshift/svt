@@ -151,3 +151,6 @@
   - name: Delete uperf projects
     shell: oc delete project uperf-{{ item }}
     with_sequence: start=1 end={{ uperf_pod_number }}
+    
+  - name: Clear pbench results
+    shell: pbench-clear-results    
