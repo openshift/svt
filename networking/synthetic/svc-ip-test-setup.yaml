@@ -154,7 +154,7 @@
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=tcp
-      --instances=2
+      --instances=1
       --samples=3
       --max-stddev=10
       --clients={{ uperf_clients }}
@@ -168,7 +168,7 @@
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=udp
-      --instances=2
+      --instances=1
       --samples=3
       --max-stddev=10
       --clients={{ uperf_clients }}
@@ -187,3 +187,6 @@
   - name: Delete uperf projects
     shell: oc delete project uperf-{{ item }}
     with_sequence: start=1 end={{ uperf_pod_number }}
+    
+  - name: Clear pbench results
+    shell: pbench-clear-results    

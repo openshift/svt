@@ -63,6 +63,7 @@ do
 
     echo "INFO : $(date) #################### cross host on node to node for svc - $var pods ####################"
     python network-test.py svcIP --master $master --node ${nodes_array[0]} ${nodes_array[1]} --pods $var
-    sleep 240
+    sleep 120
+    wait_for_project_delete
 
 done
