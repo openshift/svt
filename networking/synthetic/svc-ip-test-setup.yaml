@@ -154,12 +154,12 @@
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=tcp
-      --instances=2
+      --instances=1
       --samples=3
       --max-stddev=10
       --clients={{ uperf_clients }}
       --servers={{ uperf_servers }}
-      --config={{ pbench_label }}_TCP_NN
+      --config={{ pbench_label }}_TCP
 
   - name: Run pbench-uperf for UDP benchmarks
     shell: >
@@ -168,12 +168,12 @@
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=udp
-      --instances=2
+      --instances=1
       --samples=3
       --max-stddev=10
       --clients={{ uperf_clients }}
       --servers={{ uperf_servers }}
-      --config={{ pbench_label }}_UDP_NN
+      --config={{ pbench_label }}_UDP
 
   - name: Copy pbench results
     shell: pbench-copy-results
@@ -187,3 +187,6 @@
   - name: Delete uperf projects
     shell: oc delete project uperf-{{ item }}
     with_sequence: start=1 end={{ uperf_pod_number }}
+    
+  - name: Clear pbench results
+    shell: pbench-clear-results    

@@ -33,6 +33,13 @@
     remote_src: true
   when: not (internal_image | bool)
 
+- name: install external dockernext repo
+  copy:
+    src: "{{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/dockernext.repo"
+    dest: /etc/yum.repos.d/
+    remote_src: true
+  when: not (internal_image | bool)
+
 - name: install oso-rhui-rhel-server-releases
   copy:
     src: oso-rhui-rhel-server-releases.repo
