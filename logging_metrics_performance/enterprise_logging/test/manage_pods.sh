@@ -30,7 +30,7 @@ cat << EOF
 # The argument to '-r' is the log line length.
 # This is the only argument that takes a value different than 1
 #
-# export TIMES=5; export MODE=1; ./manage_pods.sh -r 250 
+# export TIMES=5; export MODE=1; ./manage_pods.sh -r 256
 #
 # Kill pods in every node.
 # export MODE=1; ./manage_pods.sh -k 1
