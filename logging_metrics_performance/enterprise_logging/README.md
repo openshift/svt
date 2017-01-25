@@ -7,7 +7,6 @@ As root:
     $ cd $HOME && git clone https://github.com/openshift/openshift-ansible && cd -
 ```
 
-
 ### Logging project setup
 
 Clone this repository.
@@ -15,20 +14,18 @@ Clone this repository.
     $ git clone https://github.com/openshift/svt.git
 ```
 
-
-Install logging with:
+Install logging by populating the deployer.conf file and by passing it to the installer:
 
 ```
-    # Preferred way:
-    $ ./enterprise_logging_setup.sh auto 
+    $ cat deployer.conf
+    VERSION=v1.4
+    CLUSTER_SIZE=3
+    KIBANA_HOSTNAME=kibana.example.com
+    IMAGE_PREFIX=registry.example.com/openshift
+    IMAGE_VERSION=3.4.0
 
 
-    # It's also possible to pass the MASTER_URL and PUBLIC_MASTER_URL variables to the installer.
-    
-    MASTER_URL="https://ip-xxx-xx-xx-xxx.us-xxxx-x.compute.internal:8443"
-    PUBLIC_MASTER_URL="https://ec2-xx-xxx-xxx-xxx.us-xxxx-x.compute.amazonaws.com:8443"
-
-    $ ./enterprise_logging_setup.sh ${MASTER_URL} ${PUBLIC_MASTER_URL} 
+    $ ./enterprise_logging_setup.sh deployer.conf
 ```
 
 
@@ -41,13 +38,111 @@ Verify installation with:
 ```
 
 
+### Automated testing with pbench integration
+
+Define your pbench --remote hosts inside a file called "pbench_nodes.lst".
+These will typically be all the "region=infra" pods (ElasticSearch, Kibana), plus some of the Fluentd pods.
+
+```
+    $ cat pbench_nodes.lst 
+    ip-172-31-15-64.us-west-2.compute.internal
+    ip-172-31-15-65.us-west-2.compute.internal   
+
+```
+
+Example for a 1 hour run, 25 worker pods per node, each one logging at 1KB/sec rate.
+
+*NOTE*: pbench --interval collection rate (default 60) can be altered by passing the -i parameter.
+The tools registered by default are: iostat mpstat pidstat proc-vmstat sar turbostat
+
+```
+    $ nohup ./pbench_perftest.sh -n logging_3600sec_25wppn_1024B -d 3600 -r 1024 -w 25
+
+    (output removed)
+    ...
+    ...
+
+    Saving system logs.
+    Saving OpenShift logs.
+    Saving ElasticSearch logs.
+    Deleting ElasticSearch indices.
+    Saving ElasticSearch stats.
+    Collecting disk_usage_initial on ip-172-31-15-64.us-west-2.compute.internal ...
+
+    Registering iostat mpstat pidstat proc-vmstat sar turbostat on ip-172-31-15-64.us-west-2.compute.internal
+    [ip-172-31-15-64.us-west-2.compute.internal]iostat tool is now registered in group default
+    [ip-172-31-15-64.us-west-2.compute.internal]mpstat tool is now registered in group default
+    [ip-172-31-15-64.us-west-2.compute.internal]pidstat tool is now registered in group default
+    [ip-172-31-15-64.us-west-2.compute.internal]proc-vmstat tool is now registered in group default
+    [ip-172-31-15-64.us-west-2.compute.internal]sar tool is now registered in group default
+    [ip-172-31-15-64.us-west-2.compute.internal]turbostat tool is now registered in group default
+    Collecting disk_usage_initial on ip-172-31-15-65.us-west-2.compute.internal ...
+
+    Registering iostat mpstat pidstat proc-vmstat sar turbostat on ip-172-31-15-65.us-west-2.compute.internal
+    [ip-172-31-15-65.us-west-2.compute.internal]iostat tool is now registered in group default
+    [ip-172-31-15-65.us-west-2.compute.internal]mpstat tool is now registered in group default
+    [ip-172-31-15-65.us-west-2.compute.internal]pidstat tool is now registered in group default
+    [ip-172-31-15-65.us-west-2.compute.internal]proc-vmstat tool is now registered in group default
+    [ip-172-31-15-65.us-west-2.compute.internal]sar tool is now registered in group default
+    [ip-172-31-15-65.us-west-2.compute.internal]turbostat tool is now registered in group default
+
+    Starting Journalctl logger pods test
+    Worker pod(s) per node: 25
+    Load rate: 1024
+    Test duration: 3600 seconds.
+
+    Pbench --interval: 60
+    ...
+    ...
+    (output removed)
+
+```
+
+The final test results will be under */var/lib/pbench-agent/*.
+
+Example:
+
+```
+    $ ls -lrth /var/lib/pbench-agent/logging_3600s_25wppn_1024B/log
+    total 0
+    -rw-r--r--. 1 root root   0 Jan 22 15:54 rate-limiting.log
+    drwxr-xr-x. 4 root root 104 Jan 22 15:54 du
+    drwxr-xr-x. 4 root root  37 Jan 22 15:57 oc
+    drwxr-xr-x. 7 root root  94 Jan 22 15:57 es
+```
+
+Execution can be terminated at any time using Ctrl-c.
+
+```
+^C
+Received terminate signal. Exiting.
+[*] Stopping pbench tools...
+[*] Done.
+
+Removing tmp files...
+Killing running pods...
+
+Done.
+```
+
+
+### Large Clusters
+
+All cluster nodes are detected automatically and their hostnames are placed in a file called *hostlist.txt*, under the "test" directory.
+Workload generator containers will be placed on every node defined inside that file.
+On large clusters this file can be populated manually, as needed.
+
+
+### Running test scripts manually
+
 As sudo / root.
 
    Run 5 docker containers, each of them logging (journald logging driver) at 30 KB/min, per cluster node.
 ```
+   $ ./test/manage_pods.sh -h
+
    $ export TIMES=5; export MODE=1; ./test/manage_pods.sh -r 512
 ```
-
 
 Confirm they are running with:
 
@@ -79,12 +174,10 @@ Confirm they are running with:
 	...
 ```
 
+Collect pbench data while containers are logging:
 
-Define your pbench --remote hosts inside a file called "pbench_nodes.lst".
-Start recording metrics.
-   
-   Example for a 600 seconds run (10 minutes).
-   Note: -m stands for Mock test.
+Example for a 600 seconds run (10 minutes).
+*NOTE*: -m stands for Mock test. Useful for quiescent runs.
 
 ```
     $ nohup ./pbench_perftest.sh -n logger_10n_5ppn_30KBm_10m -m 600
@@ -157,6 +250,7 @@ Verification that data gets through:
 https://gist.github.com/rflorenc/ed5abd90292755b821c9b9a880842e89
 
 Register pbench tools: iostat mpstat pidstat proc-vmstat sar turbostat 
+Collection interval: 60 seconds
 
 
 ###### Phase 3 - After the run finishes.

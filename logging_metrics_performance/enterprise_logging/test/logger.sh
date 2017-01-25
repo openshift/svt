@@ -91,7 +91,7 @@ if [[ $mode -eq 1 ]]; then
         echo -e "Container ${i}: $log_driver\n $container_image"
 
         docker run -v /dev/log:/dev/log -it --privileged -d --log-driver=${log_driver} ${container_image} \
-        "/bin/sh" "-c" "while true ; do logger -s -t EFK: ${string} ; usleep ${udelay}; done  " 
+        "/bin/sh" "-c" "while true ; do logger -s ${string} ; usleep ${udelay}; done  " 
 	
         ((i++))
     done
