@@ -1,0 +1,112 @@
+---
+- hosts: master:sender:receiver
+  sudo: yes
+  user: root
+  tasks:
+    - name: Copy ssh public key to local systems
+      copy: src=id_rsa.pub dest=/root/.ssh/.
+
+- hosts: sender:receiver
+  remote_user: root
+  tasks:
+  - name: Pull centos image
+    shell: docker pull centos
+    
+  - name: Create directory for fio docker image resources
+    file: path=/tmp/fio state=directory
+    
+  - name: Copy Dockerfile to sender
+    copy: src=fio/Dockerfile dest=/tmp/fio/Dockerfile
+    
+  - name: Build fio docker image
+    shell: docker build --tag centos/fio /tmp/fio
+
+- hosts: master
+  remote_user: root
+  tasks:
+  - name: Create SSH directory /root/.ssh if it does not exist
+    file: path=/root/.ssh state=directory
+
+  - stat: path=/root/.ssh/id_rsa
+    register: id_rsa
+    
+  - name: Create /root/.ssh/id_rsa if it does not exist
+    shell: ssh-keygen -f /root/.ssh/id_rsa -N ''
+    when: id_rsa.stat.islnk is not defined
+    
+  - name: Create directory for fio resources
+    file: path=/tmp/origin state=directory
+
+  - name: Copy fio scc
+    copy: src=content/fio-scc.json dest=/tmp/origin/fio-scc.json
+
+  - name: Copy fio template
+    copy: src=content/fio-pod-pv.json dest=/tmp/origin/fio-pod-pv.json
+
+  - name: Add fio scc
+    shell: oc create -f /tmp/origin/fio-scc.json
+    ignore_errors: yes
+
+  - name: Label receiver nodes
+    shell: oc label node {{ item }} --overwrite region={{ receiver_region }}
+    with_items: "{{ groups['receiver'] }}"
+
+  - name: Create fio projects
+    shell: oc new-project fio-1
+
+  - name: Create fio pods
+    shell: >
+      oc process
+      -p ROLE=receiver      
+      -p REGION={{ receiver_region }}
+      -f /tmp/origin/fio-pod-pv.json |
+      oc create --namespace=fio-1 -f -
+
+  - name: Wait for pods to be ready
+    script: scripts/wait-ready.sh receiver
+
+- hosts: master
+  remote_user: root
+  pre_tasks:
+  - name: Get fio pods ip addresses
+    shell: oc get pods --output=json --all-namespaces --selector="name=receiver"
+    register: oc_get_receivers
+
+  vars:
+    fio_servers: "{{ (oc_get_receivers.stdout | from_json)['items'] | join(',', attribute='status.podIP') }}"
+
+  tasks:
+  - name: Register pbench tools on master
+    shell: pbench-register-tool-set --label={{ pbench_label }}
+
+  - name: Register pbench tools on remote
+    shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ pbench_remote }}
+    when: pbench_remote != "None"
+
+  - name: Run pbench-fio
+    shell: >
+      pbench-fio
+      --test-types=read,write,rw,randread,randwrite,randrw
+      --clients={{ fio_servers }}
+      --config={{ pbench_label }}
+      --direct=1 
+      --sync=1 
+      --block-sizes=4,64,1024 
+      --iodepth=2 
+      --samples=3
+      --targets=/var/lib/fio/test
+
+  - name: Copy pbench results
+    shell: pbench-copy-results
+
+  - name: Kill pbench tools
+    shell: pbench-kill-tools
+
+  - name: Clear pbench tools
+    shell: pbench-clear-tools
+
+  - name: Delete uperf projects
+    shell: oc delete project fio-1
+    
+  - name: Clear pbench results
+    shell: pbench-clear-results    

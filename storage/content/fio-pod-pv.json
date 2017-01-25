@@ -1,0 +1,154 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+	"name": "fio",
+	"annotations": {
+	    "description": "An example fio pod",
+	    "tags": "fio"
+	}
+    },
+    "labels": {
+	"template": "fio-example"
+    },
+    "objects": [
+	{
+	    "kind": "PersistentVolumeClaim",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "${FIO_NAME}",
+		"annotations": {
+		    "volume.alpha.kubernetes.io/storage-class": "foo"
+		}
+	    },
+	    "spec": {
+		"accessModes": [
+		    "ReadWriteMany"
+		],
+		"resources": {
+		    "requests": {
+			"storage": "${VOLUME_CAPACITY}"
+		    }
+		}
+	    }
+	},    
+	{
+	    "kind": "Service",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "${FIO_NAME}",
+		"annotations": {
+		    "description": "A pod for fio tests"
+		}
+	    },
+	    "spec": {
+		"ports": [
+		    {
+			"name": "fio",
+			"port": 10080,
+			"targetPort": 10080
+		    }
+		],
+		"selector": {
+		    "name": "${FIO_NAME}"
+		}
+	    }
+	},
+	{
+	    "kind": "DeploymentConfig",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"labels": {
+		    "name": "${ROLE}",
+		    "test": "${FIO_NAME}"
+		},	    
+		"name": "${FIO_NAME}",
+		"annotations": {
+		    "description": "Defines how to deploy fio"
+		}
+	    },
+	    "spec": {
+		"strategy": {
+		    "type": "Recreate"
+		},
+		"replicas": 1,
+		"selector": {
+		    "name": "${ROLE}"
+		},
+		"template": {
+		    "metadata": {
+			"name": "${FIO_NAME}",
+			"labels": {
+			    "name": "${ROLE}",
+			    "test": "${FIO_NAME}"
+			}
+		    },
+		    "spec": {
+			"containers": [
+			    {
+				"name": "fio",
+				"image": "centos/fio",
+				"imagePullPolicy": "Never",				
+				"securityContext": {
+				    "privileged": true
+				},				
+				"volumeMounts": [
+				    {
+					"name": "${FIO_NAME}-data",
+					"mountPath": "/var/lib/fio"
+				    },
+				    {
+					"mountPath": "/root/.ssh/authorized_keys",
+					"name": "${FIO_NAME}-ssh"
+				    }				    
+				]
+			    }
+			],
+			"dnsPolicy": "ClusterFirst",			
+			"nodeSelector": {
+			    "region": "${REGION}"
+			},			
+			"volumes": [
+			    {
+				"name": "${FIO_NAME}-data",
+				"persistentVolumeClaim": {
+				    "claimName": "${FIO_NAME}"
+				}
+			    },
+			    {
+				"hostPath": {
+				    "path": "/root/.ssh/id_rsa.pub"
+				},
+				"name": "${FIO_NAME}-ssh"
+			    }			    
+			]
+		    }
+		}
+	    }
+	}
+    ],
+    "parameters": [
+	{
+	    "name": "REGION",
+	    "description": "Region label where the pods will be scheduled",
+	    "value": "primary"
+	},
+	{
+	    "name": "VOLUME_CAPACITY",
+	    "displayName": "Volume Capacity",
+	    "description": "Volume space available for data, e.g. 512Mi, 2Gi",
+	    "value": "1Gi",
+	    "required": true
+	},	
+	{
+	    "name": "FIO_NAME",
+	    "displayName": "FIO Name",
+	    "value": "fio"
+	},
+	{
+	    "name": "ROLE",
+	    "description": "Role for fio pod, always receiver",
+	    "required": true
+	}	
+    ]
+}
