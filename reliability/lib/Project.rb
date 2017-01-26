@@ -195,10 +195,11 @@ module OpenshiftReliability
      @dcs.each do |dc|
        array=dc.split(/\s+/)
        name=array[0]
+       trgd_by=array[4]
        number=array[2].to_i
-  
+
        # I want to skip db,amq and etc, need to find a better way to do this
-       if (name != 'database' && name != 'mysql' && name != 'eap-app-mysql') && number>0
+       if (!trgd_by.include?('mysql:') && !trgd_by.include?('postgresql:') && !trgd_by.include?('mongodb:')) && number>0
           number=number+1
           @user.exec("oc scale dc #{name} --replicas=#{number}")
        end
@@ -212,10 +213,11 @@ module OpenshiftReliability
      @dcs.each do |dc|
        array=dc.split(/\s+/)
        name=array[0]
+       trgd_by=array[4]
        number=array[2].to_i
-  
+
        # I want to skip db,amq and etc
-       if (name != 'database' && name != 'mysql' && name != 'eap-app-mysql') && number>0
+       if (!trgd_by.include?('mysql:') && !trgd_by.include?('postgresql:') && !trgd_by.include?('mongodb:')) && number>1
           number=number-1
           @user.exec("oc scale dc #{name} --replicas=#{number}")
        end
