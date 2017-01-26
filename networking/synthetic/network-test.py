@@ -124,6 +124,8 @@ def set_sender_region(master, nodes):
     if nodes is None:
         return 'both'
     else:
+        if len(nodes) == 2 and nodes[0] == nodes[1]:
+            return 'both'
         return 'sender'
     
 
@@ -131,6 +133,8 @@ def set_receiver_region(master, nodes):
     if nodes is None:
         return 'both'
     else:
+        if len(nodes) == 2 and nodes[0] == nodes[1]:
+            return 'both'
         return 'receiver'
 
     
@@ -141,12 +145,25 @@ def set_playbook(test_type):
         return 'svc-ip-test-setup.yaml'
 
 
-def set_pbench_label(test_type):
+def set_pbench_label(test_type, nodes):
     if test_type == 'podIP':
-        return 'pod-to-pod'
+        if nodes is None:
+            return 'pod-to-pod-LB'
+        elif len(nodes) == 1:
+            return 'pod-to-pod-MN'
+        elif len(nodes) == 2 and nodes[0] == nodes[1]:
+            return 'pod-to-pod-LB'
+        elif len(nodes) == 2 and nodes[0] != nodes[1]:
+            return 'pod-to-pod-NN'
     else:
-        return 'svc-to-svc'
-    
+        if nodes is None:
+            return 'svc-to-svc-LB'
+        elif len(nodes) == 1:
+            return 'svc-to-svc-MN'
+        elif len(nodes) == 2 and nodes[0] == nodes[1]:
+            return 'svc-to-svc-LB'
+        elif len(nodes) == 2 and nodes[0] != nodes[1]:
+            return 'svc-to-svc-NN'            
 
 def main():
     args = parse_args()
@@ -156,7 +173,7 @@ def main():
     master_host = args.test_master
     
     pbench_remote = set_pbench_remote(args.test_master, args.test_nodes)
-    pbench_base_label = set_pbench_label(args.test_type)
+    pbench_base_label = set_pbench_label(args.test_type, args.test_nodes)
     
     sender_region = set_sender_region(args.test_master, args.test_nodes)
     receiver_region = set_receiver_region(args.test_master, args.test_nodes)

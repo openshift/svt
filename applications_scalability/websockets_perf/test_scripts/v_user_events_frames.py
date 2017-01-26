@@ -8,9 +8,9 @@ import json
                                                                                                                                                                
 class Transaction(object):
     def __init__(self, varfile='ose_vars.cfg'):
-        """
-         Gets instantiated once only
-        """
+	'''
+	 Gets instantiated once only
+	'''
 
         parser = SafeConfigParser()
         parser.read(varfile)
@@ -20,11 +20,12 @@ class Transaction(object):
         self.ose_resver = parser.get('wss', 'ose_resver')
         self.ose_token = parser.get('wss', 'ose_token')
 
-
+        
     def run(self):
-        """
-         Each thread runs this method independently
-        """
+        
+	'''
+	 Each thread runs this method independently
+	'''
         
         url = 'wss://{}/api/v1/namespaces/{}/events?watch={}&resourceVersion={}&access_token={}'.format(self.ose_server, self.ose_project, 'true', self.ose_resver, self.ose_token)
 
@@ -33,17 +34,14 @@ class Transaction(object):
         ws = create_connection(url, sslopt={"cert_reqs": ssl.CERT_NONE})
         self.ws = ws
 
-        def _receive():
-            while True:
-                res = ws.recv()
-                start_at = time.time()
-                data = json.loads(res)
-                end_at = time.time()
-                response_time = int((end_at - start_at))
-        gevent.spawn(_receive)
-
-    def on_quit(self):
-        self.ws.close()
+        i = 0
+        while i <= 5:
+	    res = ws.recv()
+	    data = json.loads(res)
+            print(data)
+            i += 1
+            
+        ws.close
 
 
 if __name__ == '__main__':

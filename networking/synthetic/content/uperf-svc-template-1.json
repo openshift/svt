@@ -1,0 +1,148 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+	"name": "uperf",
+	"annotations": {
+	    "description": "A template for creating resources for network testing",
+	    "tags": "uperf,networking"
+	}
+    },
+    "labels": {
+	"template": "uperf"
+    },
+    "objects": [
+	{
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+		"labels": {
+		    "name": "${ROLE}",
+		    "test": "uperf"
+		},
+                "annotations": {
+                    "description": "Exposes and load balances the application pods"
+                },
+                "name": "uperf-${ROLE}"
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "ssh",
+                        "port": 22
+                    },
+		    {
+			"name": "uperf-10-tcp",
+			"port": 20010,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-11-tcp",
+			"port": 20011,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-12-tcp",
+			"port": 20012,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-13-tcp",
+			"port": 20013,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-14-tcp",
+			"port": 20014,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-15-tcp",
+			"port": 20015,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-16-tcp",
+			"port": 20016,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-17-tcp",
+			"port": 20017,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-18-tcp",
+			"port": 20018,
+			"protocol": "TCP"
+		    },
+		    {
+			"name": "uperf-19-tcp",
+			"port": 20019,
+			"protocol": "TCP"
+		    },		    
+		    {
+			"name": "uperf-10-udp",
+			"port": 20010,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-11-udp",
+			"port": 20011,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-12-udp",
+			"port": 20012,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-13-udp",
+			"port": 20013,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-14-udp",
+			"port": 20014,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-15-udp",
+			"port": 20015,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-16-udp",
+			"port": 20016,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-17-udp",
+			"port": 20017,
+			"protocol": "UDP"
+		    },
+		    {
+			"name": "uperf-18-udp",
+			"port": 20018,
+			"protocol": "UDP"
+		    },		    		    		    		    
+		    {
+			"name": "uperf-19-udp",
+			"port": 20019,
+			"protocol": "UDP"
+		    }
+                ],
+                "selector": {
+                    "name": "${ROLE}"
+                }
+            }
+        }
+    ],
+    "parameters": [
+	{
+	    "name": "ROLE",
+	    "description": "Role for the service, either sender or receiver",
+	    "required": true
+	}
+    ]
+}

@@ -1,4 +1,8 @@
 ---
+- name: clean yum cache
+  shell:  yum clean all
+  ignore_errors: true
+
 - name: download aos-ansible tarball
   get_url:
     url: https://api.github.com/repos/openshift/aos-ansible/tarball/master 
@@ -25,6 +29,13 @@
 - name: install external rhel-cdn repo
   copy:
     src: "{{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/rhel7next.repo"
+    dest: /etc/yum.repos.d/
+    remote_src: true
+  when: not (internal_image | bool)
+
+- name: install external dockernext repo
+  copy:
+    src: "{{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/dockernext.repo"
     dest: /etc/yum.repos.d/
     remote_src: true
   when: not (internal_image | bool)
