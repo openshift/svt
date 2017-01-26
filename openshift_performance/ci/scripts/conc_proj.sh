@@ -6,6 +6,17 @@
 ## projects test.
 ################################################
 
+function wait_for_project_termination()
+{
+  terminating=`oc get projects | grep Terminating | wc -l`
+    while [ $terminating -ne 0 ]; do
+    sleep 5
+    running=`oc get projects | grep Terminating | wc -l`
+    echo "$terminating projects are still terminating"
+  done
+}
+
+
 old_i=1
 sed -i "s/num: .*/num: 1/g" ../content/conc_proj.yaml
 rm -rf ./conc_proj.out
@@ -27,7 +38,8 @@ do
   echo "Deleting $i projects"
   oc delete project -l purpose=test
 
-  sleep 30
+  wait_for_project_termination
   old_i=$i
 done
+
 cat conc_proj.out
