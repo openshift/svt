@@ -44,8 +44,8 @@
          -p redhat 
          -n cakephp-mysql0 
          -d cakephp-mysql-example 
-         -r 10
-         -s 2 
+         -r 200
+         -s 10 
          -w 10 
          -z
          -0
@@ -58,8 +58,8 @@
          -p redhat 
          -n rails-postgresql0
          -d rails-postgresql-example 
-         -r 4 
-         -s 2 
+         -r 20 
+         -s 5 
          -w 10 
          -z
          -0
@@ -72,8 +72,8 @@
          -p redhat 
          -n django-postgresql0
          -d django-psql-example
-         -r 8 
-         -s 2 
+         -r 180 
+         -s 10 
          -w 10 
          -z
          -0
@@ -86,8 +86,8 @@
          -p redhat 
          -n dancer-mysql0
          -d dancer-mysql-example
-         -r 3 
-         -s 1 
+         -r 30 
+         -s 10 
          -w 10 
          -z
          -0
