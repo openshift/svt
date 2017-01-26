@@ -62,8 +62,8 @@
   - name: Create sender pods
     shell: >
       oc process
-      -v REGION={{ sender_region }}
-      -v ROLE=sender
+      -p REGION={{ sender_region }}
+      -p ROLE=sender
       -f /tmp/origin/uperf-rc-template.json |
       oc create --namespace=uperf-{{ item }} -f -
     with_sequence: start=1 end={{ uperf_pod_number }}
@@ -74,8 +74,8 @@
   - name: Create receiver pods
     shell: >
       oc process
-      -v REGION={{ receiver_region }}
-      -v ROLE=receiver
+      -p REGION={{ receiver_region }}
+      -p ROLE=receiver
       -f /tmp/origin/uperf-rc-template.json |
       oc create --namespace=uperf-{{ item }} -f -
     with_sequence: start=1 end={{ uperf_pod_number }}
