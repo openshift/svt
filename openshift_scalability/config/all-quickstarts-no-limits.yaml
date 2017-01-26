@@ -1,0 +1,73 @@
+projects:
+  - num: 1
+    basename: cakephp-mysql
+    tuning: default
+    templates:
+      - num: 1
+        file: ./content/quickstarts/cakephp/cakephp-mysql.json
+        parameters: 
+         - MEMORY_LIMIT: "0"
+
+  - num: 1
+    basename: dancer-mysql
+    tuning: default
+    templates:
+      - num: 1
+        file: ./content/quickstarts/dancer/dancer-mysql.json
+        parameters: 
+         - MEMORY_LIMIT: "0"
+
+  - num: 1
+    basename: django-postgresql
+    tuning: default
+    templates:
+      - num: 1
+        file: ./content/quickstarts/django/django-postgresql.json
+        parameters: 
+         - MEMORY_LIMIT: "0"
+
+  - num: 1
+    basename: nodejs-mongodb
+    tuning: default
+    templates:
+      - num: 1
+        file: ./content/quickstarts/nodejs/nodejs-mongodb.json
+        parameters: 
+         - MEMORY_LIMIT: "0"
+
+  - num: 1
+    basename: rails-postgresql
+    tuning: default
+    templates:
+      - num: 1
+        file: ./content/quickstarts/rails/rails-postgresql.json
+        parameters: 
+         - MEMORY_LIMIT: "0"
+
+  - num: 1
+    basename: eap64-mysql
+    tuning: default
+    templates:
+      - num: 1
+        file: ./content/quickstarts/eap/eap64-mysql.json
+        parameters: 
+         - MEMORY_LIMIT: "0"
+
+  - num: 1
+    basename: tomcat8-mongodb
+    tuning: default
+    templates:
+      - num: 1
+        file: ./content/quickstarts/tomcat/tomcat8-mongodb.json
+        parameters: 
+         - MEMORY_LIMIT: "0"
+
+tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 5
+        pause: 0 min
+      rate_limit:
+        delay: 0 ms
+
