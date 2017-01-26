@@ -4,36 +4,21 @@ require 'Config'
 
 module OpenshiftReliability
 
-  class Ruby_hello_world < Project
-  
+  class Rails_psql_example < Project
+
     def initialize(project_name,user)
-      super(project_name, user, template:"ruby-hello-world" )
+      super(project_name, user, template:"rails-postgresql-example" )
       @counter=0
     end
-  
-    def new_app()
-      get_service
-      if @services.length > 0
-        $logger.info("Service exist, app create skipped")
-        return
-      end
-
-      @user.exec("oc new-app -f ruby-helloworld-sample.json")
-      wait_until_ready
-    end
-
 
     def access_route()
-      key="osekey"+ @counter.to_s
-      value="osevalue"+@counter.to_s
-      @counter=@counter+1
 
       if @routes.length == 0
          get_route()
       end
       @routes.each do |route|
         fqdn=route.split(/\s+/)[1]
-        cmd="curl -k --resolve #{fqdn}:80:#{$config.routers.first} https://#{fqdn} | grep 'Welcome to an OpenShift v3 Demo App'"
+        cmd="curl --resolve #{fqdn}:80:#{$config.routers.first} http://#{fqdn}|grep 'Welcome to your Rails application on OpenShift'"
         $exec.shell_exec(cmd)
       end
     end
