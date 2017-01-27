@@ -72,7 +72,7 @@
          -p redhat 
          -n django-postgresql0
          -d django-psql-example
-         -r 180 
+         -r 100 
          -s 10 
          -w 10 
          -z
