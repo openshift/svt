@@ -38,13 +38,23 @@ function run_builds()
   done
 }
 
-function check_builds_completed()
+function wait_for_build_completion()
 {
   running=`oc get pods --all-namespaces | grep proj | grep build | grep Running | wc -l`
   while [ $running -ne 0 ]; do
     sleep 5
     running=`oc get pods --all-namespaces | grep proj | grep build | grep Running | wc -l`
     echo "$running builds are still running"
+  done
+}
+
+function wait_for_project_termination()
+{
+  terminating=`oc get projects | grep Terminating | wc -l`
+  while [ $terminating -ne 0 ]; do
+    sleep 5
+    running=`oc get projects | grep Terminating | wc -l`
+    echo "$terminating projects are still terminating"
   done
 }
 
@@ -55,18 +65,19 @@ oadm policy add-cluster-role-to-user admin redhat
 
 echo "Starting cakephp builds" >> conc_builds.out
 create_cakephp_projects
-check_builds_completed
+wait_for_build_completion
 run_builds
 delete_projects
+wait_for_project_termination
 echo "Finished cakephp builds" >> conc_builds.out
-sleep 2m
 
 oc login -u system:admin
 
 echo "Starting EAP builds" >> conc_builds.out
 create_eap_projects
-check_builds_completed
+wait_for_build_completion
 run_builds
 delete_projects
+wait_for_project_termination
 echo "Finished EAP builds" >> conc_builds.out
 cat conc_builds.out

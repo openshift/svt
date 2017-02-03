@@ -7,9 +7,10 @@ environment:
   routers: master.example.com
   authtype: htpasswd
   htpasswd: /etc/origin/master/htpasswd
+  subdomain: test.example.com
 exection:
   gituser: anpingli
-  templates: django-psql-example,nodejs-mongodb-example,cakephp-mysql-example,ruby-hello-world,dancer-mysql-example,eap64-mysql-s2i
+  templates: django-psql-example,nodejs-mongodb-example,cakephp-mysql-example,dancer-mysql-example,eap64-mysql-s2i,rails-postgresql-example
   userprefix: u
   loadproject: true
 schedule:

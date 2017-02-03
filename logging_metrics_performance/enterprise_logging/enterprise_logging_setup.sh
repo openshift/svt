@@ -2,44 +2,8 @@
 #
 # Sets up logging from scratch based on the local openshift-ansible template.
 #
-# To create from the latest template:
-# oc create -n openshift -f \
-# https://raw.githubusercontent.com/openshift/origin-aggregated-logging/master/deployer/deployer.yaml &> /dev/null
-#
 # It's safe to ignore any warnings/errors about already existing API types or resources (roles/templates etc...)
 #
-
-if [[ `id -u` -ne 0 ]]
-then
-        echo -e "\n[-] Please run as root / sudo -s \n"
-        echo -e "Exit."
-        exit 1
-fi
-
-MASTERCFG=/etc/origin/master/master-config.yaml
-VERSION="v1.2"
-
-if [[ $1 =~ "auto" ]]
-  then
-    MASTER_URL=`grep masterURL $MASTERCFG | awk '{print $2}'`
-    PUBLIC_MASTER_URL=`grep ^masterPublicURL $MASTERCFG | awk '{print $2}'`
-  else
-    if [[ ! $1 || ! $2 ]]; then
-	echo -e "\nTwo arguments reguired. Check /etc/origin/master/master-config.yaml"
-	echo "1) https://MASTER_URL:8443"
-	echo "2) https://PUBLIC_MASTER_URL:8443"
-	echo
-	echo "Example:"
-	echo "MU=https://ip-xxx-xx-xx-xxx.us-xxxx-x.compute.internal:8443"
-	echo "PMU=https://ec2-xx-xxx-xxx-xxx.us-xxxx-x.compute.amazonaws.com:8443"
-	echo
-	echo "./$(basename $0)" '$MU' '$PMU'
-	echo
-	exit 1
-    fi
-    MASTER_URL=$1
-    PUBLIC_MASTER_URL=$2
-fi
 
 SCRIPTNAME=$(basename ${0%.*})
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -47,14 +11,35 @@ UTILS=$SCRIPTDIR/utils
 source $UTILS/functions.sh
 trap sig_handler SIGINT
 
+if [[ `id -u` -ne 0 ]]
+then
+        echo -e "\n[-] Please run as root / sudo -s \n"
+        echo -e "Exit."
+        exit $ERR
+fi
 
-T=20
+NUMARGS=$#
+if [ $NUMARGS -eq 0 ]; then
+    show_help
+    exit $ERR;
+fi
+
+HELPER_CFG=$1
+source $HELPER_CFG
+
+# OCP
+MASTERCFG=/etc/origin/master/master-config.yaml
+MASTER_URL=`grep masterURL $MASTERCFG | awk '{print $2}'`
+PUBLIC_MASTER_URL=`grep ^masterPublicURL $MASTERCFG | awk '{print $2}'`
+
+DELAY=20
 SCRIPTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Openshift ansible
 OSEANSIBLE=$HOME/openshift-ansible
-TBASE=${OSEANSIBLE}/roles/openshift_examples/files/examples/${VERSION}/infrastructure-templates/enterprise
+TBASE=${OSEANSIBLE}/roles/openshift_hosted_templates/files/${VERSION}/enterprise
 ANSIBLE_TEMPLATE=${TBASE}/logging-deployer.yaml
 
-# local ose-ansible template install
 if [[ ! -d $OSEANSIBLE ]]; then
   echo -e "\n[-] Cloning the openshift-ansible git repo first."
   echo
@@ -63,9 +48,6 @@ if [[ ! -d $OSEANSIBLE ]]; then
 fi
 
 
-CLUSTER_SIZE=${3:-3}
-KIBANA_HOSTNAME=${4:-kibana.example.com}
-
 echo -e "\n\n[+] Setting up EFK Logging.\n"
 echo
 echo "MASTER_URL: $MASTER_URL"
@@ -73,17 +55,17 @@ echo "PUBLIC_MASTER_URL: $PUBLIC_MASTER_URL"
 echo "CLUSTER_SIZE: $CLUSTER_SIZE"
 echo "KIBANA_HOSTNAME: $KIBANA_HOSTNAME"
 echo "ANSIBLE_TEMPLATE: $ANSIBLE_TEMPLATE"
+echo "IMAGE_PREFIX: $IMAGE_PREFIX"
+echo "IMAGE_VERSION: $IMAGE_VERSION"
+
 
 pre_clean
-_wait $T
+_wait $DELAY
 
 oadm new-project logging --node-selector=""
 oc project logging
 
 
-# wget latest and create from the local template
-# openshift-ansible/roles/openshift_examples/examples-sync.sh
-wget https://raw.githubusercontent.com/openshift/origin-aggregated-logging/enterprise/deployment/deployer.yaml -O ${ANSIBLE_TEMPLATE}
 sed -i 's/imagePullPolicy: Always/imagePullPolicy: IfNotPresent/g' ${ANSIBLE_TEMPLATE}
 oc create -f ${ANSIBLE_TEMPLATE}
 
@@ -93,24 +75,27 @@ oc delete secret logging-deployer &> /dev/null
 oc secrets new logging-deployer nothing=/dev/null
 
 oc new-app logging-deployer-account-template
-_wait $T
+_wait $DELAY
 
 echo -e "\nAdding required roles"
 add_roles
 
 
 oc delete oauthclient kibana-proxy &> /dev/null
+
+# the below params are defined in the config file
 oc new-app logging-deployer-template \
                         --param ES_CLUSTER_SIZE=$CLUSTER_SIZE \
                         --param PUBLIC_MASTER_URL=$PUBLIC_MASTER_URL \
                         --param MASTER_URL=$MASTER_URL \
-			--param KIBANA_HOSTNAME=$KIBANA_HOSTNAME
+                        --param KIBANA_HOSTNAME=$KIBANA_HOSTNAME \
+                        --param IMAGE_PREFIX=$IMAGE_PREFIX \
+                        --param IMAGE_VERSION=$IMAGE_VERSION
 
-_wait $T
-
+_wait $DELAY
 
 # fluentd pod spreading
-# in large clusters this can be adjusted to label certain nodes only
+# on large clusters this should be adjusted to label in batches. 
 oc label nodes --all logging-infra-fluentd=true &> /dev/null
 
 echo
