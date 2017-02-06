@@ -11,6 +11,7 @@ The build_test.py scripts is a flexible tool for driving builds in OpenShift.  I
 An example cluster-loader config that works with build_test.py is [master-vert.yaml](https://github.com/openshift/svt/blob/master/openshift_scalability/config/master-vert-pv.yaml)
 
 This will create namespaces as below.  These projects will be specified in the build_test json config.
+
 ```
 # oc get ns
 NAME                 STATUS    AGE
@@ -41,7 +42,7 @@ Then as admin, add permissions to the user ```redhat``` account:
 To verify that this was successful, look for the new user now has permission to read buildconfigs.
 
 ```
-root@ip-172-31-26-90: ~ # oc adm policy who-can read buildconfig
+# oc adm policy who-can read buildconfig
 Namespace: default
 Verb:      read
 Resource:  buildconfigs
@@ -59,7 +60,7 @@ Groups: system:cluster-admins
 
 ### Usage 
 
-python build_test.py -m [master-url] -u [user] -p [password] <optional-arguments>
+```python build_test.py -m [master-url] -u [user] -p [password] <optional-arguments>```
 
 Required:
 
@@ -107,7 +108,7 @@ One and only one of -a (run all builds), -f (run builds defined in json file) or
 builds.json - JSON array of namespace and build configuration names:
 
 ```
-# cat test.json 
+# cat builds_example.json
 [
   {"namespace":"cakephp-mysql0", "name":"cakephp-mysql-example"},
   {"namespace":"dancer-mysql0", "name":"dancer-mysql-example"},
@@ -118,6 +119,8 @@ builds.json - JSON array of namespace and build configuration names:
   {"namespace":"tomcat8-mongodb0", "name":"jws-app"}
 ]
 ```
+
+### Run output
 
 ```
 # python build_test.py -m localhost:8443 -u redhat -p redhat -a -n 3 -f test.json
