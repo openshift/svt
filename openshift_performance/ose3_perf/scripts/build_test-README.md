@@ -35,7 +35,7 @@ In a cluster using AllowAll authentication, create the local account by logging 
 
 - ```oc login -u redhat -p redhat```
 
-Then as admin, add permissions to the user ```redhat```` account:
+Then as admin, add permissions to the user ```redhat``` account:
 - ```oc adm policy add-cluster-role-to-user cluster-admin redhat```
 
 To verify that this was successful, look for the new user now has permission to read buildconfigs.
@@ -90,19 +90,19 @@ One and only one of -a (run all builds), -f (run builds defined in json file) or
 
 #### Run all defined builds concurrently 10 times
 
-python build_test.py -m localhost:8443 -u redhat -p redhat -a -n 10
+```python build_test.py -m localhost:8443 -u redhat -p redhat -a -n 10```
 
 #### Run all defined builds 10 times - limit concurrency to 5 builds at a time
 
-python build_test.py -m localhost:8443 -u redhat -p redhat -a -b 5 -n 10
+```python build_test.py -m localhost:8443 -u redhat -p redhat -a -b 5 -n 10```
 
 #### Run 20 random builds concurrently 100 times
 
-python build_test.py -m https://master.example.com:8443 -u redhat -p redhat -r 20 -n 100
+```python build_test.py -m https://master.example.com:8443 -u redhat -p redhat -r 20 -n 100```
 
 #### Run the builds defined in builds.json 5 times
 
-python build_test.py -m https://master.example.com:8443 -u redhat -p redhat -f builds.json -n 5
+```python build_test.py -m https://master.example.com:8443 -u redhat -p redhat -f builds.json -n 5```
 
 builds.json - JSON array of namespace and build configuration names:
 
