@@ -44,7 +44,6 @@ def get_route():
     routes_list = [y for y in (x.strip() for x in routes_output.splitlines()) if y]
     return localhost, router_ip, routes_list
 
-
 def create_template(templatefile, num, parameters, globalvars):
     if globalvars["debugoption"]:
         print "create_template function called"
@@ -68,6 +67,7 @@ def create_template(templatefile, num, parameters, globalvars):
                         size = int(value)
             num = math.ceil(float(len(jmeter_ips))/size)
         globalvars["podnum"] += num
+        create_wlg_targets("wlg-targets", globalvars)
 
     data = {}
     timings = {}
@@ -115,6 +115,17 @@ def create_template(templatefile, num, parameters, globalvars):
 
         i = i + 1
         tmpfile.close()
+
+
+def create_wlg_targets(cm_targets, globalvars):
+    namespace = globalvars["namespace"]
+    try:
+        oc_command("oc delete configmap %s -n %s" % (cm_targets, namespace), globalvars)
+    except subprocess.CalledProcessError:
+        pass
+    ret = oc_command("oc get routes --all-namespaces --no-headers | awk '{print $3}' | oc create configmap %s --from-file=targets.txt=/dev/stdin -n %s" %
+          (cm_targets, namespace), globalvars)
+    return ret
 
 
 def create_service(servconfig, num, globalvars):
