@@ -65,6 +65,10 @@
                             {
                                 "name": "GUN",
 				"value": "${GUN}"
+                            },
+                            {
+                                "name": "GUN_PORT",
+				"value": "${GUN_PORT}"
                             }
                         ],
                         "image": "sjug/centos-stress:latest",
@@ -164,6 +168,12 @@
 	    "displayName": "GUN IP Addr",
 	    "description": "The IP of the machine running cluster loader",
 	    "value": "127.0.0.1"
+	},
+	{
+	    "name": "GUN_PORT",
+	    "displayName": "GUN Port Number",
+	    "description": "The port number of the machine running cluster loader",
+	    "value": "9090"
 	},
     	{
       	    "name": "IDENTIFIER",
