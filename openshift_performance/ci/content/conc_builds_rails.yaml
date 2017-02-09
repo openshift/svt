@@ -6,7 +6,7 @@ projects:
 
     templates:
       - num: 1
-        file: ../../../openshift_scalability/content/quickstarts/eap/eap64-build.json
+        file: ../../../openshift_scalability/content/quickstarts/rails/rails-build.json
 tuningsets:
   - name: default
     pods:
