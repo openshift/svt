@@ -132,7 +132,7 @@
 	{
 	    "name": "JMETER_SIZE",
 	    "displayName": "JMeter instance size",
-	    "description": "Number of hosts to stress per Jmeter instance",
+	    "description": "Number of hosts to stress per JMeter instance",
 	    "value": "3"
 	},
 	{
