@@ -86,8 +86,8 @@ def create_template(templatefile, num, parameters, globalvars):
                         elif key == "ROUTER_IP":
                             value = router_ip
                     
-                    cmdstring += " -v %s=%s" % (key, value)
-        cmdstring += " -v IDENTIFIER=%i" % i
+                    cmdstring += " -p %s=%s" % (key, value)
+        cmdstring += " -p IDENTIFIER=%i" % i
 
         processedstr = oc_command(cmdstring, globalvars)
         templatejson = json.loads(processedstr)
