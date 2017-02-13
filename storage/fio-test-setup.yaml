@@ -15,6 +15,12 @@
   - name: Create directory for fio docker image resources
     file: path=/tmp/fio state=directory
     
+  - name: Copy sequential io config file
+    copy: src=config/sequential_io.job dest=/tmp/sequential_io.job
+
+  - name: Copy random io config file
+    copy: src=config/random_io.job dest=/tmp/random_io.job
+    
   - name: Copy Dockerfile to sender
     copy: src=fio/Dockerfile dest=/tmp/fio/Dockerfile
     
@@ -83,19 +89,25 @@
     shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ pbench_remote }}
     when: pbench_remote != "None"
 
-  - name: Run pbench-fio
+  - name: Run pbench-fio-sequential
     shell: >
       pbench-fio
-      --test-types=read,write,rw,randread,randwrite,randrw
+      --test-types=read,write,rw
       --clients={{ fio_servers }}
       --config={{ pbench_label }}
-      --direct=1 
-      --sync=1 
-      --block-sizes=4,64,1024 
-      --iodepth=2 
       --samples=3
       --targets=/var/lib/fio/test
-      --job-file=fio.job
+      --job-file=/tmp/sequential_io.job
+
+  - name: Run pbench-fio-random
+    shell: >
+      pbench-fio
+      --test-types=randread,randwrite,randrw
+      --clients={{ fio_servers }}
+      --config={{ pbench_label }}
+      --samples=3
+      --targets=/var/lib/fio/test
+      --job-file=/tmp/random_io.job      
 
   - name: Copy pbench results
     shell: pbench-copy-results
