@@ -1,9 +1,18 @@
 ---
-- name: copy docker-storage-setup config
+- name: set selinux to enforcing
+  selinux:
+    policy: targeted
+    state: enforcing
+
+- name: copy docker-storage-setup config when storage driver is devicemapper
   template: src=etc/sysconfig/docker-storage-setup.j2 dest=/etc/sysconfig/docker-storage-setup
+  when: docker_storage_driver == "devicemapper"
+
+- name: copy docker-storage-setup config when storage mapper is overlay
+  template: src=etc/sysconfig/docker-storage-overlay-setup.j2 dest=/etc/sysconfig/docker-storage-setup
+  when: docker_storage_driver == "overlay"
 
 - name: create docker config directory
-  #shell:  mkdir /root/.docker
   file: path=/root/.docker state=directory
 
 - name: download docker login config.json
@@ -12,16 +21,54 @@
 - name: install docker
   yum: name=docker state=latest
 
-- name: check for existing PV
-  command: pvdisplay
-  register: pv_result
+- block:
+   - name: format the partition
+     shell: mkfs.xfs -f {{ docker_storage_device }}
 
-- name: create LVM pv
-  shell: pvcreate {{ docker_storage_device }}
-  when: pv_result.rc != 0
+   - name: update fstab
+     shell: echo "{{ docker_storage_device }} /var/lib/docker/overlay                    xfs   defaults        0 0" >> /etc/fstab
 
-- name: create VG for docker thin pool
-  lvg: vg=docker_vg pvs={{ docker_storage_device }}
+  when: docker_storage_driver == "overlay"
+
+- block:
+   - name: restart machine
+     shell: sleep 2 && shutdown -r now "Ansible updates triggered"
+     async: 1
+     poll: 0
+     ignore_errors: true
+ 
+   - name: waiting for server to come back
+     local_action: wait_for host={{ inventory_hostname }} state=started delay=15 timeout=300
+  
+   - name: get current kernel version
+     shell: uname -r
+     register: kernel_version
+
+   - name: check if current kernel version is 3.10.0-517 or later
+     shell: rpmdev-vercmp {{ kernel_version.stdout }} 3.10.0-517 > /dev/null
+     register: vercmp_out
+     ignore_errors: true
+  
+   - name: exit if kernel version is outdated
+     fail: 
+       msg: "please update the kernel to 3.10.0-517 or later"
+     when: vercmp_out.rc == 12
+
+  when: docker_storage_driver == "overlay" or update_kernel == "true"
+
+- block:
+   - name: check for existing PV
+     command: pvdisplay
+     register: pv_result
+
+   - name: create LVM pv
+     shell: pvcreate {{ docker_storage_device }}
+     when: pv_result.rc != 0
+
+   - name: create VG for docker thin pool
+     lvg: vg=docker_vg pvs={{ docker_storage_device }}
+  
+  when: docker_storage_driver == "devicemapper"
 
 - name: run docker-storage-setup
   shell: docker-storage-setup
