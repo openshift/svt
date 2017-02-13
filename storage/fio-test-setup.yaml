@@ -95,6 +95,7 @@
       --iodepth=2 
       --samples=3
       --targets=/var/lib/fio/test
+      --job-file=fio.job
 
   - name: Copy pbench results
     shell: pbench-copy-results
