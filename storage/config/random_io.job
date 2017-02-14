@@ -5,13 +5,13 @@ iodepth=4
 direct=1
 fsync_on_close=1
 time_based=1
-runtime=5720
+runtime=300
 clocksource=clock_gettime
 ramp_time=10
 startdelay=20
 
 [fio]
-size=95g
+size=1g
 write_bw_log=fio
 write_iops_log=fio
 write_lat_log=fio

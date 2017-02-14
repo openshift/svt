@@ -137,7 +137,7 @@
 	    "name": "VOLUME_CAPACITY",
 	    "displayName": "Volume Capacity",
 	    "description": "Volume space available for data, e.g. 512Mi, 2Gi",
-	    "value": "1Gi",
+	    "value": "10Gi",
 	    "required": true
 	},	
 	{
