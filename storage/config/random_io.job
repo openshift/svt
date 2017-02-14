@@ -9,6 +9,7 @@ runtime=300
 clocksource=clock_gettime
 ramp_time=10
 startdelay=20
+directory=/var/lib/fio/
 
 [fio]
 size=1g
