@@ -23,5 +23,5 @@ export EXTENDED_TEST_PATH=/root/origin/test/extended
 
 
 TEST_REPORT_DIR=/tmp TEST_REPORT_FILE_NAME=svt-parallel ginkgo --noColor -v "-focus=$PARALLEL_TESTS" "-skip=$PARALLEL_SKIP" -p -nodes "$PARALLEL_NODES"  /usr/libexec/atomic-openshift/extended.test  || exitstatus=$?
-TEST_REPORT_DIR=/tmp TEST_REPORT_FILE_NAME=svt-serial ginkgo --noColor -v "-focus=$SERIAL_TESTS" "-skip=$SERIAL_SKIP" /usr/libexec/atomic-openshift/extended.test  || exitstatus=$?
+#TEST_REPORT_DIR=/tmp TEST_REPORT_FILE_NAME=svt-serial ginkgo --noColor -v "-focus=$SERIAL_TESTS" "-skip=$SERIAL_SKIP" /usr/libexec/atomic-openshift/extended.test  || exitstatus=$?
  
