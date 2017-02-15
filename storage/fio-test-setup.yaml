@@ -96,6 +96,7 @@
       --clients={{ fio_servers }}
       --config={{ pbench_label }}
       --samples=3
+      --block-sizes=4,64,1024
       --targets=/var/lib/fio/test
       --job-file=/tmp/sequential_io.job
 
@@ -106,6 +107,7 @@
       --clients={{ fio_servers }}
       --config={{ pbench_label }}
       --samples=3
+      --block-sizes=4,64,1024
       --targets=/var/lib/fio/test
       --job-file=/tmp/random_io.job      
 
