@@ -1,18 +1,19 @@
 [global]
 ioengine=libaio
-bs=4k, 128k, 4096k
-iodepth=4
+iodepth=2
+bs=4k,128k,4096k
 direct=1
+sync=1
 fsync_on_close=1
 time_based=1
-runtime=300
+runtime=150
 clocksource=clock_gettime
 ramp_time=10
 startdelay=20
-directory=/var/lib/fio/
 
 [fio]
-size=1g
+filename=/var/lib/fio/test
+size=4g
 write_bw_log=fio
 write_iops_log=fio
 write_lat_log=fio
