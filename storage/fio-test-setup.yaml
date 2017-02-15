@@ -96,8 +96,7 @@
       --clients={{ fio_servers }}
       --config={{ pbench_label }}
       --samples=3
-      --block-sizes=4,64,1024
-      --targets=/var/lib/fio/test
+      --block-sizes=4,128,4096
       --job-file=/tmp/sequential_io.job
 
   - name: Run pbench-fio-random
@@ -107,8 +106,7 @@
       --clients={{ fio_servers }}
       --config={{ pbench_label }}
       --samples=3
-      --block-sizes=4,64,1024
-      --targets=/var/lib/fio/test
+      --block-sizes=4,128,4096
       --job-file=/tmp/random_io.job      
 
   - name: Copy pbench results

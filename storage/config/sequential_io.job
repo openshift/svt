@@ -11,6 +11,7 @@ startdelay=20
 
 [fio]
 filename=/var/lib/fio/test
+rw=write
 size=4g
 write_bw_log=fio
 write_iops_log=fio
