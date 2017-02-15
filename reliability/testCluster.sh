@@ -4,6 +4,9 @@
 ## Desription: Test readiness of cluster for reliability tests.
 ###############################################################
 
+projects=("cakephp" "eap" "dancer" "ruby" "django" "nodejs")
+page_text=("count-value" "TODO list" "count-value" "Welcome to your Rails application on OpenShift" "Page views" "count-value")
+
 # An error exit function
 function error_exit
 {
@@ -11,142 +14,85 @@ function error_exit
   exit 1
 }
 
+function wait_for_deployment
+{
+  counter=0
+  while true;
+  do
+    all_deployed=1
 
-echo "create ruby app"
-oc new-project p1
-oc new-app -f https://raw.githubusercontent.com/openshift/svt/master/reliability/ruby-helloworld-sample.json
+    for var in {0..5}
+    do
+      proj=${projects[$var]}
+      STATUS=$(oc status -n $proj)
+      if [[ ! $STATUS =~ .*deployment.*waiting.*on.*image.*or.*update.* && ! $STATUS =~ .*deployment.*running.*for.* && ! $STATUS =~ .*deployment.*pending.*ago.* ]]
+      then
+        echo "$proj app deployment complete"
+        echo "$proj app deployment complete" >> test_cluster.out
+      else
+	all_deployed=0
+	echo "$proj deployment not complete, waiting..."
+        echo "$proj deployment not complete, waiting..." >> test_cluster.out
+      fi
+    done
 
-counter=0
-while true;
-do
-  STATUS=$(oc status -n p1)
-  if [[ ! $STATUS =~ .*deployment.*waiting.*on.*image.*or.*update.* && ! $STATUS =~ .*deployment.*running.*for.* && ! $STATUS =~ .*deployment.*pending.*ago.* ]]
+    if [ $all_deployed -eq 1 ]
+    then
+      break
+    fi
+
+    if [[ $counter == 30 ]]
+    then
+      echo "Apps took more then expected to deploy" >> test_cluster.out 
+      error_exit "Apps took more then expected to deploy"
+    fi
+    ((counter++))
+    sleep 15
+
+  done
+}
+
+function access_applications
+{
+  all_accessed=1
+  for var in {0..5}
+  do
+    proj=${projects[$var]}
+    text=${page_text[$var]}
+    content=$(curl -k http://$(oc get routes -n $proj --no-headers | awk '{print$2}'))
+    echo $content | grep "$text"
+    if [[ $? -ne 0 ]]
+    then
+      echo "error accessing $proj app"
+      echo "error accessing $proj app" >> test_cluster.out
+      all_accessed=0
+    else
+      echo "$proj app accessed"
+      echo "$proj app accessed" >> test_cluster.out
+    fi
+  done
+
+  if [ $all_accessed -eq 0 ]
   then
-    echo "ruby app deployment complete"
-    break
+    error_exit "App access failed"
   fi
+}
 
-  if [[ $counter == 16 ]]
-  then
-    error_exit "Ruby app took more then 4 mins to deploy"
-  fi
-  ((counter++))
-
-  sleep 15
-done
-content=$(curl -k https://$(oc get routes -n p1 --no-headers | awk '{print$2}'))
-
-echo $content | grep "Welcome to an OpenShift v3 Demo App!"
-if [[ $? -ne 0 ]]
-then
-  error_exit "Error accessing Ruby app"
-else
-  echo "Success ==================Ruby app deployed and accessed==================="
-fi
-oc delete project p1
-
-echo "create dancer-mysql app"
-oc new-project p2
-oc new-app --template=dancer-mysql-example
-
-counter=0
-while true;
-do
-  STATUS=$(oc status -n p2)
-  if [[ ! $STATUS =~ .*deployment.*waiting.*on.*image.*or.*update.* && ! $STATUS =~ .*deployment.*running.*for.* && ! $STATUS =~ .*deployment.*pending.*ago.* ]]
-  then
-    echo "dancer app deployment complete"
-    break
-  fi
-
-  if [[ $counter == 20 ]]
-  then
-    error_exit "Dancer app took more then 4 mins to deploy"
-  fi
-  ((counter++))
-
-  sleep 15
-done
-
-content=$(curl -k http://$(oc get routes -n p2 --no-headers | awk '{print$2}'))
-
-echo $content | grep "Page view count"
-if [[ $? -ne 0 ]]
-then
-  echo "Error accessing dancer app"
-else
-  echo "Success ==================Dancer app deployed and accessed==================="
-fi
-oc delete project p2
-
-echo "create cakephp-mysql app"
-oc new-project p3
-oc new-app --template=cakephp-mysql-example
-
-counter=0
-while true;
-do
-  STATUS=$(oc status -n p3)
-  if [[ ! $STATUS =~ .*deployment.*waiting.*on.*image.*or.*update.* && ! $STATUS =~ .*deployment.*running.*for.* && ! $STATUS =~ .*deployment.*pending.*ago.* ]]
-  then
-    echo "cakephp app deployment complete"
-    break
-  fi
-
-  if [[ $counter == 16 ]]
-  then
-    error_exit "cakephp app took more then 4 mins to deploy"
-  fi
-  ((counter++))
-
-  sleep 15
-done
-
-content=$(curl -k http://$(oc get routes -n p3 --no-headers | awk '{print$2}'))
-
-echo $content | grep "Page view count"
-if [[ $? -ne 0 ]]
-then
-  error_exit "Error accessing cakephp app"
-else
-  echo "Success ==================cakephp app deployed and accessed==================="
-fi
-oc delete project p3
-
-echo "create eap-mysql app"
-oc new-project p4
+oc new-project cakephp
+oc new-app --template=cakephp-mysql-example    
+oc new-project eap
 oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/secrets/eap-app-secret.json
 oc new-app --template=eap64-mysql-s2i
+oc new-project dancer
+oc new-app --template=dancer-mysql-example
+oc new-project ruby
+oc new-app --template=rails-postgresql-example
+oc new-project django
+oc new-app --template=django-psql-example
+oc new-project nodejs
+oc new-app --template=nodejs-mongodb-example
 
-counter=0
-while true;
-do
-  STATUS=$(oc status -n p4)
-  if [[ ! $STATUS =~ .*deployment.*waiting.*on.*image.*or.*update.* && ! $STATUS =~ .*deployment.*running.*for.* && ! $STATUS =~ .*deployment.*pending.*ago.* ]]
-  then
-    echo "eap app deployment complete"
-    break
-  fi
-
-  if [[ $counter == 30 ]]
-  then
-    error_exit "eap app took more then 6 mins to deploy"
-  fi
-  ((counter++))
-
-  sleep 15
-done
-
-content=$(curl -k http://$(oc get routes -n p4 --no-headers | grep -v secure | awk '{print$2}'))
-
-echo $content | grep "TODO list"
-if [[ $? -ne 0 ]]
-then
-  error_exit "Error accessing eap app"
-else
-  echo "Success ==================eap app deployed and accessed==================="
-fi
-
-oc delete project p4
+wait_for_deployment
+access_applications
 
 echo "######################### SUCCESS : COMPLETE ##########################"
