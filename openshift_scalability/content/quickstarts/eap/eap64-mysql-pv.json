@@ -258,7 +258,20 @@
          "name": "IDENTIFIER",
          "description": "Number to append to the name of resources",
          "value": "1"
-        }
+       },
+       {
+         "name": "STORAGE_CLASS",
+         "description": "Name of storage class used for dynamic storage allocation",
+         "required": true,
+         "value": "foo"
+       },
+       {
+         "name": "ACCESS_MODES",
+         "description": "What access modes will be imposed on PVC inside pod",
+         "required": true,
+         "value": "ReadWriteOnce"
+       }
+
     ],
     "objects": [
 	{
@@ -822,7 +835,7 @@
             "metadata": {
                 "name": "${APPLICATION_NAME}-mysql-claim",
 		"annotations": {
-		    "volume.alpha.kubernetes.io/storage-class": "foo"
+		    "volume.beta.kubernetes.io/storage-class": "${STORAGE_CLASS}"
 		},
                 "labels": {
                     "application": "${APPLICATION_NAME}"
@@ -830,7 +843,7 @@
             },
             "spec": {
                 "accessModes": [
-                    "ReadWriteOnce"
+                    "${ACCESS_MODES}"
                 ],
                 "resources": {
                     "requests": {

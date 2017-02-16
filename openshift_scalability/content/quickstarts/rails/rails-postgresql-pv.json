@@ -253,7 +253,7 @@
 	    "kind": "Service",
 	    "apiVersion": "v1",
 	    "metadata": {
-		"name": "${DATABASE_SERVICE_NAME}",
+		"name": "${DATABASE_SERVICE_NAME}-${SERVICE_NAME_SUFFIX}",
 		"annotations": {
 		    "description": "Exposes the database server"
 		}
@@ -267,7 +267,7 @@
 		    }
 		],
 		"selector": {
-		    "name": "${DATABASE_SERVICE_NAME}"
+		    "name": "${DATABASE_SERVICE_NAME}-${SERVICE_NAME_SUFFIX}"
 		}
 	    }
 	},
@@ -275,14 +275,14 @@
 	    "kind": "PersistentVolumeClaim",
 	    "apiVersion": "v1",
 	    "metadata": {
-		"name": "${DATABASE_SERVICE_NAME}",
+		"name": "${DATABASE_SERVICE_NAME}-${PVC_NAME_SUFFIX}",
 	  	"annotations": {
-		    "volume.alpha.kubernetes.io/storage-class": "foo"
+		    "volume.beta.kubernetes.io/storage-class": "${STORAGE_CLASS}"
 		}
 	    },
 	    "spec": {
 		"accessModes": [
-		    "ReadWriteOnce"
+		    "${ACCESS_MODES}"
 		],
 		"resources": {
 		    "requests": {
@@ -295,7 +295,7 @@
 	    "kind": "DeploymentConfig",
 	    "apiVersion": "v1",
 	    "metadata": {
-		"name": "${DATABASE_SERVICE_NAME}",
+		"name": "${DATABASE_SERVICE_NAME}-${DEPLOYMENT_CONFIG_SUFIX}",
 		"annotations": {
 		    "description": "Defines how to deploy the database"
 		}
@@ -325,13 +325,13 @@
 		],
 		"replicas": 1,
 		"selector": {
-		    "name": "${DATABASE_SERVICE_NAME}"
+		    "name": "${DATABASE_SERVICE_NAME}-${DEPLOYMENT_CONFIG_SUFIX}"
 		},
 		"template": {
 		    "metadata": {
-			"name": "${DATABASE_SERVICE_NAME}",
+			"name": "${DATABASE_SERVICE_NAME}-${DEPLOYMENT_CONFIG_SUFIX}",
 			"labels": {
-			    "name": "${DATABASE_SERVICE_NAME}"
+			    "name": "${DATABASE_SERVICE_NAME}-${DEPLOYMENT_CONFIG_SUFIX}"
 			}
 		    },
 		    "spec": {
@@ -397,7 +397,7 @@
 			    {
 				"name": "${DATABASE_SERVICE_NAME}-data",
 				"persistentVolumeClaim": {
-				    "claimName": "${DATABASE_SERVICE_NAME}"
+				    "claimName": "${DATABASE_SERVICE_NAME}-${PVC_NAME_SUFFIX}"
 				}
 			    }
 			]
@@ -516,6 +516,36 @@
       "name": "IDENTIFIER",
       "description": "Number to append to the name of resources",
       "value": "1"
+    },
+    {
+      "name": "STORAGE_CLASS",
+      "description": "Name of storage class used for dynamic storage allocation",
+      "required": true,
+      "value": "foo"
+    },
+    {
+      "name": "ACCESS_MODES",
+      "description": "What access modes will be imposed on PVC inside pod",
+      "required": true,
+      "value": "ReadWriteOnce"
+    },
+    {
+      "name": "SERVICE_NAME_SUFFIX",
+      "description": "database suffix, to make it different",
+      "required": true,
+      "value": "postgre"
+    },
+    {
+      "name": "PVC_NAME_SUFFIX",
+      "description": "pvc name suffix",
+      "required": true,
+      "value": "postgre"
+    },
+    {
+      "name": "DEPLOYMENT_CONFIG_SUFIX",
+      "description": "deployment config suffix",
+      "required": true,
+      "value": "postgre"
     }
     ]
 }
