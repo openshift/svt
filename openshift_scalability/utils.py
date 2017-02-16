@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import json, subprocess, time, copy, sys, os, yaml, tempfile, shutil, math
+import json, subprocess, time, copy, sys, os, yaml, tempfile, shutil, math, re
 from datetime import datetime
 from clusterloaderstorage import *
 from multiprocessing import Process
@@ -35,6 +35,25 @@ def oc_command(args, globalvars):
 def login(user,passwd,master):
     return subprocess.check_output("oc login --insecure-skip-tls-verify=true -u " + user + " -p " + passwd + " " + master,shell=True)
 
+def check_oc_version(globalvars):
+    major_version = 0;
+    minor_version = 0;
+
+    if globalvars["kubeopt"]:
+        version_string = oc_command("kubectl version", globalvars)
+        result = re.search("Client Version: version.Info\{Major:\"(\d+)\", Minor:\"(\d+)\".*", version_string)
+        if result:
+            major_version = result.group(1)
+            minor_version = result.group(2)
+    else:
+        version_string = oc_command("oc version", globalvars)
+        result = re.search("oc v(\d+)\.(\d+)\..*", version_string)
+        if result:
+            major_version = result.group(1)
+            minor_version = result.group(2)
+    return {"major":major_version, "minor": minor_version}
+
+
 def get_route():
     default_proj = subprocess.check_output("oc project default", shell=True)
     localhost = subprocess.check_output("ip addr show eth0 | awk '/inet / {print $2;}' | cut -d/ -f1", shell=True).rstrip()
@@ -47,6 +66,12 @@ def get_route():
 def create_template(templatefile, num, parameters, globalvars):
     if globalvars["debugoption"]:
         print "create_template function called"
+
+    # process parameters flag for oc 3.4 and earlier is -v.  Starting in 3.5 it is -p.
+    if not globalvars["kubeopt"] and (int(globalvars["version_info"]["major"]) <= 3 and int(globalvars["version_info"]["minor"]) <= 4):
+        parameter_flag = "-v"
+    else:
+        parameter_flag = "-p"
 
     if globalvars["autogen"] and parameters:
         localhost, router_ip, jmeter_ips = get_route()
@@ -85,9 +110,9 @@ def create_template(templatefile, num, parameters, globalvars):
                             value = ":".join(jmeter_ips[(size*i):(size*(i+1))])
                         elif key == "ROUTER_IP":
                             value = router_ip
-                    
-                    cmdstring += " -p %s=%s" % (key, value)
-        cmdstring += " -p IDENTIFIER=%i" % i
+
+                    cmdstring += " " + parameter_flag + " %s=%s" % (key, value)
+        cmdstring += " " + parameter_flag + " IDENTIFIER=%i" % i
 
         processedstr = oc_command(cmdstring, globalvars)
         templatejson = json.loads(processedstr)
