@@ -1,5 +1,5 @@
 ---
-- name: clean yum cache final time before bundle ami
+- name: clean yum cache
   shell:  yum clean all
   ignore_errors: true
 
