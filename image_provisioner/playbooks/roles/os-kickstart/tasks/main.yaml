@@ -48,6 +48,7 @@
     - xauth
     - wget
     - yum-utils
+    - rpmdevtools
 
 - name: install pbench internal
   yum: name=pbench-agent-internal state=latest
