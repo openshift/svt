@@ -1,0 +1,72 @@
+[aos]
+name=Prerelease version of Atomic Enterprise Platform and OpenShift Enterprise RPMs
+baseurl=http://{{ jump_node_ip }}/aos
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0
+
+[docker-next]
+name=Prerelease version of docker RPMs
+baseurl=http://{{ jump_node_ip }}/docker-next
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0
+
+[rhel-7-next]
+name=Prerelease version of RHEL7
+baseurl=http://{{ jump_node_ip }}/rhel-7-next
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0
+
+[rhel-7-extras-next]
+name=Prerelease version of RHEL7 Extras
+baseurl=http://{{ jump_node_ip }}/rhel-7-extras-next
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0
+
+[rhel-7-optional-next]
+name=Prerelease version of RHEL7 Optional
+baseurl=http://{{ jump_node_ip }}/rhel-7-optional-next
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0
+
+[rhel7-fast-datapath]
+name=RHEL7 fast-datapath
+baseurl=http://{{ jump_node_ip }}/rhel7-fast-datapath
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0
+
+# This htb repo gets us openvswitch-2.6, and is required until the htb bits are promoted to the above GA channel (GA is openvswitch-2.5 for now).
+[rhel7-fast-datapath-htb]
+name=RHEL7 fast-datapath HTB
+baseurl=http://{{ jump_node_ip }}/rhel7-fast-datapath-htb
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0
+
+[oso-rhui-rhel-server-extras]
+name=OpenShift Online RHUI Mirror RH Enterprise Linux 7 - Extras
+baseurl=http://{{ jump_node_ip }}/oso-rhui-rhel-server-extras
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0
+
+[oso-rhui-rhel-server-releases]
+name=OpenShift Online RHUI Mirror RH Enterprise Linux 7
+baseurl=http://{{ jump_node_ip }}/oso-rhui-rhel-server-releases
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0

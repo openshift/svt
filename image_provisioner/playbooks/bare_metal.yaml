@@ -1,0 +1,25 @@
+---
+- name: Prepare jump node
+  hosts: jump
+  user: ec2-user
+  become: yes
+  roles:
+    - ops_mirror_bootstrap
+    - qe_registry_bootstrap
+    - create-local-repo
+    - docker-save
+
+- name: Setup bare metal
+  hosts: nodes
+  user: root
+  become: no
+
+  roles:
+    - repo-install
+    - os-kickstart
+    - collectd-install
+    - clone-repos
+    - pbench-config
+    - docker-config
+    - docker-spread-images
+    - openshift-package-install

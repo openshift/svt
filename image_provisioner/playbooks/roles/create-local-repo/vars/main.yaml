@@ -1,0 +1,17 @@
+---
+rpms_to_install:
+  - createrepo
+  - nginx
+  - yum-utils
+nginx_root: "/usr/share/nginx/html"
+repos_to_clone:
+  - aos
+  - copr-pbench
+  - docker-next
+  - rhel-7-next
+  - rhel-7-extras-next
+  - rhel-7-optional-next
+  - rhel7-fast-datapath
+  - rhel7-fast-datapath-htb
+  - oso-rhui-rhel-server-releases
+  - oso-rhui-rhel-server-extras

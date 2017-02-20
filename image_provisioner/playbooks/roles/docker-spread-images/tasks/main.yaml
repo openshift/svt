@@ -1,0 +1,20 @@
+---
+- name: Creates directory
+  file:
+    path: "{{ docker_image_dir }}"
+    state: directory
+
+- name: Rsync docker images
+  synchronize:
+    src: "{{ docker_image_dir }}"
+    dest: "{{ docker_image_dir }}"
+    recursive: yes
+  delegate_to: "{{ jump_node_ip }}"
+    
+- name: Docker load images
+  command: atomic -y storage import
+
+- name: Restart docker
+  systemd:
+    name: docker
+    state: restarted

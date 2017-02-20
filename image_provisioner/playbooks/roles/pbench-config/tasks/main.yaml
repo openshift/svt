@@ -1,29 +1,27 @@
 ---
-- name: check if pbench config is present
-  stat: path=/opt/pbench-agent/config/pbench-agent.cfg.example
-  register: pbench_conf
-
 - name: rename pbench config
   command: mv /opt/pbench-agent/config/pbench-agent.cfg.example /opt/pbench-agent/config/pbench-agent.cfg
-  when: pbench_conf.stat.exists
+  args:
+    creates: /opt/pbench-agent/config/pbench-agent.cfg
 
 - name: configure pbench target
-  replace: dest=/opt/pbench-agent/config/pbench-agent.cfg regexp='{{ pbench_internal_hostname }}' replace='{{ pbench_alternate_hostname }}' backup=yes
-
-- name: fix pbench config typo 
-  replace: dest=/opt/pbench-agent/config/pbench-agent.cfg regexp='swebserver\)' replace='(webserver)' backup=yes
+  replace:
+    dest: /opt/pbench-agent/config/pbench-agent.cfg
+    regexp: '{{ pbench_internal_hostname }}'
+    replace: '{{ pbench_alternate_hostname }}'
+    backup: yes
 
 - name: copy ssh key to pbench directory
-  command: cp /root/svt-private/image_provisioner/id_rsa /opt/pbench-agent/id_rsa
-
-- name: chown ssh key in pbench directory
-  command: chown pbench:pbench /opt/pbench-agent/id_rsa
-
-- name: chmod ssh key in pbench directory
-  command: chmod 600 /opt/pbench-agent/id_rsa
+  copy:
+    src: /root/svt-private/image_provisioner/id_rsa 
+    remote_src: True
+    dest: /opt/pbench-agent/id_rsa
+    owner: pbench
+    group: pbench
+    mode: 0600
 
 - name: register tools
-  shell:  pbench-register-tool-set
+  shell: pbench-register-tool-set
   # ignore errors because the turobstat tool cannot be registered in a VM
   ignore_errors: yes
 
