@@ -11,7 +11,7 @@ function wait_for_project_termination()
   terminating=`oc get projects | grep Terminating | wc -l`
     while [ $terminating -ne 0 ]; do
     sleep 5
-    running=`oc get projects | grep Terminating | wc -l`
+    terminating=`oc get projects | grep Terminating | wc -l`
     echo "$terminating projects are still terminating"
   done
 }
