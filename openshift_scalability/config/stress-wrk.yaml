@@ -1,0 +1,27 @@
+projects:
+  - num: 1
+    basename: centos-stress
+    ifexists: delete
+    tuning: default
+    templates:
+      - num: 1
+        file: ./content/quickstarts/stress/stress-pod.json
+        parameters:
+         - RUN: "wrk"                   # which app to execute inside WLG pod
+         - RUN_TIME: "120"              # benchmark run-time in seconds
+         - PLACEMENT: "test"            # Placement of the WLG pods based on a node's label
+         - WRK_DELAY: "100"             # maximum delay between client requests in ms
+         - WRK_TARGETS: "^cakephp-"     # regex to filter target routes
+         - WRK_CONNS_PER_THREAD: "1"    # how many connections per worker thread/route
+         - WRK_KEEPALIVE: "y"           # use HTTP keepalive [yn]
+         - WRK_TLS_SESSION_REUSE: "y"   # use TLS session reuse [yn]
+         - URL_PATH: "/"                # target path for HTTP(S) requests
+
+tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 5
+        pause: 0 min
+      rate_limit:
+        delay: 0 ms
