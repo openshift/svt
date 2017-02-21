@@ -74,6 +74,8 @@ if "tuningsets" in testconfig:
 if user and passwd and master:
     login = login(user, passwd, master)
 
+globalvars["version_info"] = check_oc_version(globalvars)
+
 for config in testconfig["projects"]:
     if "tuning" in config:
         globalvars["tuningset"] = find_tuning(testconfig["tuningsets"],\
