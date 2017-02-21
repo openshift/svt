@@ -94,8 +94,9 @@
       pbench-fio
       --test-types=read,write,rw
       --clients={{ fio_servers }}
-      --config={{ pbench_label }}
+      --config=SEQ_IO
       --samples=3
+      --max-stddev=20
       --block-sizes=4,128,4096
       --job-file=/tmp/sequential_io.job
 
@@ -104,8 +105,9 @@
       pbench-fio
       --test-types=randread,randwrite,randrw
       --clients={{ fio_servers }}
-      --config={{ pbench_label }}
+      --config=RAND_IO
       --samples=3
+      --max-stddev=20
       --block-sizes=4,128,4096
       --job-file=/tmp/random_io.job      
 
