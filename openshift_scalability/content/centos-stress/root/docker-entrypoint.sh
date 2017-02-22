@@ -56,7 +56,7 @@ use_option() {
       else
         echo -n "$option"
       fi
-    ;;
+      ;;
 
     [Nn])
       if test "$neg" = y ; then
@@ -64,7 +64,7 @@ use_option() {
       else
         :
       fi
-    ;;
+      ;;
     
     *) die 1 "invalid value \`$env_var_val\` for $env_var" ;;
   esac
@@ -109,17 +109,20 @@ define_timeout_bin() {
   case $? in
     0)   # we have a busybox timeout with '-t' option for number of seconds
        timeout="timeout -t ${RUN_TIME}"
-    ;;
+       ;;
+
     1)   # we have toybox's timeout without the '-t' option for number of seconds
        timeout="timeout ${RUN_TIME}"
-    ;;
+       ;;
+
     125) # we have coreutil's timeout without the '-t' option for number of seconds
        timeout="timeout ${RUN_TIME}"
-    ;;
+       ;;
+
     *)   # couldn't find timeout or unknown version
        warn "running without timeout"
        timeout=""
-    ;;
+       ;;
   esac
 }
 
@@ -129,14 +132,18 @@ timeout_exit_status() {
   case $err in
     124) # coreutil's return code for timeout
        return 0
-    ;;
+       ;;
+
     137) # timeout also sends SIGKILL if a process fails to respond
        return 0
-    ;;
+       ;;
+
     143) # busybox's return code for timeout with default signal TERM
        return 0
-    ;;
+       ;;
+
     *) return $err
+       ;;
   esac
 }
 
@@ -158,7 +165,7 @@ main() {
       $timeout \
         /usr/local/bin/logger.sh
       $(timeout_exit_status) || die $? "${RUN} failed: $?"
-    ;;
+      ;;
 
     jmeter)
       IFS=$'\n'
@@ -191,7 +198,7 @@ main() {
         -j "${results_filename}".log -Jgun="${GUN}" || die $? "${RUN} failed: $?"
 
       have_server "${GUN}" && scp -p *.jtl *.log *.png ${GUN}:${PBENCH_DIR}
-    ;; 
+      ;; 
 
     wrk)
       local wrk_log=/tmp/${HOSTNAME}-${gateway}.log
@@ -247,11 +254,11 @@ main() {
       $(timeout_exit_status) || die $? "${RUN} failed: scp: $?"
 
       announce_finish
-    ;;
+      ;;
 
     *)
       die 1 "No harness for RUN=\"$RUN\"."
-    ;;
+      ;;
   esac
   timeout_exit_status
 }

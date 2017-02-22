@@ -1,2 +1,2 @@
 # centos-stress
-CentOS based stressor tool
+CentOS based docker image

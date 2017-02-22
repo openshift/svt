@@ -1,4 +1,4 @@
-/^nginx-route-/ { # unsecure routes
+/^nginx-route-/ { # insecure routes
   if (i) {printf "\n  },\n" }
   printf "  {\n"
 #  printf "    \"host_from": \"192.168.0.102\",
