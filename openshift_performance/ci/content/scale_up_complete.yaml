@@ -44,8 +44,8 @@
          -p redhat 
          -n cakephp-mysql0 
          -d cakephp-mysql-example 
-         -r 200
-         -s 10 
+         -r 240
+         -s 20 
          -w 10 
          -z
          -0
@@ -59,7 +59,7 @@
          -n rails-postgresql0
          -d rails-postgresql-example 
          -r 20 
-         -s 5 
+         -s 10
          -w 10 
          -z
          -0
@@ -73,7 +73,7 @@
          -n django-postgresql0
          -d django-psql-example
          -r 100 
-         -s 10 
+         -s 20 
          -w 10 
          -z
          -0
@@ -86,7 +86,35 @@
          -p redhat 
          -n dancer-mysql0
          -d dancer-mysql-example
-         -r 30 
+         -r 40 
+         -s 20 
+         -w 10 
+         -z
+         -0
+         >> /tmp/scale_test.out 2>/tmp/scale_test.err
+    - name: Run scale-up test for nodejs  
+      shell: >
+         python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
+         -m localhost:8443 
+         -u redhat 
+         -p redhat 
+         -n nodejs-mongodb0
+         -d nodejs-mongodb-example
+         -r 200
+         -s 20 
+         -w 10 
+         -z
+         -0
+         >> /tmp/scale_test.out 2>/tmp/scale_test.err
+    - name: Run scale-up test for eap-app  
+      shell: >
+         python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
+         -m localhost:8443 
+         -u redhat 
+         -p redhat 
+         -n eap64-mysql0
+         -d eap-app
+         -r 20
          -s 10 
          -w 10 
          -z
