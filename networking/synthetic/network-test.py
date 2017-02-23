@@ -10,6 +10,7 @@ from ansible.callbacks       import AggregateStats
 from ansible.callbacks       import PlaybookCallbacks
 from ansible.callbacks       import PlaybookRunnerCallbacks
 from ansible                 import utils
+from decimal                 import Decimal   
 
 class NetworkTest(object):
     def __init__(self, playbook):
@@ -70,6 +71,12 @@ def parse_args():
 
     parser.add_argument('test_type',
                         choices = ['podIP', 'svcIP'])
+    
+    parser.add_argument('-v',
+                        '--version',
+                        required = True,
+                        dest = 'os_version',
+                        help = 'OpenShift version')
     
     parser.add_argument('-m',
                         '--master',
@@ -163,7 +170,13 @@ def set_pbench_label(test_type, nodes):
         elif len(nodes) == 2 and nodes[0] == nodes[1]:
             return 'svc-to-svc-LB'
         elif len(nodes) == 2 and nodes[0] != nodes[1]:
-            return 'svc-to-svc-NN'            
+            return 'svc-to-svc-NN'
+        
+def get_option(version):
+    if Decimal(version) >= 3.5 :
+        return '-p'
+    else:
+        return '-v'                    
 
 def main():
     args = parse_args()
@@ -177,6 +190,8 @@ def main():
     
     sender_region = set_sender_region(args.test_master, args.test_nodes)
     receiver_region = set_receiver_region(args.test_master, args.test_nodes)
+    
+    oc_process_option = get_option(args.os_version);
 
     test_playbook = set_playbook(args.test_type)
 
@@ -186,6 +201,7 @@ def main():
         inventory_vars = { 'sender_region': sender_region,
                            'receiver_region': receiver_region,
                            'uperf_pod_number': pod_number,
+                           'oc_process_option': oc_process_option,
                            'pbench_label': pbench_label,
                            'pbench_remote': pbench_remote }
     
