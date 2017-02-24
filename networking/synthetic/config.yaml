@@ -1,5 +1,5 @@
 ---
 environment:
-  master: ip-172-31-22-251.us-west-2.compute.internal
-  nodes: ip-172-31-13-12.us-west-2.compute.internal ip-172-31-33-87.us-west-2.compute.internal
-  version: 3.5
+  master: master.example.com
+  nodes: node1.example.com node2.example.com
+  version: version number
