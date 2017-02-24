@@ -1,0 +1,861 @@
+Unmerged PRs by upstream wrk
+============================
+- https://github.com/giltene/wrk2/pull/33
+  #33 (wrk2): Re-connect when peer closes the connection
+
+- https://github.com/wg/wrk/pull/154
+  #154: The address returned by zmalloc must be aligned
+
+- https://github.com/wg/wrk/pull/183
+  #183: tls session resumptions and disable http keep-alive
+
+- https://github.com/wg/wrk/pull/207
+  #207: EAGAIN errors in sock_read
+
+- https://github.com/wg/wrk/pull/211
+  #211: fix building with -j > 1
+
+- https://github.com/wg/wrk/pull/221
+  #221: check connect errors on callback
+
+- https://github.com/wg/wrk/pull/224
+  partially accepted, dropped parser mods, issues with HAProxy
+
+svt
+===
+- treat 0 bytes reads as error
+- quiet option (necessary for outputting JMeter-like *.csv files)
+- access to time_us() from LUA scripts
+- support for setting scheme (https) from LUA scripts
+- src_ip support to LUA scripts
+---
+
+diff -Nura old/src/ae_epoll.c new/src/ae_epoll.c
+--- old/src/ae_epoll.c	2017-02-17 20:52:02.358396929 +0100
++++ new/src/ae_epoll.c	2017-02-16 22:14:33.396442854 +0100
+@@ -73,7 +73,7 @@
+ 
+     ee.events = 0;
+     mask |= eventLoop->events[fd].mask; /* Merge old events */
+-    if (mask & AE_READABLE) ee.events |= EPOLLIN;
++    if (mask & AE_READABLE) ee.events |= (EPOLLIN|EPOLLHUP|EPOLLRDHUP);
+     if (mask & AE_WRITABLE) ee.events |= EPOLLOUT;
+     ee.data.u64 = 0; /* avoid valgrind warning */
+     ee.data.fd = fd;
+@@ -114,7 +114,7 @@
+             int mask = 0;
+             struct epoll_event *e = state->events+j;
+ 
+-            if (e->events & EPOLLIN) mask |= AE_READABLE;
++            if (e->events & (EPOLLIN | EPOLLRDHUP | EPOLLHUP)) mask |= AE_READABLE;
+             if (e->events & EPOLLOUT) mask |= AE_WRITABLE;
+             if (e->events & EPOLLERR) mask |= AE_WRITABLE;
+             if (e->events & EPOLLHUP) mask |= AE_WRITABLE;
+diff -Nura old/src/net.c new/src/net.c
+--- old/src/net.c	2017-02-16 16:19:36.000000000 +0100
++++ new/src/net.c	2017-02-16 22:14:33.396442854 +0100
+@@ -1,5 +1,6 @@
+ // Copyright (C) 2013 - Will Glozer.  All rights reserved.
+ 
++#include <string.h>
+ #include <errno.h>
+ #include <unistd.h>
+ #include <sys/ioctl.h>
+@@ -7,7 +8,10 @@
+ #include "net.h"
+ 
+ status sock_connect(connection *c, char *host) {
+-    return OK;
++    int err = 0;
++    socklen_t len = sizeof(err);
++    getsockopt(c->fd, SOL_SOCKET, SO_ERROR, &err, &len);
++    return err == 0 ? OK : ERROR;
+ }
+ 
+ status sock_close(connection *c) {
+@@ -15,9 +19,16 @@
+ }
+ 
+ status sock_read(connection *c, size_t *n) {
+-    ssize_t r = read(c->fd, c->buf, sizeof(c->buf));
++    ssize_t r;
++    if ((r = read(c->fd, c->buf, sizeof(c->buf))) == -1) {
++        if (r == 0) return OK;		/* EOF, read 0 bytes, return OK */
++        switch (errno) {
++            case EAGAIN: return RETRY;
++            default:     return ERROR;
++        }
++    }
+     *n = (size_t) r;
+-    return r >= 0 ? OK : ERROR;
++    return OK;
+ }
+ 
+ status sock_write(connection *c, char *buf, size_t len, size_t *n) {
+diff -Nura old/src/script.c new/src/script.c
+--- old/src/script.c	2017-02-16 16:19:36.000000000 +0100
++++ new/src/script.c	2017-02-17 20:45:10.153217284 +0100
+@@ -2,6 +2,7 @@
+ 
+ #include <stdlib.h>
+ #include <string.h>
++#include <sys/time.h>
+ #include "script.h"
+ #include "http_parser.h"
+ #include "zmalloc.h"
+@@ -21,6 +22,7 @@
+ static int script_thread_newindex(lua_State *);
+ static int script_wrk_lookup(lua_State *);
+ static int script_wrk_connect(lua_State *);
++static int script_wrk_time_us(lua_State *);
+ 
+ static void set_fields(lua_State *, int, const table_field *);
+ static void set_field(lua_State *, int, char *, int);
+@@ -40,8 +42,8 @@
+ };
+ 
+ static const struct luaL_reg threadlib[] = {
+-    { "__index",    script_thread_index    },
+-    { "__newindex", script_thread_newindex },
++    { "__index",    script_thread_index    }, // var reads
++    { "__newindex", script_thread_newindex }, // var writes
+     { NULL,         NULL                   }
+ };
+ 
+@@ -68,6 +70,7 @@
+     const table_field fields[] = {
+         { "lookup",  LUA_TFUNCTION, script_wrk_lookup  },
+         { "connect", LUA_TFUNCTION, script_wrk_connect },
++        { "time_us", LUA_TFUNCTION, script_wrk_time_us },
+         { "path",    LUA_TSTRING,   path               },
+         { NULL,      0,             NULL               },
+     };
+@@ -98,7 +101,7 @@
+     return L;
+ }
+ 
+-bool script_resolve(lua_State *L, char *host, char *service) {
++bool script_resolve(lua_State *L, const char *host, const char *service) {
+     lua_getglobal(L, "wrk");
+ 
+     lua_getfield(L, -1, "resolve");
+@@ -306,6 +309,27 @@
+     return addr;
+ }
+ 
++static const char *checkscheme(lua_State *L) {
++    const char *scheme = luaL_checkstring(L, -1);
++    bool scheme_valid = strcmp("http", scheme) == 0 || strcmp("https", scheme) == 0;
++    luaL_argcheck(L, scheme != NULL, 1, "`scheme' expected");
++    luaL_argcheck(L, scheme_valid, 1, "`scheme' not any of: (http|https)");
++    return scheme;
++}
++
++static void set_host(lua_State *L, thread *t) {
++    const char *host = lua_tostring(L, -1);
++
++    if (t->host) zfree(t->host);
++    t->host = zstrdup(host);
++}
++
++static void set_src_ip(lua_State *L, thread *t) {
++    const char *host = lua_tostring(L, -1);
++
++    if(host) strncpy(t->addrf, host, 16);
++}
++
+ void script_addr_copy(struct addrinfo *src, struct addrinfo *dst) {
+     *dst = *src;
+     dst->ai_addr = zmalloc(src->ai_addrlen);
+@@ -320,6 +344,22 @@
+     return udata;
+ }
+ 
++const char *script_scheme_get(lua_State *L, const bool ssl) {
++    const char *scheme = ssl? "https": "http";
++    lua_pushfstring(L, scheme);
++    return scheme;
++}
++
++const char *script_host_get(lua_State *L, const char *host) {
++    lua_pushfstring(L, host);
++    return host;
++}
++
++const char *script_src_ip_get(lua_State *L, const char *src_ip) {
++    lua_pushfstring(L, src_ip);
++    return src_ip;
++}
++
+ static int script_addr_tostring(lua_State *L) {
+     struct addrinfo *addr = checkaddr(L);
+     char host[NI_MAXHOST];
+@@ -338,7 +378,7 @@
+ 
+ static int script_addr_gc(lua_State *L) {
+     struct addrinfo *addr = checkaddr(L);
+-    zfree(addr->ai_addr);
++    zfree(addr->ai_addr); addr->ai_addr = NULL;
+     return 0;
+ }
+ 
+@@ -418,6 +458,9 @@
+     if (!strcmp("get",  key)) lua_pushcfunction(L, script_thread_get);
+     if (!strcmp("set",  key)) lua_pushcfunction(L, script_thread_set);
+     if (!strcmp("stop", key)) lua_pushcfunction(L, script_thread_stop);
++    if (!strcmp("scheme", key)) script_scheme_get(L, t->ssl);
++    if (!strcmp("host", key)) script_host_get(L, t->host);
++    if (!strcmp("src_ip", key)) script_src_ip_get(L, t->addrf);
+     if (!strcmp("addr", key)) script_addr_clone(L, t->addr);
+     return 1;
+ }
+@@ -430,6 +473,13 @@
+         if (t->addr) zfree(t->addr->ai_addr);
+         t->addr = zrealloc(t->addr, sizeof(*addr));
+         script_addr_copy(addr, t->addr);
++    } else if (!strcmp("scheme", key)) {
++        const char *scheme = checkscheme(L);
++        t->ssl = !strncmp("https", scheme, 5);
++    } else if (!strcmp("host", key)) {
++        set_host(L, t);
++    } else if (!strcmp("src_ip", key)) {
++        set_src_ip(L, t);
+     } else {
+         luaL_error(L, "cannot set '%s' on thread", luaL_typename(L, -1));
+     }
+@@ -454,12 +504,14 @@
+     }
+ 
+     lua_newtable(L);
++
+     for (struct addrinfo *addr = addrs; addr != NULL; addr = addr->ai_next) {
+         script_addr_clone(L, addr);
+         lua_rawseti(L, -2, index++);
+     }
+ 
+     freeaddrinfo(addrs);
++
+     return 1;
+ }
+ 
+@@ -474,6 +526,14 @@
+     return 1;
+ }
+ 
++static int script_wrk_time_us(lua_State *L) {
++    struct timeval tv;
++    gettimeofday(&tv, NULL);
++    uint64_t now = (tv.tv_sec * 1000000) + tv.tv_usec;
++    lua_pushnumber(L, now);
++    return 1;
++}
++
+ void script_copy_value(lua_State *src, lua_State *dst, int index) {
+     switch (lua_type(src, index)) {
+         case LUA_TBOOLEAN:
+diff -Nura old/src/script.h new/src/script.h
+--- old/src/script.h	2017-02-16 16:19:36.000000000 +0100
++++ new/src/script.h	2017-02-16 21:46:34.058287080 +0100
+@@ -11,7 +11,7 @@
+ 
+ lua_State *script_create(char *, char *, char **);
+ 
+-bool script_resolve(lua_State *, char *, char *);
++bool script_resolve(lua_State *, const char *, const char *);
+ void script_setup(lua_State *, thread *);
+ void script_done(lua_State *, stats *, stats *);
+ 
+diff -Nura old/src/ssl.c new/src/ssl.c
+--- old/src/ssl.c	2017-02-17 21:22:39.180226576 +0100
++++ new/src/ssl.c	2017-02-17 21:23:13.722244597 +0100
+@@ -9,6 +9,7 @@
+ #include "ssl.h"
+ 
+ static pthread_mutex_t *locks;
++int ssl_data_index;
+ 
+ static void ssl_lock(int mode, int n, const char *file, int line) {
+     pthread_mutex_t *lock = &locks[n];
+@@ -23,12 +24,48 @@
+     return (unsigned long) pthread_self();
+ }
+ 
++int new_session_callback(SSL * ssl, SSL_SESSION * session){
++    connection * c = SSL_get_ex_data(ssl,ssl_data_index);
++    if(c && c->cache){
++        if(c->cache->cached_session){
++            SSL_SESSION_free(c->cache->cached_session);
++            //SSL_SESSION * session = c->cache->cached_session;
++            //printf("free %p %ld %ld %d\n",session,SSL_SESSION_get_time(session), SSL_SESSION_get_timeout(session),session->references);
++            c->cache->cached_session=NULL;
++        }
++        c->cache->cached_session=session;
++    }
++    return 1;
++}
++
++void ssl_info_callback(const SSL * ssl, int where, int ret){
++    /* for debug
++    if(where & SSL_CB_HANDSHAKE_START){
++
++        SSL_SESSION * session = SSL_get_session(ssl);
++        if(session){
++            printf("handshake begin %p %p %ld %ld %d\n",ssl,session,SSL_SESSION_get_time(session), SSL_SESSION_get_timeout(session),session->references);
++        }else{
++            printf("handshake begin %p %p \n",ssl,session);
++        }
++    }
++
++    if(where & SSL_CB_HANDSHAKE_DONE){
++        SSL_SESSION * session = SSL_get_session(ssl);
++        printf("handshake done %p reused %ld %ld %ld %d\n",session,SSL_session_reused((SSL*)ssl),
++                SSL_SESSION_get_time(session), SSL_SESSION_get_timeout(session),session->references);
++        //SSL_SESSION_print_fp(stdout,session);
++    }
++    */
++}
++
+ SSL_CTX *ssl_init() {
+     SSL_CTX *ctx = NULL;
+ 
+     SSL_load_error_strings();
+     SSL_library_init();
+     OpenSSL_add_all_algorithms();
++    ssl_data_index = SSL_get_ex_new_index(0,0,0,0,0);
+ 
+     if ((locks = calloc(CRYPTO_num_locks(), sizeof(pthread_mutex_t)))) {
+         for (int i = 0; i < CRYPTO_num_locks(); i++) {
+@@ -43,6 +80,8 @@
+             SSL_CTX_set_verify_depth(ctx, 0);
+             SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
+             SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_CLIENT);
++            SSL_CTX_sess_set_new_cb(ctx, new_session_callback);
++            SSL_CTX_set_info_callback(ctx, ssl_info_callback);
+         }
+     }
+ 
+@@ -51,6 +90,9 @@
+ 
+ status ssl_connect(connection *c, char *host) {
+     int r;
++    if(SSL_get_fd(c->ssl)!=c->fd && c->cache && c->cache->cached_session){
++        SSL_set_session(c->ssl,c->cache->cached_session);
++    }
+     SSL_set_fd(c->ssl, c->fd);
+     SSL_set_tlsext_host_name(c->ssl, host);
+     if ((r = SSL_connect(c->ssl)) != 1) {
+@@ -66,6 +108,8 @@
+ status ssl_close(connection *c) {
+     SSL_shutdown(c->ssl);
+     SSL_clear(c->ssl);
++    SSL_free(c->ssl);
++    c->ssl=NULL;
+     return OK;
+ }
+ 
+@@ -73,9 +117,12 @@
+     int r;
+     if ((r = SSL_read(c->ssl, c->buf, sizeof(c->buf))) <= 0) {
+         switch (SSL_get_error(c->ssl, r)) {
+-            case SSL_ERROR_WANT_READ:  return RETRY;
+-            case SSL_ERROR_WANT_WRITE: return RETRY;
+-            default:                   return ERROR;
++            case SSL_ERROR_WANT_READ:
++              return RETRY;
++            case SSL_ERROR_WANT_WRITE:
++              return RETRY;
++            default:
++              return ERROR;
+         }
+     }
+     *n = (size_t) r;
+diff -Nura old/src/ssl.h new/src/ssl.h
+--- old/src/ssl.h	2017-02-16 16:19:36.000000000 +0100
++++ new/src/ssl.h	2017-02-16 22:14:33.397442856 +0100
+@@ -11,4 +11,6 @@
+ status ssl_write(connection *, char *, size_t, size_t *);
+ size_t ssl_readable(connection *);
+ 
++extern int ssl_data_index;
++
+ #endif /* SSL_H */
+diff -Nura old/src/wrk.c new/src/wrk.c
+--- old/src/wrk.c	2017-02-16 16:19:36.000000000 +0100
++++ new/src/wrk.c	2017-02-17 21:23:13.722244597 +0100
+@@ -12,7 +12,10 @@
+     uint64_t pipeline;
+     bool     delay;
+     bool     dynamic;
++    bool     quiet;
+     bool     latency;
++    bool     tls_session_reuse;
++    bool     no_keep_alive;
+     char    *host;
+     char    *script;
+     SSL_CTX *ctx;
+@@ -23,14 +26,6 @@
+     stats *requests;
+ } statistics;
+ 
+-static struct sock sock = {
+-    .connect  = sock_connect,
+-    .close    = sock_close,
+-    .read     = sock_read,
+-    .write    = sock_write,
+-    .readable = sock_readable
+-};
+-
+ static struct http_parser_settings parser_settings = {
+     .on_message_complete = response_complete
+ };
+@@ -46,7 +41,10 @@
+            "  Options:                                            \n"
+            "    -c, --connections <N>  Connections to keep open   \n"
+            "    -d, --duration    <T>  Duration of test           \n"
++           "    -q, --quiet            Quiet mode                 \n"
+            "    -t, --threads     <N>  Number of threads to use   \n"
++           "    -r, --reuse       <R>  Enable tls session reuse   \n"
++           "    -k, --no_keepalive <K> Disable http keep-alive    \n"
+            "                                                      \n"
+            "    -s, --script      <S>  Load Lua script file       \n"
+            "    -H, --header      <H>  Add header to request      \n"
+@@ -61,6 +59,7 @@
+ int main(int argc, char **argv) {
+     char *url, **headers = zmalloc(argc * sizeof(char *));
+     struct http_parser_url parts = {};
++    bool ssl = false;
+ 
+     if (parse_args(&cfg, &url, &parts, headers, argc, argv)) {
+         usage();
+@@ -72,17 +71,13 @@
+     char *port    = copy_url_part(url, &parts, UF_PORT);
+     char *service = port ? port : schema;
+ 
++    if ((cfg.ctx = ssl_init()) == NULL) {
++        fprintf(stderr, "unable to initialize SSL\n");
++        ERR_print_errors_fp(stderr);
++        exit(1);
++    }
+     if (!strncmp("https", schema, 5)) {
+-        if ((cfg.ctx = ssl_init()) == NULL) {
+-            fprintf(stderr, "unable to initialize SSL\n");
+-            ERR_print_errors_fp(stderr);
+-            exit(1);
+-        }
+-        sock.connect  = ssl_connect;
+-        sock.close    = ssl_close;
+-        sock.read     = ssl_read;
+-        sock.write    = ssl_write;
+-        sock.readable = ssl_readable;
++        ssl = true;
+     }
+ 
+     signal(SIGPIPE, SIG_IGN);
+@@ -103,10 +98,12 @@
+ 
+     for (uint64_t i = 0; i < cfg.threads; i++) {
+         thread *t      = &threads[i];
++        t->ssl         = ssl;
+         t->loop        = aeCreateEventLoop(10 + cfg.connections * 3);
+         t->connections = cfg.connections / cfg.threads;
+ 
+         t->L = script_create(cfg.script, url, headers);
++
+         script_init(L, t, argc - optind, &argv[optind]);
+ 
+         if (i == 0) {
+@@ -135,17 +132,21 @@
+     sigaction(SIGINT, &sa, NULL);
+ 
+     char *time = format_time_s(cfg.duration);
+-    printf("Running %s test @ %s\n", time, url);
+-    printf("  %"PRIu64" threads and %"PRIu64" connections\n", cfg.threads, cfg.connections);
++    if (!cfg.quiet) {
++        printf("Running %s test @ %s\n", time, url);
++        printf("  %"PRIu64" threads and %"PRIu64" connections. session reuse:%s, keep-alive:%s\n", cfg.threads, cfg.connections,
++                cfg.tls_session_reuse?"enabled":"disabled", cfg.no_keep_alive?"disabled":"enabled");
++    }
+ 
+     uint64_t start    = time_us();
+     uint64_t complete = 0;
+     uint64_t bytes    = 0;
+     errors errors     = { 0 };
+ 
+-    sleep(cfg.duration);
++    sleep(cfg.duration);	// wait for the threads to do their job
+     stop = 1;
+ 
++    // collect the threads
+     for (uint64_t i = 0; i < cfg.threads; i++) {
+         thread *t = &threads[i];
+         pthread_join(t->thread, NULL);
+@@ -170,25 +171,43 @@
+         stats_correct(statistics.latency, interval);
+     }
+ 
+-    print_stats_header();
+-    print_stats("Latency", statistics.latency, format_time_us);
+-    print_stats("Req/Sec", statistics.requests, format_metric);
++    if (!cfg.quiet) {
++        print_stats_header();
++        print_stats("Latency", statistics.latency, format_time_us);
++        print_stats("Req/Sec", statistics.requests, format_metric);
++    }
++
+     if (cfg.latency) print_stats_latency(statistics.latency);
+ 
+     char *runtime_msg = format_time_us(runtime_us);
+ 
+-    printf("  %"PRIu64" requests in %s, %sB read\n", complete, runtime_msg, format_binary(bytes));
+-    if (errors.connect || errors.read || errors.write || errors.timeout) {
+-        printf("  Socket errors: connect %d, read %d, write %d, timeout %d\n",
+-               errors.connect, errors.read, errors.write, errors.timeout);
+-    }
++    if (!cfg.quiet) {
++        printf("  %"PRIu64" requests in %s, %sB read\n", complete, runtime_msg, format_binary(bytes));
++        if (errors.connect || errors.read || errors.write || errors.timeout) {
++            printf("  Socket errors: connect %d, read %d, write %d, timeout %d\n",
++                   errors.connect, errors.read, errors.write, errors.timeout);
++        }
++
++        if (errors.status) {
++            printf("  Non-2xx or 3xx responses: %d\n", errors.status);
++        }
+ 
+-    if (errors.status) {
+-        printf("  Non-2xx or 3xx responses: %d\n", errors.status);
++        printf("Requests/sec: %9.2Lf\n", req_per_s);
++        printf("Transfer/sec: %10sB\n", format_binary(bytes_per_s));
+     }
+ 
+-    printf("Requests/sec: %9.2Lf\n", req_per_s);
+-    printf("Transfer/sec: %10sB\n", format_binary(bytes_per_s));
++    if(!cfg.quiet && cfg.ctx) {
++        printf("TLS new conn %d reused %d miss %d finished conn %d sess_cb_hit %d renegotiation %d timeout %d full remove %d \n",
++                cfg.ctx->stats.sess_connect,
++                cfg.ctx->stats.sess_hit,
++                cfg.ctx->stats.sess_miss,
++                cfg.ctx->stats.sess_connect_good,
++                cfg.ctx->stats.sess_cb_hit,
++                cfg.ctx->stats.sess_connect_renegotiate,
++                cfg.ctx->stats.sess_timeout,
++                cfg.ctx->stats.sess_cache_full
++              );
++    }
+ 
+     if (script_has_done(L)) {
+         script_summary(L, runtime_us, complete, bytes);
+@@ -196,6 +215,8 @@
+         script_done(L, statistics.latency, statistics.requests);
+     }
+ 
++    stats_free(statistics.latency);
++    stats_free(statistics.requests);
+     return 0;
+ }
+ 
+@@ -213,8 +234,7 @@
+     connection *c = thread->cs;
+ 
+     for (uint64_t i = 0; i < thread->connections; i++, c++) {
+-        c->thread = thread;
+-        c->ssl     = cfg.ctx ? SSL_new(cfg.ctx) : NULL;
++        c->thread  = thread;
+         c->request = request;
+         c->length  = length;
+         c->delayed = cfg.delay;
+@@ -227,8 +247,10 @@
+     thread->start = time_us();
+     aeMain(loop);
+ 
++    SSL_SESSION_free(thread->cache.cached_session);
+     aeDeleteEventLoop(loop);
+-    zfree(thread->cs);
++    zfree(thread->cs);   thread->cs = NULL;
++    zfree(thread->host); thread->host = NULL;
+ 
+     return NULL;
+ }
+@@ -238,17 +260,49 @@
+     struct aeEventLoop *loop = thread->loop;
+     int fd, flags;
+ 
++    int rc;
++    struct addrinfo *addrf;
++    char *source_addr = thread->addrf;
++    struct addrinfo hints = {
++        .ai_family   = AF_UNSPEC,
++        .ai_socktype = SOCK_STREAM
++    };
++
+     fd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
+ 
++    if (source_addr && *source_addr) {
++        if ((rc = getaddrinfo(source_addr, NULL, &hints, &addrf)) != 0) {
++            const char *msg = gai_strerror(rc);
++            fprintf(stderr, "unable to resolve source %s: %s\n", source_addr, msg);
++            exit(1);
++        }
++    }
++
+     flags = fcntl(fd, F_GETFL, 0);
+     fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+ 
++    if (source_addr && *source_addr) {
++        if ((rc = bind(fd, addrf->ai_addr, addrf->ai_addrlen)) != 0) {
++            const char *msg = gai_strerror(rc);
++            fprintf(stderr, "unable to bind source %s: %s\n", source_addr, msg);
++            exit(1);
++        }
++    }
++
+     if (connect(fd, addr->ai_addr, addr->ai_addrlen) == -1) {
+         if (errno != EINPROGRESS) goto error;
+     }
+ 
+     flags = 1;
+     setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &flags, sizeof(flags));
++    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags));
++
++
++    if(cfg.ctx){
++        c->ssl = cfg.ctx ? SSL_new(cfg.ctx) : NULL;
++        SSL_set_ex_data(c->ssl,ssl_data_index,c);
++        c->cache = cfg.tls_session_reuse? &thread->cache:NULL;
++    }
+ 
+     flags = AE_READABLE | AE_WRITABLE;
+     if (aeCreateFileEvent(loop, fd, flags, socket_connected, c) == AE_OK) {
+@@ -265,7 +319,7 @@
+ 
+ static int reconnect_socket(thread *thread, connection *c) {
+     aeDeleteFileEvent(thread->loop, c->fd, AE_WRITABLE | AE_READABLE);
+-    sock.close(c);
++    SOCK_CLOSE(c);
+     close(c->fd);
+     return connect_socket(thread, c);
+ }
+@@ -348,7 +402,7 @@
+         aeCreateFileEvent(thread->loop, c->fd, AE_WRITABLE, socket_writeable, c);
+     }
+ 
+-    if (!http_should_keep_alive(parser)) {
++    if ((cfg.no_keep_alive) || (!http_should_keep_alive(parser))) {
+         reconnect_socket(thread, c);
+         goto done;
+     }
+@@ -361,11 +415,17 @@
+ 
+ static void socket_connected(aeEventLoop *loop, int fd, void *data, int mask) {
+     connection *c = data;
++    char    *host = c->thread->host? c->thread->host: cfg.host;
+ 
+-    switch (sock.connect(c, cfg.host)) {
+-        case OK:    break;
+-        case ERROR: goto error;
+-        case RETRY: return;
++    switch (SOCK_CONNECT(c, host)) {
++        case OK:
++        break;
++
++        case ERROR:
++        goto error;
++
++        case RETRY:
++        return;
+     }
+ 
+     http_parser_init(&c->parser, HTTP_RESPONSE);
+@@ -404,7 +464,7 @@
+     size_t len = c->length  - c->written;
+     size_t n;
+ 
+-    switch (sock.write(c, buf, len, &n)) {
++    switch (SOCK_WRITE(c, buf, len, &n)) {
+         case OK:    break;
+         case ERROR: goto error;
+         case RETRY: return;
+@@ -428,22 +488,38 @@
+     size_t n;
+ 
+     do {
+-        switch (sock.read(c, &n)) {
+-            case OK:    break;
+-            case ERROR: goto error;
+-            case RETRY: return;
++        switch (SOCK_READ(c, &n)) {
++            case OK:
++              break;
++
++            case ERROR: 
++              goto error;
++
++            case RETRY:
++              return;
+         }
+ 
+-        if (http_parser_execute(&c->parser, &parser_settings, c->buf, n) != n) goto error;
+-        if (n == 0 && !http_body_is_final(&c->parser)) goto error;
++        if (n == 0) // EOF
++            goto reconnect;
++
++        if (http_parser_execute(&c->parser, &parser_settings, c->buf, n) != n)
++            goto error;
++
++        if (http_body_is_final(&c->parser))
++            break;
++
++        if (n == 0)
++            goto error;
+ 
+         c->thread->bytes += n;
+-    } while (n == RECVBUF && sock.readable(c) > 0);
++    } while (n == RECVBUF && SOCK_READABLE(c) > 0);
+ 
+     return;
+ 
+   error:
+     c->thread->errors.read++;
++
++  reconnect:
+     reconnect_socket(c->thread, c);
+ }
+ 
+@@ -472,8 +548,11 @@
+     { "threads",     required_argument, NULL, 't' },
+     { "script",      required_argument, NULL, 's' },
+     { "header",      required_argument, NULL, 'H' },
++    { "quiet",       no_argument,       NULL, 'q' },
+     { "latency",     no_argument,       NULL, 'L' },
+     { "timeout",     required_argument, NULL, 'T' },
++    { "reuse",       no_argument,       NULL, 'r' },
++    { "no_keepalive",no_argument,       NULL, 'k' },
+     { "help",        no_argument,       NULL, 'h' },
+     { "version",     no_argument,       NULL, 'v' },
+     { NULL,          0,                 NULL,  0  }
+@@ -489,7 +568,7 @@
+     cfg->duration    = 10;
+     cfg->timeout     = SOCKET_TIMEOUT_MS;
+ 
+-    while ((c = getopt_long(argc, argv, "t:c:d:s:H:T:Lrv?", longopts, NULL)) != -1) {
++    while ((c = getopt_long(argc, argv, "t:c:d:s:H:T:qkLrv?", longopts, NULL)) != -1) {
+         switch (c) {
+             case 't':
+                 if (scan_metric(optarg, &cfg->threads)) return -1;
+@@ -506,6 +585,9 @@
+             case 'H':
+                 *header++ = optarg;
+                 break;
++            case 'q':
++                cfg->quiet = true;
++                break;
+             case 'L':
+                 cfg->latency = true;
+                 break;
+@@ -517,6 +599,12 @@
+                 printf("wrk %s [%s] ", VERSION, aeGetApiName());
+                 printf("Copyright (C) 2012 Will Glozer\n");
+                 break;
++            case 'r':
++                cfg->tls_session_reuse=true;
++                break;
++            case 'k':
++                cfg->no_keep_alive=true;
++                break;
+             case 'h':
+             case '?':
+             case ':':
+diff -Nura old/src/wrk.h new/src/wrk.h
+--- old/src/wrk.h	2017-02-16 16:19:36.000000000 +0100
++++ new/src/wrk.h	2017-02-16 21:46:34.059287082 +0100
+@@ -22,12 +22,26 @@
+ #define SOCKET_TIMEOUT_MS   2000
+ #define RECORD_INTERVAL_MS  100
+ 
++#define SOCK_CONNECT(c, host) (c->thread->ssl? ssl_connect(c, host): sock_connect(c, host))
++#define SOCK_CLOSE(c) (c->thread->ssl? ssl_close(c): sock_close(c))
++#define SOCK_READ(c, n) (c->thread->ssl? ssl_read(c, n): sock_read(c, n))
++#define SOCK_WRITE(c, buf, len, n) (c->thread->ssl? ssl_write(c, buf, len, n): sock_write(c, buf, len, n))
++#define SOCK_READABLE(c) (c->thread->ssl? ssl_readable(c): sock_readable(c))
++
+ extern const char *VERSION;
+ 
++
++typedef struct {
++    SSL_SESSION * cached_session; /* only cache 1 SSL_SESSION*/
++} tls_session_cache;
++
+ typedef struct {
+     pthread_t thread;
+     aeEventLoop *loop;
+     struct addrinfo *addr;
++    bool ssl;
++    char *host;
++    char addrf[16];	// 127.127.127.127
+     uint64_t connections;
+     uint64_t complete;
+     uint64_t requests;
+@@ -35,6 +49,7 @@
+     uint64_t start;
+     lua_State *L;
+     errors errors;
++    tls_session_cache cache;
+     struct connection *cs;
+ } thread;
+ 
+@@ -52,6 +67,7 @@
+     } state;
+     int fd;
+     SSL *ssl;
++    tls_session_cache * cache;
+     bool delayed;
+     uint64_t start;
+     char *request;
+diff -Nura old/src/zmalloc.c new/src/zmalloc.c
+--- old/src/zmalloc.c	2017-02-17 20:52:02.359396929 +0100
++++ new/src/zmalloc.c	2017-02-16 22:14:33.398442859 +0100
+@@ -35,13 +35,19 @@
+ #include "config.h"
+ #include "zmalloc.h"
+ 
++#ifdef _LP64
++#define ALIGMENT (16)
++#else
++#define ALIGMENT (8)
++#endif
++#define ROUND_UP(n,r) (((n + r - 1) / r ) * r)
+ #ifdef HAVE_MALLOC_SIZE
+ #define PREFIX_SIZE (0)
+ #else
+ #if defined(__sun) || defined(__sparc) || defined(__sparc__)
+-#define PREFIX_SIZE (sizeof(long long))
++#define PREFIX_SIZE (ROUND_UP(sizeof(long long), ALIGMENT))
+ #else
+-#define PREFIX_SIZE (sizeof(size_t))
++#define PREFIX_SIZE (ROUND_UP(sizeof(size_t), ALIGMENT))
+ #endif
+ #endif
+ 
+diff -Nura old/Makefile new/Makefile
+--- old/Makefile	2017-02-17 21:22:39.155226563 +0100
++++ new/Makefile	2017-02-17 21:23:13.701244586 +0100
+@@ -9,7 +9,7 @@
+ else ifeq ($(TARGET), darwin)
+ 	LDFLAGS += -pagezero_size 10000 -image_base 100000000
+ else ifeq ($(TARGET), linux)
+-	CFLAGS  += -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE
++	CFLAGS  += -D_POSIX_C_SOURCE=200112L -D_GNU_SOURCE
+ 	LIBS    += -ldl
+ 	LDFLAGS += -Wl,-E
+ else ifeq ($(TARGET), freebsd)
+@@ -93,7 +93,9 @@
+ else
+ 	@$(SHELL) -c "cd $< && ./config $(OPENSSL_OPTS)"
+ endif
+-	@$(MAKE) -C $< depend install
++	@$(MAKE) -C $< depend
++	@$(MAKE) -C $<
++	@$(MAKE) -C $< install
+ 
+ # ------------
+ 
