@@ -1,7 +1,9 @@
 [
-  {"namespace":"t15", "name":"cakephp-example"},
-  {"namespace":"t25", "name":"cakephp-example"},
-  {"namespace":"t35", "name":"cakephp-example"},
-  {"namespace":"t45", "name":"cakephp-example"},
-  {"namespace":"t55", "name":"cakephp-example"}
+  {"namespace":"cakephp-mysql0", "name":"cakephp-mysql-example"},
+  {"namespace":"dancer-mysql0", "name":"dancer-mysql-example"},
+  {"namespace":"django-postgresql0", "name":"django-psql-example"},
+  {"namespace":"eap64-mysql0", "name":"eap-app"},
+  {"namespace":"nodejs-mongodb0", "name":"nodejs-mongodb-example"},
+  {"namespace":"rails-postgresql0", "name":"rails-postgresql-example"},
+  {"namespace":"tomcat8-mongodb0", "name":"jws-app"}
 ]

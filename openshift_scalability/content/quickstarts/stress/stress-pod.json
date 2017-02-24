@@ -12,65 +12,107 @@
                 "generateName": "centos-stress-",
                 "labels": {
                     "run": "centos-stress",
-		    "test": "centos-stress"
+                    "test": "centos-stress"
                 }
             },
             "spec": {
-		"nodeSelector": {
-		    "placement": "test"
-		},
+                "nodeSelector": {
+                    "placement": "${PLACEMENT}"
+                },
                 "containers": [
                     {
                         "env": [
                             {
                                 "name": "RUN",
-				"value": "${RUN}"
-                            },
-                            {
-                                "name": "STRESS_CPU",
-				"value": "${STRESS_CPU}"
+                                "value": "${RUN}"
                             },
                             {
                                 "name": "RUN_TIME",
-				"value": "${RUN_TIME}"
+                                "value": "${RUN_TIME}"
+                            },
+                            {
+                                "name": "STRESS_CPU",
+                                "value": "${STRESS_CPU}"
                             },
                             {
                                 "name": "TARGET_HOST",
-				"value": "${TARGET_HOST}"
+                                "value": "${TARGET_HOST}"
                             },
                             {
                                 "name": "TARGET_PORT",
-				"value": "${TARGET_PORT}"
+                                "value": "${TARGET_PORT}"
+                            },
+                            {
+                                "name": "JVM_ARGS",
+                                "value": "${JVM_ARGS}"
                             },
                             {
                                 "name": "JMETER_SIZE",
-				"value": "${JMETER_SIZE}"
+                                "value": "${JMETER_SIZE}"
                             },
                             {
                                 "name": "JMETER_RAMP",
-				"value": "${JMETER_RAMP}"
+                                "value": "${JMETER_RAMP}"
                             },
                             {
                                 "name": "JMETER_TPS",
-				"value": "${JMETER_TPS}"
+                                "value": "${JMETER_TPS}"
                             },
                             {
-                                "name": "PBENCH_DIR",
-				"value": "${PBENCH_DIR}"
+                                "name": "WRK_DELAY",
+                                "value": "${WRK_DELAY}"
+                            },
+                            {
+                                "name": "WRK_TARGETS",
+                                "value": "${WRK_TARGETS}"
+                            },
+                            {
+                                "name": "WRK_CONNS_PER_THREAD",
+                                "value": "${WRK_CONNS_PER_THREAD}"
+                            },
+                            {
+                                "name": "WRK_KEEPALIVE",
+                                "value": "${WRK_KEEPALIVE}"
+                            },
+                            {
+                                "name": "WRK_TLS_SESSION_REUSE",
+                                "value": "${WRK_TLS_SESSION_REUSE}"
+                            },
+                            {
+                                "name": "URL_PATH",
+                                "value": "${URL_PATH}"
                             },
                             {
                                 "name": "ROUTER_IP",
-				"value": "${ROUTER_IP}"
+                                "value": "${ROUTER_IP}"
+                            },
+                            {
+                                "name": "PBENCH_DIR",
+                                "value": "${PBENCH_DIR}"
                             },
                             {
                                 "name": "GUN",
-				"value": "${GUN}"
+                                "value": "${GUN}"
+                            },
+                            {
+                                "name": "GUN_PORT",
+                                "value": "${GUN_PORT}"
+                            },
+                            {
+                                "name": "IDENTIFIER",
+                                "value": "${IDENTIFIER}"
                             }
                         ],
-                        "image": "sjug/centos-stress:latest",
+                        "image": "${WLG_IMAGE}",
                         "imagePullPolicy": "Always",
                         "name": "centos-stress",
                         "resources": {},
+                        "volumeMounts": [
+                            {
+                                "name": "targets",
+                                "mountPath": "/opt/wlg"
+                            }
+                        ],
                         "securityContext": {
                             "capabilities": {
                                 "drop": [
@@ -89,86 +131,154 @@
                         "terminationMessagePath": "/dev/termination-log"
                     }
                 ],
+                "volumes": [
+                    {
+                        "name": "targets",
+                        "configMap": {
+                            "name": "wlg-targets"
+                        }
+                    }
+                ],
                 "imagePullSecrets": [
                     {
                         "name": "default-dockercfg-ukomu"
                     }
                 ],
-		"restartPolicy": "Never"
+                "restartPolicy": "Never"
             }
         }
     ],
     "parameters": [
-	{
-	    "name": "RUN",
-	    "displayName": "Run App Name",
-	    "description": "Tells the container which app to execute",
-	    "value": "jmeter"
-	},
-	{
-	    "name": "STRESS_CPU",
-	    "displayName": "STRESS CPU Threads",
-	    "description": "How many stress CPU worker threads to spawn",
-	    "value": "6"
-	},
-	{
-	    "name": "RUN_TIME",
-	    "displayName": "Run timeout",
-	    "description": "The duration that tools will run before ending",
-	    "value": "60"
-	},
-	{
-	    "name": "TARGET_HOST",
-	    "displayName": "JMeter IP",
-	    "description": "The target IP for HTTP requests in JMeter",
-	    "value": "127.0.0.1"
-	},
-	{
-	    "name": "TARGET_PORT",
-	    "displayName": "JMeter Port",
-	    "description": "The target port for HTTP requests in JMeter",
-	    "value": "80"
-	},
-	{
-	    "name": "JMETER_SIZE",
-	    "displayName": "JMeter instance size",
-	    "description": "Number of hosts to stress per Jmeter instance",
-	    "value": "3"
-	},
-	{
-	    "name": "JMETER_RAMP",
-	    "displayName": "JMeter Ramp-up Time",
-	    "description": "The ramp-up period of the thread group in JMeter",
-	    "value": "30"
-	},
-	{
-	    "name": "JMETER_TPS",
-	    "displayName": "JMeter throughput",
-	    "description": "Thread throuput rate for JMeter",
-	    "value": "60"
-	},
-	{
-	    "name": "ROUTER_IP",
-	    "displayName": "Router IP",
-	    "description": "The IP of the OpenShift router to direct requests through",
-	    "value": "127.0.0.1"
-	},
-	{
-	    "name": "PBENCH_DIR",
-	    "displayName": "The results directory of pbench on the GUN",
-	    "description": "Where the results of the test will be copied to",
-	    "value": "default"
-	},
-	{
-	    "name": "GUN",
-	    "displayName": "GUN IP Addr",
-	    "description": "The IP of the machine running cluster loader",
-	    "value": "127.0.0.1"
-	},
-    	{
-      	    "name": "IDENTIFIER",
+        {
+            "name": "WLG_IMAGE",
+            "displayName": "WLG image",
+            "description": "Workload generator image",
+            "value": "svt/centos-stress:latest"
+        },
+        {
+            "name": "RUN",
+            "displayName": "Run App Name",
+            "description": "Tells the container which app to execute",
+            "value": "jmeter"
+        },
+        {
+            "name": "RUN_TIME",
+            "displayName": "Run timeout",
+            "description": "The duration that tools will run before ending",
+            "value": "60"
+        },
+        {
+            "name": "STRESS_CPU",
+            "displayName": "STRESS CPU Threads",
+            "description": "How many stress CPU worker threads to spawn",
+            "value": "6"
+        },
+        {
+            "name": "TARGET_HOST",
+            "displayName": "JMeter IP",
+            "description": "The target IP for HTTP requests in JMeter",
+            "value": "127.0.0.1"
+        },
+        {
+            "name": "TARGET_PORT",
+            "displayName": "JMeter Port",
+            "description": "The target port for HTTP requests in JMeter",
+            "value": "80"
+        },
+        {
+            "name": "JVM_ARGS",
+            "displayName": "Optional JVM arguments",
+            "description": "Optional JVM arguments",
+            "value": ""
+        },
+        {
+            "name": "JMETER_SIZE",
+            "displayName": "JMeter instance size",
+            "description": "Number of hosts to stress per JMeter instance",
+            "value": "3"
+        },
+        {
+            "name": "JMETER_RAMP",
+            "displayName": "JMeter Ramp-up Time",
+            "description": "The ramp-up period of the thread group in JMeter",
+            "value": "30"
+        },
+        {
+            "name": "JMETER_TPS",
+            "displayName": "JMeter throughput",
+            "description": "Thread throuput rate for JMeter",
+            "value": "60"
+        },
+        {
+            "name": "WRK_DELAY",
+            "displayName": "Delay between requests for wrk",
+            "description": "Delay between requests for the wrk client in ms.",
+            "value": "1000"
+        },
+        {
+            "name": "WRK_TARGETS",
+            "displayName": "Regex to select target routes",
+            "description": "Regex to select target routes for wrk.",
+            "value": "."
+        },
+        {
+            "name": "WRK_CONNS_PER_THREAD",
+            "displayName": "Connections per thread for wrk",
+            "description": "Connections per thread for wrk.",
+            "value": "y"
+        },
+        {
+            "name": "WRK_KEEPALIVE",
+            "displayName": "Enable http-keepalive for wrk",
+            "description": "Enable http-keepalive for wrk.",
+            "value": "y"
+        },
+        {
+            "name": "WRK_TLS_SESSION_REUSE",
+            "displayName": "Enable TLS session reuse for wrk",
+            "description": "Enable TLS session reuse for wrk.",
+            "value": "n"
+        },
+        {
+            "name": "URL_PATH",
+            "displayName": "URL path to query",
+            "description": "URL path to query with http(s) requests.",
+            "value": "/"
+        },
+        {
+            "name": "ROUTER_IP",
+            "displayName": "Router IP",
+            "description": "The IP of the OpenShift router to direct requests through",
+            "value": "127.0.0.1"
+        },
+        {
+            "name": "PBENCH_DIR",
+            "displayName": "The results directory of pbench on the GUN",
+            "description": "Where the results of the test will be copied to",
+            "value": "default"
+        },
+        {
+            "name": "GUN",
+            "displayName": "GUN IP Addr",
+            "description": "The IP of the machine running cluster loader",
+            "value": "127.0.0.1"
+        },
+        {
+            "name": "GUN_PORT",
+            "displayName": "GUN Port Number",
+            "description": "The port number of the machine running cluster loader",
+            "value": "9090"
+        },
+        {
+            "name": "PLACEMENT",
+            "displayName": "Placement of the WLG pod",
+            "description": "Placement of the WLG pod based on a node selector.",
+            "value": "test"
+        },
+        {
+            "name": "IDENTIFIER",
             "description": "Number to append to the name of resources",
             "value": "1"
-    	}
+        }
     ]
 }
