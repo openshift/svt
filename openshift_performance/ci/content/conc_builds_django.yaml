@@ -1,0 +1,17 @@
+projects:
+  - num: 50
+    basename: proj
+    ifexists: default
+    tuning: default
+
+    templates:
+      - num: 1
+        file: ../../../openshift_scalability/content/quickstarts/django/django-build.json
+tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 5
+        pause: 10 s
+      rate_limit:
+        delay: 250 ms

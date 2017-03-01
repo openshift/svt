@@ -1,10 +1,10 @@
 ---
-- hosts: all
+- hosts: master:sender:receiver
   sudo: yes
   user: root
   tasks:
     - name: Copy ssh public key to local systems
-      copy: src=id_rsa.pub dest=/root/.ssh/id_rsa.pub
+      copy: src=id_rsa.pub dest=/root/.ssh/.
 
 - hosts: sender:receiver
   remote_user: root
@@ -50,7 +50,8 @@
     copy: src=content/uperf-rc-template.json dest=/tmp/origin/uperf-rc-template.json
 
   - name: Copy uperf service template
-    copy: src=content/uperf-svc-template.json dest=/tmp/origin/uperf-svc-template.json
+    copy: src=content/uperf-svc-template-{{ item }}.json dest=/tmp/origin/uperf-svc-template-{{ item }}.json
+    with_sequence: start=1 end={{ uperf_pod_number }}
 
   - name: Add uperf scc
     shell: oc create -f /tmp/origin/uperf-scc.json
@@ -71,8 +72,8 @@
   - name: Create sender pods
     shell: >
       oc process
-      -v REGION={{ sender_region }}
-      -v ROLE=sender
+      -p REGION={{ sender_region }}
+      -p ROLE=sender
       -f /tmp/origin/uperf-rc-template.json |
       oc create --namespace=uperf-{{ item }} -f -
     with_sequence: start=1 end={{ uperf_pod_number }}
@@ -80,8 +81,8 @@
   - name: Create sender services
     shell: >
       oc process
-      -v ROLE=sender
-      -f /tmp/origin/uperf-svc-template.json |
+      -p ROLE=sender
+      -f /tmp/origin/uperf-svc-template-{{ item }}.json |
       oc create --namespace=uperf-{{ item }} -f -
     with_sequence: start=1 end={{ uperf_pod_number }}
 
@@ -91,8 +92,8 @@
   - name: Create receiver pods
     shell: >
       oc process
-      -v REGION={{ receiver_region }}
-      -v ROLE=receiver
+      -p REGION={{ receiver_region }}
+      -p ROLE=receiver
       -f /tmp/origin/uperf-rc-template.json |
       oc create --namespace=uperf-{{ item }} -f -
     with_sequence: start=1 end={{ uperf_pod_number }}
@@ -100,8 +101,8 @@
   - name: Create receiver services
     shell: >
       oc process
-      -v ROLE=receiver
-      -f /tmp/origin/uperf-svc-template.json |
+      -p ROLE=receiver
+      -f /tmp/origin/uperf-svc-template-{{ item }}.json |
       oc create --namespace=uperf-{{ item }} -f -
     with_sequence: start=1 end={{ uperf_pod_number }}
 
@@ -122,7 +123,7 @@
   - name: Generate oc exec commands
     shell: >
       oc get pods --all-namespaces --no-headers --selector="test=uperf" |
-      awk '{printf "oc exec %s --namespace=%s -- sysctl net.ipv4.ip_local_port_range=\"20010 20012\"\n",$2, $1}'
+      awk '{printf "oc exec %s --namespace=%s -- sysctl net.ipv4.ip_local_port_range=\"200%s0 200%s9\"\n",$2, $1,substr($1,7),substr($1,7)}'
     register: oc_exec_cmds
 
   vars:
@@ -153,7 +154,7 @@
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=tcp
-      --instances=1,2
+      --instances=1
       --samples=3
       --max-stddev=10
       --clients={{ uperf_clients }}
@@ -163,11 +164,11 @@
   - name: Run pbench-uperf for UDP benchmarks
     shell: >
       pbench-uperf
-      --test-types=rr
+      --test-types=stream,rr
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=udp
-      --instances=1,2
+      --instances=1
       --samples=3
       --max-stddev=10
       --clients={{ uperf_clients }}
@@ -186,3 +187,6 @@
   - name: Delete uperf projects
     shell: oc delete project uperf-{{ item }}
     with_sequence: start=1 end={{ uperf_pod_number }}
+    
+  - name: Clear pbench results
+    shell: pbench-clear-results    

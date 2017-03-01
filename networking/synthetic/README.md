@@ -9,7 +9,8 @@ The following uperf tests are run:
 ## Assumptions
 - You have copied a public ssh key for use by all nodes and pods to svt/networking/synthetic/id_rsa.pub 
 - You already have a running OpenShift cluster
-- The master node has the `oc` tool installed
+- If master host is not connected to pods subnet, you have a pod running to serve as ansible host, ansible_pod.
+- The master_host/ansible_pod has the `oc` tool installed.
 - The `oc` tool is logged in as user `system:admin`
 - The ssh-able hostnames given to this script match their node name in OpenShift
 - [pbench](https://github.com/distributed-system-analysis/pbench) is installed and configured on all hosts
@@ -42,10 +43,10 @@ $ python network-test.py svcIP --master <hostname> --pods 1 5 10
 
 ```
 # podIP-to-podIP, master-to-node, 1 pod pair
-$ python network-test.py podIP --master <master-hostname> --node <node-hostname> --pods 1
+$ python network-test.py podIP --master <master-hostname/ansible_pod-hostname> --node <node-hostname> --pods 1
 
 # svcIP-to-svcIP, node-to-node, 6 pod pairs
-$ python network-test.py svcIP --master <master-hostname> --node <node1-hostname> <node2-hostname> --pods 6
+$ python network-test.py svcIP --master <master-hostname/ansible_pod-hostname> --node <node1-hostname> <node2-hostname> --pods 6
 ```
 
 ### Running all the combinations

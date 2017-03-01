@@ -37,7 +37,7 @@ module OpenshiftReliability
         user = guess_user
         project_name = template + "-" + user.name + "-" + $config.seq
         case template
-          when "rails-postgresql-example" then project=Project.new(project_name,user )
+          when "rails-postgresql-example" then project=Rails_psql_example.new(project_name,user )
           when "nodejs-example"           then project=Project.new(project_name,user )
           when "django-example"           then project=Project.new(project_name,user )
           when "cakephp-example"          then project=Project.new(project_name ,user)
@@ -45,7 +45,6 @@ module OpenshiftReliability
           when "django-psql-example"      then project=Django_psql.new(project_name,user )
           when "dancer-mysql-example"     then project=Dancer_mysql.new(project_name,user )
           when "cakephp-mysql-example"    then project=Cake_php_mysql.new(project_name ,user)
-          when "ruby-hello-world"         then project=Ruby_hello_world.new(project_name ,user)
           when "eap64-mysql-s2i"          then project=EAP_app_mysql.new(project_name,user )
           else project=Project.new(project_name,user )
         end

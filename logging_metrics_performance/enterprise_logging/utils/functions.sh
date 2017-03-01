@@ -17,6 +17,8 @@ function setup_globals() {
 
         # pbench
         export PB_RES=${2:-'/var/lib/pbench-agent'}
+	PBENCH_COLLECTION_INTERVAL=60
+
 
 	# pbench node file
 	PBENCH_NODESFILE="pbench_nodes.lst"
@@ -51,30 +53,43 @@ function parse_opts() {
         Accepted parameters::
         [*] are required
 
-        -n <test name>  logSoak1 [*]
-        -e <e2e test>   1
-        -s <scale>      1
-        -j <jctl>       1
+        -n <test name> [*]
+	-d <test duration in seconds>
+        -w <logger pods per node>
+	-r <load rate>
+	
+	-i <pbench collection interval>
+	-m <mock test>
         '
 
-        while getopts ":m:n:e:s:j:h:" option; do
+	while getopts ":m:n:w:h:d:i:r:" option; do
             case "${option}" in
                 n)
                     TESTNAME=${OPTARG}
+                    ;;
+		r)
+                    LOAD_RATE=${OPTARG}
+                    ;;
+		d)
+                    TEST_DURATION=${OPTARG}
                     ;;
                 m)
                     MOCK=${OPTARG}
                     RUN_TYPE="Mock testing... ${MOCK} seconds"
                     TESTBIN="sleep ${MOCK}"
                     CMD="$TESTBIN"
-                    ;;		    
-                j)
-                    JOURNALD=${OPTARG}
-                    RUN_TYPE="Journalctl spammer"
-                    TESTBIN="$TESTDIR/logger.sh"
-                    CMD="$TESTBIN -r $JOURNALD -l 256"
                     ;;
-                *)
+		i)
+                    PBENCH_COLLECTION_INTERVAL=${OPTARG}
+                    ;;
+                w)
+                    TIMES=${OPTARG}
+                    RUN_TYPE="Journalctl logger pods"
+                    TESTBIN="export TIMES=$TIMES; export MODE=1; $TESTDIR/manage_pods.sh -r $LOAD_RATE; sleep $TEST_DURATION"
+                    CMD="$TESTBIN"
+		     
+                    ;;
+		*)
                     echo -e "Invalid option / usage: ${option}\nExiting."
                     usage
                     exit $ERR
@@ -83,8 +98,8 @@ function parse_opts() {
             esac
         done
         shift $((OPTIND-1))
-}
 
+}
 
 function pbench_perftest() {
 	PBTOOLS="iostat mpstat pidstat proc-vmstat sar turbostat"
@@ -101,11 +116,14 @@ function pbench_perftest() {
                 echo -e "\n[*] Registering $PBTOOLS on $NODE"
                 for TOOL in $PBTOOLS
                 do
-			pbench-register-tool --name=$TOOL --remote=$NODE -- --interval=300
+			pbench-register-tool --name=$TOOL --remote=$NODE -- --interval=${PBENCH_COLLECTION_INTERVAL}
                 done
         done
 
         echo -e "\n[*] Starting $RUN_TYPE test"
+	echo -e "Worker pod(s) per node: $TIMES\nLoad rate: $LOAD_RATE Byte/sec\nTest duration: $TEST_DURATION seconds.\n"
+	echo -e "Pbench --interval: ${PBENCH_COLLECTION_INTERVAL}\n"
+	sleep 5
         pbench-start-tools -d $PB_RES/$TESTNAME
 
 	# Phase 2 - Run test
@@ -118,8 +136,10 @@ function pbench_perftest() {
                 disk_usage ${NODE} "disk_usage_final"
         done
 
+	echo -e "\n[*] Stopping $RUN_TYPE"
+	export MODE=1; $TESTDIR/manage_pods.sh -k 1
+
 	# Finish up pbench collection
-        echo -e "\n[*] Stopping $RUN_TYPE"
         pbench-stop-tools -d $PB_RES/$TESTNAME &> /dev/null
         pbench-postprocess-tools -d $PB_RES/$TESTNAME
 
@@ -224,7 +244,7 @@ es_logs() {
 
   test -t 9 && {
     echo "ProgramName: file descriptor 9 already opened, cannot save logs." >&1
-    return 1
+    return $ERR
   }
 
   for es_pod in $es_pods
@@ -236,15 +256,23 @@ _cluster/state?pretty		_cluster_state
 _cluster/pending_tasks?pretty	_cluster_pending_tasks
 _nodes?pretty			_nodes
 _nodes/stats?pretty		_nodes_stats
-_stats				_stats
+_stats?pretty			_stats
 _cat/allocation?v		_cat_allocation
-_cat/thread_pool?v		_thread_pool
+_cat/thread_pool?v		_cat_thread_pool
 _cat/health?v			_cat_health
 _cat/plugins?v			_cat_plugins
 _cat/recovery?v			_cat_recovery
 _cat/count?v			_cat_count
+_cat/shards?v			_cat_shards
+_cat/master?v			_cat_master
+_cat/nodes?v			_cat_nodes
+_cat/indices?v			_cat_indices
+_cat/segments?v			_cat_segments
+_cat/pending_tasks?v		_cat_pending_tasks
+_cat/aliases?v			_cat_aliases
+_cat/plugins?v			_cat_plugins
+_cat/fielddata?v		_cat_fielddata
 _EOF_
-#https://gist.github.com/rflorenc/f7f86078ee412c33fffc4f9ccb9ff5f1
 
     while read -u9 -r api save rest
     do
@@ -296,6 +324,13 @@ oc_logs() {
 
 #
 # Logging installer specific
+function show_help() {
+cat << EOF
+    Usage: scriptname.sh [depyer_helper_cfg_file]
+    ./enterprise_logging_setup.sh deployer.conf
+EOF
+}
+
 function _wait() {
         echo -e "\nSleeping for $1 secs..."
         sleep $1
@@ -320,17 +355,6 @@ function pre_clean() {
         done
 }
 
-function tear_down() {
-        oc delete all --selector logging-infra=kibana
-        oc delete all,daemonsets --selector logging-infra=fluentd
-        oc delete all --selector logging-infra=elasticsearch
-        oc delete all --selector logging-infra=curator
-        oc delete all,sa,oauthclient --selector logging-infra=support
-
-        oc delete secret logging-fluentd logging-elasticsearch \
-        logging-es-proxy logging-kibana logging-kibana-proxy \
-        logging-kibana-ops-proxy
-}
 
 #
 # Other / misc 
@@ -342,6 +366,10 @@ function cleanup() {
         echo -e "\nRemoving tmp files..."
         rm -rf perf-percpu/ &> /dev/null
         rm perf-report.* &> /dev/null
+
+        echo -e "\nKilling running pods..."
+        export MODE=1; $TESTDIR/manage_pods.sh -k 1
+
         echo -e "Done.\n"
         return $?
 }
@@ -371,8 +399,17 @@ function usage() {
         [*] are required
 
         -n <test name> [*]
-        -j <journalctl>
+	-d <test duration in seconds>
+        -w <logger pods per node>
+	-r <load rate>
+	
+	-i <pbench collection interval>
+	-m <mock test>
 
         Examples:
-        ./pbench_perftest.sh -n logging_e2e100_01012016 -e 100'
+	 Mock test for 120 seconds
+         ./pbench_perftest.sh -n logging_e2e100_01012016 -m 120
+	
+	 3600 seconds test, 5 worker pods per node logging at 256Bytes/sec
+	 ./pbench_perftest.sh -n logging_3600sec_5wppn -d 3600 -r 256 -w 5'
 }

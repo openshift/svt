@@ -11,9 +11,9 @@ For each application there are the following files:
 - \<app>-\<db>-pv-deploy.json
 - \<app>-build.json
 
-Each application has two permutations, one with persistent volumes and one without persistent volumes. 
+Each application has two permutations, one with persistent volumes and one without persistent volumes.
 
-Within each permutation there is a complete template that includes a BuildConfig and ImageStream and a deploy only template that omits the build step. The deploy only template assumes that the container image has already been built in the `openshift` namespace. 
+Within each permutation there is a complete template that includes a BuildConfig and ImageStream and a deploy only template that omits the build step. The deploy only template assumes that the container image has already been built in the `openshift` namespace.
 
 ### cluster-loader
 
@@ -29,11 +29,11 @@ Example usage:
 # python cluster-loader.py -f config/master-vert-pv.yaml
 ```
 
-## Requirements and Recommendations 
+## Requirements and Recommendations
 
 ### Router
 
-To access routes from an external machine such as a server running JMeter or your workstation, dnsmasq needs to be configured on that system. 
+To access routes from an external machine such as a server running JMeter or your workstation, dnsmasq needs to be configured on that system.
 
 1. Add a dnsmasq configuration file to `/etc/dnsmasq.d/` :
 ```
@@ -63,15 +63,15 @@ nameserver 127.0.0.1
 
 Source: https://github.com/openshift/cakephp-ex
 
-Simple landing page app with a page view counter that is written to the database. App code must be modified to [enable database example](https://github.com/openshift/cakephp-ex#enabling-the-database-example).
+Simple landing page app with a page view counter that is written to the database. App code must be modified to [enable MySQL database access](https://github.com/openshift/cakephp-ex#enabling-the-database-example).
 
 ### Dancer
 
 Source: https://github.com/openshift/dancer-ex
 
-Contact list app that keeps track of names and email addresses. App code must be modified to [enable database example](https://github.com/openshift/dancer-ex#enabling-the-database-sample).
+Contact list app that keeps track of names and email addresses. Application [is configured](https://github.com/openshift/dancer-ex#enabling-the-database-sample) to use PostgreSQL database.
 
-Example HTTP request to write data: 
+Example HTTP request to write data:
 ```
 # curl -XPOST -d "name=perf" -d "email=perf@redhat.com" http://dancer-mysql-example-dancer-mysql0.cloudapps.ose.com/
 ```
@@ -80,44 +80,44 @@ Example HTTP request to write data:
 
 Source: https://github.com/siamaksade/daytrader
 
-DayTrader is benchmark application built around the paradigm of an online stock trading system.  The application needs to be first [configured](http://<app_route_host>/daytrader/configure.html). 
+DayTrader is benchmark application built around the paradigm of an online stock trading system.  The application needs to be first [configured](http://<app_route_host>/daytrader/configure.html).  Application uses PostgreSQL database.
 
 ### Django
 
 Source: https://github.com/openshift/django-ex
 
-Simple landing page app with a page view counter that is written to the database.
+Simple landing page app with a page view counter that is written to the PostgreSQL database.
 
 ### EAP
 
 Source: https://github.com/jboss-openshift/openshift-examples
 
-Todo app that keeps track of task summary and description. 
+Todo app that keeps track of task summary and description. Application writes to the MySQL database.
 
 Example HTTP request to write data:
 ```
-# curl -XPOST -d "summary=get+stuff+done" -d "description=omg+so+many+things" http://jws-app-tomcat8-mongodb0.cloudapps.ose.com/
+# curl -XPOST -d "summary=get+stuff+done" -d "description=omg+so+many+things" http://eap-app-eap64-mysql0.cloudapps.ose.com/
 ```
 
 ### NodeJS
 
 Source: https://github.com/openshift/nodejs-ex
 
-Simple landing page app with a page view counter that is written to the database.
+Simple landing page app with a page view counter that is written to the MongoDB database.
 
 ### Rails
 
 Source: https://github.com/openshift/rails-ex
 
-Blog posting app. 
+Blog posting app with data written to the PostgreSQL database.
 
-TODO: figure out how to progammatically send requests, app uses cookies to validate requests. 
+TODO: figure out how to programmatically send requests, app uses cookies to validate requests.
 
 ### Tomcat
 
 Source: https://github.com/jboss-openshift/openshift-examples
 
-Todo app that keeps track of task summary and description. 
+Todo app that keeps track of task summary and description.  Data is written to the MongoDB database.
 
 Example HTTP request to write data:
 ```
@@ -126,7 +126,7 @@ Example HTTP request to write data:
 
 ## Issues
 
-### Dynamic Provisioning 
+### Dynamic Provisioning
 
 - Application templates that use persistent volumes have been modified to use dynamic provisioning
 
@@ -154,4 +154,4 @@ The following quickstarts need to be forked from their upstream repos to enable 
 
 ### Poor Performance with Java Based Apps
 
-The Tomcat and EAP based apps handle a considerably lower number of requests per second compared to the other quickstart apps. During preliminary testing, these apps could only handle about 4.1 requests per second before returning errors. This may be due to requests being blocked on disk access, increasing memory utilization until the pod memory limit is reached. This causes the pod to be repeatedly restarted during the test and the majority of requests fail. 
+The Tomcat and EAP based apps handle a considerably lower number of requests per second compared to the other quickstart apps. During preliminary testing, these apps could only handle about 4.1 requests per second before returning errors. This may be due to requests being blocked on disk access, increasing memory utilization until the pod memory limit is reached. This causes the pod to be repeatedly restarted during the test and the majority of requests fail.

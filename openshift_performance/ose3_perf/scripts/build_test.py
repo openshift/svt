@@ -143,7 +143,7 @@ def run_builds(all_builds):
         if globalconfig["random"] > 0:
             selected_builds = select_random_builds(all_builds, globalconfig["random"])
         else:
-            selected_builds = all_builds
+            selected_builds = all_builds[0:]
 
         if globalconfig["shuffle"]:
             selected_builds = random.sample(selected_builds, len(selected_builds))
