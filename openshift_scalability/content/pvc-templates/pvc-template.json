@@ -1,0 +1,68 @@
+{
+    "apiVersion": "v1",
+    "kind": "Template",
+    "metadata": {
+        "name": "pvc-template",
+        "labels": {
+            "name": "pvc-template"
+        },
+        "annotations": {
+            "descriptions": "Template to create PVC and bound it to PV in desired namespace",
+            "tags": "pvc, pvc-template"
+        }
+    },
+    "objects": [
+        {
+            "apiVersion": "v1",
+            "kind": "PersistentVolumeClaim",
+            "metadata": {
+                "name": "${PVC_NAME}",
+                "annotations": {
+                    "volume.beta.kubernetes.io/storage-class": "${STORAGE_CLASS}"
+                }
+            },
+            "spec": {
+                "accessModes": [
+                    "${ACCESS_MODES}"
+                ],
+                "resources": {
+                    "requests": {
+                        "storage": "${STORAGE_SIZE}"
+                    }
+                }
+            }
+        }
+    ],
+    "parameters": [
+        {
+            "name": "PVC_NAME",
+            "description": "PVC name",
+            "required": true,
+            "from": "pvc[a-z0-9]{10}",
+            "generate": "expression"
+        },
+        {
+            "name" : "STORAGE_CLASS",
+            "description": "Storagecclass to use - here we expect storageclass name",
+            "required": true,
+            "value": "storageclassname"
+        },
+        {
+            "name": "STORAGE_SIZE",
+            "description": "The PVC size - default is 1Gi",
+            "required": true,
+            "value": "1Gi"
+        },
+        {
+            "name": "ACCESS_MODES",
+            "description": "PVC access mode - this will have different values for different storage backends",
+            "required": true,
+            "value": "ReadWriteOnce"
+        },
+        {
+            "name": "IDENTIFIER",
+            "description": "Number to append to the name of resources",
+            "value": "1"
+        }
+    ]
+}
