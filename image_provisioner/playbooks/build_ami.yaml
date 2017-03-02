@@ -50,6 +50,7 @@
     - docker-config
     - aos-ansible
     - openshift-package-install
+    - seal-image
 
 - hosts: localhost
   connection: local
