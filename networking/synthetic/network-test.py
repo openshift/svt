@@ -11,6 +11,7 @@ from ansible.callbacks       import PlaybookCallbacks
 from ansible.callbacks       import PlaybookRunnerCallbacks
 from ansible                 import utils
 from decimal                 import Decimal   
+from email.policy import default
 
 class NetworkTest(object):
     def __init__(self, playbook):
@@ -74,8 +75,9 @@ def parse_args():
     
     parser.add_argument('-v',
                         '--version',
-                        required = True,
+                        required = False,
                         dest = 'os_version',
+                        default = '3.5',
                         help = 'OpenShift version')
     
     parser.add_argument('-m',
