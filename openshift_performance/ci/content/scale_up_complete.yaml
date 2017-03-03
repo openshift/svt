@@ -44,7 +44,7 @@
          -p redhat 
          -n cakephp-mysql0 
          -d cakephp-mysql-example 
-         -r 240
+         -r 200
          -s 20 
          -w 10 
          -z
