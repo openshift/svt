@@ -10,10 +10,8 @@ from ansible.callbacks       import AggregateStats
 from ansible.callbacks       import PlaybookCallbacks
 from ansible.callbacks       import PlaybookRunnerCallbacks
 from ansible                 import utils
-from decimal                 import Decimal   
-from email.policy import default
 
-class NetworkTest(object):
+class StorageTest(object):
     def __init__(self, playbook):
         self.inventory = Inventory(host_list=[])
         self.playbook = playbook
@@ -71,14 +69,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('test_type',
-                        choices = ['podIP', 'svcIP'])
-    
-    parser.add_argument('-v',
-                        '--version',
-                        required = False,
-                        dest = 'os_version',
-                        default = '3.5',
-                        help = 'OpenShift version')
+                        choices = ['podIP', 'svcIP', 'fio'])
     
     parser.add_argument('-m',
                         '--master',
@@ -88,14 +79,14 @@ def parse_args():
     
     parser.add_argument('-n',
                         '--node',
-                        required = False,
+                        required = True,
                         nargs = '*',
                         dest = 'test_nodes',
                         help = 'OpenShift node')
 
     parser.add_argument('-p',
                         '--pods',
-                        required = True,
+                        required = False,
                         nargs = '*',
                         dest = 'pod_numbers',
                         type = int,
@@ -145,40 +136,12 @@ def set_receiver_region(master, nodes):
         if len(nodes) == 2 and nodes[0] == nodes[1]:
             return 'both'
         return 'receiver'
-
     
 def set_playbook(test_type):
-    if test_type == 'podIP':
-        return 'pod-ip-test-setup.yaml'
+    if test_type == 'fio':
+        return 'fio-test-setup.yaml'
     else:
         return 'svc-ip-test-setup.yaml'
-
-
-def set_pbench_label(test_type, nodes):
-    if test_type == 'podIP':
-        if nodes is None:
-            return 'pod-to-pod-LB'
-        elif len(nodes) == 1:
-            return 'pod-to-pod-MN'
-        elif len(nodes) == 2 and nodes[0] == nodes[1]:
-            return 'pod-to-pod-LB'
-        elif len(nodes) == 2 and nodes[0] != nodes[1]:
-            return 'pod-to-pod-NN'
-    else:
-        if nodes is None:
-            return 'svc-to-svc-LB'
-        elif len(nodes) == 1:
-            return 'svc-to-svc-MN'
-        elif len(nodes) == 2 and nodes[0] == nodes[1]:
-            return 'svc-to-svc-LB'
-        elif len(nodes) == 2 and nodes[0] != nodes[1]:
-            return 'svc-to-svc-NN'
-        
-def get_option(version):
-    if Decimal(version) >= 3.5 :
-        return '-p'
-    else:
-        return '-v'                    
 
 def main():
     args = parse_args()
@@ -188,34 +151,30 @@ def main():
     master_host = args.test_master
     
     pbench_remote = set_pbench_remote(args.test_master, args.test_nodes)
-    pbench_base_label = set_pbench_label(args.test_type, args.test_nodes)
     
     sender_region = set_sender_region(args.test_master, args.test_nodes)
     receiver_region = set_receiver_region(args.test_master, args.test_nodes)
-    
-    oc_process_option = get_option(args.os_version);
 
     test_playbook = set_playbook(args.test_type)
 
-    for pod_number in args.pod_numbers:
-        pbench_label = '{0}_PODS_{1}'.format(pbench_base_label, pod_number)
+    pbench_label = 'FIO'
+    project_number = 1
         
-        inventory_vars = { 'sender_region': sender_region,
-                           'receiver_region': receiver_region,
-                           'uperf_pod_number': pod_number,
-                           'oc_process_option': oc_process_option,
-                           'pbench_label': pbench_label,
-                           'pbench_remote': pbench_remote }
+    inventory_vars = { 'sender_region': sender_region,
+                       'receiver_region': receiver_region,
+                       'project_number': project_number,
+                       'pbench_label': pbench_label,
+                       'pbench_remote': pbench_remote }
     
-        nettest = NetworkTest(test_playbook)
+    nettest = StorageTest(test_playbook)
 
-        nettest.add_sender(sender_host)
-        nettest.add_receiver(receiver_host)
-        nettest.add_master(master_host)
+    nettest.add_sender(sender_host)
+    nettest.add_receiver(receiver_host)
+    nettest.add_master(master_host)
     
-        nettest.set_inventory_vars(inventory_vars)
+    nettest.set_inventory_vars(inventory_vars)
 
-        nettest.run()
+    nettest.run()
     
 
 if __name__ == '__main__':
