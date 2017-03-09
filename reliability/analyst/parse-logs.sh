@@ -113,8 +113,8 @@ function extract_activity_data
   echo "User Deletion Passed: $(grep -e "Execute: oc delete user.*-> pass" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "User Deletion Failed: $(grep -e "Execute: oc delete user.*-> fail" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "User Deletion Total: $(grep -e "Execute: oc delete user.*->" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
-  echo "Project Deletion Total: $(grep -e "Execute: oc delete project.*-> pass" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
-  echo "Project Deletion Total: $(grep -e "Execute: oc delete project.*-> fail" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "Project Deletion Passed: $(grep -e "Execute: oc delete project.*-> pass" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "Project Deletion Failed: $(grep -e "Execute: oc delete project.*-> fail" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "Project Deletion Total: $(grep -e "Execute: oc delete project.*->" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "Application Access Passed $(grep -e "Execute: curl.*${subdomain}.*-> pass" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "Application Access Failed $(grep -e "Execute: curl.*${subdomain}.*-> fail" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
