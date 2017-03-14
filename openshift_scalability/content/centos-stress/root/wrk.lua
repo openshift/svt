@@ -85,14 +85,13 @@ function setup(thread)
   while true do
     index = (counter % #requests_data) + 1 	-- we can have more connections than threads
     req = requests_data[index]
-
     if req.addr ~= nil then break end
     counter = counter + 1			-- skip unreachable hosts
   end
   counter = counter + 1
 
   -- set per-thread userdata
-  thread:set("id", counter)
+  thread:set("thread_id", counter)
   thread:set("host", req.host)
   thread:set("port", req.port)
   thread:set("method", req.method)
@@ -120,7 +119,7 @@ function wrk.init(args)
     max_requests = to_integer(args[1])
   end
 
-  math.randomseed(id)				-- generate different random seed for every thread
+  math.randomseed(thread_id)			-- generate different random seed for every thread
 
   wrk.headers["Host"] = host
 
@@ -136,12 +135,11 @@ end
 
 function request()
   requests = requests + 1
-  start_us = wrk.time_us()
 
   return wrk.format(method, path, headers, body)
 end
 
-function response(status, headers, body)
+function response(status, headers, body, stats)
   responses = responses + 1
 
   local cont_len = headers["Content-Length"]
@@ -149,11 +147,17 @@ function response(status, headers, body)
     cont_len = 0
   end
 
-  local msg = "%d,%d,%d,%d,%s %s://%s:%s%s,%d,%d\n"
-  local time_us = wrk.time_us()
-  local delay = time_us - start_us
+  local msg = "%d,%d,%d,%d,%s %s://%s:%s%s,%d,%d,%d,%d,%d,%d\n"
+  local now_us = wrk.time_us()
+  local conn_id = stats["conn_id"]			-- file descriptor of the connection for which we received this response
+  local conn_reqs = stats["conn_reqs"]			-- number of requests sent over this connection
+  local conn_start = stats["conn_start"]		-- time [us] since the Epoch we first tried to establish this connection
+  local conn_delay_est = stats["conn_delay_est"]	-- time [us] it took to establish this connection (e.g. TLS establishment); initial connection establishment delay
+  local conn_delay_req = stats["conn_delay_req"]	-- time [us] wrk was instructed to wait before sending a request at start_us
+  local start_us = stats["start"]			-- time [us] since the Epoch conn_id became writeable and we issued a new request
+  local delay = now_us - start_us			-- request latency [us] (conn_delay_est excluded)
 
-  io.write(msg:format(start_us,delay,status,cont_len,method,wrk.thread.scheme,host,port,path,id,responses))
+  io.write(msg:format(start_us,delay,status,cont_len,method,wrk.thread.scheme,host,port,path,thread_id,conn_id,conn_reqs,conn_start,conn_delay_est,conn_delay_req))
   io.flush()
 
   -- Stop after max_requests if max_requests is a positive number

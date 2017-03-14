@@ -28,11 +28,44 @@ svt
 - access to time_us() from LUA scripts
 - support for setting scheme (https) from LUA scripts
 - src_ip support to LUA scripts
+- initial connection establishment calculation
 ---
 
+diff -Nura old/Makefile new/Makefile
+--- old/Makefile	2017-03-08 17:07:15.329167360 +0100
++++ new/Makefile	2017-03-08 16:44:01.000000000 +0100
+@@ -9,7 +9,7 @@
+ else ifeq ($(TARGET), darwin)
+ 	LDFLAGS += -pagezero_size 10000 -image_base 100000000
+ else ifeq ($(TARGET), linux)
+-	CFLAGS  += -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE
++	CFLAGS  += -D_POSIX_C_SOURCE=200112L -D_GNU_SOURCE
+ 	LIBS    += -ldl
+ 	LDFLAGS += -Wl,-E
+ else ifeq ($(TARGET), freebsd)
+@@ -65,7 +65,7 @@
+ $(ODIR)/version.o:
+ 	@echo 'const char *VERSION="$(VER)";' | $(CC) -xc -c -o $@ -
+ 
+-$(ODIR)/%.o : %.c
++$(ODIR)/%.o : %.c %.h
+ 	@echo CC $<
+ 	@$(CC) $(CFLAGS) -c -o $@ $<
+ 
+@@ -93,7 +93,9 @@
+ else
+ 	@$(SHELL) -c "cd $< && ./config $(OPENSSL_OPTS)"
+ endif
+-	@$(MAKE) -C $< depend install
++	@$(MAKE) -C $< depend
++	@$(MAKE) -C $<
++	@$(MAKE) -C $< install
+ 
+ # ------------
+ 
 diff -Nura old/src/ae_epoll.c new/src/ae_epoll.c
---- old/src/ae_epoll.c	2017-02-17 20:52:02.358396929 +0100
-+++ new/src/ae_epoll.c	2017-02-16 22:14:33.396442854 +0100
+--- old/src/ae_epoll.c	2017-03-08 17:07:15.351167386 +0100
++++ new/src/ae_epoll.c	2017-03-08 17:06:48.673135617 +0100
 @@ -73,7 +73,7 @@
  
      ee.events = 0;
@@ -52,8 +85,8 @@ diff -Nura old/src/ae_epoll.c new/src/ae_epoll.c
              if (e->events & EPOLLERR) mask |= AE_WRITABLE;
              if (e->events & EPOLLHUP) mask |= AE_WRITABLE;
 diff -Nura old/src/net.c new/src/net.c
---- old/src/net.c	2017-02-16 16:19:36.000000000 +0100
-+++ new/src/net.c	2017-02-16 22:14:33.396442854 +0100
+--- old/src/net.c	2017-03-08 17:07:10.480161586 +0100
++++ new/src/net.c	2017-03-08 17:06:48.673135617 +0100
 @@ -1,5 +1,6 @@
  // Copyright (C) 2013 - Will Glozer.  All rights reserved.
  
@@ -93,8 +126,8 @@ diff -Nura old/src/net.c new/src/net.c
  
  status sock_write(connection *c, char *buf, size_t len, size_t *n) {
 diff -Nura old/src/script.c new/src/script.c
---- old/src/script.c	2017-02-16 16:19:36.000000000 +0100
-+++ new/src/script.c	2017-02-17 20:45:10.153217284 +0100
+--- old/src/script.c	2017-03-08 17:07:10.481161587 +0100
++++ new/src/script.c	2017-03-08 16:44:01.000000000 +0100
 @@ -2,6 +2,7 @@
  
  #include <stdlib.h>
@@ -139,7 +172,46 @@ diff -Nura old/src/script.c new/src/script.c
      lua_getglobal(L, "wrk");
  
      lua_getfield(L, -1, "resolve");
-@@ -306,6 +309,27 @@
+@@ -164,7 +167,7 @@
+     lua_pop(L, pop);
+ }
+ 
+-void script_response(lua_State *L, int status, buffer *headers, buffer *body) {
++void script_response(lua_State *L, int status, buffer *headers, buffer *body, connection *c) {
+     lua_getglobal(L, "response");
+     lua_pushinteger(L, status);
+     lua_newtable(L);
+@@ -176,7 +179,28 @@
+     }
+ 
+     lua_pushlstring(L, body->buffer, body->cursor - body->buffer);
+-    lua_call(L, 3, 0);
++
++    lua_newtable(L);
++    lua_pushstring(L, "conn_id");
++    lua_pushinteger(L, c->fd);
++    lua_rawset(L, -3);
++    lua_pushstring(L, "conn_reqs");
++    lua_pushinteger(L, c->cstats.reqs);
++    lua_rawset(L, -3);
++    lua_pushstring(L, "conn_start");
++    lua_pushinteger(L, c->cstats.start);
++    lua_rawset(L, -3);
++    lua_pushstring(L, "start");
++    lua_pushinteger(L, c->start);
++    lua_rawset(L, -3);
++    lua_pushstring(L, "conn_delay_est");
++    lua_pushinteger(L, c->cstats.delay_est);
++    lua_rawset(L, -3);
++    lua_pushstring(L, "conn_delay_req");
++    lua_pushinteger(L, c->start - c->cstats.delay_req);
++    lua_rawset(L, -3);
++
++    lua_call(L, 4, 0);
+ 
+     buffer_reset(headers);
+     buffer_reset(body);
+@@ -306,6 +330,27 @@
      return addr;
  }
  
@@ -167,7 +239,7 @@ diff -Nura old/src/script.c new/src/script.c
  void script_addr_copy(struct addrinfo *src, struct addrinfo *dst) {
      *dst = *src;
      dst->ai_addr = zmalloc(src->ai_addrlen);
-@@ -320,6 +344,22 @@
+@@ -320,6 +365,22 @@
      return udata;
  }
  
@@ -190,7 +262,7 @@ diff -Nura old/src/script.c new/src/script.c
  static int script_addr_tostring(lua_State *L) {
      struct addrinfo *addr = checkaddr(L);
      char host[NI_MAXHOST];
-@@ -338,7 +378,7 @@
+@@ -338,7 +399,7 @@
  
  static int script_addr_gc(lua_State *L) {
      struct addrinfo *addr = checkaddr(L);
@@ -199,7 +271,7 @@ diff -Nura old/src/script.c new/src/script.c
      return 0;
  }
  
-@@ -418,6 +458,9 @@
+@@ -418,6 +479,9 @@
      if (!strcmp("get",  key)) lua_pushcfunction(L, script_thread_get);
      if (!strcmp("set",  key)) lua_pushcfunction(L, script_thread_set);
      if (!strcmp("stop", key)) lua_pushcfunction(L, script_thread_stop);
@@ -209,7 +281,7 @@ diff -Nura old/src/script.c new/src/script.c
      if (!strcmp("addr", key)) script_addr_clone(L, t->addr);
      return 1;
  }
-@@ -430,6 +473,13 @@
+@@ -430,6 +494,13 @@
          if (t->addr) zfree(t->addr->ai_addr);
          t->addr = zrealloc(t->addr, sizeof(*addr));
          script_addr_copy(addr, t->addr);
@@ -223,7 +295,7 @@ diff -Nura old/src/script.c new/src/script.c
      } else {
          luaL_error(L, "cannot set '%s' on thread", luaL_typename(L, -1));
      }
-@@ -454,12 +504,14 @@
+@@ -454,12 +525,14 @@
      }
  
      lua_newtable(L);
@@ -238,7 +310,7 @@ diff -Nura old/src/script.c new/src/script.c
      return 1;
  }
  
-@@ -474,6 +526,14 @@
+@@ -474,6 +547,14 @@
      return 1;
  }
  
@@ -254,9 +326,9 @@ diff -Nura old/src/script.c new/src/script.c
      switch (lua_type(src, index)) {
          case LUA_TBOOLEAN:
 diff -Nura old/src/script.h new/src/script.h
---- old/src/script.h	2017-02-16 16:19:36.000000000 +0100
-+++ new/src/script.h	2017-02-16 21:46:34.058287080 +0100
-@@ -11,7 +11,7 @@
+--- old/src/script.h	2017-03-08 17:07:10.481161587 +0100
++++ new/src/script.h	2017-03-08 16:44:01.000000000 +0100
+@@ -11,14 +11,14 @@
  
  lua_State *script_create(char *, char *, char **);
  
@@ -265,9 +337,17 @@ diff -Nura old/src/script.h new/src/script.h
  void script_setup(lua_State *, thread *);
  void script_done(lua_State *, stats *, stats *);
  
+ void script_init(lua_State *, thread *, int, char **);
+ uint64_t script_delay(lua_State *);
+ void script_request(lua_State *, char **, size_t *);
+-void script_response(lua_State *, int, buffer *, buffer *);
++void script_response(lua_State *, int, buffer *, buffer *, connection *);
+ size_t script_verify_request(lua_State *L);
+ 
+ bool script_is_static(lua_State *);
 diff -Nura old/src/ssl.c new/src/ssl.c
---- old/src/ssl.c	2017-02-17 21:22:39.180226576 +0100
-+++ new/src/ssl.c	2017-02-17 21:23:13.722244597 +0100
+--- old/src/ssl.c	2017-03-08 17:07:15.352167388 +0100
++++ new/src/ssl.c	2017-03-08 17:06:48.674135618 +0100
 @@ -9,6 +9,7 @@
  #include "ssl.h"
  
@@ -370,8 +450,8 @@ diff -Nura old/src/ssl.c new/src/ssl.c
      }
      *n = (size_t) r;
 diff -Nura old/src/ssl.h new/src/ssl.h
---- old/src/ssl.h	2017-02-16 16:19:36.000000000 +0100
-+++ new/src/ssl.h	2017-02-16 22:14:33.397442856 +0100
+--- old/src/ssl.h	2017-03-08 17:07:10.481161587 +0100
++++ new/src/ssl.h	2017-03-08 17:06:48.674135618 +0100
 @@ -11,4 +11,6 @@
  status ssl_write(connection *, char *, size_t, size_t *);
  size_t ssl_readable(connection *);
@@ -380,8 +460,8 @@ diff -Nura old/src/ssl.h new/src/ssl.h
 +
  #endif /* SSL_H */
 diff -Nura old/src/wrk.c new/src/wrk.c
---- old/src/wrk.c	2017-02-16 16:19:36.000000000 +0100
-+++ new/src/wrk.c	2017-02-17 21:23:13.722244597 +0100
+--- old/src/wrk.c	2017-03-08 17:07:10.481161587 +0100
++++ new/src/wrk.c	2017-03-08 16:44:01.000000000 +0100
 @@ -12,7 +12,10 @@
      uint64_t pipeline;
      bool     delay;
@@ -576,7 +656,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
  
      return NULL;
  }
-@@ -238,17 +260,49 @@
+@@ -238,17 +260,52 @@
      struct aeEventLoop *loop = thread->loop;
      int fd, flags;
  
@@ -588,6 +668,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
 +        .ai_socktype = SOCK_STREAM
 +    };
 +
++    c->cstats.reqs = 0;
      fd = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
  
 +    if (source_addr && *source_addr) {
@@ -623,10 +704,12 @@ diff -Nura old/src/wrk.c new/src/wrk.c
 +        SSL_set_ex_data(c->ssl,ssl_data_index,c);
 +        c->cache = cfg.tls_session_reuse? &thread->cache:NULL;
 +    }
++
++    c->cstats.start   = time_us();
  
      flags = AE_READABLE | AE_WRITABLE;
      if (aeCreateFileEvent(loop, fd, flags, socket_connected, c) == AE_OK) {
-@@ -265,7 +319,7 @@
+@@ -265,7 +322,7 @@
  
  static int reconnect_socket(thread *thread, connection *c) {
      aeDeleteFileEvent(thread->loop, c->fd, AE_WRITABLE | AE_READABLE);
@@ -635,7 +718,16 @@ diff -Nura old/src/wrk.c new/src/wrk.c
      close(c->fd);
      return connect_socket(thread, c);
  }
-@@ -348,7 +402,7 @@
+@@ -336,7 +393,7 @@
+ 
+     if (c->headers.buffer) {
+         *c->headers.cursor++ = '\0';
+-        script_response(thread->L, status, &c->headers, &c->body);
++        script_response(thread->L, status, &c->headers, &c->body, c);
+         c->state = FIELD;
+     }
+ 
+@@ -348,7 +405,7 @@
          aeCreateFileEvent(thread->loop, c->fd, AE_WRITABLE, socket_writeable, c);
      }
  
@@ -644,7 +736,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
          reconnect_socket(thread, c);
          goto done;
      }
-@@ -361,11 +415,17 @@
+@@ -361,11 +418,18 @@
  
  static void socket_connected(aeEventLoop *loop, int fd, void *data, int mask) {
      connection *c = data;
@@ -656,6 +748,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
 -        case RETRY: return;
 +    switch (SOCK_CONNECT(c, host)) {
 +        case OK:
++          c->cstats.delay_est = time_us() - c->cstats.start;	// calculate the initial connection establishment delay
 +        break;
 +
 +        case ERROR:
@@ -666,7 +759,23 @@ diff -Nura old/src/wrk.c new/src/wrk.c
      }
  
      http_parser_init(&c->parser, HTTP_RESPONSE);
-@@ -404,7 +464,7 @@
+@@ -387,6 +451,7 @@
+ 
+     if (c->delayed) {
+         uint64_t delay = script_delay(thread->L);
++        c->cstats.delay_req = time_us();
+         aeDeleteFileEvent(loop, fd, AE_WRITABLE);
+         aeCreateTimeEvent(loop, delay, delay_request, c, NULL);
+         return;
+@@ -395,6 +460,7 @@
+     if (!c->written) {
+         if (cfg.dynamic) {
+             script_request(thread->L, &c->request, &c->length);
++            c->cstats.reqs++;
+         }
+         c->start   = time_us();
+         c->pending = cfg.pipeline;
+@@ -404,7 +470,7 @@
      size_t len = c->length  - c->written;
      size_t n;
  
@@ -675,7 +784,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
          case OK:    break;
          case ERROR: goto error;
          case RETRY: return;
-@@ -428,22 +488,38 @@
+@@ -428,22 +494,38 @@
      size_t n;
  
      do {
@@ -721,7 +830,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
      reconnect_socket(c->thread, c);
  }
  
-@@ -472,8 +548,11 @@
+@@ -472,8 +554,11 @@
      { "threads",     required_argument, NULL, 't' },
      { "script",      required_argument, NULL, 's' },
      { "header",      required_argument, NULL, 'H' },
@@ -733,7 +842,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
      { "help",        no_argument,       NULL, 'h' },
      { "version",     no_argument,       NULL, 'v' },
      { NULL,          0,                 NULL,  0  }
-@@ -489,7 +568,7 @@
+@@ -489,7 +574,7 @@
      cfg->duration    = 10;
      cfg->timeout     = SOCKET_TIMEOUT_MS;
  
@@ -742,7 +851,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
          switch (c) {
              case 't':
                  if (scan_metric(optarg, &cfg->threads)) return -1;
-@@ -506,6 +585,9 @@
+@@ -506,6 +591,9 @@
              case 'H':
                  *header++ = optarg;
                  break;
@@ -752,7 +861,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
              case 'L':
                  cfg->latency = true;
                  break;
-@@ -517,6 +599,12 @@
+@@ -517,6 +605,12 @@
                  printf("wrk %s [%s] ", VERSION, aeGetApiName());
                  printf("Copyright (C) 2012 Will Glozer\n");
                  break;
@@ -766,8 +875,8 @@ diff -Nura old/src/wrk.c new/src/wrk.c
              case '?':
              case ':':
 diff -Nura old/src/wrk.h new/src/wrk.h
---- old/src/wrk.h	2017-02-16 16:19:36.000000000 +0100
-+++ new/src/wrk.h	2017-02-16 21:46:34.059287082 +0100
+--- old/src/wrk.h	2017-03-08 17:07:10.481161587 +0100
++++ new/src/wrk.h	2017-03-08 16:44:01.000000000 +0100
 @@ -22,12 +22,26 @@
  #define SOCKET_TIMEOUT_MS   2000
  #define RECORD_INTERVAL_MS  100
@@ -803,17 +912,26 @@ diff -Nura old/src/wrk.h new/src/wrk.h
      struct connection *cs;
  } thread;
  
-@@ -52,6 +67,7 @@
+@@ -52,8 +67,15 @@
      } state;
      int fd;
      SSL *ssl;
-+    tls_session_cache * cache;
++    tls_session_cache *cache;
      bool delayed;
-     uint64_t start;
+-    uint64_t start;
++    uint64_t start;		// time [us] since the Epoch a request was sent
++    struct {
++        uint64_t start;		// time [us] since the Epoch we first tried to establish this connection
++        uint64_t delay_est;	// time [us] it took to establish this connection (connection establishment delay)
++        uint64_t delay_req;	// time [us] since the Epoch the socket was writeable but we were instructed to delay this request
++        uint64_t reqs;		// number of requests sent over this connection
++    } cstats;
      char *request;
+     size_t length;
+     size_t written;
 diff -Nura old/src/zmalloc.c new/src/zmalloc.c
---- old/src/zmalloc.c	2017-02-17 20:52:02.359396929 +0100
-+++ new/src/zmalloc.c	2017-02-16 22:14:33.398442859 +0100
+--- old/src/zmalloc.c	2017-03-08 17:07:15.352167388 +0100
++++ new/src/zmalloc.c	2017-03-08 17:06:48.675135619 +0100
 @@ -35,13 +35,19 @@
  #include "config.h"
  #include "zmalloc.h"
@@ -835,27 +953,4 @@ diff -Nura old/src/zmalloc.c new/src/zmalloc.c
 +#define PREFIX_SIZE (ROUND_UP(sizeof(size_t), ALIGMENT))
  #endif
  #endif
- 
-diff -Nura old/Makefile new/Makefile
---- old/Makefile	2017-02-17 21:22:39.155226563 +0100
-+++ new/Makefile	2017-02-17 21:23:13.701244586 +0100
-@@ -9,7 +9,7 @@
- else ifeq ($(TARGET), darwin)
- 	LDFLAGS += -pagezero_size 10000 -image_base 100000000
- else ifeq ($(TARGET), linux)
--	CFLAGS  += -D_POSIX_C_SOURCE=200112L -D_BSD_SOURCE
-+	CFLAGS  += -D_POSIX_C_SOURCE=200112L -D_GNU_SOURCE
- 	LIBS    += -ldl
- 	LDFLAGS += -Wl,-E
- else ifeq ($(TARGET), freebsd)
-@@ -93,7 +93,9 @@
- else
- 	@$(SHELL) -c "cd $< && ./config $(OPENSSL_OPTS)"
- endif
--	@$(MAKE) -C $< depend install
-+	@$(MAKE) -C $< depend
-+	@$(MAKE) -C $<
-+	@$(MAKE) -C $< install
- 
- # ------------
  
