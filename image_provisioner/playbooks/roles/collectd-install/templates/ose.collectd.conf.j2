@@ -60,36 +60,14 @@ LoadPlugin match_regex
   ProcessMatch "cassandra" "/usr/lib/jvm/java-1.8.0/bin/java"
   ProcessMatch "hawkular" "jboss.node.name=hawkular-metrics"
   ProcessMatch "heapster" "heapster"
+  ProcessMatch "fluentd" "/usr/bin/ruby /usr/bin/fluentd"
+  ProcessMatch "elasticsearch" "/bin/java -Xms256m -Xmx1g -Djava.awt.headless=true"
+  ProcessMatch "kibana" "/usr/bin/node /usr/share/kibana/src/bin/kibana.js"
 </Plugin>
 
 <Plugin swap>
   ReportBytes true
   ValuesPercentage true
-</Plugin>
-
-<Chain "PostCache">
-  <Rule> 
-    <Match regex>
-      Plugin "^cpu$"
-    </Match>
-    <Target write>
-      Plugin "aggregate"
-    </Target>
-    Target stop
-  </Rule>
-</Chain>
-
-<Plugin "aggregation">
-  <Aggregation>
-    Plugin "cpu"
-    Type "cpu"
-    
-    GroupBy "Host"
-    GroupBy "TypeInstance"
-    
-    CalculateSum true
-    CalculateAverage true
-  </Aggregation>
 </Plugin>
 
 # ignore veth and container lvm devices
