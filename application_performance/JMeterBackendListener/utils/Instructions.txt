@@ -1,0 +1,6 @@
+To load your template:
+
+# use poster or curl to create the index template 
+# http://elasticsearch_url:9200/_template/jmeter_template
+http://172.17.0.1:9200/_template/jmeter_template
+
