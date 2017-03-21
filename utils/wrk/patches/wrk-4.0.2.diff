@@ -29,11 +29,12 @@ svt
 - support for setting scheme (https) from LUA scripts
 - src_ip support to LUA scripts
 - initial connection establishment calculation
+- handle HTTP responses with no Content-Length headers correctly
 ---
 
 diff -Nura old/Makefile new/Makefile
---- old/Makefile	2017-03-08 17:07:15.329167360 +0100
-+++ new/Makefile	2017-03-08 16:44:01.000000000 +0100
+--- old/Makefile	2017-03-21 13:39:22.908211978 +0100
++++ new/Makefile	2017-03-21 13:54:51.177383879 +0100
 @@ -9,7 +9,7 @@
  else ifeq ($(TARGET), darwin)
  	LDFLAGS += -pagezero_size 10000 -image_base 100000000
@@ -64,8 +65,8 @@ diff -Nura old/Makefile new/Makefile
  # ------------
  
 diff -Nura old/src/ae_epoll.c new/src/ae_epoll.c
---- old/src/ae_epoll.c	2017-03-08 17:07:15.351167386 +0100
-+++ new/src/ae_epoll.c	2017-03-08 17:06:48.673135617 +0100
+--- old/src/ae_epoll.c	2017-03-21 13:39:22.931212007 +0100
++++ new/src/ae_epoll.c	2017-03-21 13:54:51.177383879 +0100
 @@ -73,7 +73,7 @@
  
      ee.events = 0;
@@ -85,8 +86,8 @@ diff -Nura old/src/ae_epoll.c new/src/ae_epoll.c
              if (e->events & EPOLLERR) mask |= AE_WRITABLE;
              if (e->events & EPOLLHUP) mask |= AE_WRITABLE;
 diff -Nura old/src/net.c new/src/net.c
---- old/src/net.c	2017-03-08 17:07:10.480161586 +0100
-+++ new/src/net.c	2017-03-08 17:06:48.673135617 +0100
+--- old/src/net.c	2017-03-21 13:39:22.932212008 +0100
++++ new/src/net.c	2017-03-21 13:54:51.177383879 +0100
 @@ -1,5 +1,6 @@
  // Copyright (C) 2013 - Will Glozer.  All rights reserved.
  
@@ -126,8 +127,8 @@ diff -Nura old/src/net.c new/src/net.c
  
  status sock_write(connection *c, char *buf, size_t len, size_t *n) {
 diff -Nura old/src/script.c new/src/script.c
---- old/src/script.c	2017-03-08 17:07:10.481161587 +0100
-+++ new/src/script.c	2017-03-08 16:44:01.000000000 +0100
+--- old/src/script.c	2017-03-21 13:39:22.932212008 +0100
++++ new/src/script.c	2017-03-21 13:54:51.178383880 +0100
 @@ -2,6 +2,7 @@
  
  #include <stdlib.h>
@@ -326,8 +327,8 @@ diff -Nura old/src/script.c new/src/script.c
      switch (lua_type(src, index)) {
          case LUA_TBOOLEAN:
 diff -Nura old/src/script.h new/src/script.h
---- old/src/script.h	2017-03-08 17:07:10.481161587 +0100
-+++ new/src/script.h	2017-03-08 16:44:01.000000000 +0100
+--- old/src/script.h	2017-03-21 13:39:22.932212008 +0100
++++ new/src/script.h	2017-03-21 13:54:51.178383880 +0100
 @@ -11,14 +11,14 @@
  
  lua_State *script_create(char *, char *, char **);
@@ -346,8 +347,8 @@ diff -Nura old/src/script.h new/src/script.h
  
  bool script_is_static(lua_State *);
 diff -Nura old/src/ssl.c new/src/ssl.c
---- old/src/ssl.c	2017-03-08 17:07:15.352167388 +0100
-+++ new/src/ssl.c	2017-03-08 17:06:48.674135618 +0100
+--- old/src/ssl.c	2017-03-21 13:39:22.932212008 +0100
++++ new/src/ssl.c	2017-03-21 13:54:51.178383880 +0100
 @@ -9,6 +9,7 @@
  #include "ssl.h"
  
@@ -450,8 +451,8 @@ diff -Nura old/src/ssl.c new/src/ssl.c
      }
      *n = (size_t) r;
 diff -Nura old/src/ssl.h new/src/ssl.h
---- old/src/ssl.h	2017-03-08 17:07:10.481161587 +0100
-+++ new/src/ssl.h	2017-03-08 17:06:48.674135618 +0100
+--- old/src/ssl.h	2017-03-21 13:39:22.932212008 +0100
++++ new/src/ssl.h	2017-03-21 13:54:51.178383880 +0100
 @@ -11,4 +11,6 @@
  status ssl_write(connection *, char *, size_t, size_t *);
  size_t ssl_readable(connection *);
@@ -460,8 +461,8 @@ diff -Nura old/src/ssl.h new/src/ssl.h
 +
  #endif /* SSL_H */
 diff -Nura old/src/wrk.c new/src/wrk.c
---- old/src/wrk.c	2017-03-08 17:07:10.481161587 +0100
-+++ new/src/wrk.c	2017-03-08 16:44:01.000000000 +0100
+--- old/src/wrk.c	2017-03-21 13:39:22.932212008 +0100
++++ new/src/wrk.c	2017-03-21 12:23:51.000000000 +0100
 @@ -12,7 +12,10 @@
      uint64_t pipeline;
      bool     delay;
@@ -597,13 +598,13 @@ diff -Nura old/src/wrk.c new/src/wrk.c
 +            printf("  Socket errors: connect %d, read %d, write %d, timeout %d\n",
 +                   errors.connect, errors.read, errors.write, errors.timeout);
 +        }
-+
-+        if (errors.status) {
-+            printf("  Non-2xx or 3xx responses: %d\n", errors.status);
-+        }
  
 -    if (errors.status) {
 -        printf("  Non-2xx or 3xx responses: %d\n", errors.status);
++        if (errors.status) {
++            printf("  Non-2xx or 3xx responses: %d\n", errors.status);
++        }
++
 +        printf("Requests/sec: %9.2Lf\n", req_per_s);
 +        printf("Transfer/sec: %10sB\n", format_binary(bytes_per_s));
      }
@@ -784,7 +785,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
          case OK:    break;
          case ERROR: goto error;
          case RETRY: return;
-@@ -428,22 +494,38 @@
+@@ -428,22 +494,47 @@
      size_t n;
  
      do {
@@ -801,13 +802,22 @@ diff -Nura old/src/wrk.c new/src/wrk.c
 +
 +            case RETRY:
 +              return;
++        }
++
++        if (n == 0) { // EOF
++            if (!http_body_is_final(&c->parser)) {
++                /* HTTP parser did not trigger response_complete() callback -- waiting for EOF in
++                   `s_body_identity_eof' state.  This happens when HTTP server does not specify 
++                   Content-Length header field in its response (e.g.: HAProxy 1.5.18 & HTTP/1.0 503).
++                   Speed things up and do not call the parser again with no data. */
++                response_complete(&c->parser);	/* will also handle reconnection */
++                return;
++            }
++            goto reconnect;
          }
  
 -        if (http_parser_execute(&c->parser, &parser_settings, c->buf, n) != n) goto error;
 -        if (n == 0 && !http_body_is_final(&c->parser)) goto error;
-+        if (n == 0) // EOF
-+            goto reconnect;
-+
 +        if (http_parser_execute(&c->parser, &parser_settings, c->buf, n) != n)
 +            goto error;
 +
@@ -830,7 +840,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
      reconnect_socket(c->thread, c);
  }
  
-@@ -472,8 +554,11 @@
+@@ -472,8 +563,11 @@
      { "threads",     required_argument, NULL, 't' },
      { "script",      required_argument, NULL, 's' },
      { "header",      required_argument, NULL, 'H' },
@@ -842,7 +852,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
      { "help",        no_argument,       NULL, 'h' },
      { "version",     no_argument,       NULL, 'v' },
      { NULL,          0,                 NULL,  0  }
-@@ -489,7 +574,7 @@
+@@ -489,7 +583,7 @@
      cfg->duration    = 10;
      cfg->timeout     = SOCKET_TIMEOUT_MS;
  
@@ -851,7 +861,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
          switch (c) {
              case 't':
                  if (scan_metric(optarg, &cfg->threads)) return -1;
-@@ -506,6 +591,9 @@
+@@ -506,6 +600,9 @@
              case 'H':
                  *header++ = optarg;
                  break;
@@ -861,7 +871,7 @@ diff -Nura old/src/wrk.c new/src/wrk.c
              case 'L':
                  cfg->latency = true;
                  break;
-@@ -517,6 +605,12 @@
+@@ -517,6 +614,12 @@
                  printf("wrk %s [%s] ", VERSION, aeGetApiName());
                  printf("Copyright (C) 2012 Will Glozer\n");
                  break;
@@ -875,8 +885,8 @@ diff -Nura old/src/wrk.c new/src/wrk.c
              case '?':
              case ':':
 diff -Nura old/src/wrk.h new/src/wrk.h
---- old/src/wrk.h	2017-03-08 17:07:10.481161587 +0100
-+++ new/src/wrk.h	2017-03-08 16:44:01.000000000 +0100
+--- old/src/wrk.h	2017-03-21 13:39:22.932212008 +0100
++++ new/src/wrk.h	2017-03-21 13:54:51.179383882 +0100
 @@ -22,12 +22,26 @@
  #define SOCKET_TIMEOUT_MS   2000
  #define RECORD_INTERVAL_MS  100
@@ -930,8 +940,8 @@ diff -Nura old/src/wrk.h new/src/wrk.h
      size_t length;
      size_t written;
 diff -Nura old/src/zmalloc.c new/src/zmalloc.c
---- old/src/zmalloc.c	2017-03-08 17:07:15.352167388 +0100
-+++ new/src/zmalloc.c	2017-03-08 17:06:48.675135619 +0100
+--- old/src/zmalloc.c	2017-03-21 13:39:22.932212008 +0100
++++ new/src/zmalloc.c	2017-03-21 13:54:51.179383882 +0100
 @@ -35,13 +35,19 @@
  #include "config.h"
  #include "zmalloc.h"
