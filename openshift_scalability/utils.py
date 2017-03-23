@@ -132,7 +132,7 @@ def create_template(templatefile, num, parameters, globalvars):
                         elif key == "ROUTER_IP":
                             value = router_ip
 
-                    cmdstring += " " + parameter_flag + " %s=%s" % (key, value)
+                    cmdstring += " " + parameter_flag + " %s='%s'" % (key, value)
         cmdstring += " " + parameter_flag + " IDENTIFIER=%i" % i
 
         processedstr = oc_command(cmdstring, globalvars)
