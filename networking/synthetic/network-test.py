@@ -1,20 +1,25 @@
-import ansible.runner
-import json
 import argparse
+from decimal import Decimal
+import json
 
-from ansible                 import playbook
-from ansible.inventory.host  import Host
+from collections import namedtuple
+
+from ansible.parsing.dataloader import DataLoader
+from ansible.vars import VariableManager
+from ansible.inventory import Inventory
+from ansible.executor.playbook_executor import PlaybookExecutor
+
+from ansible import utils
+from ansible.inventory import Inventory
 from ansible.inventory.group import Group
-from ansible.inventory       import Inventory
-from ansible.callbacks       import AggregateStats
-from ansible.callbacks       import PlaybookCallbacks
-from ansible.callbacks       import PlaybookRunnerCallbacks
-from ansible                 import utils
-from decimal                 import Decimal   
+from ansible.inventory.host import Host
+
 
 class NetworkTest(object):
     def __init__(self, playbook):
-        self.inventory = Inventory(host_list=[])
+        self.variable_manager = VariableManager()
+        self.loader = DataLoader()
+        self.inventory = Inventory(loader=self.loader, variable_manager=self.variable_manager,host_list=[])
         self.playbook = playbook
         
         self.sender_group = Group(name = 'sender')
@@ -31,6 +36,7 @@ class NetworkTest(object):
         
     def set_inventory_vars(self, inv_vars):
         self.inv_vars.update(inv_vars)
+        self.variable_manager.extra_vars.update(inv_vars)
 
 
     def add_sender(self, sender):
@@ -49,21 +55,21 @@ class NetworkTest(object):
 
 
     def run(self):
-        stats = AggregateStats()
-        playbook_cb = PlaybookCallbacks(verbose=utils.VERBOSITY)
-        runner_cb = PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
 
-        pb = playbook.PlayBook(playbook = self.playbook,
-                               stats = stats,
-                               callbacks = playbook_cb,
-                               runner_callbacks = runner_cb,
-                               inventory = self.inventory,
-                               extra_vars = self.inv_vars,
-                               check=False)
+        Options = namedtuple('Options', ['listtags', 'listtasks', 'listhosts', 'syntax', 'connection','module_path', 'forks', 'remote_user', 'private_key_file', 'ssh_common_args', 'ssh_extra_args', 'sftp_extra_args', 'scp_extra_args', 'become', 'become_method', 'become_user', 'verbosity', 'check'])
+        options = Options(listtags=False, listtasks=False, listhosts=False, syntax=False, connection='ssh', module_path=None, forks=100, remote_user='root', private_key_file=None, ssh_common_args=None, ssh_extra_args=None, sftp_extra_args=None, scp_extra_args=None, become=True, become_method=None, become_user='root', verbosity=None, check=False)
 
-        pr = pb.run()
+        passwords = {}
 
-        print json.dumps(pr, sort_keys=True, indent=4, separators=(',', ': '))
+        pbex = PlaybookExecutor(playbooks=[self.playbook], 
+                                inventory=self.inventory, 
+                                variable_manager=self.variable_manager, 
+                                loader=self.loader, 
+                                options=options, 
+                                passwords=passwords)
+        results = pbex.run()
+        
+        print json.dumps(results, sort_keys=True, indent=4, separators=(',', ': '))
 
 
 def parse_args():
@@ -74,8 +80,9 @@ def parse_args():
     
     parser.add_argument('-v',
                         '--version',
-                        required = True,
+                        required = False,
                         dest = 'os_version',
+                        default = '3.5',
                         help = 'OpenShift version')
     
     parser.add_argument('-m',
