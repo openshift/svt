@@ -1,65 +1,83 @@
-import ansible.runner
-import json
 import argparse
-
-from ansible import playbook
-from ansible.inventory.host import Host
-from ansible.inventory.group import Group
-from ansible.inventory import Inventory
-from ansible.callbacks import AggregateStats
-from ansible.callbacks import PlaybookCallbacks
-from ansible.callbacks import PlaybookRunnerCallbacks
-from ansible import utils
 from decimal import Decimal
+import json
+
+from collections import namedtuple
+
+from ansible.parsing.dataloader import DataLoader
+from ansible.vars import VariableManager
+from ansible.inventory import Inventory
+from ansible.executor.playbook_executor import PlaybookExecutor
+
+from ansible import utils
+from ansible.inventory import Inventory
+from ansible.inventory.group import Group
+from ansible.inventory.host import Host
 
 
 class NetworkTest(object):
     def __init__(self, playbook):
-        self.inventory = Inventory(host_list=[])
+        self.variable_manager = VariableManager()
+        self.loader = DataLoader()
+        self.inventory = Inventory(loader=self.loader, variable_manager=self.variable_manager,host_list=[])
+        self.variable_manager.set_inventory(self.inventory)
         self.playbook = playbook
-
-        self.sender_group = Group(name='sender')
+        
+        self.sender_group = Group(name = 'sender')
         self.inventory.add_group(self.sender_group)
-
-        self.receiver_group = Group(name='receiver')
+        
+        self.receiver_group = Group(name = 'receiver')
         self.inventory.add_group(self.receiver_group)
-
-        self.master_group = Group(name='master')
+        
+        self.master_group = Group(name = 'master')
         self.inventory.add_group(self.master_group)
-
-        self.inv_vars = dict()
-
+        
     def set_inventory_vars(self, inv_vars):
-        self.inv_vars.update(inv_vars)
+        self.variable_manager.extra_vars = inv_vars
+
 
     def add_sender(self, sender):
-        sender_host = Host(name=sender)
+        sender_host = Host(name = sender)
         self.sender_group.add_host(sender_host)
 
+
     def add_receiver(self, receiver):
-        receiver_host = Host(name=receiver)
+        receiver_host = Host(name = receiver)
         self.receiver_group.add_host(receiver_host)
 
+        
     def add_master(self, master):
-        master_host = Host(name=master)
+        master_host = Host(name = master)
         self.master_group.add_host(master_host)
 
+
     def run(self):
-        stats = AggregateStats()
-        playbook_cb = PlaybookCallbacks(verbose=utils.VERBOSITY)
-        runner_cb = PlaybookRunnerCallbacks(stats, verbose=utils.VERBOSITY)
 
-        pb = playbook.PlayBook(playbook=self.playbook,
-                               stats=stats,
-                               callbacks=playbook_cb,
-                               runner_callbacks=runner_cb,
-                               inventory=self.inventory,
-                               extra_vars=self.inv_vars,
-                               check=False)
+        Options = namedtuple('Options', 
+                             ['listtags', 'listtasks', 'listhosts', 
+                              'syntax', 'connection', 'module_path', 
+                              'forks', 'remote_user', 'private_key_file', 
+                              'ssh_common_args', 'ssh_extra_args', 'sftp_extra_args', 
+                              'scp_extra_args', 'become', 'become_method', 
+                              'become_user', 'verbosity', 'check'])
+        options = Options(listtags=False, listtasks=False, listhosts=False, 
+                          syntax=False, connection='ssh', module_path=None, 
+                          forks=100, remote_user='root', private_key_file=None, 
+                          ssh_common_args=None, ssh_extra_args=None, sftp_extra_args=None, 
+                          scp_extra_args=None, become=True, become_method=None, 
+                          become_user='root', verbosity=None, check=False)
 
-        pr = pb.run()
+        passwords = {}
 
-        print json.dumps(pr, sort_keys=True, indent=4, separators=(',', ': '))
+        pbex = PlaybookExecutor(playbooks=[self.playbook], 
+                                inventory=self.inventory, 
+                                variable_manager=self.variable_manager, 
+                                loader=self.loader, 
+                                options=options, 
+                                passwords=passwords)
+        results = pbex.run()
+        
+        print json.dumps(results, sort_keys=True, indent=4, separators=(',', ': '))
 
 
 def parse_args():
@@ -67,35 +85,35 @@ def parse_args():
 
     parser.add_argument('test_type',
                         choices=['podIP', 'svcIP', 'nodeIP'])
-
+    
     parser.add_argument('-v',
                         '--version',
                         required = False,
                         dest = 'os_version',
                         default = '3.5',
                         help = 'OpenShift version')
-
+    
     parser.add_argument('-m',
                         '--master',
-                        required=True,
-                        dest='test_master',
-                        help='OpenShift master node')
-
+                        required = True,
+                        dest = 'test_master',
+                        help = 'OpenShift master node')
+    
     parser.add_argument('-n',
                         '--node',
-                        required=False,
-                        nargs='*',
-                        dest='test_nodes',
-                        help='OpenShift node')
+                        required = False,
+                        nargs = '*',
+                        dest = 'test_nodes',
+                        help = 'OpenShift node')
 
     parser.add_argument('-p',
                         '--pods',
-                        required=False,
-                        nargs='*',
-                        dest='pod_numbers',
-                        type=int,
-                        help='Sequence of pod numbers to test')
-
+                        required = False,
+                        nargs = '*',
+                        dest = 'pod_numbers',
+                        type = int,
+                        help = 'Sequence of pod numbers to test')
+    
     return parser.parse_args()
 
 
@@ -104,7 +122,7 @@ def set_sender(master, nodes):
         return master
     else:
         return nodes[0]
-
+    
 
 def set_receiver(master, nodes):
     if nodes is None:
@@ -113,7 +131,7 @@ def set_receiver(master, nodes):
         return nodes[0]
     elif len(nodes) == 2:
         return nodes[1]
-
+    
 
 def set_pbench_remote(master, nodes):
     if nodes is None:
@@ -122,7 +140,7 @@ def set_pbench_remote(master, nodes):
         return nodes[0]
     elif len(nodes) == 2:
         return nodes[1]
-
+    
 
 def set_sender_region(master, nodes):
     if nodes is None:
@@ -131,7 +149,7 @@ def set_sender_region(master, nodes):
         if len(nodes) == 2 and nodes[0] == nodes[1]:
             return 'both'
         return 'sender'
-
+    
 
 def set_receiver_region(master, nodes):
     if nodes is None:
@@ -141,7 +159,7 @@ def set_receiver_region(master, nodes):
             return 'both'
         return 'receiver'
 
-
+    
 def set_playbook(test_type):
     if test_type == 'podIP':
         return 'pod-ip-test-setup.yaml'
@@ -172,7 +190,7 @@ def set_pbench_label(test_type, nodes):
             return 'svc-to-svc-LB'
         elif len(nodes) == 2 and nodes[0] != nodes[1]:
             return 'svc-to-svc-NN'
-
+        
 def get_option(version):
     if Decimal(version) >= 3.5 :
         return '-p'
