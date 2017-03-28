@@ -40,6 +40,7 @@ RUN yum install --assumeyes \
 		epel-release; \
     yum clean expire-cache; \
     yum install --assumeyes \
+        sysstat \
         fio \
         python-pip \
         python-pandas; \

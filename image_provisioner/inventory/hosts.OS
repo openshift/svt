@@ -35,7 +35,10 @@ docker_login=no
 docker_storage_device=/dev/xvdb
 docker_storage_vgname=docker_vg
 docker_storage_driver=overlay
+# updates the kernel if set to true
 update_kernel=false
+# URL to pull the latest kernel
+kernel_url=https://example.com
 # aos-ansible
 aos_ansible_path=/root/aos-ansible
 aos_ansible_inventory=/root/aos-ansible/inventory/hosts 

@@ -1,6 +1,6 @@
 projects:
   - num: 1
-    basename: clusterproject
+    basename: kube
     tuning: default
     services:
       - num: 3
@@ -18,6 +18,9 @@ projects:
         image: openshift/hello-openshift
         basename: hellopods
         file: default
+        storage:
+          - type: none
+
 
 quotas:
   - name: default

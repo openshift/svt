@@ -47,6 +47,9 @@ $ python network-test.py podIP --master <master-hostname/ansible_pod-hostname> -
 
 # svcIP-to-svcIP, node-to-node, 6 pod pairs
 $ python network-test.py svcIP --master <master-hostname/ansible_pod-hostname> --node <node1-hostname> <node2-hostname> --pods 6
+
+# nodeIP-to-nodeIP, To run the tests between any two machines(vms or baremetals) 
+$ python network-test.py nodeIP --master <machine1-ip> --node <machine2-ip>
 ```
 
 ### Running all the combinations
