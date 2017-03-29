@@ -82,6 +82,8 @@ if __name__ ==  "__main__":
                       help="Do not scale down at the beginning")
     parser.add_option("-z", "--zero", dest="zero", action="store_true",
                       help="Return to zero replicas between steps")
+    parser.add_option("-0", "--zero-final", dest="zero_final", action="store_true",
+                      help="Return to zero replicas at the end of execution")
 
 
     globalconfig = {}
@@ -97,6 +99,7 @@ if __name__ ==  "__main__":
     globalconfig["wait"] = int(options.wait)
     globalconfig["incremental"] = options.incremental
     globalconfig["zero"] = options.zero
+    globalconfig["zero_final"] = options.zero_final
 
     login(globalconfig["master"],globalconfig["oseuser"],globalconfig["password"])
 
@@ -140,5 +143,9 @@ if __name__ ==  "__main__":
         print str(elapsed) + " seconds to scale dc " + globalconfig["dc"] + " from " + str(previous_replicas) + " to " + str(cumulative_replicas) + " replicas"
 
     run_stop_time=time.time()
+    if globalconfig["zero_final"]:
+        scale_down(globalconfig["namespace"], globalconfig["dc"])
+        
     print "Total seconds for all scaleup operations (excluding sleep time): " + str(total_scaleup_time)
     print "Elapsed seconds for the test (scaleup + sleep): " + str(run_stop_time - run_start_time)
+

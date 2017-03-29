@@ -24,12 +24,6 @@
                         "protocol": "TCP",
                         "port": 8080,
                         "targetPort": 8080
-                    },
-                    {
-                        "name": "second",
-                        "protocol": "TCP",
-                        "port": 8888,
-                        "targetPort": 8888
                     }
                 ]
             }
@@ -64,10 +58,6 @@
                             {
                                 "name": "PORT",
                                 "value": "${PORT}"
-                            },
-                            {
-                                "name": "SECOND_PORT",
-                                "value": "${SECOND_PORT}"
                             }
                         ],
                         "image": "openshift/hello-openshift",
@@ -76,10 +66,6 @@
                         "ports": [
                             {
                                 "containerPort": 8080,
-                                "protocol": "TCP"
-                            },
-                            {
-                                "containerPort": 8888,
                                 "protocol": "TCP"
                             }
                         ],
@@ -121,12 +107,6 @@
             "displayName": "Listen on PORT",
             "description": "Tells the container to start httpd server on port PORT",
             "value": "8080"
-        },
-        {
-            "name": "SECOND_PORT",
-            "displayName": "Listen also on SECOND_PORT",
-            "description": "Tells the container to start httpd server also on port SECOND_PORT",
-            "value": "8888"
         },
         {
             "name": "APPLICATION_DOMAIN",

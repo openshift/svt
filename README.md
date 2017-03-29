@@ -16,6 +16,7 @@ The hierarchy of this repository is as follows:
 ├── application_performance:  JMeter-based performance testing of applications hosted on OpenShift.
 ├── applications_scalability:  Performance and scalability testing of the OpenShift web UI.
 ├── conformance: Wrappers to run a subset of e2e/conformance tests in an SVT environment (work in progress)
+├── image_provisioner:  Ansible playbooks for building AMI and qcow2 images with OpenShift rpms and Docker images baked in.
 ├── networking: Performance tests for the OpenShift SDN and kube-proxy.
 ├── openshift_performance:  Performance tests for container build parallelism, projects and persistent storage (EBS, Ceph, Gluster and NFS)
 ├── openshift_scalability: Home of the infamous "cluster-loader", details in openshift_scalability/README.md
