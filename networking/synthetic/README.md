@@ -58,3 +58,19 @@ $ python network-test.py nodeIP --master <machine1-ip> --node <machine2-ip>
 ```
 $ nohup ./start-network-test.sh >> run.log & tail -f run.log
 ```
+
+# STAC-N1 tests
+To run STAC-N1 test harness:
+```
+$ python stac-test.py -o 15.0.0.10 -p 15.0.0.10 -c 15.0.0.5 -rp http://path/to/stac-n1/repo/ -f=True
+```
+NOTE: '-f' option represents 'fast-mode' for a quick test with lesser number of images. To run standard test, skip "-f=True".
+
+Once completed, results can be found at the following path on the producer node:
+```
+/capture/n/orchestration/stats.udp-tcp-sock/
+```
+And a consolidated csv file at:
+```
+/capture/consolidatedResults.csv
+```
