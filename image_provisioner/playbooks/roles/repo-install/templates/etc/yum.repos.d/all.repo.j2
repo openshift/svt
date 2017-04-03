@@ -38,6 +38,13 @@ enabled=1
 gpgcheck=0
 sslverify=0
 
+[rhel-7-update-kernel]
+name=New kernel for RHEL7
+baseurl=http://{{ jump_node_ip }}/rhel-7-update-kernel
+enabled=1
+gpgcheck=0
+sslverify=0
+
 [rhel7-fast-datapath]
 name=RHEL7 fast-datapath
 baseurl=http://{{ jump_node_ip }}/rhel7-fast-datapath
