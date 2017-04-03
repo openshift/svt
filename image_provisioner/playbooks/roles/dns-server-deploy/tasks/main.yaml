@@ -54,6 +54,13 @@
 - include: reverse_zones.yaml oct3={{ item }}
   with_sequence: start={{ range_start }} end={{ range_end }}
 
+- name: open port 53
+  firewalld:
+    zone: public
+    service: dns
+    permanent: true
+    state: enabled
+
 - name: start bind
   systemd:
     name: named
