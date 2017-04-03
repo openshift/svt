@@ -30,6 +30,8 @@
 
 - name: test pbench-copy-results
   shell: pbench-copy-results
+  # many node deployments may have errors
+  ignore_errors: yes
 
 - name: clean up pbench
   shell: pbench-clear-tools ; pbench-clear-results
