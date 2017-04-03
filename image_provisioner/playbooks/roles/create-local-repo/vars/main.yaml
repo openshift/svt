@@ -11,6 +11,7 @@ repos_to_clone:
   - rhel-7-next
   - rhel-7-extras-next
   - rhel-7-optional-next
+  - rhel-7-update-kernel
   - rhel7-fast-datapath
   - rhel7-fast-datapath-htb
   - oso-rhui-rhel-server-releases

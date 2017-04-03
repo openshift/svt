@@ -1,20 +1,26 @@
 ---
-- name: Install necessary packages
+- name: install necessary packages
   yum:
     name: "{{ rpms_to_install }}"
     state: present
 
-- name: Reposync each target
+- name: reposync each target
   command: reposync --gpgcheck -l --repoid={{ item }} --download_path={{ nginx_root }}
   with_items: "{{ repos_to_clone }}"
 
-- name: Create each new repo
+- name: create each new repo
   command: createrepo -v {{ nginx_root }}/{{ item }}
   args:
     chdir: "{{ nginx_root }}/{{ item }}"
   with_items: "{{ repos_to_clone }}"
 
-- name: Start nginx service
+- name: open port 80
+  firewalld:
+    service: http
+    permanent: true
+    state: enabled
+
+- name: start nginx service
   systemd:
     name: nginx 
     state: started
