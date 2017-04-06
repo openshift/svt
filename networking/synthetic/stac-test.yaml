@@ -1,0 +1,106 @@
+---
+- hosts: producer:consumer
+  remote_user: root
+  tasks:
+    
+  - name: Create directory for stac docker image resources
+    file: path=/tmp/stac state=directory
+    
+  - name: Copy Dockerfile to producer and consumer
+    copy: src=stac/Dockerfile dest=/tmp/stac/Dockerfile
+    
+  - name: Copy tuned stac profile to producer and consumer
+    copy: src=stac/tuned.conf dest=/tmp/stac/tuned.conf
+
+  - name: Create directory for passing into producer and consumer containers as volumes
+    file: path=/capture state=directory
+
+  - name: Build stac docker image
+    shell: docker build --build-arg producer={{ producer }} --build-arg consumer={{ consumer }} --build-arg stac_url={{ stac_repo_path }} --build-arg iface_name={{ iface_name }} --build-arg fast_mode={{ test_mode_fast }} --tag centos/stac /tmp/stac
+
+- hosts: orchestrator
+  remote_user: root
+  tasks:
+  - name: Create SSH directory /root/.ssh if it does not exist
+    file: path=/root/.ssh state=directory
+
+  - stat: path=/root/.ssh/id_rsa
+    register: id_rsa
+    
+  - name: Create /root/.ssh/id_rsa if it does not exist
+    shell: ssh-keygen -f /root/.ssh/id_rsa -N ''
+    when: id_rsa.stat.islnk is not defined
+    
+  - name: Create directory for stac resources
+    file: path=/tmp/origin state=directory
+
+  - name: Copy stac scc
+    copy: src=content/stac-scc.json dest=/tmp/origin/stac-scc.json
+
+  - name: Copy stac replicationcontroller template
+    copy: src=content/stac-rc-template.json dest=/tmp/origin/stac-rc-template.json
+
+  - name: Add stac scc
+    shell: oc create -f /tmp/origin/stac-scc.json
+    ignore_errors: yes
+    
+  - name: Label producer nodes
+    shell: oc label node {{ item }} --overwrite region={{ producer_region }}
+    with_items: "{{ groups['producer'] }}"
+
+  - name: Label consumer nodes
+    shell: oc label node {{ item }} --overwrite region={{ consumer_region }}
+    with_items: "{{ groups['consumer'] }}"
+
+  - name: Create stac projects
+    shell: oc new-project stac
+
+  - name: Create producer pods
+    shell: >
+      oc process
+      -p REGION={{ producer_region }}
+      -p ROLE=producer
+      -f /tmp/origin/stac-rc-template.json |
+      oc create --namespace=stac -f -
+
+  - name: Wait for producer pods to be ready
+    script: scripts/wait-ready.sh producer
+
+  - name: Create consumer pods
+    shell: >
+      oc process
+      -p REGION={{ consumer_region }}
+      -p ROLE=consumer
+      -f /tmp/origin/stac-rc-template.json |
+      oc create --namespace=stac -f -
+
+  - name: Wait for consumer pods to be ready
+    script: scripts/wait-ready.sh consumer
+
+- hosts: producer
+  remote_user: root
+  pre_tasks:
+  - name: Get producer pod name
+    shell: oc get pods --output=json --all-namespaces --selector="name=producer"
+    register: oc_get_producer
+
+  - name: Get consumer pod name
+    shell: oc get pods --output=json --all-namespaces --selector="name=consumer"
+    register: oc_get_consumer
+
+  vars:
+    stac_producer: "{{ (oc_get_producer.stdout | from_json)['items'] | join(',', attribute='metadata.name') }}"
+    stac_consumer: "{{ (oc_get_consumer.stdout | from_json)['items'] | join(',', attribute='metadata.name') }}"
+
+  tasks:
+  - name: Restart tuned on producer
+    shell: oc exec {{ stac_producer }} -c stac -it -- systemctl start tuned.service
+
+  - name: Restart tuned on consumer
+    shell: oc exec {{ stac_consumer }} -c stac -it -- systemctl start tuned.service
+
+  - name: Running PINGPONG test
+    shell: oc exec {{ stac_producer }} -c stac -it -- /bin/bash -c 'cd /opt/STAC-N-Tools-Pkg20131015/Linux/orchestration/; ./runTest.sh PINGPONG 1'
+
+  - name: Post-Processing binary results into consolidated csv file
+    shell: oc exec {{ stac_producer }} -c stac -it -- /bin/bash -c '/opt/STAC-N-Tools-Pkg20131015/Linux/bin/linux2.6-x86_64-gcc4.1.2-libc2.5/stac.n.1.create_consolidated_results -i /capture/n/orchestration/stats.udp-tcp-sock -s PINGPONG -r 1 -o /capture/consolidatedResults.csv -b /opt/STAC-N-Tools-Pkg20131015/Linux/bin/linux2.6-x86_64-gcc4.1.2-libc2.5'
