@@ -125,7 +125,7 @@
                             },
                             "privileged": false,
                             "seLinuxOptions": {
-                                "level": "s0:c9,c4"
+                                "level": "s0:c21,c5"
                             }
                         },
                         "terminationMessagePath": "/dev/termination-log"
