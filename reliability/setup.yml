@@ -1,0 +1,166 @@
+---
+- name: Read config and create groups
+  hosts: localhost
+  vars:
+    cloudwatch_mon: false
+    pbench_mon: false
+  tasks:
+    - name: Include config file
+      include_vars:
+        file: ./config/config.yaml
+        name: env
+    - name: Add masters, nodes, etcds to groups
+      add_host:
+        name: "{{ item }}"
+        groups: masters
+      with_items: "{{ env.environment.masters }}"
+    - name: Add nodes to groups
+      add_host:
+        name: "{{ item }}"
+        groups: nodes
+      with_items: "{{ env.environment.nodes }}"
+    - name: Add etcds to groups
+      add_host:
+        name: "{{ item }}"
+        groups: etcds
+      with_items: "{{ env.environment.etcds }}"
+    - name: Set global variables
+      set_fact:
+        auth_type: "{{ env.environment.authtype }}"
+    - name: Read if cloudwatch is enabled
+      set_fact:
+        cloudwatch_mon: true
+      when: item == "cloudwatch"
+      with_items: "{{ env.environment.monitoring }}"
+    - name: Read if pbench is enabled
+      set_fact:
+        pbench_mon: true
+      when: item == "pbench"
+      with_items: "{{ env.environment.monitoring }}"
+
+- name: Configure reliability client/cleanup
+  hosts: localhost
+  tasks:
+    - name: Delete logs directory
+      file:
+        state: absent
+        path: logs
+    - name: Delete runtime directory
+      file:
+        state: absent
+        path: runtime
+    - name: Delete users.data
+      file:
+        state: absent
+        path: config/users.data
+    - name: Delete create users.data
+      file:
+        state: touch
+        path: config/users.data
+    - name: Create logs directory
+      file:
+        state: directory
+        path: logs
+    - name: Create runtime/keys directory
+      file:
+        state: directory
+        path: runtime/keys
+    - name: Create runtime/repos directory
+      file:
+        state: directory
+        path: runtime/repos
+    - name: Create runtime/templates directory
+      file:
+        state: directory
+        path: runtime/templates
+
+- name: Copy configs from master
+  hosts: masters
+  tasks:
+    - fetch:
+        src: /etc/origin/master/admin.kubeconfig
+        dest: runtime/keys
+        flat: yes
+    - fetch:
+        src: /etc/origin/master/ca.crt
+        dest: runtime/keys
+        flat: yes
+    - synchronize:
+        src: /usr/share/openshift/examples/quickstart-templates/*.*
+        dest: runtime/templates
+        mode: pull
+
+- name: Configure amazon monitoring
+  hosts: masters, nodes, etcds
+  vars:
+    iaas_name: "{{ lookup('env', 'iaas_name') | default('AWS', True) }}"
+  tasks:
+    - name: Download and unzip monitoring file 
+      unarchive:
+        src: http://aws-cloudwatch.s3.amazonaws.com/downloads/CloudWatchMonitoringScripts-1.2.1.zip
+        dest: /root
+        remote_src: True
+      when: hostvars.localhost.cloudwatch_mon is not undefined and hostvars.localhost.cloudwatch_mon
+    - name: copy aws conf
+      copy: 
+        src: ./awscreds 
+        dest: /root/aws-scripts-mon/awscreds.template
+      when: hostvars.localhost.cloudwatch_mon is not undefined and hostvars.localhost.cloudwatch_mon
+    - name: create cron for sending results
+      cron:
+        name: "send results"
+        minute: "0"
+        job: "/root/aws-scripts-mon/mon-put-instance-data.pl --mem-util --aws-credential-file=/root/aws-scripts-mon/awscreds.template --disk-space-util --disk-path=/"
+      when: hostvars.localhost.cloudwatch_mon is not undefined and hostvars.localhost.cloudwatch_mon
+    - name: Copy monitor script to masters, nodes and etcds
+      copy:
+        src: lib/bin
+        dest: /root
+
+- name: Setup master
+  hosts: masters
+  tasks:
+    - name: Create cron for cleanup on master
+      cron:
+        name: "clean images, builds, deployments"
+        minute: "0"
+        hour: "0"
+        job: "/root/svt/reliability/cleanup.sh"
+    - name: Setup pruning user
+      command: htpasswd -b /etc/origin/htpasswd redhat redhat
+      ignore_errors: yes
+      when: hostvars.localhost.auth_type == "htpasswd"
+    - name: Login with pruning user
+      command: oc login -u redhat -p redhat
+    - name: Login with sysadmin
+      command: oc login -u system:admin
+    - name: Provide pruning user permissions
+      command: oadm policy add-cluster-role-to-user system:image-pruner redhat
+
+
+- name: Setup PBench
+  hosts: localhost
+  tasks:
+    - name: Cleanup PBench
+      command: pbench-cleanup && pbench-clear-tools
+      when: hostvars.localhost.pbench_mon is not undefined and hostvars.localhost.pbench_mon
+
+    - name: Register PBench on masters, etcds, nodes
+      shell: |
+        pbench-register-tool --name=sar --remote={{ item }} -- --interval=3600
+        pbench-register-tool --name=pidstat --remote={{ item }} -- --interval=3600 --patterns=openshift,docker
+        pbench-register-tool --name=iostat --remote={{ item }} -- --interval=3600
+        exit 0
+      with_inventory_hostnames:
+        - masters
+        - nodes
+        - etcds
+      when: hostvars.localhost.pbench_mon is not undefined and hostvars.localhost.pbench_mon
+
+    - name: PBench list tools
+      command: pbench-list-tools
+      register: listtools
+      when: hostvars.localhost.pbench_mon is not undefined and hostvars.localhost.pbench_mon
+
+    - debug: msg="{{ listtools.stdout }}"
+      when: hostvars.localhost.pbench_mon is not undefined and hostvars.localhost.pbench_mon
