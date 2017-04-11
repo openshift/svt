@@ -207,7 +207,7 @@ main() {
         -Jresults_file="${results_filename}".jtl -l "${results_filename}".jtl \
         -j "${results_filename}".log -Jgun="${GUN}" || die $? "${RUN} failed: $?"
 
-      have_server "${GUN}" && scp -p *.jtl *.log *.png ${GUN}:${PBENCH_DIR}
+      have_server "${GUN}" && scp -o StrictHostKeyChecking=false -p *.jtl *.log *.png ${GUN}:${PBENCH_DIR}
       ;; 
 
     wrk)
@@ -261,7 +261,7 @@ main() {
       xz -0 -T0 < ${results_csv} > ${results_csv}.xz && rm -f ${results_csv}
 
       have_server "${GUN}" && \
-        scp -rp ${dir_out} ${GUN}:${PBENCH_DIR}
+        scp -o StrictHostKeyChecking=false -rp ${dir_out} ${GUN}:${PBENCH_DIR}
       $(timeout_exit_status) || die $? "${RUN} failed: scp: $?"
 
       announce_finish
