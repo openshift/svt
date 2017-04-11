@@ -207,7 +207,7 @@ main() {
         -Jresults_file="${results_filename}".jtl -l "${results_filename}".jtl \
         -j "${results_filename}".log -Jgun="${GUN}" || die $? "${RUN} failed: $?"
 
-      have_server "${GUN}" && scp -p *.jtl *.log *.png ${GUN}:${PBENCH_DIR}
+      have_server "${GUN}" && scp -o StrictHostKeyChecking=false -p *.jtl *.log *.png ${GUN}:${PBENCH_DIR}
       ;; 
 
     wrk)
