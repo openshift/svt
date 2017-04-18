@@ -1,0 +1,14 @@
+$TTL 1D
+@       IN SOA  dns.{{ host }}.    root.{{ host }}. (
+                                        1          ; serial
+                                        1H         ; refresh
+                                        1H         ; retry
+                                        1W         ; expire
+                                        3H )       ; minimum
+
+; name servers - NS records
+        IN      NS      dns.{{ host }}.
+; name servers - A records
+dns     IN      A       {{ dns_ip }}
+
+; generated - A records

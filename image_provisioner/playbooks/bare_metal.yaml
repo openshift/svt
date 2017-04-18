@@ -1,0 +1,35 @@
+---
+- name: Prepare jump node
+  hosts: jump
+  user: root 
+  roles:
+    - ops_mirror_bootstrap
+    - qe_registry_bootstrap
+    - one-off
+    - create-local-repo
+    - docker-save
+    - dns-server-deploy
+
+- name: Allow root access
+  hosts: nodes
+  user: heat-admin
+  become: yes
+  roles:
+    - ssh-authorized-keys
+
+- name: Setup bare metal
+  hosts: nodes
+  user: root
+  become: no
+
+  roles:
+    - repo-install
+    - os-kickstart
+    - dns-client-deploy
+    - collectd-install
+    - clone-repos
+    - pbench-config
+    - docker-config
+    - docker-spread-images
+    - openshift-package-install
+    - qe_registry_bootstrap
