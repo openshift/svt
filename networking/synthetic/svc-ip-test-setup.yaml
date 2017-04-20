@@ -9,9 +9,6 @@
 - hosts: sender:receiver
   remote_user: root
   tasks:
-  - name: Pull centos image
-    shell: docker pull centos
-    
   - name: Create directory for uperf docker image resources
     file: path=/tmp/uperf state=directory
     
