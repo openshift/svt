@@ -1,0 +1,2 @@
+---
+docker_image_dir: "/var/lib/atomic/migrate"

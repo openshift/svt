@@ -1,0 +1,10 @@
+---
+host: "ocp.net"
+oct1: 10
+oct2: 2
+dns_ip: "10.2.1.3"
+range_start: 1
+range_end: 9
+named_local_file: "/etc/named/named.local.conf"
+zone_file_dir: "/etc/named/zones"
+dhcpd_file: "/etc/dhcp/dhcpd.conf"

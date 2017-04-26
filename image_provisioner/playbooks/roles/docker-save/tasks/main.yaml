@@ -1,0 +1,11 @@
+---
+- name: Install atomic package
+  yum:
+    name: atomic
+    state: latest
+
+- name: Docker save local images
+  command: atomic storage export
+
+- name: Ensure files are 0644
+  command: find {{ docker_image_dir }} -type f -exec chmod 0644 {} \;

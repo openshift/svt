@@ -1,0 +1,15 @@
+$TTL 1D
+@       IN SOA  dns.{{ host }}.    root.{{ host }}. (
+                                        1       ; serial
+                                        1H      ; refresh
+                                        1H      ; retry
+                                        1W      ; expire
+                                        3H )    ; minimum
+
+; NS records
+        IN        NS    dns.{{ host }}.
+; PTR records
+;5       IN       PTR   node.{{ host }}.
+
+; GENERATE records
+$GENERATE 1-254 $ PTR   dhcp{{ oct3 }}-$.{{ host }}.

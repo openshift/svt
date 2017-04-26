@@ -11,7 +11,7 @@ projects:
          - RUN_TIME: "120"              # benchmark run-time in seconds
          - PLACEMENT: "test"            # Placement of the WLG pods based on a node's label
          - WRK_DELAY: "100"             # maximum delay between client requests in ms
-         - WRK_TARGETS: "^cakephp-"     # regex to filter target routes
+         - WRK_TARGETS: "^cakephp-"     # extended RE (egrep) to filter target routes
          - WRK_CONNS_PER_THREAD: "1"    # how many connections per worker thread/route
          - WRK_KEEPALIVE: "y"           # use HTTP keepalive [yn]
          - WRK_TLS_SESSION_REUSE: "y"   # use TLS session reuse [yn]

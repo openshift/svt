@@ -207,7 +207,7 @@ main() {
         -Jresults_file="${results_filename}".jtl -l "${results_filename}".jtl \
         -j "${results_filename}".log -Jgun="${GUN}" || die $? "${RUN} failed: $?"
 
-      have_server "${GUN}" && scp -p *.jtl *.log *.png ${GUN}:${PBENCH_DIR}
+      have_server "${GUN}" && scp -o StrictHostKeyChecking=false -p *.jtl *.log *.png ${GUN}:${PBENCH_DIR}
       ;; 
 
     wrk)
@@ -230,7 +230,7 @@ main() {
       #sysctl -w net.ipv4.tcp_tw_reuse=1	# safe to use on client side
       env > $env_out				# dump out the environment for debugging
 
-      cat ${targets_lst} | grep "${WRK_TARGETS:-.}" | awk \
+      cat ${targets_lst} | grep -E "${WRK_TARGETS:-.}" | awk \
         -vpath=${URL_PATH:-/} -vdelay_min=0 -vdelay_max=${WRK_DELAY:-1000} \
         -f ${requests_awk} > ${requests_json} || \
         die $? "${RUN} failed: $?: unable to retrieve wrk targets list \`targets'"

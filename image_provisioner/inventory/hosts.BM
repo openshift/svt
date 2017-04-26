@@ -1,0 +1,47 @@
+[jump]
+#10.2.1.3
+
+[all:vars]
+qe_repo_image_versions=v3.5.0.39
+aos_repo=
+
+[nodes]
+#10.2.4.10
+
+[nodes:vars]
+vm_install=False
+internal_image=False
+jump_node_ip=10.2.1.3
+# kickstart
+ssh_repo=
+github_token=
+# collectd install
+config_type=ose
+collectd_interval=10
+collectd_status=started
+graphite_host=
+graphite_prefix=ose
+# pbench config
+pbench_internal_hostname=pbench\..*com$
+pbench_alternate_hostname=
+# docker config
+# sda2 for openstack, sdb/xvdb for ec2, nvme0n1 for baremetal
+config_repo=svt-private
+docker_login=no
+docker_storage_device=/dev/nvme0n1
+docker_storage_vgname=docker_vg
+docker_storage_driver=overlay
+update_kernel=true
+# baremetal DNS server config
+host=ocp.net
+dns_ip=10.2.1.3
+oct1=10
+oct2=2
+# range values for octet3
+range_start=0
+range_end=9
+# baremetal DNS client config
+network_interface=bond0.7
+dns_domain=cluster.local
+kube_svc_ip=10.192.0.1
+existing_dns_ip=10.1.16.4

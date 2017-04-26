@@ -1,0 +1,5 @@
+---
+- name: create reverse zone files
+  template:
+    src: db.o1.o2.o3.j2
+    dest: "{{ zone_file_dir }}/db.{{ oct1 }}.{{ oct2 }}.{{ oct3 }}"

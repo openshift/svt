@@ -1,0 +1,84 @@
+---
+- name: enable grub serial console
+  command: grubby --remove-args="rhgb quiet" --args=console=ttyS0,115200 --update-kernel=ALL
+
+- name: change DNS1 host
+  lineinfile:
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ network_interface }}
+    regexp: '^DNS1='
+    line: 'DNS1={{ dns_ip }}'
+
+- name: get rid of DNS2 host
+  lineinfile:
+    dest: /etc/sysconfig/network-scripts/ifcfg-{{ network_interface }}
+    regexp: '^DNS2='
+    state: absent
+
+- name: set ifcfg-bond0 to correct bond type
+  lineinfile:
+    dest: /etc/sysconfig/network-scripts/ifcfg-bond0
+    regexp: '^TYPE='
+    line: 'TYPE=Bond'
+
+- name: start and enable NetworkManager
+  systemd:
+    name: NetworkManager
+    state: started
+    enabled: true
+
+- name: stop and disable LSB network 
+  systemd:
+    name: network
+    enabled: false
+
+- name: reload NM connections
+  command: nmcli con reload
+
+- name: restart machine
+  shell: sleep 2 && shutdown -r now "Ansible updates triggered"
+  async: 1
+  poll: 0
+  ignore_errors: true
+
+- name: waiting for server to come back
+  local_action: wait_for
+  args:
+    host: "{{ inventory_hostname }}"
+    port: 22
+    state: started
+    delay: 15
+    timeout: 300
+
+- name: get rid of DNS2 host again
+  lineinfile:
+    dest: /etc/resolv.conf
+    regexp: '^nameserver {{ existing_dns_ip }}'
+    state: absent
+
+- name: get rid of resolv.conf.save
+  file:
+    path: /etc/resolv.conf.save
+    state: absent
+
+- name: get ip address
+  shell: ip addr show {{ network_interface }} | grep -m1 -Po 'inet \K[\d.]+'
+  register: vlan_ip
+
+- name: get hostname
+  shell: host {{ vlan_ip.stdout }} | cut -d ' ' -f 5 | sed 's/.$//'
+  register: vlan_host
+
+- debug:
+    msg: "IP: {{ vlan_ip.stdout_lines }} and hostname: {{ vlan_host.stdout_lines }}"
+
+- name: overwrite /etc/hostname
+  shell: echo {{ vlan_host.stdout }} > /etc/hostname
+
+- name: run hostname command
+  command: hostname {{ vlan_host.stdout }}
+
+- name: disable cloud init hostname setting
+  lineinfile:
+    dest: /etc/cloud/cloud.cfg
+    state: absent
+    regexp: 'hostname'
