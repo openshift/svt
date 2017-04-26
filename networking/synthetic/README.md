@@ -60,17 +60,32 @@ $ nohup ./start-network-test.sh >> run.log & tail -f run.log
 ```
 
 # STAC-N1 tests
-To run STAC-N1 test harness:
-```
-$ python stac-test.py -o 15.0.0.10 -p 15.0.0.10 -c 15.0.0.5 -rp http://path/to/stac-n1/repo/ -f=True
-```
-NOTE: '-f' option represents 'fast-mode' for a quick test with lesser number of images. To run standard test, skip "-f=True".
 
-Once completed, results can be found at the following path on the producer node:
+## Preparing Nodes
+- Download [openonloader](http://www.openonload.org/) :
 ```
-/capture/n/orchestration/stats.udp-tcp-sock/
+$ wget http://www.openonload.org/download/openonload-201606-u1.2.tgz
+$ tar zxf openonload-201606-u1.2.tgz
 ```
-And a consolidated csv file at:
+- Install openonloader on node machines:
 ```
-/capture/consolidatedResults.csv
+$ cd openonload-201606-u1.2/scripts
+$  ./onload_install
 ```
+
+## To run STAC-N1 test harness:
+1. Prepare Nodes. Nodes for producer and consumer pods are decided using [OIR](https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#opaque-integer-resources-alpha-feature). cluster-admin MUST pass atleast two nodes to stac-prepare-nodes.py
+```
+$ python stac-prepare-nodes.py -s https://<api-server-ip>:<port> -n <node-1> <node-2> ... <node-N> -i eth0
+```
+2. Launch producer and consumer pods. Configuration for tests MUST be hosted on a github repo and its url is passed as an argument to the script:
+
+```
+$ ./stac-build-n-deploy.sh http(s)://github.com/<username>/<stac-config-repo>.git
+```
+Sample stac_config file is content/stac_config.sample
+
+3. Run the test:
+```
+$ ./run-stac-test.sh 
+
