@@ -113,21 +113,6 @@
                                 "mountPath": "/opt/wlg"
                             }
                         ],
-                        "securityContext": {
-                            "capabilities": {
-                                "drop": [
-                                    "KILL",
-                                    "MKNOD",
-                                    "SETGID",
-                                    "SETUID",
-                                    "SYS_CHROOT"
-                                ]
-                            },
-                            "privileged": false,
-                            "seLinuxOptions": {
-                                "level": "s0:c9,c4"
-                            }
-                        },
                         "terminationMessagePath": "/dev/termination-log"
                     }
                 ],
