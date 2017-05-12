@@ -52,9 +52,9 @@
       dest: /etc/yum.repos.d
 
   - name: install rhel-7-update-kernel-repo
-    copy:
-      src: rhel-7-update-kernel.repo
-      dest: /etc/yum.repos.d/rhel-7-update-kernel.repo
+    template:
+      src: etc/yum.repos.d/rhel7-update-kernel.repo.j2
+      dest: /etc/yum.repos.d/rhel7-update-kernel.repo
     when: docker_storage_driver == "overlay" or update_kernel == "true"
   
   #- name: install pbench-internal repo
@@ -77,7 +77,7 @@
       src: "{{ aos_ansible_path }}/playbooks/roles/ops_mirror_bootstrap/files/client-key.pem"
       dest: /var/lib/yum/
       remote_src: true
-  when: "{{ vm_install | default(True) | bool }}"
+  when: vm_install | default(True) | bool
 
 - name: install EPEL repo
   copy:
@@ -93,4 +93,4 @@
   template:
     src: etc/yum.repos.d/all.repo.j2
     dest: /etc/yum.repos.d/all.repo
-  when: not vm_install
+  when: not vm_install | default(True) | bool

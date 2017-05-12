@@ -48,6 +48,7 @@
      ignore_errors: true
  
    - name: waiting for server to come back
+     become: false
      local_action: wait_for
      args:
        host: "{{ inventory_hostname }}"
