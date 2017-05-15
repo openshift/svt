@@ -1,0 +1,13 @@
+---
+- name: remove the currently installed ansible package which normally comes form epel repo
+  yum:
+    name: ansible
+    state: absent
+
+- name: install ansible from aos.repo
+  yum:
+    name: ansible
+    disablerepo: epel
+    enablerepo: aos
+    state: present
+

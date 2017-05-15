@@ -49,6 +49,7 @@
     - pbench-config
     - docker-config
     - aos-ansible
+    - ansible-update
     - openshift-package-install
     - seal-image
 

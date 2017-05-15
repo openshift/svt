@@ -56,6 +56,16 @@
       src: etc/yum.repos.d/rhel7-update-kernel.repo.j2
       dest: /etc/yum.repos.d/rhel7-update-kernel.repo
     when: docker_storage_driver == "overlay" or update_kernel == "true"
+
+  - name: install rhel-7-gluster-3.1-latest mirror.openshift.com repo
+    copy:
+      src: rhel7-gluster.repo
+      dest: /etc/yum.repos.d
+
+  - name: install rhel-7-ceph-2-latest mirror.openshift.com repo
+    copy:
+      src: rhel7-ceph.repo
+      dest: /etc/yum.repos.d
   
   #- name: install pbench-internal repo
   #  template:
