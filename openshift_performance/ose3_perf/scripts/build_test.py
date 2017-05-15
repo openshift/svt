@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import re, subprocess, json, time, threading
 import datetime,random,sys
 from optparse import OptionParser
@@ -211,6 +212,8 @@ if __name__ ==  "__main__":
                      help="Seconds to sleep between iterations")
     parser.add_option("-r", "--random", dest="random", default=0,
                       help="Number of builds to select randomly on each iteration")
+    parser.add_option("-z", dest="nologin", action="store_true", default=False,
+                     help="Bypass oc login")
     parser.add_option("-d", "--debug", dest="debug", action="store_true",
                      help="Debug messages")
     globalconfig = {}
@@ -229,8 +232,10 @@ if __name__ ==  "__main__":
     globalconfig["random"] = int(options.random)
     globalconfig["batch"] = int(options.batch)
     globalconfig["shuffle"] = options.shuffle
+    globalconfig["nologin"] = options.nologin
 
-    login(globalconfig["master"],globalconfig["oseuser"],globalconfig["password"])
+    if not globalconfig["nologin"]:
+        login(globalconfig["master"],globalconfig["oseuser"],globalconfig["password"])
 
     print "Gathering build info..."
 
