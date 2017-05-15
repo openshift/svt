@@ -7,7 +7,7 @@
 ################################################
 master=$1
 build_array=(1 5 10 20 30 40 50)
-app_array=("cakephp" "eap" "rails" "django" "nodejs")
+app_array=("cakephp" "eap" "django" "nodejs")
 
 function delete_projects()
 {
@@ -20,12 +20,19 @@ function create_projects()
   python ../../../openshift_scalability/cluster-loader.py -f $1
 }
 
+function prepare_builds_file()
+{
+  bc_name=`oc get bc -n  proj0 --no-headers | awk {'print $1'}`
+  cp ../content/builds.json ../content/running-builds.json
+  sed -i "s/build_name/$bc_name" ../content/running-builds.json
+}
+
 function run_builds()
 {
   for i in "${build_array[@]}"
   do
     echo "running $i $1 concurrent builds"
-    python ../../ose3_perf/scripts/build_test.py -u redhat -p redhat -m $master -n 2 -r $i >> conc_builds_$1.out
+    python ../../ose3_perf/scripts/build_test.py -u redhat -p redhat -m $master -n 2 -r $i -f ../content/running-builds.json >> conc_builds_$1.out
     sleep 30
   done
 }
@@ -77,6 +84,7 @@ do
   echo "Starting $proj builds" >> conc_builds_$proj.out
   create_projects "../content/conc_builds_$proj.yaml"
   wait_for_build_completion
+  prepare_builds_file
   run_builds $proj
   delete_projects
   wait_for_project_termination
