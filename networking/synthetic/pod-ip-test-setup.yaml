@@ -1,6 +1,7 @@
 ---
 - hosts: master:sender:receiver
-  sudo: yes
+  become: true
+  become_method: sudo
   user: root
   tasks:
     - name: Copy ssh public key to local systems
@@ -9,9 +10,6 @@
 - hosts: sender:receiver
   remote_user: root
   tasks:
-  - name: Pull centos image
-    shell: docker pull centos
-    
   - name: Create directory for uperf docker image resources
     file: path=/tmp/uperf state=directory
     

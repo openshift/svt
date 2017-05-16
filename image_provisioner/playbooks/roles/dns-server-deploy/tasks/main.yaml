@@ -1,0 +1,68 @@
+---
+- name: install bind & dhcpd
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - bind
+    - bind-utils
+    - dhcp
+
+- name: copy named.conf
+  template: 
+    src: named.conf
+    dest: /etc/named.conf
+
+- name: make local file and add forward zone
+  blockinfile:
+    dest: "{{ named_local_file }}"
+    create: yes
+    block: |
+      zone "{{ host }}" {
+        type master;
+        file "{{ zone_file_dir }}/db.{{ host }}";
+      };
+    marker: "# {mark} ANSIBLE GENERATED FORWARD ZONE HOST={{ host }}"
+
+- name: append reverse zones to local file
+  blockinfile:
+    dest: "{{ named_local_file }}"
+    block: |
+      zone "{{ item }}.{{ oct2 }}.{{ oct1 }}.in-addr.arpa" {
+        type master;
+        file "{{ zone_file_dir }}/db.{{ oct1 }}.{{ oct2 }}.{{ item }}";
+      };
+    marker: "# {mark} ANSIBLE GENERATED REVERSE ZONE OCT3={{ item }}"
+  with_sequence: start={{ range_start }} end={{ range_end }}
+
+- name: make zone subdirectory
+  file:
+    path: "{{ zone_file_dir }}"
+    state: directory
+
+- name: copy base forward zone file
+  template:
+    src: db.host.tld.j2
+    dest: "{{ zone_file_dir }}/db.{{ host }}"
+
+- name: append custom A records to forward zone file
+  lineinfile:
+    dest: "{{ zone_file_dir }}/db.{{ host }}"
+    line: '$GENERATE 1-254 dhcp{{ item }}-$ A {{ oct1 }}.{{ oct2 }}.{{ item }}.$'
+  with_sequence: start={{ range_start }} end={{ range_end }}
+
+- include: reverse_zones.yaml oct3={{ item }}
+  with_sequence: start={{ range_start }} end={{ range_end }}
+
+- name: open port 53
+  firewalld:
+    zone: public
+    service: dns
+    permanent: true
+    state: enabled
+
+- name: start bind
+  systemd:
+    name: named
+    state: restarted
+    enabled: yes

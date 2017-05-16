@@ -1,0 +1,47 @@
+{
+  "Kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "imageTemplate",
+    "creationTimestamp": null,
+    "annotations": {
+      "description": "This template will create a single test image.",
+      "tags": ""
+    }
+  },
+  "objects": [
+  {
+    "apiVersion": "v1",
+   "dockerImageManifestMediaType": "application/vnd.docker.distribution.manifest.v2+json",
+    "dockerImageMetadata": {
+        "Architecture": "amd64",
+        "Author": "Redhat SVT",
+        "Config": {
+            "Entrypoint": [
+                "/hello-openshift"
+            ]
+        },
+       "Size": 1933496,
+        "apiVersion": "1.0",
+        "kind": "DockerImage"
+    },
+    "dockerImageMetadataVersion": "1.0",
+    "dockerImageReference": "openshift/svt-test-image",
+    "kind": "Image",
+    "metadata": {
+        "name": "svt-test${IDENTIFIER}"
+    }
+  }  
+],
+  "parameters": [
+    {
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1",
+      "required": true
+    }
+  ],
+  "labels": {
+    "template": "imageTemplate"
+  }
+}

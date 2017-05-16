@@ -5,29 +5,39 @@
     state: enforcing
 
 - name: copy docker-storage-setup config when storage driver is devicemapper
-  template: src=etc/sysconfig/docker-storage-setup.j2 dest=/etc/sysconfig/docker-storage-setup
+  template:
+    src: etc/sysconfig/docker-storage-setup.j2
+    dest: /etc/sysconfig/docker-storage-setup
   when: docker_storage_driver == "devicemapper"
 
 - name: copy docker-storage-setup config when storage mapper is overlay
-  template: src=etc/sysconfig/docker-storage-overlay-setup.j2 dest=/etc/sysconfig/docker-storage-setup
+  template:
+    src: etc/sysconfig/docker-storage-overlay-setup.j2
+    dest: /etc/sysconfig/docker-storage-setup
   when: docker_storage_driver == "overlay"
 
 - name: create docker config directory
-  file: path=/root/.docker state=directory
+  file:
+    path: /root/.docker
+    state: directory
 
 - name: download docker login config.json
-  copy: src=/root/{{ config_repo }}/image_provisioner/config.json dest=/root/.docker/ remote_src=true
+  copy:
+    src: /root/{{ config_repo }}/image_provisioner/config.json
+    dest: /root/.docker/
+    remote_src: true
 
 - name: install docker
-  yum: name=docker state=latest
+  yum:
+    name: docker
+    state: latest
 
 - block:
    - name: format the partition
-     shell: mkfs.xfs -f {{ docker_storage_device }}
+     command: mkfs.xfs -f {{ docker_storage_device }}
 
    - name: update fstab
      shell: echo "{{ docker_storage_device }} /var/lib/docker/overlay                    xfs   defaults        0 0" >> /etc/fstab
-
   when: docker_storage_driver == "overlay"
 
 - block:
@@ -38,14 +48,20 @@
      ignore_errors: true
  
    - name: waiting for server to come back
-     local_action: wait_for host={{ inventory_hostname }} state=started delay=15 timeout=300
-  
-   - name: get current kernel version
-     shell: uname -r
-     register: kernel_version
+     become: false
+     local_action: wait_for
+     args:
+       host: "{{ inventory_hostname }}"
+       port: 22
+       state: started
+       delay: 15
+       timeout: 600
 
+   - name: Update kernel version
+     setup: filter='ansible_kernel'
+  
    - name: check if current kernel version is 3.10.0-517 or later
-     shell: rpmdev-vercmp {{ kernel_version.stdout }} 3.10.0-517 > /dev/null
+     shell: rpmdev-vercmp {{ ansible_kernel }} 3.10.0-517 > /dev/null
      register: vercmp_out
      ignore_errors: true
   
@@ -53,7 +69,6 @@
      fail: 
        msg: "please update the kernel to 3.10.0-517 or later"
      when: vercmp_out.rc == 12
-
   when: docker_storage_driver == "overlay" or update_kernel == "true"
 
 - block:
@@ -62,19 +77,18 @@
      register: pv_result
 
    - name: create LVM pv
-     shell: pvcreate {{ docker_storage_device }}
+     command: pvcreate {{ docker_storage_device }}
      when: pv_result.rc != 0
 
    - name: create VG for docker thin pool
      lvg: vg=docker_vg pvs={{ docker_storage_device }}
-  
   when: docker_storage_driver == "devicemapper"
 
 - name: run docker-storage-setup
   shell: docker-storage-setup
 
 - name: enable docker service and start it
-  service: name=docker state=restarted enabled=yes
-
-#- name: docker version override
-#  shell: yum --disablerepo=* localinstall -y http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/docker-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/docker-common-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/docker-forward-journald-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/docker-rhel-push-plugin-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/docker-selinux-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/oci-register-machine-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/docker/1.10.3/50.el7/x86_64/oci-systemd-hook-1.10.3-50.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/selinux-policy/3.13.1/92.el7/noarch/selinux-policy-3.13.1-92.el7.noarch.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/selinux-policy/3.13.1/92.el7/noarch/selinux-policy-targeted-3.13.1-92.el7.noarch.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/policycoreutils/2.5/5.1.el7/x86_64/policycoreutils-2.5-5.1.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/libsemanage/2.5/3.el7/x86_64/libsemanage-2.5-3.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/policycoreutils/2.5/5.1.el7/x86_64/policycoreutils-python-2.5-5.1.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/setools/3.3.8/1.1.el7/x86_64/setools-libs-3.3.8-1.1.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/libsepol/2.5/4.el7/x86_64/libsepol-2.5-4.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/libsemanage/2.5/3.el7/x86_64/libsemanage-python-2.5-3.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/libselinux/2.5/4.el7/x86_64/libselinux-2.5-4.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/libselinux/2.5/4.el7/x86_64/libselinux-utils-2.5-4.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/systemd/219/24.el7/x86_64/systemd-219-24.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/systemd/219/24.el7/x86_64/systemd-libs-219-24.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/systemd/219/24.el7/x86_64/systemd-sysv-219-24.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/systemd/219/24.el7/x86_64/libgudev1-219-24.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/libselinux/2.5/4.el7/x86_64/libselinux-python-2.5-4.el7.x86_64.rpm http://{{ rhel_repo_hostname }}/brewroot/packages/iptables/1.4.21/17.el7/x86_64/iptables-services-1.4.21-17.el7.x86_64.rpm
+  service:
+    name: docker
+    state: restarted
+    enabled: yes

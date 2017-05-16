@@ -4,25 +4,29 @@
 #  become: true
 
 - name: download base image file
-  get_url: url={{ base_image_url }} dest=/tmp/
+  get_url:
+    url: "{{ base_image_url }}"
+    dest: "{{ tmp_dir }}"
 
 - name: add empty space to disk image as specified in the inventory
-  shell: qemu-img resize /tmp/{{ base_image_filename }} +{{ extend_disk_gb }}G
+  command: qemu-img resize {{ base_image_location }}  +{{ extend_disk_gb }}G
 
 - name: create tmp disk for first resize pass
-  shell: qemu-img create -f qcow2 -o preallocation=metadata /tmp/osptmp1.qcow2 {{ (extend_disk_gb+10)|int|abs }}G
+  command: qemu-img create -f {{ qemu_img_format }} -o preallocation=full {{ tmp_img_location }} {{ (extend_disk_gb+10)|int|abs }}G
 
 - name: resize root partition from 6 to 10G
-  shell: virt-resize --quiet --resize {{ root_partition }}=+4G /tmp/{{ base_image_filename }} /tmp/osptmp1.qcow2
+  command: virt-resize --quiet --resize {{ root_partition }}=+4G {{ base_image_location }} {{ tmp_img_location }}
 
 - name: create tmp disk for adding second partition for docker thinpool
-  shell: qemu-img create -f qcow2 -o preallocation=metadata /tmp/{{ ansible_date_time.date }}-ocp-{{ openshift_version }}-gold.qcow2 {{ (extend_disk_gb+10+1)|int|abs }}G
+  command: qemu-img create -f {{ qemu_img_format }} -o preallocation=full {{ qemu_img_location }} {{ (extend_disk_gb+10+1)|int|abs }}G
 
 - name: resize second partition to use all free space
-  shell: virt-resize --quiet --expand {{ docker_storage_device }} /tmp/osptmp1.qcow2 /tmp/{{ ansible_date_time.date }}-ocp-{{ openshift_version }}-gold.qcow2
+  command: virt-resize --quiet --expand {{ docker_storage_device }} {{ tmp_img_location }} {{ qemu_img_location }}
 
 - name: run virt-sysprep, set root password and inject ssh public key
-  shell:  virt-sysprep -a /tmp/{{ ansible_date_time.date }}-ocp-{{ openshift_version }}-gold.qcow2 --root-password password:{{ root_password }} --ssh-inject root:string:"ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEA57NxnEo8KnrBYRrWjgS8eSZBKiUFBbP4GGbC1M1Kxo+494T2+y3uuihK0Ey5n824ch2OafK7m/TnByIC9pQ3VuAi/ggiOfja2gvZ/GtTedE3ct0jVbGbM/98MS0GV1NoIZRqX6e44JMDqID+ngwQutPyTgxbJ/PL2jVUrjP6sOMEJqgSEbQ9a3s+oM3O0vMTLp7E0PtgKQo0bKRoKFEn5mUxiQ2gmwg/dPqOb2/VpBAKCozsE2illszzyP/KC1gq0VkgMqIZspUsXRqvDDbnaSkCc8/AwA0yBAPBMAjtuk5UZvpioHSh2X0ShcgHtYocZiQIxiSvDzvxdYkFBztu6w== perf-team-shared-key"
+  command:  virt-sysprep -a {{ qemu_img_location }} --root-password password:{{ root_password }} --ssh-inject root:string:"{{ ssh_pub_key }}"
 
 - name: clean up temp images
-  file: path=/tmp/osptmp1.qcow2 state=absent
+  file:
+    path: "{{ tmp_img_location }}"
+    state: absent
