@@ -59,6 +59,30 @@
                                 "value": "${JMETER_TPS}"
                             },
                             {
+                                "name": "MB_DELAY",
+                                "value": "${MB_DELAY}"
+                            },
+                            {
+                                "name": "MB_TARGETS",
+                                "value": "${MB_TARGETS}"
+                            },
+                            {
+                                "name": "MB_CONNS_PER_TARGET",
+                                "value": "${MB_CONNS_PER_TARGET}"
+                            },
+                            {
+                                "name": "MB_KA_REQUESTS",
+                                "value": "${MB_KA_REQUESTS}"
+                            },
+                            {
+                                "name": "MB_TLS_SESSION_REUSE",
+                                "value": "${MB_TLS_SESSION_REUSE}"
+                            },
+                            {
+                                "name": "MB_RAMP_UP",
+                                "value": "${MB_RAMP_UP}"
+                            },
+                            {
                                 "name": "WRK_DELAY",
                                 "value": "${WRK_DELAY}"
                             },
@@ -208,6 +232,42 @@
             "displayName": "JMeter throughput",
             "description": "Thread throuput rate for JMeter",
             "value": "60"
+        },
+        {
+            "name": "MB_DELAY",
+            "displayName": "Delay between requests for mb",
+            "description": "Delay between requests for the mb client in ms.",
+            "value": "1000"
+        },
+        {
+            "name": "MB_TARGETS",
+            "displayName": "Regex to select target routes",
+            "description": "Regex to select target routes for mb.",
+            "value": "."
+        },
+        {
+            "name": "MB_CONNS_PER_TARGET",
+            "displayName": "Connections per target route for mb",
+            "description": "Connections per target route for mb.",
+            "value": "y"
+        },
+        {
+            "name": "MB_KA_REQUESTS",
+            "displayName": "How many HTTP keep-alive requests to send per connection",
+            "description": "How many HTTP keep-alive requests to send per connection before sending Connection: close header.",
+            "value": "y"
+        },
+        {
+            "name": "MB_TLS_SESSION_REUSE",
+            "displayName": "Enable TLS session reuse for mb",
+            "description": "Enable TLS session reuse for mb.",
+            "value": "n"
+        },
+        {
+            "name": "MB_RAMP_UP",
+            "displayName": "Thread ramp-up time in seconds",
+            "description": "Thread ramp-up time in seconds.",
+            "value": "n"
         },
         {
             "name": "WRK_DELAY",
