@@ -251,7 +251,7 @@ main() {
       xz -0 -T0 ${results_csv}
 
       have_server "${GUN}" && \
-        scp -rp ${dir_out} ${GUN}:${PBENCH_DIR}
+        scp -o StrictHostKeyChecking=false -rp ${dir_out} ${GUN}:${PBENCH_DIR}
       $(timeout_exit_status) || die $? "${RUN} failed: scp: $?"
 
       announce_finish
@@ -308,7 +308,7 @@ main() {
       xz -0 -T0 < ${results_csv} > ${results_csv}.xz && rm -f ${results_csv}
 
       have_server "${GUN}" && \
-        scp -rp ${dir_out} ${GUN}:${PBENCH_DIR}
+        scp -o StrictHostKeyChecking=false -rp ${dir_out} ${GUN}:${PBENCH_DIR}
       $(timeout_exit_status) || die $? "${RUN} failed: scp: $?"
 
       announce_finish
