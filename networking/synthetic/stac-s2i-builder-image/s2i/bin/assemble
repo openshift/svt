@@ -1,0 +1,53 @@
+#!/bin/bash -e
+#
+# S2I assemble script for the 's2i-stac-builder' image.
+# The 'assemble' script builds your application source so that it is ready to run.
+#
+# For more information refer to the documentation:
+#	https://github.com/openshift/source-to-image/blob/master/docs/builder_image.md
+#
+
+# If the 's2i-stac-builder' assemble script is executed with the '-h' flag, print the usage.
+if [[ "$1" == "-h" ]]; then
+	exec /usr/libexec/s2i/usage
+fi
+
+# Restore artifacts from the previous build (if they exist).
+echo "---> Installing application source..."
+cp -Rf /tmp/src/. ./
+source stac_config
+echo $stac_tar_url
+stac_url=$stac_tar_url
+stac_tar_file=`echo "$stac_url" | rev | cut -d / -f 1 | rev`
+stac_top_dir=`tar -tzf $stac_tar_file| head -1 | cut -f1 -d"/" ` \
+    && echo $stac_top_dir > /etc/stac-dir \
+    && tar zxf $stac_tar_file \
+    && mv $stac_top_dir /opt/ \
+    && sed -i -- "s/ssh/ssh -q/" /opt/$stac_top_dir/Linux/orchestration/runTest.sh \
+    && sed -i -- "s/ssh/ssh -q/" /opt/$stac_top_dir/Linux/orchestration/common_tcp.sh \
+    && sed -i -- "s/scp/scp -q/" /opt/$stac_top_dir/Linux/orchestration/runTest.sh \
+    && sed -i -- "s/taskset -c 1,3/taskset -c $main_core,$sender_core/" /opt/$stac_top_dir/Linux/orchestration/common_tcp.sh \
+    && sed -i -- "s/MAIN_CORE=1/MAIN_CORE=$main_core/" /opt/$stac_top_dir/Linux/orchestration/common_tcp.sh \
+    && sed -i -- "s/SENDER_CORE=3/SENDER_CORE=$sender_core/" /opt/$stac_top_dir/Linux/orchestration/common_tcp.sh \
+    && sed -i -- "s/RECEIVER_CORE=5/RECEIVER_CORE=$receiver_core/" /opt/$stac_top_dir/Linux/orchestration/common_tcp.sh \
+    && sed -e '/^apply_tuning/s/^/#/g' -i /opt/$stac_top_dir/Linux/orchestration/common_tcp.sh \
+    && sed -i "s/.*RUN_WITH_SCREEN=.*/export RUN_WITH_SCREEN=0/" /opt/$stac_top_dir/Linux/orchestration/run_common.sh \
+    && sed -i -- "s/p1p1/$iface_name/" /opt/$stac_top_dir/Linux/orchestration/common_tcp.sh \
+    && sed -i -- "s/orchestrationInterface = em1/orchestrationInterface = $iface_name/g" /opt/$stac_top_dir/Linux/config/stac.n.1.cfg
+
+if [ $enable_OpenOnloader == "True" ]; then yum -y -q update && yum localinstall -y -q rpmbuild/RPMS/x86_64/openonload*rpm ; yum clean all \
+    && sed -i -- 's/CMD="$NICE/CMD="onload --profile=latency $NICE/' /opt/$stac_top_dir/Linux/orchestration/common_tcp.sh; fi
+
+if [ $enable_quick_test_mode = "True" ]; then set -x \
+    && stac_tar_file=`echo "$stac_url" | rev | cut -d / -f 1 | rev` \
+    && stac_top_dir=`tar -tzf $stac_tar_file| head -1 | cut -f1 -d"/" ` \
+    && sed -i "s/fixedMessageRate=100000/fixedMessageRate=1000;/g" /opt/$stac_top_dir/Linux/config/stac.n.1.cfg \
+    && sed -i "s/minMessageRate.*/minMessageRate=2000;/g" /opt/$stac_top_dir/Linux/config/stac.n.1.cfg \
+    && sed -i "s/maxMessageRate.*/maxMessageRate=2000;/g" /opt/$stac_top_dir/Linux/config/stac.n.1.cfg \
+    && sed -i "s/stepTestDuration.*/stepTestDuration=50;/g" /opt/$stac_top_dir/Linux/config/stac.n.1.cfg \
+    && sed -i "s/maxAndFixedTestDuration.*/maxAndFixedTestDuration=50;/g" /opt/$stac_top_dir/Linux/config/stac.n.1.cfg \
+    && sed -i "s/saveRate.*/saveRate = 100;/g" /opt/$stac_top_dir/Linux/config/stac.n.1.cfg \
+    && sed -i "s/primaryItemCount.*/primaryItemCount = 1000;/g" /opt/$stac_top_dir/Linux/config/stac.n.1.cfg \
+    && sed -i "s/uniqueItemCount.*/uniqueItemCount = 1000;/g" /opt/$stac_top_dir/Linux/config/stac.n.1.cfg;fi
+
+echo "cd /opt/STAC-*/Linux/orchestration" >> /opt/app-root/src/.bashrc

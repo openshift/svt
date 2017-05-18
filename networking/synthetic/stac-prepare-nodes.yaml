@@ -1,0 +1,32 @@
+---
+- hosts: stac_nodes
+  remote_user: root
+  tasks:
+    
+  - name: Create stac tuned profile directory if not exists
+    file: path=/etc/tuned/stac state=directory
+    
+  - name: Copy tuned stac profile to producer and consumer
+    copy: src=stac/tuned.conf dest=/etc/tuned/stac/tuned.conf
+
+  - name: Copy stac profile script to producer and consumer
+    copy: src=scripts/tuning.sh dest=/etc/tuned/stac/tuning.sh owner=root group=root mode=744
+
+  - name: Update interface name in tuned script
+    replace:
+      dest=/etc/tuned/stac/tuning.sh
+      regexp='<benchmark_interface>'
+      replace={{ iface_name }}
+
+  - name: Copy stac profile variables to nodes
+    copy: src=stac/tuned_variables.conf dest=/etc/tuned/stac/tuned_variables.conf
+
+  - name: Enable stac profile on nodes
+    shell: tuned-adm profile stac
+
+  - name: restart service tuned
+    shell: systemctl restart tuned
+
+  - name: Verify tuned stac profile on producer and consumer nodes
+    shell: tuned-adm verify
+    ignore_errors: yes

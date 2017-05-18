@@ -1,0 +1,83 @@
+---
+kind: Template
+apiVersion: v1
+metadata:
+  name: stac-deploy
+  annotations:
+    description: A template for creating stac pods
+    tags: stac,perf
+labels:
+  template: stac-deploy
+objects:
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      name: "${ROLE}"
+      test: PINGPONG
+    name: stac-${ROLE}
+    annotations:
+      description: Defines how to deploy the application server
+  spec:
+    strategy:
+      type: Recreate
+    triggers:
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+        - "${ROLE}"
+        from:
+          kind: ImageStreamTag
+          name: centos_stac:latest
+    - type: ConfigChange
+    replicas: 1
+    selector:
+      name: "${ROLE}"
+    template:
+      metadata:
+        name: stac-${ROLE}
+        labels:
+          name: "${ROLE}"
+          test: PINGPONG
+      spec:
+        hostNetwork: true
+        containers:
+        - name: "${ROLE}"
+          image: centos_stac
+          terminationMessagePath: "/dev/termination-log"
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              pod.alpha.kubernetes.io/opaque-int-resource-solarflare: '1'
+            limits:
+              pod.alpha.kubernetes.io/opaque-int-resource-solarflare: '1'
+          volumeMounts:
+          - mountPath: "/sys/fs/cgroup"
+            name: sys-fs-cgroup
+          - mountPath: "/root/.ssh/id_rsa"
+            name: stac-ssh-key
+          - mountPath: "/root/.ssh/authorized_keys"
+            name: stac-ssh
+          - mountPath: "/capture"
+            name: stac-results
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        volumes:
+        - hostPath:
+            path: "/sys/fs/cgroup"
+          name: sys-fs-cgroup
+        - hostPath:
+            path: "/root/.ssh/id_rsa"
+          name: stac-ssh-key
+        - hostPath:
+            path: "/root/.ssh/id_rsa.pub"
+          name: stac-ssh
+        - hostPath:
+            path: "/tmp"
+          name: stac-results
+parameters:
+- name: ROLE
+  description: Role for stac pod, either producer or consumer
+  required: true
