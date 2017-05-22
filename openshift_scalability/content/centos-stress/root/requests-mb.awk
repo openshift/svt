@@ -142,7 +142,7 @@
   printf "    }"
   i++
 }
-/^jws-app-tomcat8-/ {
+/^jws-app-/ {
   if (i) {printf "\n  },\n" }
   printf "  {\n"
   printf "    \"scheme\": \"http\",\n"
@@ -162,7 +162,7 @@
   printf "    }"
   i++
 }
-/^secure-jws-app-tomcat8-/ {
+/^secure-jws-app-/ {
   if (i) {printf "\n  },\n" }
   printf "  {\n"
   printf "    \"scheme\": \"https\",\n"
