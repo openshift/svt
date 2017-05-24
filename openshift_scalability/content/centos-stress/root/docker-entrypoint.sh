@@ -210,6 +210,53 @@ main() {
       have_server "${GUN}" && scp -o StrictHostKeyChecking=false -p *.jtl *.log *.png ${GUN}:${PBENCH_DIR}
       ;; 
 
+    mb)
+      local mb_log=/tmp/${HOSTNAME}-${gateway}.log
+      local requests_awk=requests-mb.awk
+      local dir_out=${RUN}-${HOSTNAME:-${IDENTIFIER:-0}}
+      local targets_lst=/opt/wlg/targets.txt
+      local requests_json=$dir_out/requests.json
+      local mb=/usr/local/bin/mb
+      local env_out=$dir_out/environment	# for debugging
+      local results_csv=$dir_out/results.csv
+      local graph_dir=gnuplot/${RUN}
+      local graph_sh=gnuplot/$RUN/graph.sh
+      local interval=10				# sample interval for d3js graphs [s]
+      local tls_session_reuse=""
+
+      rm -rf ${dir_out} && mkdir -p ${dir_out}
+      ulimit -n 1048576				# use the same limits as HAProxy pod
+      #sysctl -w net.ipv4.tcp_tw_reuse=1	# safe to use on client side
+      env > $env_out				# dump out the environment for debugging
+
+      local tls_session_reuse=$(use_option "true" MB_TLS_SESSION_REUSE n n)		# TLS session reuse is disabled by default
+
+      cat ${targets_lst} | grep -E "${MB_TARGETS:-.}" | awk \
+        -vtls_session_reuse=${tls_session_reuse:-false} \
+        -vka_requests=${MB_KA_REQUESTS:-100} -vclients=${MB_CLIENTS:-10} \
+        -vpath=${URL_PATH:-/} -vdelay_min=0 -vdelay_max=${MB_DELAY:-1000} \
+        -f ${requests_awk} > ${requests_json} || \
+        die $? "${RUN} failed: $?: unable to retrieve wrk targets list \`targets'"
+
+      $timeout \
+        $mb \
+          -d${RUN_TIME:-600} \
+          -r${MB_RAMP_UP:-0} \
+          -i ${requests_json} \
+          -o ${results_csv}.$$
+      $(timeout_exit_status) || die $? "${RUN} failed: $?"
+      LC_ALL=C sort -t, -n -k1 ${results_csv}.$$ > ${results_csv}
+      rm -f ${results_csv}.$$
+      $graph_sh ${graph_dir} ${results_csv} $dir_out/graphs $interval
+      xz -0 -T0 ${results_csv}
+
+      have_server "${GUN}" && \
+        scp -o StrictHostKeyChecking=false -rp ${dir_out} ${GUN}:${PBENCH_DIR}
+      $(timeout_exit_status) || die $? "${RUN} failed: scp: $?"
+
+      announce_finish
+      ;;
+
     wrk)
       local wrk_log=/tmp/${HOSTNAME}-${gateway}.log
       local requests_awk=requests.awk
@@ -261,7 +308,7 @@ main() {
       xz -0 -T0 < ${results_csv} > ${results_csv}.xz && rm -f ${results_csv}
 
       have_server "${GUN}" && \
-        scp -rp ${dir_out} ${GUN}:${PBENCH_DIR}
+        scp -o StrictHostKeyChecking=false -rp ${dir_out} ${GUN}:${PBENCH_DIR}
       $(timeout_exit_status) || die $? "${RUN} failed: scp: $?"
 
       announce_finish

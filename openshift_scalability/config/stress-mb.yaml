@@ -1,0 +1,28 @@
+projects:
+  - num: 1
+    basename: centos-stress
+    ifexists: delete
+    tuning: default
+    templates:
+      - num: 1
+        file: ./content/quickstarts/stress/stress-pod.json
+        parameters:
+         - RUN: "mb"                    # which app to execute inside WLG pod
+         - RUN_TIME: "120"              # benchmark run-time in seconds
+         - PLACEMENT: "test"            # Placement of the WLG pods based on a node's label
+         - MB_DELAY: "100"              # maximum delay between client requests in ms
+         - MB_TARGETS: "^cakephp-"      # extended RE (egrep) to filter target routes
+         - MB_CONNS_PER_TARGET: "1"     # how many connections per target route
+         - MB_KA_REQUESTS: "100"        # how many HTTP keep-alive requests to send before sending "Connection: close".
+         - MB_TLS_SESSION_REUSE: "y"    # use TLS session reuse [yn]
+         - MB_RAMP_UP: "60"             # thread ramp-up time in seconds
+         - URL_PATH: "/"                # target path for HTTP(S) requests
+
+tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 5
+        pause: 0 min
+      rate_limit:
+        delay: 0 ms
