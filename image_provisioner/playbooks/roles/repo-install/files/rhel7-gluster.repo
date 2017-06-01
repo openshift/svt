@@ -1,0 +1,9 @@
+[rhel-7-gluster]
+name=rhel-7-gluster3.1 Latest Enterprise RPMs
+baseurl=https://mirror.openshift.com/enterprise/rhel/rhel-7-gluster-3.1-latest/x86_64/os/
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0
+sslclientcert=/var/lib/yum/client-cert.pem
+sslclientkey=/var/lib/yum/client-key.pem
