@@ -7,7 +7,7 @@
 ################################################
 master=$1
 build_array=(20 40 50)
-app_array=("cakephp" "eap" "django" "nodejs")
+app_array=("cakephp" "eap" "nodejs")
 
 function delete_projects()
 {
@@ -67,6 +67,7 @@ do
   wait_for_build_completion
   prepare_builds_file
   run_builds $proj
+  sleep 60
   delete_projects
   wait_for_project_termination
   echo "Finished $proj builds" >> conc_builds_$proj.out
