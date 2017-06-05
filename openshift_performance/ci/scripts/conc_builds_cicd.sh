@@ -6,7 +6,7 @@
 ## build tests.
 ################################################
 master=$1
-build_array=(1 5 10 20 30 40 50)
+build_array=(20 40 50)
 app_array=("cakephp" "eap" "django" "nodejs")
 
 function delete_projects()
@@ -57,21 +57,7 @@ function wait_for_project_termination()
   done
 }
 
-function clean_docker_images()
-{
-  oc login -u redhat -p redhat
-  oadm prune images --keep-tag-revisions=1 --keep-younger-than=5m --confirm
-  oc login -u system:admin
-  oadm prune builds --orphans --keep-complete=0 --keep-failed=0 --keep-younger-than=0m --confirm
-
-  echo "docker rmi -f $(docker images | grep proj | awk '{print $3}')" >> clean-docker.sh
-  chmod 777 clean-docker.sh
-  ssh root@$(oc get nodes --show-labels | grep primary | head -1 | awk '{print $1}') < clean-docker.sh >> clean-docker.out
-  ssh root@$(oc get nodes --show-labels | grep primary | tail -n 1 | awk '{print $1}') < clean-docker.sh >> clean-docker.out
-}
-
 rm -rf *.out
-
 
 for proj in "${app_array[@]}"
 do
@@ -85,7 +71,6 @@ do
   wait_for_project_termination
   echo "Finished $proj builds" >> conc_builds_$proj.out
   cat conc_builds_$proj.out
-#  clean_docker_images
 done
 
 for proj in "${app_array[@]}"
