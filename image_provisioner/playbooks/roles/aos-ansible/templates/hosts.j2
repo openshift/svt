@@ -19,4 +19,8 @@ qe_repo_image_versions={{ image_version }}
 docker_login=no
 
 [masters]
+{% if not atomic %}
 localhost
+{% else %}
+{{ inventory_hostname }}
+{% endif %}

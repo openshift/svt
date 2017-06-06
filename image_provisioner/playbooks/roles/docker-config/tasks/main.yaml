@@ -22,15 +22,23 @@
       state: latest
   when: not atomic | default(False) | bool
 
+
 - name: stop docker service
   systemd:
     name: docker
     state: stopped
 
-- name: reset docker storage
-  command: atomic storage reset
-  when: atomic | default(False) | bool
+- block:
+   - name: extend root volume
+     command: lvextend -l +60%FREE /dev/atomicos/root
 
+   - name: resize the filesystem
+     command: xfs_growfs /dev/atomicos/root
+
+   - name: reset docker storage
+     command: atomic storage reset
+  when: atomic | default(False) | bool
+  
 - name: check that docker-storage has been deleted
   stat:
     path: /etc/sysconfig/docker-storage

@@ -22,9 +22,9 @@
       vpc_subnet_id: "{{ vpc_subnet_id }}"
       image: "{{ base_image }}"
       volumes:
-        - device_name: /dev/sdb
+        - device_name: "{{ '/dev/sda1' if atomic | default(False) else '/dev/sdb' }}"
           volume_type: gp2
-          volume_size: 30
+          volume_size: 50
           delete_on_termination: true
       wait: yes
       user_data: "{{ lookup('file', '../cloud-init/user-data-aws') }}"
@@ -42,21 +42,31 @@
   - name: add host to group
     add_host: name={{ ami_instance.tagged_instances.0.public_dns_name }} groups=just_created
 
+- hosts: localhost
+  user: root
+  vars:
+    internal_image: false
+  roles:
+    - { role: repo-install, when: atomic | default(False) | bool }
+    - { role: clone-repos, when: atomic | default(False) | bool }
+
 - hosts: just_created
   remote_user: root
   vars:
     internal_image: false
   roles:
-    - repo-install
-    - os-kickstart
-    - collectd-install
-    - clone-repos
-    - pbench-config
-    - docker-config
-    - aos-ansible
-    - ansible-update
-    - openshift-package-install
-    - seal-image
+    - { role: repo-install, when: not atomic | default(False) | bool }
+    - { role: os-kickstart }
+    - { role: clone-repos, when: not atomic | default(False) | bool }
+    - { role: docker-config }
+    - { role: pbench-config, when: not atomic | default(False) | bool }
+    - { role: aos-ansible }
+    - { role: ansible-update, when: not atomic | default(False) | bool }
+    - { role: openshift-package-install, when: not atomic | default(False) | bool }
+    - { role: pbench-kickstart, when: atomic | default(False) | bool }
+    - { role: collectd-install }
+    - { role: seal-image, when: not atomic | default(False) | bool }
+    - { role: clean-env, when: atomic | default(False) | bool }
 
 - hosts: localhost
   connection: local
@@ -76,7 +86,7 @@
       region: "{{ region }}"
       state: present
       description: This was provisioned {{ ansible_date_time.iso8601 }}
-      name: ocp-{{ openshift_version }}-{{ ami_type }}-gold-auto
+      name: ocp-{{ openshift_version }}-{{ ami_type }}-gold
       wait: yes
     register: amioutput
 

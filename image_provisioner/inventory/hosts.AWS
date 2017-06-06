@@ -47,3 +47,5 @@ image_version=v3.3.0.30
 # image naming
 # set openshift_version to the rpm version, sometimes with a trailing -N
 openshift_version=3.3.0.30-1
+# set atomic to True for atomic image
+atomic=False

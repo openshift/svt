@@ -1,19 +1,26 @@
 ---
-- name: provision gold images
+- hosts: localhost
   user: root
-  hosts: all
   vars:
     internal_image: false
-
   roles:
-    - repo-install
-    - os-kickstart
-    - collectd-install
-    - clone-repos
-    - pbench-config
-    - docker-config
-    - aos-ansible
-    - svt-setup
-    - openshift-package-install
-    - seal-image
+    - { role: repo-install, when: atomic | default(False) | bool }
+    - { role: clone-repos, when: atomic | default(False) | bool }
 
+- hosts: all
+  user: root
+  vars:
+    internal_image: false
+  roles:
+    - { role: repo-install, when: not atomic | default(False) | bool }
+    - { role: os-kickstart }
+    - { role: clone-repos, when: not atomic | default(False) | bool }
+    - { role: docker-config }
+    - { role: pbench-config, when: not atomic | default(False) | bool}
+    - { role: aos-ansible }
+    - { role: pbench-kickstart, when: atomic | default(False) | bool }
+    - { role: collectd-install }
+    - { role: ansible-update, when: not atomic | default(False) | bool }
+    - { role: openshift-package-install, when: not atomic | default(False) | bool }
+    - { role: seal-image, when: not atomic | default(False) | bool }
+    - { role: clean-env, when: atomic | default(False) | bool }

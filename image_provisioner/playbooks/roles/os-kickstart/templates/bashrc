@@ -31,7 +31,9 @@ alias cl='clear ; ls -al'
 alias ur='uname -r'
 alias rehash='source ~/.bashrc'
 alias rs='rsync -avz --progress --stats'
+{% if not atomic | bool %}
 alias vi='vim'
+{% endif %}
 alias iftop='sudo iftop'
 export SVN_EDITOR=vim
 alias less='less -FiX'

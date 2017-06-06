@@ -1,20 +1,31 @@
 ---
-- name: install collectd
-  yum: name={{ item }} state=latest
-  with_items:
-    - collectd
+- block:
+   - name: install collectd
+     yum: name={{ item }} state=latest
+     with_items:
+       - collectd
 
-- name: Configure collectd.conf
-  template:
-    src={{config_type}}.collectd.conf.j2
-    dest=/etc/collectd.conf
-    owner=root
-    group=root
-    mode=0644
-  become: true
+   - name: Configure collectd.conf
+     template:
+       src={{config_type}}.collectd.conf.j2
+       dest=/etc/collectd.conf
+       owner=root
+       group=root
+       mode=0644
+     become: true
 
-- name: allow collectd to use the network
-  shell: setsebool -P collectd_tcp_network_connect on
+   - name: allow collectd to use the network
+     shell: setsebool -P collectd_tcp_network_connect on
 
-- name: set collectd service
-  service: name=collectd state={{ collectd_status }}
+   - name: set collectd service
+     service: name=collectd state={{ collectd_status }}
+  when: not atomic | default(False) | bool
+
+- block:
+   # not using docker_image module of ansible since that requires docker-py package to be installed on the atomic host
+   - name: pull collectd image from dockerhub
+     command: docker pull ravielluri/image:collectd
+
+   - name: tag the image as collectd:latest
+     command: docker tag ravielluri/image:collectd collectd:latest
+  when: atomic | default(False) | bool
