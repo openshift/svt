@@ -3,10 +3,16 @@
 #  yum: name=libguestfs-tools-c state=latest
 #  become: true
 
+- name: check if image exists
+  stat:
+    path: "{{ base_image_location }}"
+  register: base_image
+
 - name: download base image file
   get_url:
     url: "{{ base_image_url }}"
     dest: "{{ tmp_dir }}"
+  when: base_image.stat.exists == False
 
 - name: add empty space to disk image as specified in the inventory
   command: qemu-img resize {{ base_image_location }}  +{{ extend_disk_gb }}G
@@ -14,7 +20,7 @@
 - name: create tmp disk for first resize pass
   command: qemu-img create -f {{ qemu_img_format }} -o preallocation=full {{ tmp_img_location }} {{ (extend_disk_gb+10)|int|abs }}G
 
-- name: resize root partition from 6 to 10G
+- name: resize root partition from 6G to 10G
   command: virt-resize --quiet --resize {{ root_partition }}=+4G {{ base_image_location }} {{ tmp_img_location }}
 
 - name: create tmp disk for adding second partition for docker thinpool

@@ -32,7 +32,7 @@ config_repo=
 docker_login=no
 docker_storage_device=/dev/xvdb
 docker_storage_vgname=docker_vg
-docker_storage_driver=overlay
+docker_storage_driver=overlay2
 # updates the kernel if set to true
 update_kernel=false
 # URL to pull the latest kernel
