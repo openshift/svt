@@ -14,7 +14,7 @@
   template:
     src: etc/sysconfig/docker-storage-overlay-setup.j2
     dest: /etc/sysconfig/docker-storage-setup
-  when: docker_storage_driver == "overlay"
+  when: docker_storage_driver == "overlay2"
 
 - name: create docker config directory
   file:
@@ -38,7 +38,7 @@
 
    - name: update fstab
      shell: echo "{{ docker_storage_device }} /var/lib/docker/overlay                    xfs   defaults        0 0" >> /etc/fstab
-  when: docker_storage_driver == "overlay"
+  when: docker_storage_driver == "overlay2"
 
 - block:
    - name: restart machine
@@ -69,7 +69,7 @@
      fail: 
        msg: "please update the kernel to 3.10.0-517 or later"
      when: vercmp_out.rc == 12
-  when: docker_storage_driver == "overlay" or update_kernel == "true"
+  when: docker_storage_driver == "overlay2" or update_kernel == "true"
 
 - block:
    - name: check for existing PV
