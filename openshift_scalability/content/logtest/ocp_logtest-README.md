@@ -14,7 +14,7 @@ Finally it includes a sample [cluster-loader](https://github.com/openshift/svt/b
 
 An example cluster-loader config that works with ocp_logtest.py is [ocp-logtest.yaml](https://github.com/openshift/svt/blob/master/openshift_scalability/config/ocp-logtest.yaml)
 
-1. Edit *svt/openshift_scalability/config/ocp-logtest.py* if you want to change the parameters for the logtest pods.  The following parameters are supported:
+1. Edit **svt/openshift_scalability/config/ocp-logtest.py** if you want to change the parameters for the logtest pods.  The following parameters are supported:
 
 LOGTEST_IMAGE:  logtest image built with the content/logtest Dockerfile, default is **docker.io/mffiedler/ocp-logtest:latest**
 
@@ -26,7 +26,7 @@ PLACEMENT: Value of the placement tag to control which nodes the pods run on, de
 
 2. Run **cluster_loader** against the file:
 
-*./cluster_loader.py -f config/ocp-logtest.py*
+**./cluster_loader.py -f config/ocp-logtest.py**
 
 3. Verify by listing the logtest pods and tailing the logs
 ```
