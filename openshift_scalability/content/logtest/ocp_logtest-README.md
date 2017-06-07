@@ -14,39 +14,44 @@ Finally it includes a sample [cluster-loader](https://github.com/openshift/svt/b
 
 An example cluster-loader config that works with ocp_logtest.py is [ocp-logtest.yaml](https://github.com/openshift/svt/blob/master/openshift_scalability/config/ocp-logtest.yaml)
 
-1. Edit svt/openshift_scalability/config/ocp-logtest.py if you want to change the parameters for the logtest pods.  The following parameters are supported:
+1. Edit *svt/openshift_scalability/config/ocp-logtest.py* if you want to change the parameters for the logtest pods.  The following parameters are supported:
 
 LOGTEST_IMAGE:  logtest image built with the content/logtest Dockerfile, default is **docker.io/mffiedler/ocp-logtest:latest**
+
 INITIAL_FLAGS:  Initial flags to pass to ocp_logtest.py, default is **"--num-lines 0 --line-length 200 --word-length 9 --rate 60 --fixed-line\n"**
+
 REPLICAS:  Number of replicas of the logtest pod to start, default is **1**
+
 PLACEMENT: Value of the placement tag to control which nodes the pods run on, default is **logtest**.  This would include nodes labelled with "placement=logtest"
 
 2. Run **cluster_loader** against the file:
 
-./cluster_loader.py -f config/ocp-logtest.py
+*./cluster_loader.py -f config/ocp-logtest.py*
 
 3. Verify by listing the logtest pods and tailing the logs
-
+```
 oc get pods -n logtest0 -o wide (note hostname where pod is running)
-oc logs -f <podname> (verify logs are shown)
-login to the host where the pod is running and verify the logs are going to journald (or wherever docker logging is configured for)
 
+oc logs -f <podname> (verify logs are shown)
+
+login to the host where the pod is running and verify the logs are going to journald (or wherever docker logging is configured for)
+```
 ### Complete ocp_logtest.py flags 
 
 ```python ocp_logtest.py <optional-arguments>```
 
 - --time how long to run for in seconds.  0 means run forever.  Not compatible with --num-lines.  No default
-- --num-lines number of lines to generate.  Not compatible with --time .  Default is 0
-- --text-type random or input.   Generate random text or read text from the input file specified by --file.  Default is random
-- --line-length length of each line. Default is 100
-- --word-length length of each word.  Only valid with random text. Default is 9
-- --fixed-line true or false - repeat the same line of text over and over or use new text for each line. Default is false
-- --rate lines per minute. Default is 10.0
-- --file file to read text from.  A sample.txt is included in the default docker image.  If running in a pod, a new image with the file should be built. No default.
+- *--num-lines* number of lines to generate.  Not compatible with *--time* .  Default is 0
+- *--text-type* random or input.   Generate random text or read text from the input file specified by *--file*.  Default is random
+- *--line-length* length of each line. Default is 100
+- *--word-length* length of each word.  Only valid with random text. Default is 9
+- *--fixed-line* true or false - repeat the same line of text over and over or use new text for each line. Default is false
+- *--rate* lines per minute. Default is 10.0
+- *--file* file to read text from.  A sample.txt is included in the default docker image.  If running in a pod, a new image with the file should be built. No default.
 
 If no parameters are specified, it is equivalent to:
 
-python ocp_logtest.py --text-type random --line-length 100 --word-length 9 --fixed-line false --rate 10.0 --time 0
+```python ocp_logtest.py --text-type random --line-length 100 --word-length 9 --fixed-line false --rate 10.0 --time 0```
 
 ### Examples
 
