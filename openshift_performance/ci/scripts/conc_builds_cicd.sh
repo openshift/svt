@@ -70,13 +70,8 @@ do
   sleep 60
   delete_projects
   wait_for_project_termination
-<<<<<<< HEAD
 #  echo "Finished $proj builds" >> conc_builds_$proj.out
 #  cat conc_builds_$proj.out
-=======
-  echo "Finished $proj builds" >> conc_builds_$proj.out
-  cat conc_builds_$proj.out
->>>>>>> 912fc6451222f3e3b5a8d0d82d42534e3a683a80
 done
 
 #for proj in "${app_array[@]}"
