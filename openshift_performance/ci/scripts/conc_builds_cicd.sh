@@ -32,7 +32,7 @@ function run_builds()
   for i in "${build_array[@]}"
   do
     echo "running $i $1 concurrent builds"
-    python ../../ose3_perf/scripts/build_test.py -z -n 2 -r $i -f ../content/running-builds.json >> conc_builds_$1.out
+    python ../../ose3_perf/scripts/build_test.py -z -n 2 -r $i -f ../content/running-builds.json
     sleep 30
   done
 }
@@ -70,17 +70,17 @@ do
   sleep 60
   delete_projects
   wait_for_project_termination
-  echo "Finished $proj builds" >> conc_builds_$proj.out
-  cat conc_builds_$proj.out
+#  echo "Finished $proj builds" >> conc_builds_$proj.out
+#  cat conc_builds_$proj.out
 done
 
-for proj in "${app_array[@]}"
-do
-  echo "================ Average times for $proj app =================" >> conc_builds_results.out
-  grep "Average build time, all good builds" conc_builds_$proj.out >> conc_builds_results.out
-  grep "Average push time, all good builds" conc_builds_$proj.out >> conc_builds_results.out
-  grep "Good builds included in stats" conc_builds_$proj.out >> conc_builds_results.out
-  echo "==============================================================" >> conc_builds_results.out
-done
+#for proj in "${app_array[@]}"
+#do
+#  echo "================ Average times for $proj app =================" >> conc_builds_results.out
+#  grep "Average build time, all good builds" conc_builds_$proj.out >> conc_builds_results.out
+#  grep "Average push time, all good builds" conc_builds_$proj.out >> conc_builds_results.out
+#  grep "Good builds included in stats" conc_builds_$proj.out >> conc_builds_results.out
+#  echo "==============================================================" >> conc_builds_results.out
+#done
 
 cat conc_builds_results.out
