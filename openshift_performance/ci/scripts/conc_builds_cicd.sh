@@ -58,6 +58,7 @@ function wait_for_project_termination()
 }
 
 rm -rf *.out
+delete_projects
 
 for proj in "${app_array[@]}"
 do
