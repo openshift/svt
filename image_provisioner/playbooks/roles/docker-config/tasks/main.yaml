@@ -37,7 +37,7 @@
      command: mkfs.xfs -f {{ docker_storage_device }}
 
    - name: update fstab
-     shell: echo "{{ docker_storage_device }} /var/lib/docker/overlay                    xfs   defaults        0 0" >> /etc/fstab
+     shell: echo "{{ docker_storage_device }} /var/lib/docker/overlay2                    xfs   defaults        0 0" >> /etc/fstab
   when: docker_storage_driver == "overlay2"
 
 - block:
