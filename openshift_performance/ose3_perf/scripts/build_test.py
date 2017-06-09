@@ -28,6 +28,7 @@ def run_build(build_def, start_build):
 
     namespace = build_def["namespace"]
     name = build_def["name"]
+    print "bc name ----"+name+"project-----"+namespace
 
     try:
 
