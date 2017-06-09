@@ -69,8 +69,12 @@ def run_build(build_def, start_build):
 
                     # timestamps for start and end of push.  End of push message different for non-s2i builds
 
-                    push_start = start_regex.search(result).group(1)
-                    push_end = end_regex.search(result).group(1)
+                    try:
+                      push_start = start_regex.search(result).group(1)
+                      push_end = end_regex.search(result).group(1)
+                      print "push_start-" + push_start + "push_end-" + push_end
+                    except AttributeError:
+                      print result
 
                     #calculate and record stats
                     push_time_delta = datetime.datetime.strptime(push_end, push_date_fmt) - datetime.datetime.strptime(push_start, push_date_fmt)

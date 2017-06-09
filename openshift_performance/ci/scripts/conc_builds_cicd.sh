@@ -13,6 +13,7 @@ function delete_projects()
 {
   echo "deleting projects"
   oc delete project -l purpose=test
+  wait_for_project_termination
 }
 
 function create_projects()
@@ -70,7 +71,6 @@ do
   run_builds $proj
   sleep 60
   delete_projects
-  wait_for_project_termination
 #  echo "Finished $proj builds" >> conc_builds_$proj.out
 #  cat conc_builds_$proj.out
 done
@@ -84,4 +84,4 @@ done
 #  echo "==============================================================" >> conc_builds_results.out
 #done
 
-cat conc_builds_results.out
+#cat conc_builds_results.out
