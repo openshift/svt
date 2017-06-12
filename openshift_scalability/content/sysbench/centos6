@@ -1,0 +1,34 @@
+# Latest centos6 images 
+FROM centos:6
+
+RUN yum -y install git wget tar which automake libtool mariadb mariadb-bench mariadb-server mariadb-test gcc gcc-c++ autoconf make zlib zlib-devel openssl-devel gettext \
+                                                         openssh-server MariaDB-devel && yum clean all
+
+# clone sysbenchose.sh script
+RUN curl -o /root/sysbenchose.sh https://raw.githubusercontent.com/ekuric/openshift/master/sysbench/sysbenchose.sh
+RUN chmod +x /root/sysbenchose.sh
+
+# get mariadb packages 
+RUN echo $'[repo] \n\
+name            = mariadb \n\
+baseurl         =  http://yum.mariadb.org/10.0/centos6-amd64/ \n\
+enabled         = 1 \n\
+gpgcheck        = 0' > /etc/yum.repos.d/mariadb.repo
+
+# get and compile sysbench
+RUN wget http://repo.percona.com/apt/pool/main/s/sysbench/sysbench_0.5.orig.tar.gz
+RUN tar -xaf sysbench_0.5.orig.tar.gz  && cd sysbench-0.5 && sed '/AC_LIB_PREFIX\(\)/d' -i configure.ac && ./autogen.sh && ./configure && make && make install
+
+RUN echo "export TERM=dumb" >> /root/.bashrc
+
+ENV container docker
+ENV HOME /root
+ENV USER root
+ENV LANG en_US.UTF-8
+WORKDIR /root
+
+# Setup root password in the container
+RUN echo "root:redhat" | chpasswd
+
+# Launch bash as the default command if none specified.
+CMD ["/bin/bash"]
