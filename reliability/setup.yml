@@ -73,6 +73,14 @@
       file:
         state: directory
         path: runtime/templates
+    - name: Install Ruby on client
+      yum:
+        name: ruby
+        state: present
+    - name: gem install packages
+      gem:
+        name: filewatcher, net-scp, net-ssh
+        state: present
 
 - name: Copy configs from master
   hosts: masters
@@ -116,6 +124,11 @@
       copy:
         src: lib/bin
         dest: /root
+    - name: Install required rpms for cloudwatch
+      yum:
+        name: perl-Switch, perl-DateTime, perl-Sys-Syslog, perl-LWP-Protocol-https, perl-Digest-SHA
+        state: present
+      when: hostvars.localhost.cloudwatch_mon is not undefined and hostvars.localhost.cloudwatch_mon
 
 - name: Setup master
   hosts: masters
