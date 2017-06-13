@@ -1,2 +1,18 @@
-VG={{ docker_storage_vgname }}
-STORAGE_DRIVER={{ docker_storage_driver }}
+{% if not atomic | bool %}
+DEVS="{{ docker_storage_device }}"
+VG="{{ docker_storage_vgname }}"
+{% endif %}
+
+STORAGE_DRIVER="{{ docker_storage_driver }}"
+{% if docker_storage_driver == 'devicemapper' %}
+DATA_SIZE=100%FREE
+{% elif docker_storage_driver == 'overlay2' %}
+{% if atomic | bool %}
+CONTAINER_ROOT_LV_NAME=docker-root-lv
+CONTAINER_ROOT_LV_MOUNT_PATH=/var/lib/docker
+CONTAINER_ROOT_LV_SIZE=100%FREE
+{% else %}
+DOCKER_ROOT_VOLUME=yes
+DOCKER_ROOT_VOLUME_SIZE=100%FREE
+{% endif %}
+{% endif %}

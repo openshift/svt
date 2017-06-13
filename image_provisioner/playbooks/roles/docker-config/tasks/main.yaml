@@ -1,44 +1,54 @@
 ---
-- name: set selinux to enforcing
-  selinux:
-    policy: targeted
-    state: enforcing
+#- name: set selinux to enforcing
+#  selinux:
+#    policy: targeted
+#    state: enforcing
 
-- name: copy docker-storage-setup config when storage driver is devicemapper
+- block:
+  - name: create docker config directory
+    file:
+      path: /root/.docker
+      state: directory
+  
+  - name: download docker login config.json
+    copy:
+      src: /root/{{ config_repo }}/image_provisioner/config.json
+      dest: /root/.docker/
+      remote_src: true
+  
+  - name: install docker
+    yum:
+      name: docker
+      state: latest
+  when: not atomic | default(False) | bool
+
+- name: stop docker service
+  systemd:
+    name: docker
+    state: stopped
+
+- name: reset docker storage
+  command: atomic storage reset
+  when: atomic | default(False) | bool
+
+- name: check that docker-storage has been deleted
+  stat:
+    path: /etc/sysconfig/docker-storage
+  register: ds_config
+
+- name: delete docker-storage if it still exists
+  file:
+    path: /etc/sysconfig/docker-storage
+    state: absent
+  when: ds_config.stat.exists == True
+
+- name: copy docker-storage-setup config
   template:
     src: etc/sysconfig/docker-storage-setup.j2
     dest: /etc/sysconfig/docker-storage-setup
-  when: docker_storage_driver == "devicemapper"
-
-- name: copy docker-storage-setup config when storage mapper is overlay
-  template:
-    src: etc/sysconfig/docker-storage-overlay-setup.j2
-    dest: /etc/sysconfig/docker-storage-setup
-  when: docker_storage_driver == "overlay2"
-
-- name: create docker config directory
-  file:
-    path: /root/.docker
-    state: directory
-
-- name: download docker login config.json
-  copy:
-    src: /root/{{ config_repo }}/image_provisioner/config.json
-    dest: /root/.docker/
-    remote_src: true
-
-- name: install docker
-  yum:
-    name: docker
-    state: latest
-
-- block:
-   - name: format the partition
-     command: mkfs.xfs -f {{ docker_storage_device }}
-
-   - name: update fstab
-     shell: echo "{{ docker_storage_device }} /var/lib/docker/overlay2                    xfs   defaults        0 0" >> /etc/fstab
-  when: docker_storage_driver == "overlay2"
+    owner: root
+    group: root
+    mode: 0644
 
 - block:
    - name: restart machine
@@ -57,38 +67,19 @@
        delay: 15
        timeout: 600
 
-   - name: Update kernel version
+   - name: query running kernel version
      setup: filter='ansible_kernel'
   
    - name: check if current kernel version is 3.10.0-517 or later
-     shell: rpmdev-vercmp {{ ansible_kernel }} 3.10.0-517 > /dev/null
+     shell: rpmdev-vercmp {{ ansible_kernel }} 3.10.0-517
      register: vercmp_out
-     ignore_errors: true
-  
-   - name: exit if kernel version is outdated
-     fail: 
-       msg: "please update the kernel to 3.10.0-517 or later"
-     when: vercmp_out.rc == 12
-  when: docker_storage_driver == "overlay2" or update_kernel == "true"
-
-- block:
-   - name: check for existing PV
-     command: pvdisplay
-     register: pv_result
-
-   - name: create LVM pv
-     command: pvcreate {{ docker_storage_device }}
-     when: pv_result.rc != 0
-
-   - name: create VG for docker thin pool
-     lvg: vg=docker_vg pvs={{ docker_storage_device }}
-  when: docker_storage_driver == "devicemapper"
-
-- name: run docker-storage-setup
-  shell: docker-storage-setup
+     failed_when: vercmp_out.rc == 12
+  when:
+    - docker_storage_driver == "overlay2" or update_kernel == "true"
+    - not atomic | default(False) | bool
 
 - name: enable docker service and start it
-  service:
+  systemd:
     name: docker
-    state: restarted
+    state: started
     enabled: yes
