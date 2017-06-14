@@ -2,10 +2,12 @@
 - name: yum update
   yum: name=* state=latest
 
+- name: make sure ansible is installed
+  yum: name=ansible state=present
+
 - name: install packages
   yum: name={{ item }} state=latest
   with_items:
-    - ansible
     - bind-utils
     - blktrace
     - ethtool
