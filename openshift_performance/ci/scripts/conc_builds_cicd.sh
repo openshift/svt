@@ -7,7 +7,7 @@
 ################################################
 master=$1
 build_array=(20 40 50)
-app_array=("cakephp" "eap" "nodejs")
+app_array=("cakephp" "django" "nodejs")
 
 function delete_projects()
 {
