@@ -23,7 +23,7 @@ function create_projects()
 
 function prepare_builds_file()
 {
-  bc_name=`oc get bc -n  proj0 --no-headers | awk {'print $1'}`
+  bc_name=`oc get bc -n  svt-build-perf-proj0 --no-headers | awk {'print $1'}`
   cp ../content/builds.json ../content/running-builds.json
   sed -i "s/build_name/$bc_name/" ../content/running-builds.json
 }
@@ -41,20 +41,20 @@ function run_builds()
 
 function wait_for_build_completion()
 {
-  running=`oc get pods --all-namespaces | grep proj | grep build | grep Running | wc -l`
+  running=`oc get pods --all-namespaces | grep svt | grep build | grep Running | wc -l`
   while [ $running -ne 0 ]; do
     sleep 5
-    running=`oc get pods --all-namespaces | grep proj | grep build | grep Running | wc -l`
+    running=`oc get pods --all-namespaces | grep svt | grep build | grep Running | wc -l`
     echo "$running builds are still running"
   done
 }
 
 function wait_for_project_termination()
 {
-  terminating=`oc get projects | grep Terminating | wc -l`
+  terminating=`oc get projects | grep svt | grep Terminating | wc -l`
   while [ $terminating -ne 0 ]; do
     sleep 5
-    terminating=`oc get projects | grep Terminating | wc -l`
+    terminating=`oc get projects | grep svt | grep Terminating | wc -l`
     echo "$terminating projects are still terminating"
   done
 }
