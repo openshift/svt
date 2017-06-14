@@ -233,7 +233,7 @@ main() {
 
       cat ${targets_lst} | grep -E "${MB_TARGETS:-.}" | awk \
         -vtls_session_reuse=${tls_session_reuse:-false} \
-        -vka_requests=${MB_KA_REQUESTS:-100} -vclients=${MB_CLIENTS:-10} \
+        -vka_requests=${MB_KA_REQUESTS:-100} -vclients=${MB_CONNS_PER_TARGET:-10} \
         -vpath=${URL_PATH:-/} -vdelay_min=0 -vdelay_max=${MB_DELAY:-1000} \
         -f ${requests_awk} > ${requests_json} || \
         die $? "${RUN} failed: $?: unable to retrieve wrk targets list \`targets'"
