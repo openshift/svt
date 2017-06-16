@@ -30,7 +30,6 @@ function prepare_builds_file()
 
 function run_builds()
 {
-  cat ../content/running-builds.json
   for i in "${build_array[@]}"
   do
     echo "running $i $1 concurrent builds"
@@ -59,6 +58,7 @@ function wait_for_project_termination()
   done
 }
 
+docker info
 rm -rf *.out
 delete_projects
 
