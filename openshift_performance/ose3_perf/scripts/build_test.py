@@ -28,7 +28,6 @@ def run_build(build_def, start_build):
 
     namespace = build_def["namespace"]
     name = build_def["name"]
-    print "bc name ----"+name+"project-----"+namespace
 
     try:
 
@@ -73,7 +72,6 @@ def run_build(build_def, start_build):
                     try:
                       push_start = start_regex.search(result).group(1)
                       push_end = end_regex.search(result).group(1)
-                      print "push_start-" + push_start + "push_end-" + push_end
                     except AttributeError:
                       print result
 
