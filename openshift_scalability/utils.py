@@ -6,6 +6,28 @@ from clusterloaderstorage import *
 from multiprocessing import Process
 from flask import Flask, request
 
+
+class OpenShiftClient:
+    def __init__(self):
+        pass
+
+    def login(self, user, passwd, master):
+        return subprocess.check_output(
+            "oc login --insecure-skip-tls-verify=true -u " + user + " -p " + passwd + " " + master, shell=True)
+
+    def oc_command(args, globalvars):
+        tmpfile = tempfile.NamedTemporaryFile()
+        # see https://github.com/openshift/origin/issues/7063 for details why this is done.
+        shutil.copyfile(globalvars["kubeconfig"], tmpfile.name)
+        ret = subprocess.check_output("KUBECONFIG=" + tmpfile.name + " " + args, shell=True)
+        if globalvars["debugoption"]:
+            print args
+        if args.find("oc process") == -1:
+            print ret
+        tmpfile.close()
+        return ret
+
+
 def calc_time(timestr):
     tlist = timestr.split()
     if tlist[1] == "s":
@@ -20,29 +42,33 @@ def calc_time(timestr):
         print "Invalid delay in rate_limit\nExitting ........"
         sys.exit()
 
+
 def oc_command(args, globalvars):
-    tmpfile=tempfile.NamedTemporaryFile()
-    # see https://github.com/openshift/origin/issues/7063 for details why this is done. 
+    tmpfile = tempfile.NamedTemporaryFile()
+    # see https://github.com/openshift/origin/issues/7063 for details why this is done.
     shutil.copyfile(globalvars["kubeconfig"], tmpfile.name)
-    ret = subprocess.check_output("KUBECONFIG="+tmpfile.name+" "+args, shell=True)
+    ret = subprocess.check_output("KUBECONFIG=" + tmpfile.name + " " + args, shell=True)
     if globalvars["debugoption"]:
         print args
     if args.find("oc process") == -1:
-        print ret 
+        print ret
     tmpfile.close()
     return ret
 
-def login(user,passwd,master):
-    return subprocess.check_output("oc login --insecure-skip-tls-verify=true -u " + user + " -p " + passwd + " " + master,shell=True)
 
-def get_route():
+def get_route(self):
     default_proj = subprocess.check_output("oc project default", shell=True)
-    localhost = subprocess.check_output("ip addr show eth0 | awk '/inet / {print $2;}' | cut -d/ -f1", shell=True).rstrip()
-    router_name = subprocess.check_output("oc get pod --no-headers | awk '/^router-/ {print $1;}'", shell=True).rstrip()
-    router_ip = subprocess.check_output("oc describe pod %s | awk '/^IP:/ {print $2}'" % router_name, shell=True).rstrip()
-    routes_output = subprocess.check_output("oc get route --all-namespaces --no-headers | awk '/example/ {print $3;}'", shell=True)
+    localhost = subprocess.check_output("ip addr show eth0 | awk '/inet / {print $2;}' | cut -d/ -f1",
+                                            shell=True).rstrip()
+    router_name = subprocess.check_output("oc get pod --no-headers | awk '/^router-/ {print $1;}'",
+                                              shell=True).rstrip()
+    router_ip = subprocess.check_output("oc describe pod %s | awk '/^IP:/ {print $2}'" % router_name,
+                                            shell=True).rstrip()
+    routes_output = subprocess.check_output(
+            "oc get route --all-namespaces --no-headers | awk '/example/ {print $3;}'", shell=True)
     routes_list = [y for y in (x.strip() for x in routes_output.splitlines()) if y]
     return localhost, router_ip, routes_list
+
 
 def create_template(templatefile, num, parameters, globalvars):
     if globalvars["debugoption"]:
@@ -351,7 +377,7 @@ def delete_project(projname, globalvars) :
     if project_exists(projname,globalvars) :
         raise RuntimeError("Failed to delete project " + projname)
 
-def single_project(testconfig, projname, globalvars):
+def single_project(client, testconfig, projname, globalvars):
     globalvars["createproj"] = True
     if project_exists(projname,globalvars) :
         if testconfig["ifexists"] == "delete" :
@@ -372,11 +398,11 @@ def single_project(testconfig, projname, globalvars):
             with open(tmpfile.name, 'w+') as f:
                 yaml.dump(nsconfig, f, default_flow_style=False)
             tmpfile.flush()
-            oc_command("kubectl create -f %s" % tmpfile.name,globalvars)
-            oc_command("kubectl label --overwrite namespace " + projname +" purpose=test", globalvars)
+            client.oc_command("kubectl create -f %s" % tmpfile.name,globalvars)
+            client.oc_command("kubectl label --overwrite namespace " + projname +" purpose=test", globalvars)
         else:
-            oc_command("oc new-project " + projname,globalvars)      
-            oc_command("oc label --overwrite namespace " + projname +" purpose=test", globalvars)
+            client.oc_command("oc new-project " + projname,globalvars)
+            client.oc_command("oc label --overwrite namespace " + projname +" purpose=test", globalvars)
     else:
         pass
     
@@ -452,7 +478,7 @@ def autogen_pod_wait(pods_running, num_expected):
     pods_running = [pod.split() for pod in pods_running]
     return pods_running
 
-def project_handler(testconfig, globalvars):
+def project_handler(client, testconfig, globalvars):
     if globalvars["debugoption"]:
         print "project_handler function called"
 
@@ -481,7 +507,7 @@ def project_handler(testconfig, globalvars):
                     projname = basename + str(i)
 
                 print "forking %s"%projname
-                single_project(testconfig, projname, globalvars)
+                single_project(client, testconfig, projname, globalvars)
                 os._exit(0)
         for k, child in enumerate(children):
             os.waitpid(child, 0)
