@@ -6,7 +6,7 @@
 ## build tests.
 ################################################
 master=$1
-build_array=(20 40 50)
+build_array=(1 2 4)
 app_array=("cakephp" "django" "nodejs")
 
 function delete_projects()
