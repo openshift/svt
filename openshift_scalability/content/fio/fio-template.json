@@ -1,0 +1,156 @@
+{
+    "apiVersion": "v1",
+    "kind": "Template",
+    "metadata": {
+        "name": "fio-test",
+        "labels": {
+            "name": "fio-test"
+        },
+        "annotations": {
+            "descriptions": "Fio test running inside pods",
+            "tags": "fio, fio-test"
+        }
+    },
+    "objects": [
+        {
+            "apiVersion": "v1",
+            "kind": "PersistentVolumeClaim",
+            "metadata": {
+                "name": "${PVC_NAME}",
+                "annotations": {
+                    "volume.beta.kubernetes.io/storage-class": "${STORAGE_CLASS}"
+                }
+            },
+            "spec": {
+                "accessModes": [
+                    "${ACCESS_MODES}"
+                ],
+                "resources": {
+                    "requests": {
+                        "storage": "${STORAGE_SIZE}"
+                    }
+                }
+            }
+        },
+        {
+            "kind": "Pod",
+            "apiVersion": "v1",
+            "metadata": {
+                "generateName": "fio-pod-",
+                "labels": {
+                    "name": "fio-pod-${IDENTIFIER}"
+                }
+            },
+            "spec": {
+                "containers": [
+                    {
+                        "image": "${DOCKER_IMAGE}",
+                        "imagePullPolicy": "IfNotPresent",
+                        "name": "fio-pod",
+                        "ports": [
+                            {
+                                "containerPort": 22,
+                                "protocol": "TCP",
+                                "targetPort": 22
+                            },
+                            {
+                                "containerPort": 8765,
+                                "protocol": "TCP",
+                                "targetPort": 8765
+                            }
+                        ],
+                        "resources": {
+                           "limits": {
+                                "cpu": "800m",
+                                "memory": "20Mi"
+                            },
+                            "requests": {
+                                "cpu": "10m",
+                                "memory": "10Mi"
+                            }
+                        },
+                        "volumeMounts": [
+                            {
+                                "name": "${VOL_MOUNT_NAME}",
+                                "mountPath": "${MOUNT_PATH}"
+                            }
+                        ],
+                        "securityContext": {
+                            "capabilities": {},
+                            "privileged": false,
+                            "seLinuxOptions": {
+                                "level": "s0:c9,c4"
+                            }
+                        },
+                        "terminationMessagePath": "/dev/termination-log"
+                    }
+                ],
+                "restartPolicy": "Never",
+                "volumes":[
+                    {
+                        "name": "${VOL_MOUNT_NAME}",
+                        "persistentVolumeClaim": {
+                            "claimName": "${PVC_NAME}"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "parameters": [
+        {
+            "name": "VOL_MOUNT_NAME",
+            "description" : "Name of volume mount",
+            "required": true,
+            "value": "persistentvolume"
+        },
+        {
+            "name": "PVC_NAME",
+            "description": "PVC name",
+            "required": true,
+            "from": "pvc[a-z0-9]{10}",
+            "generate": "expression"
+        },
+        {
+            "name": "DOCKER_IMAGE",
+            "description": "Docker image name - it has to have sshd service enabled and started. Pbench fio needs sshd service and fio ports",
+            "required": true,
+            "value": "dockerimage"
+        },
+        {
+            "name": "FIO_SERVICE_NAME",
+            "description": "FIO service name",
+            "required": true,
+            "value": "fio"
+        },
+        {
+            "name" : "STORAGE_CLASS",
+            "description": "Storagecclass to use - here we expect storageclass name",
+            "required": true,
+            "value": "storageclassname"
+        },
+        {
+            "name": "STORAGE_SIZE",
+            "description": "The PVC size - default is 1Gi",
+            "required": true,
+            "value": "1Gi"
+        },
+        {
+            "name": "ACCESS_MODES",
+            "description": "PVC access mode - this will have different values for different storage backends",
+            "required": true,
+            "value": "ReadWriteOnce"
+        },
+        {
+            "name": "IDENTIFIER",
+            "description": "Number to append to the name of resources",
+            "value": "1"
+        },
+        {
+          "name": "MOUNT_PATH",
+          "description": "The location where inside pod PVC will be mounted",
+          "required": true,
+          "value":"/mnt/pvcmount"
+        }
+    ]
+}
