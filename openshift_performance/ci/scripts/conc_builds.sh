@@ -24,7 +24,7 @@ function prepare_builds_file()
 {
   bc_name=`oc get bc -n  proj0 --no-headers | awk {'print $1'}`
   cp ../content/builds.json ../content/running-builds.json
-  sed -i "s/build_name/$bc_name" ../content/running-builds.json
+  sed -i "s/build_name/$bc_name/" ../content/running-builds.json
 }
 
 function run_builds()
@@ -32,7 +32,7 @@ function run_builds()
   for i in "${build_array[@]}"
   do
     echo "running $i $1 concurrent builds"
-    python ../../ose3_perf/scripts/build_test.py -u redhat -p redhat -m $master -n 2 -r $i -f ../content/running-builds.json >> conc_builds_$1.out
+    python ../../ose3_perf/scripts/build_test.py -z -n 2 -r $i -f ../content/running-builds.json >> conc_builds_$1.out
     sleep 30
   done
 }
