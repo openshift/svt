@@ -11,6 +11,7 @@ group_id=
 instance_type=m4.xlarge
 vpc_subnet_id=
 base_image=
+instance_tag=
 # repo install
 rhel_int_repo_hostname=
 # os kickstart
