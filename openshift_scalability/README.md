@@ -2,6 +2,14 @@
 This package is written in python and can be used to create an environment on top of an OpenShift installation. So, basically you can create any number of projects, each having any number of following objects -- ReplicationController, Pods, Services, etc..
 Note : As of now it supports only - Pods, Replicationcontrollers, Services, and Templates.
 
+# Prerequisites
+
+cluster-loader depends on some Python libraries that are not part of default Python installs:
+
+```
+ $ yum install python-flask python-ceph python-boto3
+```
+
 # Sample Command
 
 ```
