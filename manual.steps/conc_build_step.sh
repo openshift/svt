@@ -14,7 +14,7 @@ do
   proj=$(echo "${line}" | awk '{print $1}')
   app=$(echo "${line}" | awk '{print $2}')
   if [[ ${proj} == proj* ]]; then
-    logs=$(oc logs -n "${proj}" "${app}-build")
+    logs=$(oc logs --timestamps -n "${proj}" "${app}-build")
     #echo "yyy ${logs}"
     record_file="${RECORD_FOLDER}/${proj}_${app}_record.out"
     if [[ -f "${record_file}" ]]; then
