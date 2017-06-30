@@ -121,6 +121,9 @@ def run_builds_sequentially(all_builds, sleep_time):
 
 #Select a random set of builds to run.  Duplicates not allowed
 def select_random_builds(builds, num):
+    if len(builds) < num:
+        raise ValueError('It is not possible to select %d builds from build'
+                         ' source containing only %d builds' % (num, len(builds)))
     selected_builds = []
     seen = set()
     i=0
