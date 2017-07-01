@@ -14,13 +14,13 @@ do
   proj=$(echo "${line}" | awk '{print $1}')
   app=$(echo "${line}" | awk '{print $2}')
   if [[ ${proj} == proj* ]]; then
-    logs=$(oc logs --timestamps -n "${proj}" "${app}-build")
     #echo "yyy ${logs}"
     record_file="${RECORD_FOLDER}/${proj}_${app}_record.out"
     if [[ -f "${record_file}" ]]; then
       echo "skip (already processed build) ${proj} ${app}"
       continue
     fi
+    logs=$(oc logs --timestamps -n "${proj}" "${app}-build")
     if [[ ${logs} == *"Cannot connect to the Docker daemon. Is the docker daemon running on this host"* ]]; then
       echo "WARNING: ${proj} ${app}: docker busy"
     elif [[ ${logs} == *"free data blocks which is less than minimum required 6083 free data blocks"* ]]; then
