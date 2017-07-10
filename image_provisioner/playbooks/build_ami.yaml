@@ -67,7 +67,7 @@
       region: "{{ region }}"
       state: present
       description: This was provisioned {{ ansible_date_time.iso8601 }}
-      name: ocp-{{ openshift_version }}-gold-auto
+      name: "{{ 'ocp-{{ openshift_version }}-atomic-gold-auto' if atomic | default(False) else 'ocp-{{ openshift_version }}-rhel-gold-auto' }}"
       wait: yes
     register: amioutput
 
