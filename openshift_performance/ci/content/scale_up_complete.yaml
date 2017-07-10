@@ -38,7 +38,7 @@
          - { namespace: 'tomcat8-mongodb0', dc: 'jws-app'}
     - name: Run scale-up test for cakephp
       shell: >
-         python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
+         python -u /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
          -m localhost:8443 
          -u redhat 
          -p redhat 
@@ -52,7 +52,7 @@
          > /tmp/scale_test.out 2>/tmp/scale_test.err
     - name: Run scale-up test for rails  
       shell: >
-         python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
+         python -u /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
          -m localhost:8443 
          -u redhat 
          -p redhat 
@@ -66,7 +66,7 @@
          >> /tmp/scale_test.out 2>/tmp/scale_test.err
     - name: Run scale-up test for django  
       shell: >
-         python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
+         python -u /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
          -m localhost:8443 
          -u redhat 
          -p redhat 
@@ -80,7 +80,7 @@
          >> /tmp/scale_test.out 2>/tmp/scale_test.err
     - name: Run scale-up test for dancer  
       shell: >
-         python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
+         python -u /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
          -m localhost:8443 
          -u redhat 
          -p redhat 
@@ -94,7 +94,7 @@
          >> /tmp/scale_test.out 2>/tmp/scale_test.err
     - name: Run scale-up test for nodejs  
       shell: >
-         python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
+         python -u /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
          -m localhost:8443 
          -u redhat 
          -p redhat 
@@ -108,7 +108,7 @@
          >> /tmp/scale_test.out 2>/tmp/scale_test.err
     - name: Run scale-up test for eap-app  
       shell: >
-         python /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
+         python -u /root/svt/openshift_performance/ose3_perf/scripts/scale_test.py
          -m localhost:8443 
          -u redhat 
          -p redhat 
