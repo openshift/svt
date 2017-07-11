@@ -9,7 +9,7 @@ master=$1
 build_array=(1 5 10 20 30 40 50)
 app_array=("cakephp" "eap" "django" "nodejs")
 # this number should be equal to the number of the created projects
-readonly PROJECT_NUM=300
+readonly PROJECT_NUM=50
 
 function delete_projects()
 {
