@@ -8,6 +8,8 @@
 master=$1
 build_array=(1 5 10 20 30 40 50)
 app_array=("cakephp" "eap" "django" "nodejs")
+# this number should be equal to the number of the created projects
+readonly PROJECT_NUM=50
 
 function delete_projects()
 {
@@ -23,8 +25,19 @@ function create_projects()
 function prepare_builds_file()
 {
   bc_name=`oc get bc -n  proj0 --no-headers | awk {'print $1'}`
-  cp ../content/builds.json ../content/running-builds.json
-  sed -i "s/build_name/$bc_name/" ../content/running-builds.json
+  local running_build_file
+  running_build_file="../content/running-builds.json"
+  # generate running-builds.json on the fly
+  printf '%s\n' "[" > "${running_build_file}"
+  for (( c=0; c<"${PROJECT_NUM}"; c++ ))
+  do
+    if [[ "$c" == $((PROJECT_NUM - 1)) ]]; then
+      printf '%s\n' "{\"namespace\":\"proj${c}\", \"name\":\"$bc_name\"}" >> "${running_build_file}"
+    else
+      printf '%s\n' "{\"namespace\":\"proj${c}\", \"name\":\"$bc_name\"}," >> "${running_build_file}"
+    fi
+  done
+  printf '%s' "]" >> "${running_build_file}"
 }
 
 function run_builds()
