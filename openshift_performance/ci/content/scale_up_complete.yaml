@@ -2,9 +2,12 @@
 - hosts: all
   remote_user: root
   tasks:
+    - name: Ensure htpasswd file exits
+      file:
+        path: /etc/origin/htpasswd
+        state: touch
     - name: Create redhat user
       shell: htpasswd -b /etc/origin/htpasswd redhat redhat
-      ignore_errors: yes
     - name: Give redhat user cluster-admin
       shell: oadm policy add-cluster-role-to-user cluster-admin redhat
     - name: Run cluster loader to create all projects
