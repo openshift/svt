@@ -237,7 +237,7 @@ Threads fairness:
 
 ```
 
-==== Quickstart for rnning bare metal, docker and OCP
+==== Quickstart for rnning bare metal, docker and OCP ====
 ```
 # ./cluster-loader.py -f content/sysbench/sysbench-parameters.yaml 
 # oc get pods -n sysbench0 -o wide
