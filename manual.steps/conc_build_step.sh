@@ -1,6 +1,12 @@
 #!/bin/bash
 
-echo "test"
+echo "test: $(date)"
+
+echo "all pods"
+oc get pods --all-namespaces -o wide
+
+echo "pods with error"
+oc get pods --all-namespaces -o wide | grep -i error
 
 readonly MY_DATE="$(date '+%d%m%Y')"
 readonly RESULT_FOLDER="/tmp/${MY_DATE}_conc_builds"
@@ -14,13 +20,13 @@ do
   proj=$(echo "${line}" | awk '{print $1}')
   app=$(echo "${line}" | awk '{print $2}')
   if [[ ${proj} == proj* ]]; then
-    logs=$(oc logs -n "${proj}" "${app}-build")
     #echo "yyy ${logs}"
     record_file="${RECORD_FOLDER}/${proj}_${app}_record.out"
     if [[ -f "${record_file}" ]]; then
       echo "skip (already processed build) ${proj} ${app}"
       continue
     fi
+    logs=$(oc logs --timestamps -n "${proj}" "${app}-build")
     if [[ ${logs} == *"Cannot connect to the Docker daemon. Is the docker daemon running on this host"* ]]; then
       echo "WARNING: ${proj} ${app}: docker busy"
     elif [[ ${logs} == *"free data blocks which is less than minimum required 6083 free data blocks"* ]]; then
@@ -38,7 +44,7 @@ do
     touch ${record_file}
 
   else
-    echo "skipped line: ${line}"
+    echo "skipped line: =${line}="
   fi
 done << EOF
 $(oc get builds --all-namespaces | grep -i fail)
