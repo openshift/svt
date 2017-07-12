@@ -3,7 +3,6 @@
   hosts: localhost
   vars:
     cloudwatch_mon: false
-    pbench_mon: false
   tasks:
     - name: Include config file
       include_vars:
@@ -31,11 +30,6 @@
       set_fact:
         cloudwatch_mon: true
       when: item == "cloudwatch"
-      with_items: "{{ env.environment.monitoring }}"
-    - name: Read if pbench is enabled
-      set_fact:
-        pbench_mon: true
-      when: item == "pbench"
       with_items: "{{ env.environment.monitoring }}"
 
 - name: Configure reliability client/cleanup
@@ -77,9 +71,17 @@
       yum:
         name: ruby
         state: present
-    - name: gem install packages
+    - name: gem install filewatcher
       gem:
-        name: filewatcher, net-scp, net-ssh
+        name: filewatcher
+        state: present
+    - name: gem install net-scp
+      gem:
+        name: net-scp
+        state: present
+    - name: gem install net-sshs
+      gem:
+        name: net-ssh
         state: present
 
 - name: Copy configs from master
@@ -150,30 +152,3 @@
     - name: Provide pruning user permissions
       command: oadm policy add-cluster-role-to-user system:image-pruner redhat
 
-
-- name: Setup PBench
-  hosts: localhost
-  tasks:
-    - name: Cleanup PBench
-      command: pbench-cleanup && pbench-clear-tools
-      when: hostvars.localhost.pbench_mon is not undefined and hostvars.localhost.pbench_mon
-
-    - name: Register PBench on masters, etcds, nodes
-      shell: |
-        pbench-register-tool --name=sar --remote={{ item }} -- --interval=3600
-        pbench-register-tool --name=pidstat --remote={{ item }} -- --interval=3600 --patterns=openshift,docker
-        pbench-register-tool --name=iostat --remote={{ item }} -- --interval=3600
-        exit 0
-      with_inventory_hostnames:
-        - masters
-        - nodes
-        - etcds
-      when: hostvars.localhost.pbench_mon is not undefined and hostvars.localhost.pbench_mon
-
-    - name: PBench list tools
-      command: pbench-list-tools
-      register: listtools
-      when: hostvars.localhost.pbench_mon is not undefined and hostvars.localhost.pbench_mon
-
-    - debug: msg="{{ listtools.stdout }}"
-      when: hostvars.localhost.pbench_mon is not undefined and hostvars.localhost.pbench_mon
