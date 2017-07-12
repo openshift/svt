@@ -95,10 +95,19 @@
         src: /etc/origin/master/ca.crt
         dest: runtime/keys
         flat: yes
+    - name: Find if its container or rpm install install
+        stat: path=/usr/share/openshift/examples/quickstart-templates/
+        register: rpm_install
     - synchronize:
         src: /usr/share/openshift/examples/quickstart-templates/*.*
         dest: runtime/templates
         mode: pull
+        when: rpm_install.stat.exists
+    - synchronize:
+        src: /etc/origin/examples/quickstart-templates/*.*
+        dest: runtime/templates
+        mode: pull
+        when: rpm_install.stat.exists == false
 
 - name: Configure amazon monitoring
   hosts: masters, nodes, etcds
