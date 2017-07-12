@@ -1,4 +1,4 @@
-=== Run sysbench Benchmark Test Inside OCP Pod(s)
+# Run sysbench Benchmark Test Inside OCP Pod(s)
 
 *This document assume that all commands in below text are run on fully functional and running OCP installation with proper storage configured
  storage classes and dynamic provisioning. Refer to OCP documentation for instructions how to do configure
@@ -6,7 +6,7 @@
 
 In this document it will be described what is necessary to run sysbench benchmark inside OCP pods
 
-==== Create Docker Images
+## Create Docker Images
 
 It is first necessary to build *sysbench* docker images. The docker files are prepared for this for
 https://github.com/ekuric/openshift/blob/master/sysbench/dockerfiles/centos6[centos6]
@@ -25,7 +25,7 @@ nodes directly, or building and pushing to registry which is used by OCP nodes a
 During image build step it will get script https://github.com/ekuric/openshift/blob/master/sysbench/sysbenchose.sh[sysbenchose.sh]
 inside container and it will be used for running sysbench inside pods.
 
-==== Creating sysbench Test Pods
+## Creating sysbench Test Pods
 
 After successful creation of docker images, we can create sysbench pods, there are two options:
 
@@ -81,7 +81,7 @@ tuningsets:
 
 ```
 
-==== Running sysbench Test in Pbench Mode
+## Running sysbench Test in Pbench Mode
 
 https://github.com/distributed-system-analysis/pbench[Pbench tool] offers option to collect system data
 during test execution. With system data we mean different system / performance data collected with
@@ -106,7 +106,7 @@ Variable `SYSBENCH_RESULTS` for this test case would be
 SYSBENCH_RESULTS: "$benchmark_run_dir/tools-default/sysbench_results"
 ```
 
-==== sysbench-parameters.yaml explanation
+### sysbench-parameters.yaml explanation
 
 From above *sysbench-parameters.yaml* we want to do
 
@@ -155,7 +155,7 @@ drwxr-sr-x. 2 root 2000 4096 May  5 10:02 data
 drwxr-sr-x. 2 root 2000 4096 May  5 10:02 datalog
 ```
 
-==== sysbench Test Result
+### sysbench Test Result
 
 Results from sysbench test will be saved on host where sysbench pod was running in
 `SYSBENCH_RESULTS` location in directory which is https://github.com/ekuric/openshift/blob/master/sysbench/sysbenchose.sh#L110[$hosname -s] of pod where
@@ -173,7 +173,7 @@ For above example *sysbench-parameters.yaml* file results will be saved as showe
 
 ```
 
-==== Running sysbench Test Using `docker run ... ` Approach
+### Running sysbench Test Using `docker run ... ` Approach
 
 It is possible to run sysbench test directly via ` docker run .... ` approach
 
@@ -237,7 +237,7 @@ Threads fairness:
 
 ```
 
-==== Quickstart for rnning bare metal, docker and OCP ====
+### Quickstart for running bare metal, docker and OCP ====
 ```
 # ./cluster-loader.py -f content/sysbench/sysbench-parameters.yaml 
 # oc get pods -n sysbench0 -o wide
@@ -248,6 +248,6 @@ Threads fairness:
 ```
 
 ```
-# yum install sysbench -y
+# yum install https://copr-be.cloud.fedoraproject.org/results/ndokos/pbench/epel-7-x86_64/00182794-pbench-sysbench/pbench-sysbench-0.4.12-1.x86_64.rpm -y
 # content/sysbench/sysbenchose.sh -t 1 -r /tmp --cpuprime 10000 --testtype cpu
 ```
