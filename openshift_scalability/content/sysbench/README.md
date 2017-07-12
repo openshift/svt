@@ -236,3 +236,18 @@ Threads fairness:
     execution time (avg/stddev):   21.4936/0.00
 
 ```
+
+==== Quickstart for rnning bare metal, docker and OCP
+```
+# ./cluster-loader.py -f content/sysbench/sysbench-parameters.yaml 
+# oc get pods -n sysbench0 -o wide
+# ssh root@$(whatever_node_ran_sysbench) cat /var/sysbench*/sysbench*/*txt
+```
+```
+# docker run --privileged -v /tmp:/tmp -it sysbench /root/sysbenchose.sh -t 1 -r /tmp --cpuprime 5000 --testtype cpu
+```
+
+```
+# yum install sysbench -y
+# content/sysbench/sysbenchose.sh -t 1 -r /tmp --cpuprime 10000 --testtype cpu
+```
