@@ -38,47 +38,52 @@ For example:<br/>
 *check project info*<br/>
 
 Execute
-====================
+===========================
 1) pre execution<br/>
   edit config/config.yaml <br/>
-  sh setEnv.sh<br/>
+  ansible-playbook setup.yml <br/>
   define tasks under config/tasks/<br/>
+  update awscreds file with AWSAccessKeyId and AWSSecretKey which will be used for cloudwatch monitoring.</br>
 2) run testing<br/>
    ./reliabilityTests.sh start (to start the tests)<br/>
    ./reliabilityTests.sh stop (to stop the tests)<br/>
    ./reliabilityTests.sh pause (to pause the running tests)<br/>
    ./reliabilityTests.sh resume (to resume the tests)<br/>
 3) post execution<br/>
-   The log are under logs/<br/>
-   analyst directory has a parse-logs.sh script which parses data and creates results directory,/<br/>
-   results directory will have csv files with CPU and Memory consumptions and all the activities done by tests./<br/>
-   PBench results are available on server configured in /opt/pbench-agent/config/pbench-agent.conf/<br/>
-<br/>
+   The log are under logs directory<br/>
+   analyst directory has a parse-logs.sh script which parses data and creates results directory<br/>
+   results directory will have csv files with CPU and Memory consumptions and all the activities done by tests.<br/>
+   PBench results are available on server configured in /opt/pbench-agent/config/pbench-agent.conf<br/>
+
 Execute in Docker Container
-====================
+===========================
 1) pre execution<br/>
    clone the git repo on docker host<br/>
    edit config/config.yaml <br/>
    define tasks under config/tasks/<br/>
+   update awscreds file with AWSAccessKeyId and AWSSecretKey which will be used for cloudwatch monitoring.<br/>
 2) run testing<br/>
-   build image using Dockerfile `docker build -t <image_name>:<version>`
-   run image using following command
+   build image using Dockerfile<br/> 
+   `docker build -t <image_name>:<version>`
+   run image using following command<br/>
    `docker run -v <path_to_svt_clone>:/root/svt -v <ssh_key1>:/root/.ssh/id_rsa -v <updated_pbench-agent.conf>:/opt/pbench-agent/config/pbench-agent.conf -v <ssh_key2>:/opt/pbench-agent/id_rsa -t -i <image_name>:<version> <br/>
    ssh_key1=ssh key for nodes and master hosts
-   ssh_key2=ssh key for pbench server to move results.`
+   ssh_key2=ssh key for pbench server to move results.`<br/>
 3) post execution<br/>
    The log are under logs/<br/>
-   analyst directory has a parse-logs.sh script which parses data and creates results directory,/<br/>
-   results directory will have csv files with CPU and Memory consumptions and all the activities done by tests./<br/>
-   PBench results are available on server configured in /opt/pbench-agent/config/pbench-agent.conf/<br/>
+   analyst directory has a parse-logs.sh script which parses data and creates results directory<br/>
+   results directory will have csv files with CPU and Memory consumptions and all the activities done by tests.<br/>
+   PBench results are available on server configured in /opt/pbench-agent/config/pbench-agent.conf<br/>
 <br/>
-TODO
-======================
+
+TODO<br/>
+======================<br/>
 crontab support<br/><br/>
 GUI configure<br/><br/>
 Cloud running<br/><br/>
 <br/>
-Reference
-======================
+
+Reference<br/>
+======================<br/>
 1. Crontab https://bitbucket.org/dbenamy/devcron#egg=devcron<br/><br/>
 2. http://www.pcp.io/docs/installation.html<br/><br/>
