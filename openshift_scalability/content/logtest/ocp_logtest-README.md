@@ -26,7 +26,7 @@ PLACEMENT: Value of the placement tag to control which nodes the pods run on, de
 
 2. Run **cluster_loader** against the file:
 
-**./cluster_loader.py -f config/ocp-logtest.py**
+**./cluster_loader.py -f config/ocp-logtest.yaml**
 
 3. Verify by listing the logtest pods and tailing the logs
 ```
