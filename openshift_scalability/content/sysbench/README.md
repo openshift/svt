@@ -9,8 +9,8 @@ In this document it will be described what is necessary to run sysbench benchmar
 ## Create Docker Images
 
 It is first necessary to build *sysbench* docker images. The docker files are prepared for this for
-https://github.com/ekuric/openshift/blob/master/sysbench/dockerfiles/centos6[centos6]
-and https://github.com/ekuric/openshift/blob/master/sysbench/dockerfiles/centos7[centos7]
+(centos6)[https://github.com/ekuric/openshift/blob/master/sysbench/dockerfiles/centos6]
+and (centos7)[https://github.com/ekuric/openshift/blob/master/sysbench/dockerfiles/centos7]
 
 To build images run below commands
 
@@ -22,7 +22,7 @@ To build images run below commands
 Ensure that these images are present on all nodes where sysbench pods are supposed to run. This can be achieved either by building them on
 nodes directly, or building and pushing to registry which is used by OCP nodes and thus enable them to consume image from there.
 
-During image build step it will get script https://github.com/ekuric/openshift/blob/master/sysbench/sysbenchose.sh[sysbenchose.sh]
+During image build step it will get script (sysbenchose.sh)[https://github.com/ekuric/openshift/blob/master/sysbench/sysbenchose.sh]
 inside container and it will be used for running sysbench inside pods.
 
 ## Creating sysbench Test Pods
