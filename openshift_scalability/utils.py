@@ -311,7 +311,8 @@ def pod_data(globalvars):
             fields = status.split()
             if fields[2] == "Running" and fields[0] in pend_pods:
                 pend_pods.remove(fields[0])
-        time.sleep(10)
+        if len(pend_pods) > 0:
+           time.sleep(5)
 
 
 def create_rc(rc_config, num, globalvars):
