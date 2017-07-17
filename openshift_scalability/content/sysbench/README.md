@@ -9,8 +9,8 @@ In this document it will be described what is necessary to run sysbench benchmar
 ## Create Docker Images
 
 It is first necessary to build *sysbench* docker images. The docker files are prepared for this for
-(centos6)[https://github.com/ekuric/openshift/blob/master/sysbench/dockerfiles/centos6]
-and (centos7)[https://github.com/ekuric/openshift/blob/master/sysbench/dockerfiles/centos7]
+[centos6](https://github.com/ekuric/openshift/blob/master/sysbench/dockerfiles/centos6)
+and [centos7](https://github.com/ekuric/openshift/blob/master/sysbench/dockerfiles/centos7)
 
 To build images run below commands
 
@@ -22,7 +22,7 @@ To build images run below commands
 Ensure that these images are present on all nodes where sysbench pods are supposed to run. This can be achieved either by building them on
 nodes directly, or building and pushing to registry which is used by OCP nodes and thus enable them to consume image from there.
 
-During image build step it will get script (sysbenchose.sh)[https://github.com/ekuric/openshift/blob/master/sysbench/sysbenchose.sh]
+During image build step it will get script [sysbenchose.sh](https://github.com/ekuric/openshift/blob/master/sysbench/sysbenchose.sh)
 inside container and it will be used for running sysbench inside pods.
 
 ## Creating sysbench Test Pods
@@ -30,7 +30,7 @@ inside container and it will be used for running sysbench inside pods.
 After successful creation of docker images, we can create sysbench pods, there are two options:
 
 - create pods manually based on above docker image
-- create pods using https://github.com/openshift/svt[clusterloader] as described below
+- create pods using [clusterloader](https://github.com/openshift/svt) as described below
 
 in next section it will be described how to create pods using *clusterloader* tool
 
@@ -40,8 +40,8 @@ $ cd svt/openshift_scalability
 $ python cluster-loader.py -f <template_file>
 
 ```
-https://github.com/ekuric/openshift/blob/master/sysbench/sysbench-template.json[sysbench template_file] and
-https://github.com/ekuric/openshift/blob/master/sysbench/sysbench-parameters.yaml[sysbench parameters file] can be as these two files
+[sysbench template_file](https://github.com/ekuric/openshift/blob/master/sysbench/sysbench-template.json) and
+[sysbench parameters file](https://github.com/ekuric/openshift/blob/master/sysbench/sysbench-parameters.yaml) can be as these two files
 
 Below is an example of *sysbench-parameters.yaml* file and that file is used as input for clusterloader
 
@@ -83,14 +83,14 @@ tuningsets:
 
 ## Running sysbench Test in Pbench Mode
 
-https://github.com/distributed-system-analysis/pbench[Pbench tool] offers option to collect system data
+[Pbench tool](https://github.com/distributed-system-analysis/pbench) offers option to collect system data
 during test execution. With system data we mean different system / performance data collected with
-general tools like `sar`, `iostat`, `mpstat` and many others. For detailed list, refer to pbench https://github.com/distributed-system-analysis/pbench/tree/master/agent/tool-scripts[tool scripts]
+general tools like `sar`, `iostat`, `mpstat` and many others. For detailed list, refer to pbench [tool scripts](https://github.com/distributed-system-analysis/pbench/tree/master/agent/tool-scripts)
 
-Pbench has `pbench-user-benchmark` https://github.com/distributed-system-analysis/pbench/blob/master/agent/bench-scripts/pbench-user-benchmark[script]
+Pbench has `pbench-user-benchmark` [script](https://github.com/distributed-system-analysis/pbench/blob/master/agent/bench-scripts/pbench-user-benchmark)
 It is possible to use `pbench-user-benchmark` script to run sysbench test and at same time to collect system data during test execution.
 
-`pbench-user-benchmark` exports https://github.com/distributed-system-analysis/pbench/blob/master/agent/bench-scripts/pbench-user-benchmark#L107[benchmark_run_dir]
+`pbench-user-benchmark` exports [benchmark_run_dir](https://github.com/distributed-system-analysis/pbench/blob/master/agent/bench-scripts/pbench-user-benchmark#L107)
 variable and it can be used as value for `SYSBENCH_RESULTS` to ensure that sysbench data are collected to pbench directory too.
 
 The way we then start test would be
@@ -99,7 +99,7 @@ The way we then start test would be
 # pbench-user-benchmark --config="sysbench_test" -- ./runsys.sh <projectName>.0
 ```
 
-with `runsys.sh` as in this https://raw.githubusercontent.com/ekuric/openshift/master/sysbench/runsys.sh[example]
+with `runsys.sh` as in this [example](https://raw.githubusercontent.com/ekuric/openshift/master/sysbench/runsys.sh)
 
 Variable `SYSBENCH_RESULTS` for this test case would be
 ```
@@ -132,7 +132,7 @@ sysbench pod was running during sysbench pod execution
 either `CPU` (TESTTYPE: "cpu") , or `OLTP` ( TESTTYPE: "oltp", or both ( TESTTYPE:"oltpcpu" )
  during test.Pick up desired test and specifiy it in `sysbench-parameters.yaml` file
 
-For full list of all available parameters, refer to https://github.com/openshift/svt/blob/master/openshift_scalability/content/sysbench/sysbench-template.json#L94-L166[sysbench-template.json] file.
+For full list of all available parameters, refer to [sysbench-template.json](https://github.com/openshift/svt/blob/master/openshift_scalability/content/sysbench/sysbench-template.json#L94-L166) file.
 
 After setting parameters in *sysbench-parameters.yaml* running test can be started as
 below
@@ -140,7 +140,7 @@ below
 `python cluster-loader.py -f sysbench-parameters.yaml`
 
 This will create sysbench pod and start sysbench test inside the pod. sysbench pod log example is
-showed at this https://gist.github.com/ekuric/5d30eb8d411b08f6b79164f38d86b1af[link]
+showed at this [link](https://gist.github.com/ekuric/5d30eb8d411b08f6b79164f38d86b1af)
 
 In this test case, storage was originating from CNS cluster and inside sysbench pod we see below, and it is visible that
 sysbench is writing to custom mount location inside sysbench pod specified with `MOUNT_PATH` in parameters file
@@ -158,7 +158,7 @@ drwxr-sr-x. 2 root 2000 4096 May  5 10:02 datalog
 ### sysbench Test Result
 
 Results from sysbench test will be saved on host where sysbench pod was running in
-`SYSBENCH_RESULTS` location in directory which is https://github.com/ekuric/openshift/blob/master/sysbench/sysbenchose.sh#L110[$hosname -s] of pod where
+`SYSBENCH_RESULTS` location in directory which is  [$hosname -s](https://github.com/ekuric/openshift/blob/master/sysbench/sysbenchose.sh#L110) of pod where
 it was executed.
 
 For above example *sysbench-parameters.yaml* file results will be saved as showed below
