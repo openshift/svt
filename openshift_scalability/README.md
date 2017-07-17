@@ -58,10 +58,14 @@ projects:
         image: openshift/hello-openshift:v1.0.6
         basename: hellopods
         file: default
+        storage:
+          - type: none
       - num: 60
         image: rhscl/python-34-rhel7:latest
         basename: pyrhelpods
         file: default
+        storage:
+          - type: none
   - num: 1
     basename: testproject
  
