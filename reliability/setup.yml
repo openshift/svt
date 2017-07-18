@@ -89,25 +89,25 @@
   tasks:
     - fetch:
         src: /etc/origin/master/admin.kubeconfig
-        dest: runtime/keys
+        dest: runtime/keys/
         flat: yes
     - fetch:
         src: /etc/origin/master/ca.crt
-        dest: runtime/keys
+        dest: runtime/keys/
         flat: yes
     - name: Find if its container or rpm install install
-        stat: path=/usr/share/openshift/examples/quickstart-templates/
-        register: rpm_install
+      stat: path=/usr/share/openshift/examples/quickstart-templates/
+      register: rpm_install
     - synchronize:
-        src: /usr/share/openshift/examples/quickstart-templates/*.*
-        dest: runtime/templates
+        src: /usr/share/openshift/examples/quickstart-templates/
+        dest: runtime/templates/
         mode: pull
-        when: rpm_install.stat.exists
+      when: rpm_install.stat.exists
     - synchronize:
-        src: /etc/origin/examples/quickstart-templates/*.*
-        dest: runtime/templates
+        src: /etc/origin/examples/quickstart-templates/
+        dest: runtime/templates/
         mode: pull
-        when: rpm_install.stat.exists == false
+      when: rpm_install.stat.exists == false
 
 - name: Configure amazon monitoring
   hosts: masters, nodes, etcds
@@ -151,7 +151,7 @@
         hour: "0"
         job: "/root/svt/reliability/cleanup.sh"
     - name: Setup pruning user
-      command: htpasswd -b /etc/origin/htpasswd redhat redhat
+      command: htpasswd -c -b /etc/origin/htpasswd redhat redhat
       ignore_errors: yes
       when: hostvars.localhost.auth_type == "htpasswd"
     - name: Login with pruning user
