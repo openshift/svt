@@ -82,20 +82,22 @@ def parse_args():
                         dest='iface_name',
                         help='interace name on nodes through which stac test traffic will run')
 
-    parser.add_argument('-t',
-                        '--test-file',
-                        required=True,
-                        dest='test_file',
-                        help='a yaml test file')
+    parser.add_argument('-p',
+                        '--tracing',
+                        required=False,
+                        dest='pbd_tracing',
+                        help='profile the app with pdb tracing')
 
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    nettest = NetworkTest(args.test_file)
+    nettest = NetworkTest('stac-prepare-nodes.yaml')
     for node in args.nodes:
-        import pdb; pdb.set_trace()
+        if args.pbd_tracing:
+            import pdb
+            pdb.set_trace()
     	patch_node_oir(args.api_server_url, node)
     	nettest.add_stac_node(node)
     inventory_vars = {'iface_name': args.iface_name}
