@@ -82,12 +82,18 @@ def parse_args():
                         dest='iface_name',
                         help='interace name on nodes through which stac test traffic will run')
 
+    parser.add_argument('-t',
+                        '--test-file',
+                        required=True,
+                        dest='test_file',
+                        help='a yaml test file')
+
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    nettest = NetworkTest('stac-test.yaml')
+    nettest = NetworkTest(args.test_file)
     for node in args.nodes:
         import pdb; pdb.set_trace()
     	patch_node_oir(args.api_server_url, node)
