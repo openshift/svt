@@ -43,6 +43,9 @@ cliparser.add_option("-p", "--processes", dest="processes",
 cliparser.add_option("-a", "--auto-gen",
                      action="store_true", dest="autogen", default=False,
                      help="Override config parameters with live OpenShift data.")
+cliparser.add_option("-t", "--tolerate-bad-pods", action="store_true", default=False, dest="tolerate",
+                     help="Tolerates bad pods, by default cluster loader cannot tolerate bad pods as \
+                     it runs till all the pods come to running state.")
 
 (options, args) = cliparser.parse_args()
 
@@ -60,6 +63,7 @@ globalvars["kubeconfig"] = options.kubeconfig
 globalvars["processes"] = options.processes
 globalvars["autogen"] = options.autogen
 globalvars["podnum"] = 0
+globalvars["tolerate"] = options.tolerate
 
 user = options.oseuser
 passwd = options.osepass
@@ -86,3 +90,4 @@ for config in testconfig["projects"]:
             config["quota"])
 
     project_handler(config,globalvars)
+

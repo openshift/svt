@@ -1,0 +1,42 @@
+{
+  "kind": "Pod",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "hello-openshift1",
+    "creationTimestamp": null,
+    "labels": {
+      "name": "hello-openshift"
+    }
+  },
+  "spec": {
+    "containers": [
+      {
+        "name": "goproxy",
+        "image": "gcr.io/google_containers/goproxy:0.1",
+        "resources": {
+				"requests": {
+					"cpu" : "50m",
+					"memory": "100Mi"
+				},
+				"limits": {
+					"cpu" : "400m",
+					"memory": "400Mi"
+				}
+        },
+	"command": ["derekisbad"],
+        "terminationMessagePath": "/dev/termination-log",
+        "imagePullPolicy": "IfNotPresent",
+        "capabilities": {},
+        "securityContext": {
+          "capabilities": {},
+          "privileged": false
+        }
+      }
+    ],
+    "restartPolicy": "Always",
+    "dnsPolicy": "ClusterFirst",
+    "serviceAccount": ""
+  },
+  "status": {}
+}
+
