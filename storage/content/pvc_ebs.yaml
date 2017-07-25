@@ -1,0 +1,11 @@
+kind: "PersistentVolumeClaim"
+apiVersion: "v1"
+metadata:
+  name: "${name}"
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "${size}Gi"
+  storageClassName: gp2
