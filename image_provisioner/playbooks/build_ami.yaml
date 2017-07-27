@@ -3,6 +3,11 @@
   become: no
   tasks:
 
+  - name: set instance_tag to default value in case it is defined but not set to any value
+    set_fact:
+      instance_tag: ami_builder
+    when: instance_tag == ""
+
   - name: launch temporary instance
     connection: local
     become: no
@@ -58,6 +63,10 @@
   become: no
   tasks:
 
+  - name: set ami_type
+    set_fact:
+      ami_type: "{{ 'atomic' if atomic | default(False) else 'rhel' }}"
+
   - name: bundle ami
     action: 
       module: ec2_ami
@@ -67,7 +76,7 @@
       region: "{{ region }}"
       state: present
       description: This was provisioned {{ ansible_date_time.iso8601 }}
-      name: "{{ 'ocp-{{ openshift_version }}-atomic-gold-auto' if atomic | default(False) else 'ocp-{{ openshift_version }}-rhel-gold-auto' }}"
+      name: ocp-{{ openshift_version }}-{{ ami_type }}-gold-auto
       wait: yes
     register: amioutput
 
