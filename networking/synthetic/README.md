@@ -78,14 +78,16 @@ $  ./onload_install
 ```
 $ python stac-prepare-nodes.py -s https://<api-server-ip>:<port> -n <node-1> <node-2> ... <node-N> -i eth0
 ```
-2. Launch producer and consumer pods. Configuration for tests MUST be hosted on a github repo and its url is passed as an argument to the script:
 
+2. Reboot your hosts (just once, for first time)
+
+3. Launch producer and consumer pods. Configuration for tests MUST be hosted on a github repo and its url is passed as an argument to the script:
 ```
 $ ./stac-build-n-deploy.sh http(s)://github.com/<username>/<stac-config-repo>.git
 ```
 Sample stac_config file is content/stac_config.sample
 
-3. Run the test:
+4. Run the test:
 ```
 $ ./run-stac-test.sh 
 
