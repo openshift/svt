@@ -26,6 +26,9 @@ cur_dir=`pwd`
 master=`cat config.yaml |egrep 'master:' | awk -F: '{print $2}'`
 nodes=`cat config.yaml |egrep 'nodes:' | awk -F: '{print $2}'`
 
+# make the master schedulable
+oc adm manage-node --schedulable "${master}"
+
 i=0;
 for host in ${nodes//,/ }
 do
