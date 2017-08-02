@@ -2,8 +2,8 @@
 
 
 # print usage and check number of arguments passed
-if [ "$#" -lt 6 ]; then
-  echo "Incorrect number of arguments $#, expecting 6:"
+if [ "$#" -lt 7 ]; then
+  echo "Incorrect number of arguments $#, expecting 7:"
   echo "$0 with arguments: "
   echo "   1. MASTER_PUBLIC_DNS"
   echo "   2. STANDALONE_ETCDS_PRIVATE_DNS"
@@ -11,6 +11,7 @@ if [ "$#" -lt 6 ]; then
   echo "   4. PBENCH_RESULTS_DIR_NAME"
   echo "   5. CLUSTER_LOADER_CONFIG_FILE"
   echo "   6. WAIT_TIME_BEFORE_STOPPING_PBENCH"
+  echo "   7. PBENCH_REGISTER"
   exit 0
 fi
 
@@ -18,6 +19,7 @@ echo -e "\nCurrent environment variables:\n$(env)"
 echo -e "\nCurrent bash shell options: $(echo $-)"
 
 DEFAULT_COLLECTION_DURATION_SECS=10
+DEFAULT_PBENCH_REGISTER=false
 
 MASTER_PUBLIC_DNS=$1
 STANDALONE_ETCDS_PRIVATE_DNS=$2
@@ -25,6 +27,8 @@ PBENCH_COLLECTION_INTERVAL=$3
 PBENCH_RESULTS_DIR_NAME=$4
 CLUSTER_LOADER_CONFIG_FILE=$5
 WAIT_TIME_BEFORE_STOPPING_PBENCH=${6:-$DEFAULT_COLLECTION_DURATION_SECS}
+PBENCH_REGISTER=${7:-$DEFAULT_PBENCH_REGISTER}
+
 
 echo "MASTER_PUBLIC_DNS from first argument: ${MASTER_PUBLIC_DNS}"
 echo "STANDALONE_ETCDS_PRIVATE_DNS from second argument: ${STANDALONE_ETCDS_PRIVATE_DNS}"
@@ -32,12 +36,17 @@ echo "PBENCH_COLLECTION_INTERVAL from third argument: ${PBENCH_COLLECTION_INTERV
 echo "PBENCH_RESULTS_DIR_NAME from fourth argument: ${PBENCH_RESULTS_DIR_NAME}"
 echo "CLUSTER_LOADER_CONFIG_FILE from fifth argument: ${CLUSTER_LOADER_CONFIG_FILE}"
 echo "WAIT_TIME_BEFORE_STOPPING_PBENCH from sixth argument: ${WAIT_TIME_BEFORE_STOPPING_PBENCH}"
+echo "PBENCH_REGISTER from seventh argument:  ${PBENCH_REGISTER}"
 
 
 echo -e "\nChecking current version of atomic-openshift-clients on this Test Client instance:"
 yum list installed atomic-openshift-clients
 yum clean all
 yum list atomic-openshift-clients
+
+### TO-DO: 
+### - update the atomic-openshift-clients rpm to latest or to specified version
+
 
 oc version
 echo -e "\nRemoving current /root/.kube dir on this host"
@@ -65,10 +74,12 @@ scp root@${MASTER_PUBLIC_DNS}:/opt/pbench-agent/config/pbench-agent.cfg /opt/pbe
 echo -e "Checking the newly copied /opt/pbench-agent/config/pbench-agent.cfg file on this host: \n"
 cat /opt/pbench-agent/config/pbench-agent.cfg
 
-echo -e "Running pbench-stop-tools pbench-kill-tools pbench-clear-tools and pbench-clear-results on this Test Client host: \n"
+
+## echo -e "Running pbench-stop-tools pbench-kill-tools pbench-clear-tools and pbench-clear-results on this Test Client host: \n"
+echo -e "Running pbench-stop-tools and pbench-clear-results on this Test Client host: \n"
 pbench-stop-tools
-pbench-kill-tools
-pbench-clear-tools
+## pbench-kill-tools
+## pbench-clear-tools
 pbench-clear-results
 
 
@@ -83,37 +94,70 @@ ssh ${MASTER_PUBLIC_DNS} "cat /etc/origin/node/node-config.yaml"
 echo -e \n"Nodes other than masters: ${NODES}, and etcds: ${STANDALONE_ETCDS_PRIVATE_DNS}"
 echo -e "All Nodes internal ip addresses: ${ALL_NODES_INTERNAL}"
 echo -e "Master internal ip address: ${MASTER_INTERNAL_IP}"
-echo -e "\nClearing past pbench results on all nodes:"
 
+# checking if the pbench directories were created
+echo -e "\nChecking if the pbench directories were previously created by Flexy"
+
+for i in ${ALL_NODES_INTERNAL} ${STANDALONE_ETCDS_PRIVATE_DNS} ; do
+  echo -e "\nssh to $i: "
+  ssh $i "ls -ltr /var/lib/pbench-agent/ ; ls -ltr /var/lib/pbench-agent/tools-default"
+done
+
+
+
+echo -e "\nClearing past pbench results on all nodes:"
 
 # Run on Test Client:
 for node in ${ALL_NODES_INTERNAL} ${STANDALONE_ETCDS_PRIVATE_DNS} ; do
   echo -e "\nssh to $node: "
-  ssh ${node} "pbench-clear-tools; pbench-clear-results"
+  ssh ${node} "pbench-clear-results"
 done
 
 sleep 10
 
 
-echo -e "\nSSH to test Client and register pbench on all nodes:"
+######### Using Flexy now with Ravi's vars file that creates a jump node and runs pbench-register
+######### on all the nodes, so we can skip the pbench-register steps
+## PBENCH_REGISTER=false; # by default
+
+if [ "${PBENCH_REGISTER}" == "true" ]; then
+
+  echo -e "Running pbench-kill-tools pbench-clear-tools on this Test Client host: \n"
+  pbench-kill-tools
+  pbench-clear-tools
+
+  echo -e "\nClearing past pbench tools setup and pbench results on all nodes:"
+
+  # Run on Test Client:
+  for node in ${ALL_NODES_INTERNAL} ${STANDALONE_ETCDS_PRIVATE_DNS} ; do
+    echo -e "\nssh to $node: "
+    ssh ${node} "pbench-clear-tools; pbench-clear-results"
+  done
+
+  sleep 10
+
+  echo -e "\nSSH to test Client and register pbench on all nodes:"
 
 
-# pbench register master node first.  Handle case where we have more than one Master later, add for loop.
-echo -e "\npbench register master node first: "
-pbench-register-tool-set --interval=${PBENCH_COLLECTION_INTERVAL} --remote=${MASTER_INTERNAL_IP}
-pbench-register-tool --name=pprof --remote=${MASTER_INTERNAL_IP} -- --osecomponent=master
+  # pbench register master node first.  Handle case where we have more than one Master later, add for loop.
+  echo -e "\npbench register master node first: "
+  pbench-register-tool-set --interval=${PBENCH_COLLECTION_INTERVAL} --remote=${MASTER_INTERNAL_IP}
+  pbench-register-tool --name=pprof --remote=${MASTER_INTERNAL_IP} -- --osecomponent=master
 
-# pbench register remaining nodes and/or etcd (when on separate node or nodes from master)
-echo -e "\npbench register remaining nodes and/or etcd"
+  # pbench register remaining nodes and/or etcd (when on separate node or nodes from master)
+  echo -e "\npbench register remaining nodes and/or etcd"
 
-echo -e "Nodes other than masters: ${NODES} and etcds: ${STANDALONE_ETCDS_PRIVATE_DNS}"
+  echo -e "Nodes other than masters: ${NODES} and etcds: ${STANDALONE_ETCDS_PRIVATE_DNS}"
 
-for i in ${NODES} ${STANDALONE_ETCDS_PRIVATE_DNS} ; do
-  echo -e "\nRegistering Node:  $i : "
-  pbench-register-tool-set --interval=${PBENCH_COLLECTION_INTERVAL} --remote=${i}
-  pbench-register-tool --name=pprof --remote=${i} -- --osecomponent=node
-done
+  for i in ${NODES} ${STANDALONE_ETCDS_PRIVATE_DNS} ; do
+    echo -e "\nRegistering Node:  $i : "
+    pbench-register-tool-set --interval=${PBENCH_COLLECTION_INTERVAL} --remote=${i}
+    pbench-register-tool --name=pprof --remote=${i} -- --osecomponent=node
+  done
 
+fi
+
+###############################################
 
 # run pbench-start-tools specifying the results dir
 echo -e "\nRun pbench-start-tools specifying the results dir:  ${PBENCH_RESULTS_DIR_NAME} "
@@ -154,10 +198,11 @@ echo "Default python version: $(python --version)"
 echo "/usr/bin/python version: $(/usr/bin/python --version)"
 
 
-echo -e "\nRunning: python -u cluster-loader.py -f ${CLUSTER_LOADER_CONFIG_FILE}"
+echo -e "\nRunning: python -u cluster-loader.py -vf ${CLUSTER_LOADER_CONFIG_FILE}"
 
 # python -u: for unbuffered stdin/out:
-python -u cluster-loader.py -f ${CLUSTER_LOADER_CONFIG_FILE}
+# added -v option to see actual commands executed:
+python -u cluster-loader.py -vf ${CLUSTER_LOADER_CONFIG_FILE}
 
 rc=$?
 
@@ -214,30 +259,22 @@ echo -e "\nPbench main results URL:   ${PBENCH_RESULTS_URL}"
 # sample sar URL for an application nodes:
 # http://perf-infra.ec2.breakage.org/pbench/results/ip-172-31-37-120/${PBENCH_RESULTS_DIR_NAME}/tools-default/ip-172-31-57-127.us-west-2.compute.internal/sar/memory.html"
 
-# Find infra node internal ip address:
-INFRA_NODE_IP_LINE=$(oc get pods -n default -o wide | grep router)
-echo -e "Infra node internal ip address line:  ${INFRA_NODE_IP_LINE}"
-INFRA_NODE_IP=$(echo ${INFRA_NODE_IP_LINE}|  cut -d' ' -f 7)
-echo "Infra Node internal ip address:  ${INFRA_NODE_IP}"
+# Find infra nodes other than master internal ip addresses:
+INFRA_NODES_IPS=$(oc get nodes -l region=infra | grep -v SchedulingDisabled | grep -v NAME | awk '{print $1}')
+echo -e "\nInfra Nodes internal ip addresses: \n${INFRA_NODES_IPS}"
 
+# Find the compute nodes
+COMPUTE_NODES_IPS=$(oc get nodes -l region=primary | grep -v NAME | awk '{print $1}')
+echo -e "\nCompute Nodes internal ip addresses: \n${COMPUTE_NODES_IPS}"
 
+# Find the Master Nodes
+MASTER_NODES_IPS=$(oc get nodes -l region=infra | grep SchedulingDisabled | grep -v NAME | awk '{print $1}') 
+echo -e "\nMaster nodes internal ip addresses: \n${MASTER_NODES_IPS}"
 
-for i in ${NODES} ; do
-  if [ "${i}" = "${INFRA_NODE_IP}" ]; then
-    echo -e "\nPbench main results URL for infra node:  $i : "
-  else
-    echo -e "\nPbench main results URL for application node:  $i : "
-  fi
-  echo "    ${PBENCH_RESULTS_URL}/$i"
-done
-
-if [ "${STANDALONE_ETCDS_PRIVATE_DNS}" = "" ]; then
-  echo -e "\nPbench main results URL for standalone etcd node:  $i : "
-  echo "    ${PBENCH_RESULTS_URL}/$i"
+# Find Standalone Etcd nodes
+if [ "${STANDALONE_ETCDS_PRIVATE_DNS}" != "" ]; then
+  echo -e "\nStandalone Etcd nodes internal ip addresses: \n${STANDALONE_ETCDS_PRIVATE_DNS}"
 fi
-
-
-echo -e "\nPbench main results URL for Master node:  ${PBENCH_RESULTS_URL}/${MASTER_INTERNAL_IP}"
 
 exit
 
