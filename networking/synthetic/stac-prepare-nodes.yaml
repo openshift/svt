@@ -2,7 +2,44 @@
 - hosts: stac_nodes
   remote_user: root
   tasks:
-    
+
+  - name: install epel 7
+    yum:
+      name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+      state: present
+
+  - name: add rhel latest repos
+    yum_repository:
+      name: rhel_latest
+      description: rhel 7.4 should be injected from outside
+      baseurl: {{ rhel_repo }}
+
+  - name: install reqiured pkgs
+    yum: state=present name={{ item }}
+      with_items:
+      - kernel
+      - kernel-devel
+      - gcc
+      - js
+      - tuna
+      - tuned
+      - numactl
+      - python34
+      - rpmbuild
+
+  - name: download openonload
+    get_url:
+      url: http://www.openonload.org/download/openonload-201606-u1.3.tgz
+      dest: /root/
+
+  - name: install openonload
+    shell: rpmbuild -ta /root/openonload-201606-u1.3.tgz
+
+  - name: remove onload archive
+    file:
+      path: /root/openonload-201606-u1.3.tgz
+      state: absent
+
   - name: Create stac tuned profile directory if not exists
     file: path=/etc/tuned/stac state=directory
     
@@ -29,4 +66,4 @@
 
   - name: Verify tuned stac profile on producer and consumer nodes
     shell: tuned-adm verify
-    ignore_errors: yes
+
