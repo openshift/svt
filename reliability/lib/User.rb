@@ -3,7 +3,7 @@ module OpenshiftReliability
 
     attr_reader :name, :password, :token ,:master
     attr_accessor :status
-    def initialize(name=nil, password=nil, master=nil, port=nil, token:nil, status:1 )
+    def initialize(name=nil, password=nil, master=nil, port=8443, token:nil, status:1 )
       @name = name
       @password = password
       @master=master

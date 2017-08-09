@@ -40,15 +40,14 @@ module OpenshiftReliability
       host=$config.master
       newusers=[]
       defaultpassword="redhat"
-      usercreatecmds=[]
+      usercreatecmds=""
       (1..number).each do
          newuser="#{$config.prefix}-#{$config.seq}"
          newusers << newuser
-         cmd="htpasswd -b #{$config.htpasswd} #{newuser} #{defaultpassword}"
+         cmd="htpasswd -b #{$config.htpasswd} #{newuser} #{defaultpassword};"
          usercreatecmds << cmd
       end
-      usercreatecmds << "exit 0"
-      $exec.remote_upload("root", host, "/root/bin/addnewusers", usercreatecmds)
+      $exec.remote_exec("root", host, usercreatecmds)
       cmd="root@#{host} sh /root/bin/addnewusers#addnewuser"
       res=$exec.execute(cmd)
       if res[:status] == 0
