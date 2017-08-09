@@ -12,11 +12,11 @@ elif [ "${1}" == "test" ]; then
   ruby test.rb
   echo "INFO: Test run complete"
 elif [ "${1}" == "stop" ]; then
-  kill -9 $(ps -ef | grep relia.rb | grep -v grep | awk '{print $2}')
+  kill -9 $(ps -ef | grep "ruby relia.rb" | grep -v grep | awk '{print $2}')
 elif [ "${1}" == "pause" ]; then
-  kill -STOP $(ps -ef | grep relia.rb | grep -v grep | awk '{print $2}')
+  kill -STOP $(ps -ef | grep "ruby relia.rb" | grep -v grep | awk '{print $2}')
 elif [ "${1}" == "resume" ]; then
-  kill -CONT $(ps -ef | grep relia.rb | grep -v grep | awk '{print $2}')
+  kill -CONT $(ps -ef | grep "ruby relia.rb" | grep -v grep | awk '{print $2}')
 else
   echo "=============================================================================================================="
   echo "=============================================================================================================="

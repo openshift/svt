@@ -1,8 +1,6 @@
 ---
 - name: Read config and create groups
   hosts: localhost
-  vars:
-    cloudwatch_mon: false
   tasks:
     - name: Include config file
       include_vars:
@@ -26,11 +24,6 @@
     - name: Set global variables
       set_fact:
         auth_type: "{{ env.environment.authtype }}"
-    - name: Read if cloudwatch is enabled
-      set_fact:
-        cloudwatch_mon: true
-      when: item == "cloudwatch"
-      with_items: "{{ env.environment.monitoring }}"
 
 - name: Configure reliability client/cleanup
   hosts: localhost
@@ -98,6 +91,9 @@
     - name: Find if its container or rpm install install
       stat: path=/usr/share/openshift/examples/quickstart-templates/
       register: rpm_install
+    - name: Find if its container or rpm install install
+      stat: path=/etc/origin/examples/quickstart-templates/
+      register: example_templates
     - synchronize:
         src: /usr/share/openshift/examples/quickstart-templates/
         dest: runtime/templates/
@@ -107,43 +103,27 @@
         src: /etc/origin/examples/quickstart-templates/
         dest: runtime/templates/
         mode: pull
-      when: rpm_install.stat.exists == false
+      when: not rpm_install.stat.exists and example_templates.stat.exists
 
 - name: Configure amazon monitoring
   hosts: masters, nodes, etcds
   vars:
     iaas_name: "{{ lookup('env', 'iaas_name') | default('AWS', True) }}"
   tasks:
-    - name: Download and unzip monitoring file 
-      unarchive:
-        src: http://aws-cloudwatch.s3.amazonaws.com/downloads/CloudWatchMonitoringScripts-1.2.1.zip
-        dest: /root
-        remote_src: True
-      when: hostvars.localhost.cloudwatch_mon is not undefined and hostvars.localhost.cloudwatch_mon
-    - name: copy aws conf
-      copy: 
-        src: ./awscreds 
-        dest: /root/aws-scripts-mon/awscreds.template
-      when: hostvars.localhost.cloudwatch_mon is not undefined and hostvars.localhost.cloudwatch_mon
-    - name: create cron for sending results
-      cron:
-        name: "send results"
-        minute: "0"
-        job: "/root/aws-scripts-mon/mon-put-instance-data.pl --mem-util --aws-credential-file=/root/aws-scripts-mon/awscreds.template --disk-space-util --disk-path=/"
-      when: hostvars.localhost.cloudwatch_mon is not undefined and hostvars.localhost.cloudwatch_mon
-    - name: Copy monitor script to masters, nodes and etcds
-      copy:
-        src: lib/bin
-        dest: /root
-    - name: Install required rpms for cloudwatch
-      yum:
-        name: perl-Switch, perl-DateTime, perl-Sys-Syslog, perl-LWP-Protocol-https, perl-Digest-SHA
-        state: present
-      when: hostvars.localhost.cloudwatch_mon is not undefined and hostvars.localhost.cloudwatch_mon
+    - name: Include config file
+      include_vars:
+        file: ./config/config.yaml
+        name: env
+    - include: monitoring-setup.yml
+      when: env.environment.monitoring is defined
 
 - name: Setup master
   hosts: masters
   tasks:
+    - name: Include config file
+      include_vars:
+        file: ./config/config.yaml
+        name: env
     - name: Create cron for cleanup on master
       cron:
         name: "clean images, builds, deployments"
@@ -151,13 +131,13 @@
         hour: "0"
         job: "/root/svt/reliability/cleanup.sh"
     - name: Setup pruning user
-      command: htpasswd -c -b /etc/origin/htpasswd redhat redhat
+      command: "htpasswd -c -b {{ env.environment.htpasswd }} redhat redhat"
       ignore_errors: yes
-      when: hostvars.localhost.auth_type == "htpasswd"
+      when: env.environment.authtype == "htpasswd"
     - name: Login with pruning user
       command: oc login -u redhat -p redhat
-    - name: Login with sysadmin
-      command: oc login -u system:admin
     - name: Provide pruning user permissions
       command: oadm policy add-cluster-role-to-user system:image-pruner redhat
+      environment:
+        KUBECONFIG: "{{ env.environment.kubeconfig }}"
 
