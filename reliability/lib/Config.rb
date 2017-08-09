@@ -42,7 +42,7 @@ module OpenshiftReliability
       @etcds=@configs["environment"]["etcds"]
       @routers= @configs["environment"]["routers"]
       @authtype= @configs["environment"]["authtype"]
-      @authtype= @configs["environment"]["port"]
+      @port= @configs["environment"]["port"]
       @htpasswd= @configs["environment"]["htpasswd"]
       @gituser= @configs["exection"]["gituser"]
       @templates=@configs["exection"]["templates"]
