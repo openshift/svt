@@ -5,7 +5,7 @@ require 'filewatcher'
 module OpenshiftReliability
   class Config
 
-    attr_reader  :home,:tasks,:keys,:masters,:master,:nodes,:etcds,:routers,:gituser,:authtype,:htpasswd,:templates,:prefix,:projectload,:tasknum
+    attr_reader  :home,:tasks,:keys,:masters,:master,:port,:nodes,:etcds,:routers,:gituser,:authtype,:htpasswd,:templates,:prefix,:projectload,:tasknum
     def initialize(config:nil)
       filewatcher = FileWatcher.new([Pathname.new(File.dirname(__FILE__)).realpath.to_s+"/../config/config.yaml"])
       thread = Thread.new(filewatcher){

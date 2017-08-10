@@ -14,7 +14,7 @@ module OpenshiftReliability
       userlist=File.read($config.home+"/config/users.data")
       userlist.split(/\n/).each do |line|
         array=line.split(':')
-        @users.push(User.new(array[0],array[1], $config.master, $config,port))
+        @users.push(User.new(array[0],array[1], $config.master, $config.port))
       end
     end
 
