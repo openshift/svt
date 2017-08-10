@@ -31,7 +31,8 @@ def determine_run_time() :
     return fixed_count, fixed_time, infinite
 
 def delay() :
-    time.sleep(60.0/options.rate)
+    if options.rate > 0.0:
+       time.sleep(60.0/options.rate)
     return
 
 # When file input used, pull a line from the file or re-open file if wrapped/eof
