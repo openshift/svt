@@ -824,8 +824,8 @@ def pod_handler(inputpods, globalvars):
         pod_config["metadata"]["name"] = basename
 
         create_pods(pod_config, num,storagetype, globalvars)
-    tolerate_bad_pods = globalvars["tolerate"]
-    if tolerate_bad_pods is False:
+    
+    if globalvars["tolerate"] is False:
         if len(globalvars["pend_pods"]) > 0:
             pod_data(globalvars)
 
