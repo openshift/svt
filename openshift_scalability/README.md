@@ -22,6 +22,7 @@ Note:
 * The directory "content" contains default file for all the supported object-types.
 * If the "-f" option is not supplied, then the default config file is used -- pyconfig.yaml .
 * For cleaning the environment, use "-d/--clean" option.
+* The "-t" option ensures that cluster-loader utility won't wait till all the pods would come to running state. This is useful when we intentionally give bad pods which are bound to fail. By default the utility waits till all the pods come to running state. The long format for this flag is `--tolerate-bad-pods`.
 
 # Sample Config File
 ```

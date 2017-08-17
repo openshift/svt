@@ -279,7 +279,7 @@ def create_pods(podcfg, num, storagetype, globalvars):
                 pause = globalvars["tuningset"]["stepping"]["pause"]
                 globalvars["totalpods"] = globalvars["totalpods"] + 1
                 total_pods_created = int(globalvars["totalpods"])
-                if total_pods_created % stepsize == 0:
+                if total_pods_created % stepsize == 0 and globalvars["tolerate"] is False:
                     pod_data(globalvars)
                     time.sleep(calc_time(pause))
             if "rate_limit" in globalvars["tuningset"]:
@@ -297,7 +297,6 @@ def pod_data(globalvars):
 
     pend_pods = globalvars["pend_pods"]
     namespace = globalvars["namespace"]
-
     while len(pend_pods) > 0:
         if globalvars["kubeopt"]:
             getpods = oc_command("kubectl get pods --namespace " + namespace, globalvars)
@@ -825,14 +824,15 @@ def pod_handler(inputpods, globalvars):
         pod_config["metadata"]["name"] = basename
 
         create_pods(pod_config, num,storagetype, globalvars)
+    
+    if globalvars["tolerate"] is False:
+        if len(globalvars["pend_pods"]) > 0:
+            pod_data(globalvars)
 
-    if len(globalvars["pend_pods"]) > 0:
-        pod_data(globalvars)
-
-    if "podtuningset" in globalvars:
-        del(globalvars["podtuningset"])
-        del(globalvars["totalpods"])
-    del(globalvars["pend_pods"])
+        if "podtuningset" in globalvars:
+            del(globalvars["podtuningset"])
+            del(globalvars["totalpods"])
+        del(globalvars["pend_pods"])
     
 
 def rc_handler(inputrcs, globalvars):
@@ -892,3 +892,4 @@ def find_quota(quotaset, name):
 
     print "Failed to find quota : " + name + "\nExitting ......"
     sys.exit()
+
