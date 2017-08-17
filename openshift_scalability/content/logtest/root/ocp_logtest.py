@@ -30,9 +30,22 @@ def determine_run_time() :
 
     return fixed_count, fixed_time, infinite
 
-def delay() :
-    if options.rate > 0.0:
-       time.sleep(60.0/options.rate)
+def delay(sleep_time,num_messages) :
+
+# Avoid unnecessary calls to time.sleep()
+    if sleep_time > 0.0 :
+       sleep_this_time = True;
+
+# Calling time.sleep() more than 10 times per second is pointless and adds too much overhead
+# Back off to batches of messages big enough so that sleep is called 10 times per second max
+       if sleep_time < 0.1 :
+           sleep_this_time = False
+           batch_size = 0.1 / options.sleep_time
+           sleep_time = 0.1
+           if num_messages % int(batch_size) == 0 :
+              sleep_this_time = True
+       if sleep_this_time :
+          time.sleep(sleep_time)
     return
 
 # When file input used, pull a line from the file or re-open file if wrapped/eof
@@ -85,7 +98,7 @@ def generate_for_time():
     while now <= then :
         number_generated += 1
         print create_message(number_generated, single_line())
-        delay()
+        delay(options.sleep_time, number_generated)
         now = time.time()
 
     return
@@ -102,7 +115,7 @@ def generate_num_lines() :
     while (number_generated < number_to_generate) :
         number_generated += 1
         print create_message(number_generated, single_line())
-        delay()
+        delay(options.sleep_time, number_generated)
 
 def generate_messages() :
     global fixed_line
@@ -139,6 +152,10 @@ if __name__ ==  "__main__":
 
     if not options.file == "" :
         infile = open(options.file,'r')
+
+    options.sleep_time = 0.0
+    if options.rate > 0.0 : 
+        options.sleep_time = 60.0/options.rate
 
     generate_messages()
 
