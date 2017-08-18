@@ -51,6 +51,16 @@
               {
                 "name": "server",
                 "image": "${IMAGE}",
+                "resources": {
+                  "requests": {
+                    "memory": "128Mi",
+                    "cpu": "0.5"
+                  },
+                  "limits": {
+                    "memory": "256Mi",
+                    "cpu": "1"
+                  }
+                },
                 "ports": [
                   {
                     "containerPort": "${PORT}",
