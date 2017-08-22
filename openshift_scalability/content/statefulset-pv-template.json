@@ -53,12 +53,12 @@
                 "image": "${IMAGE}",
                 "resources": {
                   "requests": {
-                    "memory": "128Mi",
-                    "cpu": "0.5"
+                    "memory": "${REQUEST_MEM}",
+                    "cpu": "${REQUEST_CPU}"
                   },
                   "limits": {
-                    "memory": "256Mi",
-                    "cpu": "1"
+                    "memory": "${LIMIT_MEM}",
+                    "cpu": "${LIMIT_CPU}"
                   }
                 },
                 "ports": [
@@ -121,6 +121,30 @@
       "name": "REPLICAS",
       "description": "number of replicas",
       "value": "2",
+      "required": false
+    },
+    {
+      "name": "REQUEST_MEM",
+      "description": "request of memory",
+      "value": "128Mi",
+      "required": false
+    },
+    {
+      "name": "REQUEST_CPU",
+      "description": "request of CPU",
+      "value": "0.5",
+      "required": false
+    },
+    {
+      "name": "LIMIT_MEM",
+      "description": "limit of memory",
+      "value": "256Mi",
+      "required": false
+    },
+    {
+      "name": "LIMIT_CPU",
+      "description": "limit of CPU",
+      "value": "1",
       "required": false
     }
   ]
