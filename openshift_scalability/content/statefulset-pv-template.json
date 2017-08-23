@@ -51,6 +51,16 @@
               {
                 "name": "server",
                 "image": "${IMAGE}",
+                "resources": {
+                  "requests": {
+                    "memory": "${REQUEST_MEM}",
+                    "cpu": "${REQUEST_CPU}"
+                  },
+                  "limits": {
+                    "memory": "${LIMIT_MEM}",
+                    "cpu": "${LIMIT_CPU}"
+                  }
+                },
                 "ports": [
                   {
                     "containerPort": "${PORT}",
@@ -111,6 +121,30 @@
       "name": "REPLICAS",
       "description": "number of replicas",
       "value": "2",
+      "required": false
+    },
+    {
+      "name": "REQUEST_MEM",
+      "description": "request of memory",
+      "value": "128Mi",
+      "required": false
+    },
+    {
+      "name": "REQUEST_CPU",
+      "description": "request of CPU",
+      "value": "0.5",
+      "required": false
+    },
+    {
+      "name": "LIMIT_MEM",
+      "description": "limit of memory",
+      "value": "256Mi",
+      "required": false
+    },
+    {
+      "name": "LIMIT_CPU",
+      "description": "limit of CPU",
+      "value": "1",
       "required": false
     }
   ]
