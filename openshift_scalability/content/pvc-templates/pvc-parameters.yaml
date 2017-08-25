@@ -4,7 +4,7 @@ projects:
     tuning: default
     templates:
       - num: 1
-        file: ./content/fio/pvc-template.json
+        file: ./content/pvc-templates/pvc-template.json
         parameters:
           - STORAGE_CLASS: "cnsclass" # this is name of storage class to use
           - STORAGE_SIZE: "1Gi" # this is size of PVC mounted inside pod
