@@ -136,6 +136,8 @@
       when: env.environment.authtype == "htpasswd"
     - name: Login with pruning user
       command: oc login -u redhat -p redhat
+    - name: login back with system admin
+      command: oc login -u system:admin
     - name: Provide pruning user permissions
       command: oadm policy add-cluster-role-to-user system:image-pruner redhat
       environment:

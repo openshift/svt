@@ -92,9 +92,9 @@ function extract_cpu_mem_data
 function extract_activity_data
 {
   cat /dev/null > results/activity_logs.txt
-  echo "User Creation Passed: $(grep -e "addnewuser Execute: sh.*-> pass" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
-  echo "User Creation Failed: $(grep -e "addnewuser Execute: sh.*-> fail" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
-  echo "User Creation Total: $(grep -e "addnewuser Execute: sh.*->" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "User Creation Passed: $(grep -e "Execute: htpasswd.*-> pass" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "User Creation Failed: $(grep -e "Execute: htpasswd: sh.*-> fail" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "User Creation Total: $(grep -e "Execute: htpasswd.*->" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "Project Creation Passed: $(grep -e "Execute: oc new-project.*-> pass" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "Project Creation Failed: $(grep -e "Execute: oc new-project.*-> fail" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "Project Creation Total: $(grep -e "Execute: oc new-project.*->" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
