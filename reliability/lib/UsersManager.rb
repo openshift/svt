@@ -47,9 +47,7 @@ module OpenshiftReliability
          cmd="htpasswd -b #{$config.htpasswd} #{newuser} #{defaultpassword};"
          usercreatecmds << cmd
       end
-      $exec.remote_exec("root", host, usercreatecmds)
-      cmd="root@#{host} sh /root/bin/addnewusers#addnewuser"
-      res=$exec.execute(cmd)
+      res=$exec.remote_exec("root", host, usercreatecmds)
       if res[:status] == 0
         newusers.each do |u|
            @users.push(User.new(u, defaultpassword, $config.master, $config.port))
