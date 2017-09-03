@@ -88,6 +88,12 @@ def parse_args():
                         dest='pbd_tracing',
                         help='profile the app with pdb tracing')
 
+    parser.add_argument('-c',
+                        '--cpu_isolated_cores',
+                        required=True,
+                        dest='cpu_isolated_cores',
+                        help='cpu_isolated_cores range or series')
+
     return parser.parse_args()
 
 
@@ -100,7 +106,7 @@ def main():
             pdb.set_trace()
     	patch_node_oir(args.api_server_url, node)
     	nettest.add_stac_node(node)
-    inventory_vars = {'iface_name': args.iface_name}
+    inventory_vars = {'iface_name': args.iface_name, 'isolated_cores': args.cpu_isolated_cores}
  
     nettest.set_inventory_vars(inventory_vars)
 

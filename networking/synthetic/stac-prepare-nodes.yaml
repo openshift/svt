@@ -1,30 +1,54 @@
 ---
 - hosts: stac_nodes
   remote_user: root
+  gather_facts: False
+  vars:
+    tuned_stac_dir: "/etc/tuned/stac"
+
   tasks:
-    
+
+  - name: Update onload config
+    blockinfile:
+        path: /etc/modprobe.d/onload.conf
+        insertbefore: '# onload_end'
+        block: |
+              options onload phys_mode_gid=-1
+              options sfc rss_cpus=1
+
+  - name: Reload onload
+    shell: onload_tool reload
+
   - name: Create stac tuned profile directory if not exists
-    file: path=/etc/tuned/stac state=directory
-    
+    file: path={{ tuned_stac_dir }}  state=directory
+
   - name: Copy tuned stac profile to producer and consumer
-    copy: src=stac/tuned.conf dest=/etc/tuned/stac/tuned.conf
+    copy: src=stac/* dest={{ tuned_stac_dir }}/
+
+  - name: set isolated_cores for tuned
+    replace:
+      dest={{ tuned_stac_dir }}/cpu-partitioning-variables.conf
+      regexp='<range>'
+      replace={{ isolated_cores }}
 
   - name: Copy stac profile script to producer and consumer
-    copy: src=scripts/tuning.sh dest=/etc/tuned/stac/tuning.sh owner=root group=root mode=744
+    copy: src=stac/script.sh dest=/home/script.sh owner=root group=root mode=744
+
+  - name: set isolated_cores for preperation script
+    replace:
+      dest=/home/script.sh
+      regexp='<range>'
+      replace={{ isolated_cores }}
 
   - name: Update interface name in tuned script
     replace:
-      dest=/etc/tuned/stac/tuning.sh
+      dest=/home/script.sh
       regexp='<benchmark_interface>'
       replace={{ iface_name }}
-
-  - name: Copy stac profile variables to nodes
-    copy: src=stac/tuned_variables.conf dest=/etc/tuned/stac/tuned_variables.conf
 
   - name: Enable stac profile on nodes
     shell: tuned-adm profile stac
 
-  - name: restart service tuned
+  - name: Restart service tuned
     shell: systemctl restart tuned
 
   - name: Verify tuned stac profile on producer and consumer nodes
