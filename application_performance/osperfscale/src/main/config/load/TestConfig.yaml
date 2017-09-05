@@ -1,0 +1,31 @@
+## Test Config
+## Mention the parameters of each Test that are needed to create a request.
+## Each test will have its own parameters.
+## Each parameter set will correspond to one request.
+
+## Conditions:
+##     1. Test Suite Name has to be unique
+##     1. Test Suite Name should not contain hyphens (-), used as a seperator for discribing the scenario
+##     2. interval between app hits must be mentioned in milliSecs and all other time in Secs
+##     3. app URL must be the string "<appurl>" in the URL http://<appurl>(optional < :port >)/path_to_resource
+##     4. cannot use same url for multiple tests as this will mess up graphs. that is testSiteName and appURL 
+##           should be one-to-one     
+##     5. number of users, ramp up time, number of user loops, number of app loops and interval are all arrays.
+## 
+
+testParameters:
+   - testSuiteName: nodejs
+     appURL: nodejs-mongodb-example-nodejs-mongodb0.0605-mce.qe.rhcloud.com
+     numberOfUsers: [10]
+     rampUpTime: [30]
+     intervalBetweenAppHits: [500]
+   - testSuiteName: eap64
+     appURL: eap-app-eap64-mysql0.0605-mce.qe.rhcloud.com
+     numberOfUsers: [10]
+     rampUpTime: [30]
+     intervalBetweenAppHits: [500]
+   - testSuiteName: dancer
+     appURL: dancer-mysql-example-dancer-mysql0.0605-mce.qe.rhcloud.com
+     numberOfUsers: [10]
+     rampUpTime: [30]
+     intervalBetweenAppHits: [500]          
