@@ -136,7 +136,7 @@
   printf "    }"
   i++
 }
-/^jws-app-tomcat8-/ {
+/^jws-app-/ {
   if (i) {printf "\n  },\n" }
   printf "  {\n"
 #  printf "    \"host_from": \"192.168.0.102\",
@@ -155,7 +155,7 @@
   printf "    }"
   i++
 }
-/^secure-jws-app-tomcat8-/ {
+/^secure-jws-app-/ {
   if (i) {printf "\n  },\n" }
   printf "  {\n"
 #  printf "    \"host_from": \"192.168.0.102\",

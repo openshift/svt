@@ -5,7 +5,7 @@ require 'filewatcher'
 module OpenshiftReliability
   class Config
 
-    attr_reader  :home,:tasks,:keys,:masters,:master,:nodes,:etcds,:routers,:gituser,:authtype,:htpasswd,:templates,:prefix,:projectload,:tasknum
+    attr_reader  :home,:tasks,:keys,:masters,:master,:port,:nodes,:etcds,:routers,:gituser,:authtype,:htpasswd,:templates,:prefix,:projectload,:tasknum
     def initialize(config:nil)
       filewatcher = FileWatcher.new([Pathname.new(File.dirname(__FILE__)).realpath.to_s+"/../config/config.yaml"])
       thread = Thread.new(filewatcher){
@@ -36,15 +36,16 @@ module OpenshiftReliability
       @tasks=@home+"config/tasks/"
       @keys=@home+"runtime/keys/"
       @configs = YAML.load_file(@config)
-      @masters=@configs["environment"]["masters"].split(',')
+      @masters=@configs["environment"]["masters"]
       @master = @masters.first
-      @nodes=@configs["environment"]["nodes"].split(',')
-      @etcds=@configs["environment"]["etcds"].split(',')
-      @routers= @configs["environment"]["routers"].split(',')
+      @nodes=@configs["environment"]["nodes"]
+      @etcds=@configs["environment"]["etcds"]
+      @routers= @configs["environment"]["routers"]
       @authtype= @configs["environment"]["authtype"]
+      @port= @configs["environment"]["port"]
       @htpasswd= @configs["environment"]["htpasswd"]
       @gituser= @configs["exection"]["gituser"]
-      @templates=@configs["exection"]["templates"].split(',')
+      @templates=@configs["exection"]["templates"]
       @projectload=@configs["exection"]["projectload"]
       @prefix= @configs["exection"]["userprefix"]
     end

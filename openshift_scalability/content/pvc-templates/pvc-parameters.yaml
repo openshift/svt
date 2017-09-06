@@ -1,0 +1,19 @@
+projects:
+  - num: 1
+    basename: pvcproject
+    tuning: default
+    templates:
+      - num: 1
+        file: ./content/pvc-templates/pvc-template.json
+        parameters:
+          - STORAGE_CLASS: "cnsclass" # this is name of storage class to use
+          - STORAGE_SIZE: "1Gi" # this is size of PVC mounted inside pod
+
+tuningsets:
+  - name: default
+    templates:
+      stepping:
+        stepsize: 5
+        pause: 1 min
+      rate_limit:
+        delay: 1000 ms

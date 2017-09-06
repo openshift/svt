@@ -33,7 +33,7 @@ function setup_globals() {
  	ES_ADMIN_CA=/etc/elasticsearch/secret/admin-ca
 	ES_ADMIN_CERT=/etc/elasticsearch/secret/admin-cert
 	ES_ADMIN_KEY=/etc/elasticsearch/secret/admin-key
-	ES_URL=https://logging-es:9200
+	ES_URL=https://localhost:9200
 
 }
 

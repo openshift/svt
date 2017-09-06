@@ -3,6 +3,11 @@
   become: no
   tasks:
 
+  - name: set instance_tag to default value in case it is defined but not set to any value
+    set_fact:
+      instance_tag: ami_builder
+    when: instance_tag == ""
+
   - name: launch temporary instance
     connection: local
     become: no
@@ -25,9 +30,9 @@
       user_data: "{{ lookup('file', '../cloud-init/user-data-aws') }}"
       exact_count: 1
       count_tag:
-         Name: ami_builder
+         Name: "{{ instance_tag | default('ami_builder') }}"
       instance_tags:
-         Name: ami_builder
+         Name: "{{ instance_tag | default('ami_builder') }}"
     register: ami_instance
 
   - name: waiting for ssh to start
@@ -49,6 +54,7 @@
     - pbench-config
     - docker-config
     - aos-ansible
+    - ansible-update
     - openshift-package-install
     - seal-image
 
@@ -56,6 +62,10 @@
   connection: local
   become: no
   tasks:
+
+  - name: set ami_type
+    set_fact:
+      ami_type: "{{ 'atomic' if atomic | default(False) else 'rhel' }}"
 
   - name: bundle ami
     action: 
@@ -66,7 +76,7 @@
       region: "{{ region }}"
       state: present
       description: This was provisioned {{ ansible_date_time.iso8601 }}
-      name: ocp-{{ openshift_version }}-gold-auto
+      name: ocp-{{ openshift_version }}-{{ ami_type }}-gold-auto
       wait: yes
     register: amioutput
 

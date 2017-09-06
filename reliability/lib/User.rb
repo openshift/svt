@@ -3,10 +3,11 @@ module OpenshiftReliability
 
     attr_reader :name, :password, :token ,:master
     attr_accessor :status
-    def initialize(name=nil, password=nil, master=nil, token:nil, status:1 )
+    def initialize(name=nil, password=nil, master=nil, port=8443, token:nil, status:1 )
       @name = name
       @password = password
       @master=master
+      @port=port
       @status = status
       @cakey= $config.keys + "ca.crt"
       @userkey=$config.keys + name + ".kubeconfig"
@@ -16,7 +17,7 @@ module OpenshiftReliability
     #login to sync token for a while
     def login()
       delete_key()
-      $exec.shell_exec("oc login #{@master}:8443 -u #{@name} -p #{@password} --insecure-skip-tls-verify=true  --certificate-authority=#{@cakey} --config=#{@userkey}")
+      $exec.shell_exec("oc login #{@master}:#{@port} -u #{@name} -p #{@password} --insecure-skip-tls-verify=true  --certificate-authority=#{@cakey} --config=#{@userkey}")
     end
 
     def avaible?()

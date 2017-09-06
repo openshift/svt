@@ -1,0 +1,51 @@
+---
+kind: Template
+apiVersion: v1
+metadata:
+  name: stac-build
+  annotations:
+    description: A template for creating an imagestream for stac pods
+    tags: stac,perf
+labels:
+  template: stac-build
+objects:
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: centos_stac
+    annotations:
+      description: Keeps track of changes in the application image
+      openshift.io/image.insecureRepository: "true"
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    name: stac
+    annotations:
+      description: Defines how to build the application
+  spec:
+    nodeSelector:
+      region: infra
+    source:
+      type: Git
+      git:
+        uri: ${STAC_CONFIG}
+    strategy:
+      type: Source
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: 's2i-stac-builder:latest'
+    output:
+      to:
+        kind: ImageStreamTag
+        name: "centos_stac:latest"
+    triggers:
+    - type: ImageChange
+    - type: ConfigChange
+    - type: GitHub
+      github:
+        secret: "stac-secret-1490"
+parameters:
+- name: STAC_CONFIG
+  description: Configuration for stac test
+  required: true

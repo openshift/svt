@@ -49,6 +49,7 @@
     - wget
     - yum-utils
     - rpmdevtools
+    - iperf3
 
 - name: install pbench internal
   yum: name=pbench-agent-internal state=latest

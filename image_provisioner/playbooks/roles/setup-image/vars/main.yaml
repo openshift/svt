@@ -1,5 +1,5 @@
 ---
-tmp_dir: "/run/"
+tmp_dir: "/tmp/"
 base_image_location: "{{ tmp_dir }}{{ base_image_filename }}" 
 tmp_img_location: "{{ tmp_dir }}osptmp1.{{ qemu_img_format }}"
 qemu_img_format: "raw"

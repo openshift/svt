@@ -1,0 +1,65 @@
+**addebs.py** script can be used to allocate desired number of EBS volumes and attach them to instance from where
+**addebs.py** is executed
+
+**Perquisites are **
+
+- it is necessary in advance to run `aws configure` in order to
+have aws credentials properly configure on ec2 machine
+
+```
+# pip install awscli
+# aws configure
+```
+
+- python-boto3 package has to be installed on instance
+
+```
+# yum install python-boto3
+```
+
+
+**Usage**
+
+```
+# python addebs.py -h
+usage: addebs.py [-h] [--volumesize VOLUMESIZE] [--vtype VTYPE]
+                 [--region REGION] [--tagprefix TAGPREFIX] --num NUM
+                 [--base BASE]
+
+Script to create EBS volumes and attach them to ec2 instance from where this
+script is run
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --volumesize VOLUMESIZE
+                        size of EBS volume - in GB
+  --vtype VTYPE         EBS volume type, default is gp2
+  --region REGION       Amazon region - will be ignored and defaults taken if
+                        aws configure was ran
+  --tagprefix TAGPREFIX
+                        tag prefix for EBS volumes, default tag is openshift-
+                        testing-EBS_volume_id
+  --num NUM             How many EBS volumes, max is 26 devices, eg, devices
+                        will be /dev/xvdba-/dev/xvdbz,different sets are
+                        possible /dev/xvdb, /dev/xvdc...
+  --base BASE           in which range to start adding device, base can be
+                        b,c,d ... , eg /dev/xvdba-/dev/xvdbz and here is base
+                        which to use /dev/xvdb, same for /dev/xvdc... etc
+```
+
+From range `/dev/xvda-/dev/xvdz` devices `/dev/xvda` and `/dev/xvda` will be ignored with this script - it is supposed that
+they are already attached to ec2 instance
+
+Other ranges can be be fully used. Keep in mind ec2 http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/volume_limits.html[limitations]
+
+To allocate devices `/dev/xvdc - /dev/xvdz` and attach them to ec2 instance run
+
+```
+# python addebs.py --volumesize=1 --vtype=gp2 --tagprefix=ebs_volume_tag --num=24
+```
+
+To allocate devices from range `/dev/xvdba  - /dev/xvdbz` run
+
+```
+#python addebs.py --volumesize=1 --vtype=gp2 --tagprefix=ebs_volume_tag --num=26 --base=b
+```

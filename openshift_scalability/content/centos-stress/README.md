@@ -33,6 +33,44 @@ Add description.
 
 Add description.
 
+### mb
+
+This test harness makes use of Multiple-host HTTP(s) Benchmarking tool [mb](https://github.com/jmencak/mb).  [stress-mb.yaml](https://github.com/openshift/svt/blob/master/openshift_scalability/config/stress-mb.yaml) is an example of the cluster-loader configuration file.
+
+#### Sample run
+
+Allow access to cluster-loader autogen synchronisation primitive on port 9090
+and label OCP nodes for WLG pods.
+
+```
+# firewall-cmd --zone=public --add-port=9090/tcp --permanent && systemctl reload firewalld
+$ oc label node ip-172-31-20-98.us-west-2.compute.internal placement=test
+```
+
+Build centos-stress docker image.  Note that the step to push the image to a
+docker registry is omitted here.
+
+```
+$ docker build -t svt/centos-stress ~/svt/openshift_scalability/content/centos-stress
+```
+
+Deploy sample (quickstart) applications across OCP cluster nodes.
+```
+$ cd ~/svt/openshift_scalability
+$ ./cluster-loader.py -vf config/master-vert.yaml
+```
+
+Choose `RUN_TIME`, `MB_TARGETS` and optionally `WLG_IMAGE` and other
+[stress-pod.json](https://github.com/openshift/svt/blob/master/openshift_scalability/content/quickstarts/stress/stress-pod.json) variables as needed.  Start cluster-loader in autogen mode.
+
+```
+$ vi config/stress-mb.yaml # edit RUN_TIME, MB_TARGETS, WLG_IMAGE and/or other variables as needed
+$ ./cluster-loader.py -vaf config/stress-mb.yaml
+```
+
+The results from the WLG pods will be uploaded to the host running cluster-loader to directory defined by an environment variable `benchmark_run_dir`.  If this variable is unset it defaults to `/tmp`.
+
+
 ### wrk
 
 This test harness makes use of a modern HTTP benchmarking tool [wrk](https://github.com/wg/wrk) with support for scripting in LUA. [stress-wrk.yaml](https://github.com/openshift/svt/blob/master/openshift_scalability/config/stress-wrk.yaml) is an example of the cluster-loader configuration file.

@@ -94,7 +94,8 @@ def run_build(build_def, start_build):
                             build_stats[idx]["max_push"] = push_time
                         if push_time < build_stats[idx]["min_push"]:
                             build_stats[idx]["min_push"] = push_time
-                elif (build_info["status"]["phase"] == "Failed") or (build_info["status"]["phase"] == "Cancelled"):
+
+                elif (build_info["status"]["phase"].startswith("Failed")) or (build_info["status"]["phase"] == "Cancelled") or (build_info["status"]["phase"].startswith("Error")):
                     print build_qname + " FAILED"
                     idx = namespace + ":" + name
                     build_stats[idx]["failed"] += 1
@@ -120,6 +121,9 @@ def run_builds_sequentially(all_builds, sleep_time):
 
 #Select a random set of builds to run.  Duplicates not allowed
 def select_random_builds(builds, num):
+    if len(builds) < num:
+        raise ValueError('It is not possible to select %d builds from build'
+                         ' source containing only %d builds' % (num, len(builds)))
     selected_builds = []
     seen = set()
     i=0

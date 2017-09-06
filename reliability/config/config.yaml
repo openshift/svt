@@ -1,16 +1,32 @@
 ---
 environment:
-  master: master.example.com
-  masters: master1.example.com,master2.example.com,master3.example.com
-  nodes: node1.example.com,node2.example.com
-  etcds: master1.example.com,master2.example.com,master3.example.com
-  routers: master.example.com
+  masters: 
+    - master1.example.com
+  nodes: 
+    - node1.example.com
+    - node2.example.com
+    - node3.example.com
+  etcds: 
+    - etcd1.example.com
+  routers: 
+    - 
   authtype: htpasswd
-  htpasswd: /etc/origin/master/htpasswd
-  subdomain: test.example.com
+  htpasswd: /etc/origin/htpasswd
+  subdomain: 
+  port: 8443
+  pbenchserver: pbench.example.com
+  monitoring:
+    - pbench
+    - cloudwatch
 exection:
-  gituser: anpingli
-  templates: django-psql-example,nodejs-mongodb-example,cakephp-mysql-example,dancer-mysql-example,eap64-mysql-s2i,rails-postgresql-example
+  gituser: vikaslaad
+  templates: 
+    - django-psql-example
+    - nodejs-mongodb-example
+    - cakephp-mysql-example
+    - dancer-mysql-example
+    - rails-postgresql-example
+    - eap64-mysql-s2i
   userprefix: u
   loadproject: true
 schedule:

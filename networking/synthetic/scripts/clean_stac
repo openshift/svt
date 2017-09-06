@@ -1,0 +1,15 @@
+#!/bin/bash
+
+oc delete bc --namespace=stac --all      
+oc delete dc --namespace=stac --all
+oc delete is --namespace=stac centos_stac
+oc delete pods --namespace=stac --all --now
+oc delete namespace stac || true
+oc delete scc stac
+while $(sleep 5); do
+    result=`oc get pods --namespace=stac`
+    if [[ -z "${result}" && $(oc get namespace stac 2>&1) =~ "not found" ]]; then
+        break
+    fi
+    echo $result
+done

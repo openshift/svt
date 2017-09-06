@@ -27,6 +27,9 @@ master=`cat config.yaml |egrep 'master:' | awk -F: '{print $2}'`
 nodes=`cat config.yaml |egrep 'nodes:' | awk -F: '{print $2}'`
 version=`cat config.yaml |egrep 'version:' | awk -F: '{print $2}'`
 
+# make the master schedulable
+oc adm manage-node --schedulable "${master}"
+
 i=0;
 for host in ${nodes//,/ }
 do

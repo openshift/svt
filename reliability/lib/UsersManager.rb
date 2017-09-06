@@ -14,7 +14,7 @@ module OpenshiftReliability
       userlist=File.read($config.home+"/config/users.data")
       userlist.split(/\n/).each do |line|
         array=line.split(':')
-        @users.push(User.new(array[0],array[1], $config.master))
+        @users.push(User.new(array[0],array[1], $config.master, $config.port))
       end
     end
 
@@ -40,20 +40,17 @@ module OpenshiftReliability
       host=$config.master
       newusers=[]
       defaultpassword="redhat"
-      usercreatecmds=[]
+      usercreatecmds=""
       (1..number).each do
          newuser="#{$config.prefix}-#{$config.seq}"
          newusers << newuser
-         cmd="htpasswd -b #{$config.htpasswd} #{newuser} #{defaultpassword}"
+         cmd="htpasswd -b #{$config.htpasswd} #{newuser} #{defaultpassword};"
          usercreatecmds << cmd
       end
-      usercreatecmds << "exit 0"
-      $exec.remote_upload("root", host, "/root/bin/addnewusers", usercreatecmds)
-      cmd="root@#{host} sh /root/bin/addnewusers#addnewuser"
-      res=$exec.execute(cmd)
+      res=$exec.remote_exec("root", host, usercreatecmds)
       if res[:status] == 0
         newusers.each do |u|
-           @users.push(User.new(u, defaultpassword, $config.master))
+           @users.push(User.new(u, defaultpassword, $config.master, $config.port))
         end
         f =File.open($config.home+"/config/users.data", "w+")
         @users.each do |u|

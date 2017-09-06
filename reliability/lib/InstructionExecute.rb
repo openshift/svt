@@ -86,7 +86,7 @@ module OpenshiftReliability
       stdout=""
       stderr=""
       status=0
-      session=Net::SSH.start(host, user, :password=>@password ) do | session |
+      session=Net::SSH.start(host, user, :password=>@password, :paranoid=>false, :forward_agent=>true) do | session |
         session.open_channel do |channel|
           #channel.send_request "shell", nil, true
           channel.exec(cmd) do |ch, success|

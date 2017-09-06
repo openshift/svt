@@ -30,7 +30,7 @@ config_repo=svt-private
 docker_login=no
 docker_storage_device=/dev/nvme0n1
 docker_storage_vgname=docker_vg
-docker_storage_driver=overlay
+docker_storage_driver=overlay2
 update_kernel=true
 # baremetal DNS server config
 host=ocp.net

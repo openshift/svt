@@ -17,6 +17,8 @@ RUN yum install -y bc gcc git gnuplot go java-1.8.0-openjdk lua-devel make \
     git clone https://github.com/wg/wrk.git && \
       cd wrk && git reset --hard 50305ed1d89408c26067a970dcd5d9dbea19de9d && \
       patch -p1 < ../svt/utils/wrk/patches/wrk-4.0.2.diff && make && cp ./wrk /usr/local/bin && cd .. && \
+    git clone -b stable https://github.com/jmencak/mb.git && \
+      cd mb && make && cp ./mb /usr/local/bin && cd .. && \
     cd && rm -rf build && \
     yum remove gcc go lua-devel make patch -y && \
     yum clean all

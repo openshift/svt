@@ -11,6 +11,7 @@ group_id=
 instance_type=m4.xlarge
 vpc_subnet_id=
 base_image=
+instance_tag=
 # repo install
 rhel_int_repo_hostname=
 # os kickstart
@@ -32,7 +33,7 @@ config_repo=
 docker_login=no
 docker_storage_device=/dev/xvdb
 docker_storage_vgname=docker_vg
-docker_storage_driver=overlay
+docker_storage_driver=overlay2
 # updates the kernel if set to true
 update_kernel=false
 # URL to pull the latest kernel
