@@ -20,6 +20,7 @@ class NetworkTest(object):
         self.variable_manager = VariableManager()
         self.loader = DataLoader()
         self.inventory = Inventory(loader=self.loader, variable_manager=self.variable_manager,host_list=[])
+        self.variable_manager.set_inventory(self.inventory)
         self.playbook = playbook
         
         self.sender_group = Group(name = 'sender')
@@ -31,12 +32,8 @@ class NetworkTest(object):
         self.master_group = Group(name = 'master')
         self.inventory.add_group(self.master_group)
         
-        self.inv_vars = dict()
-
-        
     def set_inventory_vars(self, inv_vars):
-        self.inv_vars.update(inv_vars)
-        self.variable_manager.extra_vars.update(inv_vars)
+        self.variable_manager.extra_vars = inv_vars
 
 
     def add_sender(self, sender):
@@ -56,11 +53,21 @@ class NetworkTest(object):
 
     def run(self):
 
-        Options = namedtuple('Options', ['listtags', 'listtasks', 'listhosts', 'syntax', 'connection','module_path', 'forks', 'remote_user', 'private_key_file', 'ssh_common_args', 'ssh_extra_args', 'sftp_extra_args', 'scp_extra_args', 'become', 'become_method', 'become_user', 'verbosity', 'check'])
-        options = Options(listtags=False, listtasks=False, listhosts=False, syntax=False, connection='ssh', module_path=None, forks=100, remote_user='root', private_key_file=None, ssh_common_args=None, ssh_extra_args=None, sftp_extra_args=None, scp_extra_args=None, become=True, become_method=None, become_user='root', verbosity=None, check=False)
+        Options = namedtuple('Options', 
+                             ['listtags', 'listtasks', 'listhosts', 
+                              'syntax', 'connection', 'module_path', 
+                              'forks', 'remote_user', 'private_key_file', 
+                              'ssh_common_args', 'ssh_extra_args', 'sftp_extra_args', 
+                              'scp_extra_args', 'become', 'become_method', 
+                              'become_user', 'verbosity', 'check'])
+        options = Options(listtags=False, listtasks=False, listhosts=False, 
+                          syntax=False, connection='ssh', module_path=None, 
+                          forks=100, remote_user='root', private_key_file=None, 
+                          ssh_common_args=None, ssh_extra_args=None, sftp_extra_args=None, 
+                          scp_extra_args=None, become=True, become_method=None, 
+                          become_user='root', verbosity=None, check=False)
 
         passwords = {}
-        
 
         pbex = PlaybookExecutor(playbooks=[self.playbook], 
                                 inventory=self.inventory, 
@@ -77,7 +84,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('test_type',
-                        choices = ['podIP', 'svcIP'])
+                        choices=['podIP', 'svcIP', 'nodeIP'])
     
     parser.add_argument('-v',
                         '--version',
@@ -101,7 +108,7 @@ def parse_args():
 
     parser.add_argument('-p',
                         '--pods',
-                        required = True,
+                        required = False,
                         nargs = '*',
                         dest = 'pod_numbers',
                         type = int,
@@ -133,8 +140,15 @@ def set_pbench_remote(master, nodes):
         return nodes[0]
     elif len(nodes) == 2:
         return nodes[1]
-    
 
+def set_pbench_remote_two(master, nodes):
+    if nodes is None:
+        return 'None'
+    elif len(nodes) == 1:
+        return nodes[0]
+    elif len(nodes) == 2:
+        return nodes[0]
+        
 def set_sender_region(master, nodes):
     if nodes is None:
         return 'both'
@@ -156,6 +170,8 @@ def set_receiver_region(master, nodes):
 def set_playbook(test_type):
     if test_type == 'podIP':
         return 'pod-ip-test-setup.yaml'
+    elif test_type == 'nodeIP':
+        return 'node-ip-test-setup.yaml'
     else:
         return 'svc-ip-test-setup.yaml'
 
@@ -170,6 +186,8 @@ def set_pbench_label(test_type, nodes):
             return 'pod-to-pod-LB'
         elif len(nodes) == 2 and nodes[0] != nodes[1]:
             return 'pod-to-pod-NN'
+    elif test_type == 'nodeIP':
+            return 'node-to-node'
     else:
         if nodes is None:
             return 'svc-to-svc-LB'
@@ -184,45 +202,54 @@ def get_option(version):
     if Decimal(version) >= 3.5 :
         return '-p'
     else:
-        return '-v'                    
+        return '-v'
+
+
+def run_tests(args, inventory_vars, sender_host, receiver_host):
+    test_playbook = set_playbook(args.test_type)
+    master_host = args.test_master
+    nettest = NetworkTest(test_playbook)
+    nettest.add_sender(sender_host)
+    nettest.add_receiver(receiver_host)
+    nettest.add_master(master_host)
+    nettest.set_inventory_vars(inventory_vars)
+    nettest.run()
+
 
 def main():
     args = parse_args()
-    
-    sender_host = set_sender(args.test_master, args.test_nodes)
-    receiver_host = set_receiver(args.test_master, args.test_nodes)
-    master_host = args.test_master
-    
+
     pbench_remote = set_pbench_remote(args.test_master, args.test_nodes)
+    if len(args.test_nodes) == 2:
+          pbench_remote_two = set_pbench_remote_two(args.test_master, args.test_nodes)    
     pbench_base_label = set_pbench_label(args.test_type, args.test_nodes)
-    
+
     sender_region = set_sender_region(args.test_master, args.test_nodes)
     receiver_region = set_receiver_region(args.test_master, args.test_nodes)
-    
-    oc_process_option = get_option(args.os_version);
+    sender_host = set_sender(args.test_master, args.test_nodes)
+    receiver_host = set_receiver(args.test_master, args.test_nodes)
 
-    test_playbook = set_playbook(args.test_type)
+    if args.test_type != 'nodeIP':
+        oc_process_option = get_option(args.os_version);
+        for pod_number in args.pod_numbers:
+            pbench_label = '{0}_PODS_{1}'.format(pbench_base_label, pod_number)
 
-    for pod_number in args.pod_numbers:
-        pbench_label = '{0}_PODS_{1}'.format(pbench_base_label, pod_number)
-        
-        inventory_vars = { 'sender_region': sender_region,
-                           'receiver_region': receiver_region,
-                           'uperf_pod_number': pod_number,
-                           'oc_process_option': oc_process_option,
-                           'pbench_label': pbench_label,
-                           'pbench_remote': pbench_remote }
-    
-        nettest = NetworkTest(test_playbook)
+            inventory_vars = {'sender_region': sender_region,
+                              'receiver_region': receiver_region,
+                              'uperf_pod_number': pod_number,
+                              'oc_process_option': oc_process_option,
+                              'pbench_label': pbench_label,
+                              'pbench_remote_two': pbench_remote_two,
+                              'pbench_remote': pbench_remote}
+            run_tests(args, inventory_vars, sender_host, receiver_host)
+    else:
+            inventory_vars = {'sender_host': sender_host,
+                              'receiver_host': receiver_host,
+                              'pbench_label': pbench_base_label,
+                              'pbench_remote_two': pbench_remote_two,
+                              'pbench_remote': pbench_remote}
+            run_tests(args, inventory_vars, sender_host, receiver_host)
 
-        nettest.add_sender(sender_host)
-        nettest.add_receiver(receiver_host)
-        nettest.add_master(master_host)
-    
-        nettest.set_inventory_vars(inventory_vars)
-
-        nettest.run()
-    
 
 if __name__ == '__main__':
     main()
