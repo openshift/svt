@@ -109,6 +109,10 @@
     shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ pbench_remote }}
     when: pbench_remote != "None"
 
+  - name: Register pbench tools on remote two
+    shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ pbench_remote_two }}
+    when: pbench_remote_two != "None"    
+
   - name: Run pbench-uperf for TCP benchmarks
     shell: >
       pbench-uperf

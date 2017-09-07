@@ -140,7 +140,6 @@ def set_pbench_remote(master, nodes):
         return nodes[0]
     elif len(nodes) == 2:
         return nodes[1]
-    
 
 def set_sender_region(master, nodes):
     if nodes is None:
@@ -230,12 +229,14 @@ def main():
                               'uperf_pod_number': pod_number,
                               'oc_process_option': oc_process_option,
                               'pbench_label': pbench_label,
+                              'pbench_remote_two': pbench_remote_two,
                               'pbench_remote': pbench_remote}
             run_tests(args, inventory_vars, sender_host, receiver_host)
     else:
             inventory_vars = {'sender_host': sender_host,
                               'receiver_host': receiver_host,
                               'pbench_label': pbench_base_label,
+                              'pbench_remote_two': pbench_remote_two,
                               'pbench_remote': pbench_remote}
             run_tests(args, inventory_vars, sender_host, receiver_host)
 
