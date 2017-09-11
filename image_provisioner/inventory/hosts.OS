@@ -35,6 +35,8 @@ docker_login=no
 docker_storage_device=/dev/xvdb
 docker_storage_vgname=docker_vg
 docker_storage_driver=overlay2
+docker_storage_mount_path=/var/lib/docker/overlay2
+container_root_lv_mount_path=/var/lib/docker
 # updates the kernel if set to true
 update_kernel=false
 # URL to pull the latest kernel
@@ -57,3 +59,8 @@ openshift_version=3.3.0.30-1
 target_directory=
 # set atomic to True for atomic image
 atomic=False
+# cri-o
+crio=False
+crio_copy_images=False
+crio_registry=registry.access.redhat.com
+image_repository=

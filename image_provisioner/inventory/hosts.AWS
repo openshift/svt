@@ -12,6 +12,7 @@ instance_type=m4.xlarge
 vpc_subnet_id=
 base_image=
 instance_tag=
+volume_size=
 # repo install
 rhel_int_repo_hostname=
 # os kickstart
@@ -34,6 +35,8 @@ docker_login=no
 docker_storage_device=/dev/xvdb
 docker_storage_vgname=docker_vg
 docker_storage_driver=overlay2
+docker_storage_mount_path=/var/lib/docker/overlay2
+container_root_lv_mount_path=/var/lib/docker
 # updates the kernel if set to true
 update_kernel=false
 # URL to pull the latest kernel
@@ -57,3 +60,8 @@ target_directory=
 atomic=False
 # To update RHEL redhat-release-server, set to true
 update_rhel_server=False
+# cri-o
+crio=False
+crio_copy_images=False
+crio_registry=registry.access.redhat.com
+image_repository=
