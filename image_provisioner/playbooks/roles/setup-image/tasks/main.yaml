@@ -23,6 +23,30 @@
   
   - name: resize second partition to use all free space
     command: virt-resize --quiet --expand {{ docker_storage_device }} {{ base_image_location }} {{ qemu_img_location }}
+
+  - name: check if the cloud-init configuration drive already exists
+    stat:
+      path: /tmp/config.iso
+    register: config_drive
+
+  - name: delete the configuration drive if it already exists
+    file:
+      path: /tmp/config.iso
+      state: absent
+    when: config_drive.stat.exists == True
+
+  - name: copy cloud-init user-data to tmp directory
+    template:
+      src: user-data.j2
+      dest: /tmp/user-data
+
+  - name: copy cloud-init meta-data to tmp directory
+    copy:
+      src: meta-data
+      dest: /tmp/meta-data
+
+  - name: create the configuration drive
+    shell: genisoimage -o /tmp/config.iso -V cidata -r -J /tmp/meta-data /tmp/user-data
   when: atomic | default(False) | bool
 
 - block:

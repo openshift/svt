@@ -1,0 +1,10 @@
+---
+- name: delete repos
+  file:
+    path: '/root/{{ item }}'
+    state: absent
+  with_items:
+    - svt-private
+    - openshift-ansible
+    - kubernetes/contrib
+  delegate_to: localhost

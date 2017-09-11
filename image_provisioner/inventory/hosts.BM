@@ -45,3 +45,5 @@ network_interface=bond0.7
 dns_domain=cluster.local
 kube_svc_ip=10.192.0.1
 existing_dns_ip=10.1.16.4
+# set atomic to True for atomic image
+atomic=False
