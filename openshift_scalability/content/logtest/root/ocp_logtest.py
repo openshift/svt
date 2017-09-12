@@ -38,11 +38,11 @@ def delay(sleep_time,num_messages) :
 
 # Calling time.sleep() more than 10 times per second is pointless and adds too much overhead
 # Back off to batches of messages big enough so that sleep is called 10 times per second max
-       if sleep_time < 0.1 :
+       if sleep_time < 0.05 :
            sleep_this_time = False
-           batch_size = 0.1 / options.sleep_time
-           sleep_time = 0.1
-           if num_messages % int(batch_size) == 0 :
+           batch_size = (0.05 / sleep_time) * 10.0
+           sleep_time = 0.5
+           if num_messages % int(round(batch_size)) == 0 :
               sleep_this_time = True
        if sleep_this_time :
           time.sleep(sleep_time)
@@ -158,4 +158,3 @@ if __name__ ==  "__main__":
         options.sleep_time = 60.0/options.rate
 
     generate_messages()
-
