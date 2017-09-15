@@ -83,26 +83,6 @@
                                 "value": "${MB_RAMP_UP}"
                             },
                             {
-                                "name": "WRK_DELAY",
-                                "value": "${WRK_DELAY}"
-                            },
-                            {
-                                "name": "WRK_TARGETS",
-                                "value": "${WRK_TARGETS}"
-                            },
-                            {
-                                "name": "WRK_CONNS_PER_THREAD",
-                                "value": "${WRK_CONNS_PER_THREAD}"
-                            },
-                            {
-                                "name": "WRK_KEEPALIVE",
-                                "value": "${WRK_KEEPALIVE}"
-                            },
-                            {
-                                "name": "WRK_TLS_SESSION_REUSE",
-                                "value": "${WRK_TLS_SESSION_REUSE}"
-                            },
-                            {
                                 "name": "URL_PATH",
                                 "value": "${URL_PATH}"
                             },
@@ -252,36 +232,6 @@
             "name": "MB_RAMP_UP",
             "displayName": "Thread ramp-up time in seconds",
             "description": "Thread ramp-up time in seconds.",
-            "value": "n"
-        },
-        {
-            "name": "WRK_DELAY",
-            "displayName": "Delay between requests for wrk",
-            "description": "Delay between requests for the wrk client in ms.",
-            "value": "1000"
-        },
-        {
-            "name": "WRK_TARGETS",
-            "displayName": "Regex to select target routes",
-            "description": "Regex to select target routes for wrk.",
-            "value": "."
-        },
-        {
-            "name": "WRK_CONNS_PER_THREAD",
-            "displayName": "Connections per thread for wrk",
-            "description": "Connections per thread for wrk.",
-            "value": "y"
-        },
-        {
-            "name": "WRK_KEEPALIVE",
-            "displayName": "Enable http-keepalive for wrk",
-            "description": "Enable http-keepalive for wrk.",
-            "value": "y"
-        },
-        {
-            "name": "WRK_TLS_SESSION_REUSE",
-            "displayName": "Enable TLS session reuse for wrk",
-            "description": "Enable TLS session reuse for wrk.",
             "value": "n"
         },
         {
