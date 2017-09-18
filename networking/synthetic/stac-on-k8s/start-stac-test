@@ -1,0 +1,28 @@
+cd /home/openonload-201707-with-vi-availability/scripts
+./onload_install --nobuild --userfiles
+
+
+mv /vikas-pstac-n.tar.gz /home/
+cd /home
+tar xf vikas-pstac-n.tar.gz
+ln -s /home/pstac/STAC-N-Tools-Pkg20141204/orchestration/multi-sut-harness/multi-sut-setups/orch-repository/0817-emarcian-udp-kernel-enet-rhel7.4 /home/local_test_dir_pstac
+systemctl start sshd
+sed -i -- "s/ssh/ssh -q -o StrictHostKeyChecking=no /" /home/local_test_dir_pstac/runTest.sh
+sed -i -- "s/ssh/ssh -q -o StrictHostKeyChecking=no /" /home/local_test_dir_pstac/common_impl.sh
+sed -i -- "s/scp/scp -q -o StrictHostKeyChecking=no/" /home/local_test_dir_pstac/runTest.sh
+sed -i -- "s/scp/scp -q -o StrictHostKeyChecking=no/" /home/local_test_dir_pstac/common_impl.sh
+
+IFName=$(ifconfig | grep -B 1 70.70.70.| awk {'print $1'} | head -1)
+IFName="${IFName%?}"
+
+sed -i -- "s/TEST_INTERFACE=p5p1/TEST_INTERFACE=$IFName/" /home/local_test_dir_pstac/common_impl.sh
+sed -i -- "s/orchestrationInterface = em1/orchestrationInterface = $IFName/g" /home/local_test_dir_pstac/stac.n.1.cfg
+
+sed -i -- 's#NICE="/bin/nice --20"#NICE=""#' /home/local_test_dir_pstac/common_impl.sh
+
+
+cd /home/pstac/STAC-N-Tools-Pkg20141204/orchestration/multi-sut-harness
+source stacset
+alias vi=vi
+echo 'y' | ./runAllMsgSizeTests.sh
+

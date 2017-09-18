@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: stac-consumer
+  annotations:
+    sfc-nic-ip: 70.70.70.2/24
+spec:
+  containers:
+  - name: stac-consumer
+    image: rhel74:latest
+    imagePullPolicy: Never
+    resources:
+      requests:
+        pod.alpha.kubernetes.io/opaque-int-resource-sfcNIC: '1'
+      limits:
+        pod.alpha.kubernetes.io/opaque-int-resource-sfcNIC: '1'
+    volumeMounts:
+    - mountPath: "/root/.ssh/id_rsa"
+      name: stac-ssh-key
+    - mountPath: "/root/.ssh/authorized_keys"
+      name: stac-ssh
+    - mountPath: "/home"
+      name: stac-home
+  volumes:
+  - hostPath:
+      path: "/root/.ssh/id_rsa_stac"
+    name: stac-ssh-key
+  - hostPath:
+      path: "/root/.ssh/id_rsa_stac.pub"
+    name: stac-ssh
+  - hostPath:
+      path: "/home/container-home"
+    name: stac-home
+

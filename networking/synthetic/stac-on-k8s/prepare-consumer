@@ -1,0 +1,4 @@
+cd /home/openonload-201707-with-vi-availability/scripts
+./onload_install --nobuild --userfiles
+
+systemctl start sshd
