@@ -15,28 +15,23 @@ leveraging [SFC device plugin](https://github.com/vikaschoudhary16/kubernetes/pu
 ------
 
  **Deploy SFC device plugin daemonset pods:**
->[root@dell-r730-01 ]# kubectl apply -f [device_plugins/sfc_nic/device_plugin.yml](https://github.com/vikaschoudhary16/kubernetes/blob/20d84bc490f4583bcb0c2c535d4cfb95358fe6ab/device_plugins/sfc_nic/device_plugin.yml)  
->[root@dell-r730-01 vikas]# kubectl get pods -o wide
-NAME                        READY     STATUS    RESTARTS   AGE       IP             NODE
-kube-dns-6df5bc5d85-4n7xl   3/3       Running   0          2d        172.17.0.2     10.12.20.134
-sfc-device-plugin-cfscs     1/1       Running   0          2d        10.12.20.134   10.12.20.134
-sfc-device-plugin-x4d7f     1/1       Running   0          2d        10.12.20.136   10.12.20.136
+>[root@dell-r730-01 ]# kubectl apply -f [device_plugins/sfc_nic/device_plugin.yml](https://github.com/vikaschoudhary16/kubernetes/blob/20d84bc490f4583bcb0c2c535d4cfb95358fe6ab/device_plugins/sfc_nic/device_plugin.yml)    
+>[root@dell-r730-01 vikas]# kubectl get pods -o wide  
+NAME                        READY     STATUS    RESTARTS   AGE       IP             NODE  
+kube-dns-6df5bc5d85-4n7xl   3/3       Running   0          2d        172.17.0.2     10.12.20.134  
+sfc-device-plugin-cfscs     1/1       Running   0          2d        10.12.20.134   10.12.20.134  
+sfc-device-plugin-x4d7f     1/1       Running   0          2d        10.12.20.136   10.12.20.136  
 
- **Deploy STAC-N1 producer and consumer pods:**
- > [root@dell-r730-01 vikas]# kubectl create -f /home/stac-producer.yml
-
- 
- > [root@dell-r730-01 vikas]# kubectl create -f /home/stac-consumer.yml
-
-
- > [root@dell-r730-01 vikas]# kubectl get pods -o wide 
-
-NAME                        READY     STATUS    RESTARTS   AGE       IP             NODE
-kube-dns-6df5bc5d85-4n7xl   3/3       Running   0          2d        172.17.0.2     10.12.20.134
-sfc-device-plugin-cfscs     1/1       Running   0          2d        10.12.20.134   10.12.20.134
-sfc-device-plugin-x4d7f     1/1       Running   0          2d        10.12.20.136   10.12.20.136
-stac-consumer               1/1       Running   0          4h        172.17.0.3     10.12.20.134
-stac-producer               1/1       Running   0          4h        172.17.0.2     10.12.20.136
+ **Deploy STAC-N1 producer and consumer pods:**    
+>[root@dell-r730-01 vikas]# kubectl create -f /home/stac-producer.yml    
+[root@dell-r730-01 vikas]# kubectl create -f /home/stac-consumer.yml    
+[root@dell-r730-01 vikas]# kubectl get pods -o wide    
+NAME                        READY     STATUS    RESTARTS   AGE       IP             NODE  
+kube-dns-6df5bc5d85-4n7xl   3/3       Running   0          2d        172.17.0.2     10.12.20.134  
+sfc-device-plugin-cfscs     1/1       Running   0          2d        10.12.20.134   10.12.20.134  
+sfc-device-plugin-x4d7f     1/1       Running   0          2d        10.12.20.136   10.12.20.136  
+stac-consumer               1/1       Running   0          4h        172.17.0.3     10.12.20.134  
+stac-producer               1/1       Running   0          4h        172.17.0.2     10.12.20.136  
 
 **NOTE:** Irrespective of what machine STAC pods get launched on, device plugin will configure 70.70.70.1 on Producer pod SFC NIC and 70.70.70.2 on the consumer pod sfc NIC. IP addresses are configurable in the pod yml files, stac-producer.yml and stac-consumer.yml
 
