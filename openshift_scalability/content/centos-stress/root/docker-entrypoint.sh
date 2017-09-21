@@ -236,7 +236,7 @@ main() {
         -vka_requests=${MB_KA_REQUESTS:-100} -vclients=${MB_CONNS_PER_TARGET:-10} \
         -vpath=${URL_PATH:-/} -vdelay_min=0 -vdelay_max=${MB_DELAY:-1000} \
         -f ${requests_awk} > ${requests_json} || \
-        die $? "${RUN} failed: $?: unable to retrieve wrk targets list \`targets'"
+        die $? "${RUN} failed: $?: unable to retrieve mb targets list \`targets'"
 
       $timeout \
         $mb \
@@ -249,63 +249,6 @@ main() {
       rm -f ${results_csv}.$$
       $graph_sh ${graph_dir} ${results_csv} $dir_out/graphs $interval
       xz -0 -T0 ${results_csv}
-
-      have_server "${GUN}" && \
-        scp -o StrictHostKeyChecking=false -rp ${dir_out} ${GUN}:${PBENCH_DIR}
-      $(timeout_exit_status) || die $? "${RUN} failed: scp: $?"
-
-      announce_finish
-      ;;
-
-    wrk)
-      local wrk_log=/tmp/${HOSTNAME}-${gateway}.log
-      local requests_awk=requests.awk
-      local dir_out=${RUN}-${HOSTNAME:-${IDENTIFIER:-0}}
-      local targets_lst=/opt/wlg/targets.txt
-      local requests_json=$dir_out/requests.json
-      local wrk=/usr/local/bin/wrk
-      local wrk_script=wrk.lua
-      local env_out=$dir_out/environment	# for debugging
-      local results_csv=$dir_out/results.csv
-      local graph_dir=gnuplot/${RUN}
-      local graph_sh=gnuplot/$RUN/graph.sh
-      local interval=10				# sample interval for d3js graphs [s]
-      local tls_session_reuse=""
-
-      rm -rf ${dir_out} && mkdir -p ${dir_out}
-      ulimit -n 1048576				# use the same limits as HAProxy pod
-      #sysctl -w net.ipv4.tcp_tw_reuse=1	# safe to use on client side
-      env > $env_out				# dump out the environment for debugging
-
-      cat ${targets_lst} | grep -E "${WRK_TARGETS:-.}" | awk \
-        -vpath=${URL_PATH:-/} -vdelay_min=0 -vdelay_max=${WRK_DELAY:-1000} \
-        -f ${requests_awk} > ${requests_json} || \
-        die $? "${RUN} failed: $?: unable to retrieve wrk targets list \`targets'"
-      ln -sf $dir_out/requests.json	# TODO: look into passing values to "$wrk_script"'s init()
-
-      local wrk_threads=`python -c 'import sys, json; print len(json.load(sys.stdin))' < ${requests_json}`
-      test "${wrk_threads}" -eq 0 && die 1 "no targets to test against"
-      local wrk_host=`python -c 'import sys, json; print json.load(sys.stdin)[0]["host"]' < ${requests_json}`
-      local wrk_port=`python -c 'import sys, json; print json.load(sys.stdin)[0]["port"]' < ${requests_json}`
-      local wrk_conns=$(($wrk_threads * ${WRK_CONNS_PER_THREAD:=1}))
-      local no_keepalive=$(use_option "--no_keepalive" WRK_KEEPALIVE n y)		# keepalive is enabled by default
-      local tls_session_reuse=$(use_option "--reuse" WRK_TLS_SESSION_REUSE n n)		# TLS session reuse is disabled by default
-
-      $timeout \
-        $wrk \
-          -q \
-          -t${wrk_threads} \
-          -c${wrk_conns} \
-          -d${RUN_TIME:-600}s \
-          ${no_keepalive} \
-          ${tls_session_reuse} \
-          -s ${wrk_script} \
-          http://${wrk_host}:${wrk_port} > ${results_csv}.$$
-      $(timeout_exit_status) || die $? "${RUN} failed: $?"
-      LC_ALL=C sort -t, -n -k1 ${results_csv}.$$ > ${results_csv}
-      rm -f ${results_csv}.$$
-      $graph_sh ${graph_dir} ${results_csv} $dir_out/graphs $interval
-      xz -0 -T0 < ${results_csv} > ${results_csv}.xz && rm -f ${results_csv}
 
       have_server "${GUN}" && \
         scp -o StrictHostKeyChecking=false -rp ${dir_out} ${GUN}:${PBENCH_DIR}
