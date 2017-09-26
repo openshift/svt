@@ -59,6 +59,7 @@
       - ceph-common
       - glusterfs-fuse
       - iscsi-initiator-utils
+      - deltarpm
 
   - name: install pbench internal
     yum: 
