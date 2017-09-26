@@ -1,0 +1,74 @@
+---
+# Abort if target_directory is not set.
+- name: Checking for target_directory
+  fail:
+    msg: "Must provide the target_directory variable."
+  when: target_directory is not defined
+
+# Get the disk usage numbers.
+- name: Get the disk usage information before cleanup
+  command: "df --output=avail,pcent {{ target_directory }}"
+  register: disk_space
+
+# Create the disk space facts.
+- name: Create the disk usage facts for {{ target_directory }}
+  set_fact:
+    available_bytes: "{{ disk_space['stdout_lines'][1].split()[0] }}"
+    percent_used: "{{ disk_space['stdout_lines'][1].split()[1] }}"
+
+# Print out the disk usage.
+- name: Print out the disk usage information
+  debug:
+    msg: "There are {{ available_bytes }} bytes available with {{ percent_used }} used on this partition."
+
+# Find the files.
+- name: Find the files in {{ target_directory }}
+  find:
+    path: "{{ target_directory  }}"
+  register: files
+
+# Create variables for these files.
+- name: Create the facts for the files in {{ target_directory }}
+  set_fact:
+    file_count: "{{ files['files']|length }}"
+    total_bytes: "{{ files['files']|map(attribute='size')|sum }}"
+
+# Print out the target directory.
+- name: Print out the target directory details
+  debug:
+    msg: "There are {{ file_count }} files in {{ target_directory }} using {{ total_bytes }} bytes."
+
+# Create the variable for the oldest file.
+- name: Find the oldest file by sorting by modification time
+  set_fact:
+    oldest_file: "{{ files['files']|sort(attribute='mtime')|first }}"
+  when: file_count | int > 0
+
+# Print the path to the oldest file.
+- name: Print the path of oldest file about to be deleted
+  debug:
+    msg: "Deleting the file: {{ oldest_file['path'] }}"
+  when: oldest_file is defined
+
+# Delete the oldest file in the target directory.
+- name: Delete the oldest file
+  file:
+    path: "{{ oldest_file['path'] }}"
+    state: absent
+  when: oldest_file is defined
+
+# Get the disk usage numbers.
+- name: Get the disk usage information after cleanup
+  command: "df --output=avail,pcent {{ target_directory }}"
+  register: disk_space
+
+# Create the disk space facts.
+- name: Create the disk usage facts
+  set_fact:
+    available_bytes: "{{ disk_space['stdout_lines'][1].split()[0] }}"
+    percent_used: "{{ disk_space['stdout_lines'][1].split()[1] }}"
+
+# Print out the disk usage.
+- name: Print out the disk usage information
+  debug:
+    msg: "There are {{ available_bytes }} bytes available with {{ percent_used }} used disk on this partition."

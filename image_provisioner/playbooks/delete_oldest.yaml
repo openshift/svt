@@ -1,0 +1,5 @@
+---
+- name: Delete the oldest file in the directory
+  hosts: localhost
+  roles:
+    - delete-oldest
