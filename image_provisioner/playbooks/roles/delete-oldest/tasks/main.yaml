@@ -1,9 +1,9 @@
 ---
 # Abort if target_directory is not set.
-- name: Checking for target_directory
+- name: Check for the target_directory variable
   fail:
     msg: "Must provide the target_directory variable."
-  when: target_directory is not defined
+  when: target_directory is not defined or target_directory == ""
 
 # Get the disk usage numbers.
 - name: Get the disk usage information before cleanup
