@@ -20,6 +20,7 @@
     - { role: aos-ansible }
     - { role: pbench-kickstart, when: atomic | default(False) | bool }
     - { role: collectd-install }
+    - { role: journald-config }
     - { role: ansible-update, when: not atomic | default(False) | bool }
     - { role: openshift-package-install, when: not atomic | default(False) | bool }
     - { role: seal-image, when: not atomic | default(False) | bool }

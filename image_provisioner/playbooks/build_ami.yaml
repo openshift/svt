@@ -65,6 +65,7 @@
     - { role: openshift-package-install, when: not atomic | default(False) | bool }
     - { role: pbench-kickstart, when: atomic | default(False) | bool }
     - { role: collectd-install }
+    - { role: journald-config }
     - { role: seal-image, when: not atomic | default(False) | bool }
     - { role: clean-env, when: atomic | default(False) | bool }
 
