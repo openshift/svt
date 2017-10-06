@@ -1,9 +1,17 @@
 ---
 - block:
+
   - name: yum update
     yum: 
       name: '*' 
       state: latest
+      exclude: redhat-release*
+
+  - name: yum update redhat-release-server
+    yum:
+      name: 'redhat-release-server'
+      state: latest
+    when: update_rhel_server | default(False) | bool
 
   - name: install packages
     yum: 
