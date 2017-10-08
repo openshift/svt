@@ -27,9 +27,13 @@ The hierarchy of this repository is as follows:
 ```
 
 # Dockerfiles and Dependencies
-Certain tests use the Quickstarts from the `openshift/origin` repository. Ensure that they are available in your environment before using any of the tests:
+Certain tests use the Quickstarts from the `openshift/origin` repository. Ensure that they are available in your `openshift` project environment before using any of the tests:
 
 https://github.com/openshift/origin/tree/master/examples/quickstarts
+
+Ensure also that the requisite image streams are available in your `openshift` project environment:
+
+https://github.com/openshift/origin/tree/master/examples/image-streams
 
 Also, for disconnected installations, the following Dockerfiles should be located somewhere in the target installation machines:
 
