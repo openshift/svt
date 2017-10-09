@@ -1,19 +1,21 @@
 ---
-- name: create directory to store pbench results, store openshift templates for pbench
-  file: 
-    path: "{{ item }}"
-    state: directory
-  with_items:
-     - /var/lib/pbench-agent
-     - /var/home/openshift-templates/pbench
+- block:
+    - name: create directory to store pbench results, store openshift templates for pbench
+      file: 
+        path: "{{ item }}"
+        state: directory
+      with_items:
+         - /var/lib/pbench-agent
+         - /var/home/openshift-templates/pbench
 
-- name: copy openshift template for pbench
-  copy: 
-    src: pbench-agent-daemonset.yml  
-    dest: /var/home/openshift-templates/pbench 
-    owner: root 
-    group: root 
-    mode: 0644
+    - name: copy openshift template for pbench
+      copy: 
+        src: pbench-agent-daemonset.yml  
+        dest: /var/home/openshift-templates/pbench 
+        owner: root 
+        group: root 
+        mode: 0644i
+  when: atomic | default(False) | bool
      
 # not using docker_image module of ansible since that requires docker-py package to be installed on the atomic host
 - name: pull pbench-agent from dockerhub
