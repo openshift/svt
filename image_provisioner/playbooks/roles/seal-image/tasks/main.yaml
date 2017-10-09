@@ -1,15 +1,21 @@
 ---
 - name: clean yum cache
-  shell:  yum clean all
+  command:  yum clean all
   ignore_errors: true
 
-- name: remove /root/.kube dir
-  shell: /bin/rm -rf /root/.kube
+- name: Remove all yum cache directories
+  command: rm -rf /var/cache/yum/*
   ignore_errors: true
 
-- name: delete contents of directories /etc/origin/node and /etc/origin/master
-  shell: /bin/rm -rf /etc/origin/node/*; /bin/rm -rf /etc/origin/master/*
-  ignore_errors: true
+- name: remove /root/.kube
+  file:
+    path: /root/.kube
+    state: absent
+
+- name: remove /etc/origin
+  file: 
+    path: /etc/origin
+    state: absent
 
 ## commented out, we do not want to remove openshift-ansible
 ## - name: ensure openshift-ansible is not installed
