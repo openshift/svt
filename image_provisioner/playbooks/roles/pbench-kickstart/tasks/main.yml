@@ -14,7 +14,7 @@
         dest: /var/home/openshift-templates/pbench 
         owner: root 
         group: root 
-        mode: 0644i
+        mode: 0644
   when: atomic | default(False) | bool
      
 # not using docker_image module of ansible since that requires docker-py package to be installed on the atomic host
