@@ -14,7 +14,7 @@ write_iops_log=fio
 write_lat_log=fio
 write_hist_log=fio
 per_job_logs=1
-log_avg_msec=60000
+log_avg_msec=10000
 log_hist_msec=60000
 
 [fio-1]
