@@ -1,0 +1,15 @@
+[rhel74]
+name=rhel74
+baseurl=http://example.com/released/RHEL-7/7.4/Server/x86_64/os/
+enabled=1
+gpgcheck=1
+priority=0
+skip_if_unavailable=1
+
+[rhel74-opt]
+name=rhel74-opt
+baseurl=http://example.com/released/RHEL-7/7.4/Server-optional/x86_64/os/
+enabled=1
+gpgcheck=1
+priority=0
+skip_if_unavailable=1
