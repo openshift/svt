@@ -214,13 +214,13 @@
             "name": "MB_CONNS_PER_TARGET",
             "displayName": "Connections per target route for mb",
             "description": "Connections per target route for mb.",
-            "value": "y"
+            "value": "1"
         },
         {
             "name": "MB_KA_REQUESTS",
             "displayName": "How many HTTP keep-alive requests to send per connection",
             "description": "How many HTTP keep-alive requests to send per connection before sending Connection: close header.",
-            "value": "y"
+            "value": "10"
         },
         {
             "name": "MB_TLS_SESSION_REUSE",
@@ -232,7 +232,7 @@
             "name": "MB_RAMP_UP",
             "displayName": "Thread ramp-up time in seconds",
             "description": "Thread ramp-up time in seconds.",
-            "value": "n"
+            "value": "0"
         },
         {
             "name": "URL_PATH",
