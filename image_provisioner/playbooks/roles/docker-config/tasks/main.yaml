@@ -22,7 +22,6 @@
       state: latest
   when: not atomic | default(False) | bool
 
-
 - name: stop docker service
   systemd:
     name: docker
@@ -85,6 +84,12 @@
   when:
     - docker_storage_driver == "overlay2" or update_kernel == "true"
     - not atomic | default(False) | bool
+
+- name: configure logging driver
+  lineinfile:
+    path: /etc/sysconfig/docker
+    regexp: '^OPTIONS'
+    line: "OPTIONS='--selinux-enabled --log-opt max-size=10M --log-opt max-file=3 --signature-verification=false'"
 
 - name: enable docker service and start it
   systemd:
