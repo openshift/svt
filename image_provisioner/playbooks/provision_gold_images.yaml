@@ -19,7 +19,7 @@
     - { role: docker-config }
     - { role: pbench-config, when: not atomic | default(False) | bool}
     - { role: aos-ansible }
-    - { role: pbench-kickstart, when: atomic | default(False) | bool }
+    - { role: pbench-kickstart }
     - { role: collectd-install }
     - { role: journald-config }
     - { role: ansible-update, when: not atomic | default(False) | bool }
