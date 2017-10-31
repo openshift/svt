@@ -75,5 +75,4 @@ You are now inside a container running in Kubernetes.  This pod is specially cre
 ```# ./run_all.sh```
 
 ### Notes
-* The pre-audit run took 151 minutes to complete in Kubernetes.
 * The output of the benchmark is written to the host filesystem so you can exit the pod and the results zip file will persist on the host machine.
