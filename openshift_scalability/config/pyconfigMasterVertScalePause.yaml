@@ -1,7 +1,6 @@
 projects:
   - num: 3
     basename: c
-    tuning: default
     templates:
       -
         num: 3
