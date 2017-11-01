@@ -1,7 +1,6 @@
 projects:
   - num: 5
     basename: clusterproject
-    tuning: default
     templates:
       -
         num: 3
