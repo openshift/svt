@@ -26,13 +26,13 @@ module OpenshiftReliability
 
     def create(numstr)
 
-      if $config.authtype == 'htpasswd'
+#      if $config.authtype == 'htpasswd'
          $logger.info " Create number users."
          number=to_digit(numstr)
          create_htpusers(number)
-      else
-         $logger.info " skip user creatation now."
-      end
+#      else
+#         $logger.info " skip user creatation now."
+#      end
     end
 
     def create_htpusers(number)
@@ -44,11 +44,22 @@ module OpenshiftReliability
       (1..number).each do
          newuser="#{$config.prefix}-#{$config.seq}"
          newusers << newuser
-         cmd="htpasswd -b #{$config.htpasswd} #{newuser} #{defaultpassword};"
-         usercreatecmds << cmd
+         if $config.authtype == 'htpasswd'
+           cmd="htpasswd -b #{$config.htpasswd} #{newuser} #{defaultpassword};"
+           usercreatecmds << cmd
+         end
       end
-      res=$exec.remote_exec("root", host, usercreatecmds)
-      if res[:status] == 0
+
+      pushuser=false
+
+      if $config.authtype == 'htpasswd'
+        res=$exec.remote_exec("root", host, usercreatecmds)
+        pushuser=(res[:status] == 0)
+      else
+        pushuser=true
+      end
+
+      if pushuser
         newusers.each do |u|
            @users.push(User.new(u, defaultpassword, $config.master, $config.port))
         end
