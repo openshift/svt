@@ -18,9 +18,8 @@ aos_repo={{ puddle_url }}
 qe_repo_image_versions={{ image_version }}
 
 # New variables needed to set up the docker login and required
-# authentication to registry.reg-aws.openshift.com, for image pulls:
+# authentication to registry, for image pulls:
 docker_login=yes
-## reg_name=registry.reg-aws.openshift.com:443
 reg_name={{ registry_name }}
 reg_username={{ registry_username }}
 reg_password={{ registry_password }}
