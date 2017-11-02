@@ -43,7 +43,6 @@ kernel_url=https://example.com
 aos_ansible_path=/root/aos-ansible
 aos_ansible_inventory=/root/aos-ansible/inventory/hosts
 # required for authentication for new registry registry.reg-aws.openshift.com:443
-# registry_name=registry.reg-aws.openshift.com:443
 registry_name=
 registry_username=
 registry_password=
