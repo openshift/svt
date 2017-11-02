@@ -49,3 +49,8 @@ existing_dns_ip=10.1.16.4
 target_directory=
 # set atomic to True for atomic image
 atomic=False
+# required for authentication for new registry registry.reg-aws.openshift.com:443
+# registry_name=registry.reg-aws.openshift.com:443
+registry_name=
+registry_username=
+registry_password=
