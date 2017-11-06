@@ -7,9 +7,6 @@ ProgramName=${0##*/}
 # Global variables
 pctl_bin=pctl
 url_gun_ws="http://${GUN}:9090"
-gw_hex=$(grep ^eth0 /proc/net/route | head -1 | awk '{print $3}')
-#gateway=$(/sbin/ip route|awk '/default/ { print $3 }')	# sometimes there is no /sbin/ip ...
-gateway=$(printf "%d.%d.%d.%d" 0x${gw_hex:6:2} 0x${gw_hex:4:2} 0x${gw_hex:2:2} 0x${gw_hex:0:2})
 JVM_ARGS=${JVM_ARGS:--Xms512m -Xmx4096m}	# increase heap size by default
 
 fail() {
@@ -166,15 +163,7 @@ main() {
       [ "${STRESS_CPU}" ] && STRESS_CPU="--cpu ${STRESS_CPU}"
       $timeout \
         stress ${STRESS_CPU}
-      $(timeout_exit_status) || die $? "${RUN} failed: $?"
-      ;;
-
-    logger)
-      local slstress_log=/tmp/${HOSTNAME}-${gateway}.log
-
-      $timeout \
-        /usr/local/bin/logger.sh
-      $(timeout_exit_status) || die $? "${RUN} failed: $?"
+      timeout_exit_status || die $? "${RUN} failed: $?"
       ;;
 
     jmeter)
@@ -211,10 +200,11 @@ main() {
       ;; 
 
     mb)
-      local mb_log=/tmp/${HOSTNAME}-${gateway}.log
       local requests_awk=requests-mb.awk
-      local dir_out=${RUN}-${HOSTNAME:-${IDENTIFIER:-0}}
-      local targets_lst=/opt/wlg/targets.txt
+      local dir_out=${RESULTS_DIR:-${RUN}-${HOSTNAME:-${IDENTIFIER:-0}}}
+      local mb_log=$dir_out/${RUN}.log
+      local targets_list=/opt/wlg/targets.txt
+      local targets_json=/opt/wlg/targets.json
       local requests_json=$dir_out/requests.json
       local mb=/usr/local/bin/mb
       local env_out=$dir_out/environment	# for debugging
@@ -231,20 +221,27 @@ main() {
 
       local tls_session_reuse=$(use_option "true" MB_TLS_SESSION_REUSE n n)		# TLS session reuse is disabled by default
 
-      cat ${targets_lst} | grep -E "${MB_TARGETS:-.}" | awk \
-        -vtls_session_reuse=${tls_session_reuse:-false} \
-        -vka_requests=${MB_KA_REQUESTS:-100} -vclients=${MB_CONNS_PER_TARGET:-10} \
-        -vpath=${URL_PATH:-/} -vdelay_min=0 -vdelay_max=${MB_DELAY:-1000} \
-        -f ${requests_awk} > ${requests_json} || \
-        die $? "${RUN} failed: $?: unable to retrieve mb targets list \`targets'"
+      if test -r "${targets_json}" ; then
+        cp ${targets_json} ${requests_json}
+      elif test -r "${targets_list}" ; then
+        cat ${targets_list} | grep -E "${MB_TARGETS:-.}" | awk \
+          -vtls_session_reuse=${tls_session_reuse:-false} \
+          -vport=${MB_PORT:-80} \
+          -vka_requests=${MB_KA_REQUESTS:-100} -vclients=${MB_CONNS_PER_TARGET:-10} \
+          -vpath=${URL_PATH:-/} -vdelay_min=0 -vdelay_max=${MB_DELAY:-1000} \
+          -f ${requests_awk} > ${requests_json} || \
+          die $? "${RUN} failed: $?: unable to retrieve mb targets list \`targets'"
+      else
+        die 1 "${RUN} failed: 1: no targets provided."
+      fi
 
       $timeout \
         $mb \
           -d${RUN_TIME:-600} \
           -r${MB_RAMP_UP:-0} \
           -i ${requests_json} \
-          -o ${results_csv}.$$
-      $(timeout_exit_status) || die $? "${RUN} failed: $?"
+          -o ${results_csv}.$$ > $mb_log 2>&1
+      timeout_exit_status || die $? "${RUN} failed: $?"
       LC_ALL=C sort -t, -n -k1 ${results_csv}.$$ > ${results_csv}
       rm -f ${results_csv}.$$
       $graph_sh ${graph_dir} ${results_csv} $dir_out/graphs $interval
@@ -252,7 +249,7 @@ main() {
 
       have_server "${GUN}" && \
         scp -o StrictHostKeyChecking=false -rp ${dir_out} ${GUN}:${PBENCH_DIR}
-      $(timeout_exit_status) || die $? "${RUN} failed: scp: $?"
+      timeout_exit_status || die $? "${RUN} failed: scp: $?"
 
       announce_finish
       ;;
