@@ -5,12 +5,15 @@
     yum: 
       name: '*' 
       state: latest
-      exclude: redhat-release*,selinux-policy*,selinux-policy-targeted*
+      exclude: redhat-release*,selinux-policy*,selinux-policy-targeted*,initscripts*
 
   - name: yum update redhat-release-server
     yum:
-      name: 'redhat-release-server'
+      name: "{{ item }}"
       state: latest
+    with_items:
+      - redhat-release-server
+      - initscripts
     when: update_rhel_server | default(False) | bool
 
   - name: install packages
