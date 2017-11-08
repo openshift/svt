@@ -1,0 +1,45 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: collectd
+  labels:
+    name: collectd
+spec:
+  template:
+    metadata:
+      labels:
+        name: collectd
+    spec:
+      hostPID: true
+      hostNetwork: true
+      containers:
+      - image: collectd
+        name: collectd
+        imagePullPolicy: "Never"
+        env:
+          - name: graphite_host
+            valueFrom:
+              configMapKeyRef:
+                name: collectd-config
+                key: host
+          - name: graphite_prefix
+            valueFrom:
+              configMapKeyRef:
+                name: collectd-config
+                key: prefix
+          - name: collectd_interval
+            valueFrom:
+              configMapKeyRef:
+                name: collectd-config
+                key: interval
+        securityContext:
+          privileged: true
+        volumeMounts:
+          - name: proc-mount
+            mountPath: /mnt/proc
+      volumes:
+        - name: proc-mount
+          hostPath:
+            path: /proc
+      nodeSelector: 
+        type: pbench
