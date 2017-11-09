@@ -37,6 +37,19 @@
    - name: reset docker storage
      command: atomic storage reset
   when: atomic | default(False) | bool
+
+- block:
+   - name: format the partition
+     filesystem:
+       fstype: xfs
+       dev: "{{ docker_storage_device }}"
+
+   - name: update fstab
+     lineinfile:
+         path: /etc/fstab
+         line: "{{ docker_storage_device }} /var/lib/docker/overlay2                    xfs   defaults        0 0"
+         insertafter: EOF
+  when: docker_storage_driver == "overlay2" and not atomic | default(False) | bool
   
 - name: check that docker-storage has been deleted
   stat:
@@ -56,6 +69,16 @@
     owner: root
     group: root
     mode: 0644
+  when: atomic | default(False)
+
+- name: copy docker-storage-setup config
+  template:
+    src: etc/sysconfig/docker-storage-setup-rhel.j2
+    dest: /etc/sysconfig/docker-storage-setup
+    owner: root
+    group: root
+    mode: 0644
+  when: not atomic | default(False)
 
 - block:
    - name: restart machine
@@ -91,6 +114,32 @@
     regexp: '^OPTIONS'
     line: "OPTIONS='--selinux-enabled --log-opt max-size=10M --log-opt max-file=3 --signature-verification=false'"
 
+- block:
+    - name: restore default selinux security context
+      command: restorecon -R /var/lib/docker/overlay2
+
+    - name: autorelabel
+      file:
+        path: /.autorelabel
+        state: touch
+    
+    - name: restart machine
+      shell: sleep 2 && shutdown -r now "Shutdown triggered"
+      async: 1
+      poll: 0
+      ignore_errors: true
+
+    - name: waiting for server to come back
+      become: false
+      local_action: wait_for
+      args:
+        host: "{{ inventory_hostname }}"
+        port: 22
+        state: started
+        delay: 15
+        timeout: 600
+  when: docker_storage_driver == "overlay2" and not atomic | default(False) | bool 
+ 
 - name: enable docker service and start it
   systemd:
     name: docker
