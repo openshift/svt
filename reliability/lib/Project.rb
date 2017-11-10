@@ -45,7 +45,7 @@ module OpenshiftReliability
     end
 
     def access_app()
-      access_service()
+      #access_service()
       access_route()
     end
 
