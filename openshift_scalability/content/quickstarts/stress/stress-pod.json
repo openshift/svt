@@ -35,6 +35,10 @@
                                 "value": "${STRESS_CPU}"
                             },
                             {
+                                "name": "ROUTER_IP",
+                                "value": "${ROUTER_IP}"
+                            },
+                            {
                                 "name": "TARGET_HOST",
                                 "value": "${TARGET_HOST}"
                             },
@@ -87,20 +91,24 @@
                                 "value": "${URL_PATH}"
                             },
                             {
-                                "name": "ROUTER_IP",
-                                "value": "${ROUTER_IP}"
-                            },
-                            {
-                                "name": "PBENCH_DIR",
-                                "value": "${PBENCH_DIR}"
-                            },
-                            {
                                 "name": "GUN",
                                 "value": "${GUN}"
                             },
                             {
                                 "name": "GUN_PORT",
                                 "value": "${GUN_PORT}"
+                            },
+                            {   
+                                "name": "RESULTS_DIR",
+                                "value": "${RESULTS_DIR}"
+                            },
+                            {
+                                "name": "SERVER_RESULTS",
+                                "value": "${SERVER_RESULTS}"
+                            },
+                            {
+                                "name": "SERVER_RESULTS_DIR",
+                                "value": "${SERVER_RESULTS_DIR}"
                             },
                             {
                                 "name": "IDENTIFIER",
@@ -114,7 +122,11 @@
                         "volumeMounts": [
                             {
                                 "name": "targets",
-                                "mountPath": "/opt/wlg"
+                                "mountPath": "/opt/wlg/"
+                            },
+                            {
+                                "name": "ssh-key",
+                                "mountPath": "/opt/stress/.ssh/"
                             }
                         ],
                         "terminationMessagePath": "/dev/termination-log"
@@ -124,13 +136,28 @@
                     {
                         "name": "targets",
                         "configMap": {
-                            "name": "wlg-targets"
+                            "name": "wlg-targets",
+                            "optional": true,
+                            "items": [
+                            	{
+					"key": "wlg-targets",
+					"path": "targets.txt"
+				}
+                            ]
                         }
-                    }
-                ],
-                "imagePullSecrets": [
+                    },
                     {
-                        "name": "default-dockercfg-ukomu"
+                        "name": "ssh-key",
+                        "secret": {
+                            "secretName": "wlg-ssh-key",
+                            "optional": true,
+                            "items": [
+                            	{
+					"key": "wlg-ssh-key",
+					"path": "id_rsa"
+				}
+                            ]
+                        }
                     }
                 ],
                 "restartPolicy": "Never"
@@ -161,6 +188,12 @@
             "displayName": "STRESS CPU Threads",
             "description": "How many stress CPU worker threads to spawn",
             "value": "6"
+        },
+        {
+            "name": "ROUTER_IP",
+            "displayName": "Router IP",
+            "description": "The IP of the OpenShift router to direct requests through",
+            "value": "127.0.0.1"
         },
         {
             "name": "TARGET_HOST",
@@ -241,18 +274,6 @@
             "value": "/"
         },
         {
-            "name": "ROUTER_IP",
-            "displayName": "Router IP",
-            "description": "The IP of the OpenShift router to direct requests through",
-            "value": "127.0.0.1"
-        },
-        {
-            "name": "PBENCH_DIR",
-            "displayName": "The results directory of pbench on the GUN",
-            "description": "Where the results of the test will be copied to",
-            "value": "default"
-        },
-        {
             "name": "GUN",
             "displayName": "GUN IP Addr",
             "description": "The IP of the machine running cluster loader",
@@ -263,6 +284,24 @@
             "displayName": "GUN Port Number",
             "description": "The port number of the machine running cluster loader",
             "value": "9090"
+        },
+        {
+            "name": "RESULTS_DIR",
+            "displayName": "Test result directory",
+            "description": "Local/Container test results directory, if empty, default will be used",
+            "value": ""
+        },
+        {
+            "name": "SERVER_RESULTS",
+            "displayName": "ssh server to copy results to",
+            "description": "ssh server to copy results to: [user@]server",
+            "value": ""
+        },
+        {
+            "name": "SERVER_RESULTS_DIR",
+            "displayName": "Target directory on the ssh results server",
+            "description": "Target directory on the ssh results server: <SERVER_RESULTS>:<SERVER_RESULTS_DIR>",
+            "value": ""
         },
         {
             "name": "PLACEMENT",

@@ -79,9 +79,10 @@ have_server() {
 
 # Wait for all the pods to be in the Running state
 synchronize_pods() {
+  local connect_timeout=15		# 15 second connection timeout
   have_server "${GUN}" || return
 
-  while [ "$(curl -s ${url_gun_ws}/)" != "GOTIME" ] ; do 
+  while ! curl --connect-timeout ${connect_timeout:-15} -s "${url_gun_ws}/" ; do 
     sleep 5
     fail "${url_gun_ws} not ready"
   done
@@ -90,7 +91,7 @@ synchronize_pods() {
 announce_finish() {
   have_server "${GUN}" || return
 
-  curl -s ${url_gun_ws}/gotime/finish
+  curl -s ${url_gun_ws}/stop
 }
 
 get_cfg() {
@@ -167,6 +168,7 @@ main() {
       ;;
 
     jmeter)
+      local SERVER_RESULTS=${SERVER_RESULTS:-$GUN}
       IFS=$'\n'
       # Massage the host data passed in from OSE
       TARGET=($(echo $TARGET_HOST | sed 's/\:/\n/g'))
@@ -189,19 +191,22 @@ main() {
       results_filename=jmeter-"${HOSTNAME}"-"$(date +%y%m%d%H%M)" 
 
       # Call JMeter packed with ENV vars
-      jmeter -n -t test.jmx -Jnum=${NUM} -Jramp=${JMETER_RAMP} \
+      jmeter.sh -n -t test.jmx -Jnum=${NUM} -Jramp=${JMETER_RAMP} \
         -Jduration=${RUN_TIME} -Jtpm=${JMETER_TPS} \
         ${ips} \
         -Jport=${TARGET_PORT} \
         -Jresults_file="${results_filename}".jtl -l "${results_filename}".jtl \
         -j "${results_filename}".log -Jgun="${GUN}" || die $? "${RUN} failed: $?"
 
-      have_server "${GUN}" && scp -o StrictHostKeyChecking=false -p *.jtl *.log *.png ${GUN}:${PBENCH_DIR}
+      if have_server "${SERVER_RESULTS}" ; then
+        scp -o StrictHostKeyChecking=false -p *.jtl *.log *.png ${SERVER_RESULTS}:${SERVER_RESULTS_DIR:-~}
+      fi
       ;; 
 
     mb)
       local requests_awk=requests-mb.awk
       local dir_out=${RESULTS_DIR:-${RUN}-${HOSTNAME:-${IDENTIFIER:-0}}}
+      local SERVER_RESULTS=${SERVER_RESULTS:-$GUN}
       local mb_log=$dir_out/${RUN}.log
       local targets_list=/opt/wlg/targets.txt
       local targets_json=/opt/wlg/targets.json
@@ -247,11 +252,10 @@ main() {
       $graph_sh ${graph_dir} ${results_csv} $dir_out/graphs $interval
       xz -0 -T0 ${results_csv}
 
-      have_server "${GUN}" && \
-        scp -o StrictHostKeyChecking=false -rp ${dir_out} ${GUN}:${PBENCH_DIR}
+      if have_server "${SERVER_RESULTS}" ; then
+        scp -o StrictHostKeyChecking=false -rp ${dir_out} ${SERVER_RESULTS}:${SERVER_RESULTS_DIR:-~}
+      fi
       timeout_exit_status || die $? "${RUN} failed: scp: $?"
-
-      announce_finish
       ;;
 
     *)
