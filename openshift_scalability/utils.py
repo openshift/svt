@@ -81,7 +81,7 @@ def create_template(templatefile, num, parameters, globalvars):
     if globalvars["autogen"] and parameters:
         localhost, router_ip, jmeter_ips = get_route()
         extra_param = {}
-        extra_param['PBENCH_DIR'] = os.environ.get('benchmark_run_dir','/tmp/')
+        extra_param['SERVER_RESULTS_DIR'] = os.environ.get('benchmark_run_dir','/tmp/')
 
         gun_env = os.environ.get('GUN')
 
@@ -169,7 +169,7 @@ def create_wlg_targets(cm_targets, globalvars):
         oc_command("oc delete configmap %s -n %s" % (cm_targets, namespace), globalvars)
     except subprocess.CalledProcessError:
         pass
-    ret = oc_command("oc get routes --all-namespaces --no-headers | awk '{print $3}' | oc create configmap %s --from-file=targets.txt=/dev/stdin -n %s" %
+    ret = oc_command("oc get routes --all-namespaces --no-headers | awk '{print $3}' | oc create configmap %s --from-file=wlg-targets=/dev/stdin -n %s" %
           (cm_targets, namespace), globalvars)
     return ret
 
@@ -464,11 +464,11 @@ def autogen_pod_handler(globalvars):
 
    app = Flask(__name__)
 
-   @app.route("/")
+   @app.route("/start")
    def hello():
-       return "GOTIME"
+       return "Hello"
 
-   @app.route("/shutdown", methods=["POST"])
+   @app.route("/stop", methods=["POST"])
    def shutdown_server():
        func = request.environ.get("werkzeug.server.shutdown")
        if func is None:
