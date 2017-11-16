@@ -34,21 +34,24 @@ def test_pod_metrics(pod, hawkular_host, bearer, start_time, bucket_duration):
     url = "https://" + hawkular_host + \
           "/hawkular/metrics/gauges/" + pod["containername"] + "%2F" + pod["uid"] + "%2Fmemory%2Fusage/data" + \
           "?bucketDuration=" + bucket_duration + "&start=" + start_time
-    response = requests.get(url, headers=headers, verify=False)
-    if response.status_code == 200:
-        results = json.loads(response.text)
-        empty = 0
-        non_empty = 0
-        for result in results:
-            if result["empty"] == True:
-                empty += 1
-            else:
-                non_empty +=1
-        print "Test of metrics for: " + pod["namespace"] + "." + pod["name"] + " found empty: " + str(empty) + ", not empty: " + str(non_empty)
+    try:
+       response = requests.get(url, headers=headers, verify=False)
+       if response.status_code == 200:
+           results = json.loads(response.text)
+           empty = 0
+           non_empty = 0
+           for result in results:
+               if result["empty"] == True:
+                   empty += 1
+               else:
+                   non_empty +=1
+           print "Test of metrics for: " + pod["namespace"] + "." + pod["name"] + " found empty: " + str(empty) + ", not empty: " + str(non_empty)
 
-    else:
-        print "Metrics GET to " + url + " failed with status code: " + str(response.status_code)
-        print "Headers: " + str(headers)
+       else:
+           print "Metrics GET to " + url + " failed with status code: " + str(response.status_code)
+           print "Headers: " + str(headers)
+    except Exception as ex:
+       print(ex)
 
 
 
