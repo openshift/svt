@@ -71,6 +71,7 @@
       - glusterfs-fuse
       - iscsi-initiator-utils
       - deltarpm
+      - jq
 
   - name: install pbench internal
     yum: 
