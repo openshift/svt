@@ -1,0 +1,64 @@
+projects:
+  - num: 1
+    basename: apptest
+    tuning: default
+    templates:
+      - num: 1
+        file: ./content/quickstarts/cakephp/cakephp-mysql-pv.json
+        parameters:
+          - STORAGE_CLASS: "elclass"
+          - ACCESS_MODES: "ReadWriteOnce"
+          - VOLUME_CAPACITY: "5Gi"
+      - num: 1
+        file: ./content/quickstarts/django/django-postgresql-pv.json
+        parameters:
+          - STORAGE_CLASS: "elclass"
+          - ACCESS_MODES: "ReadWriteOnce"
+          - VOLUME_CAPACITY: "5Gi"
+      - num: 1
+        file: ./content/quickstarts/nodejs/nodejs-mongodb-pv.json
+        parameters:
+          - STORAGE_CLASS: "elclass"
+          - ACCESS_MODES: "ReadWriteOnce"
+          - VOLUME_CAPACITY: "5Gi"
+      - num: 1
+        file: ./content/quickstarts/dancer/dancer-mysql-pv.json
+        parameters:
+          - STORAGE_CLASS: "elclass"
+          - ACCESS_MODES: "ReadWriteOnce"
+          - VOLUME_CAPACITY: "5Gi"
+      - num: 1
+        file: ./content/quickstarts/daytrader/daytrader-postgresql-pv.json
+        parameters:
+          - STORAGE_CLASS: "elclass"
+          - ACCESS_MODES: "ReadWriteOnce"
+          - VOLUME_CAPACITY: "5Gi"
+      - num: 1
+        file: ./content/quickstarts/rails/rails-postgresql-pv.json
+        parametrs:
+          - STORAGE_CLASS: "elclass"
+          - ACCESS_MODES: "ReadWriteOnce"
+          - VOLUME_CAPACITY: "5Gi"
+      - num: 1
+        file: ./content/quickstarts/tomcat/tomcat8-mongodb-pv.json
+        parameters:
+          - STORAGE_CLASS: "elclass"
+          - ACCESS_MODES: "ReadWriteOnce"
+          - VOLUME_CAPACITY: "5Gi"
+      - num: 1
+        file: ./content/quickstarts/eap/eap64-mysql-pv.json
+        parameters:
+          - STORAGE_CLASS: "elclass"
+          - ACCESS_MODES: "ReadWriteOnce"
+          - VOLUME_CAPACITY: "5Gi"
+
+
+
+tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 1
+        pause: 0 min
+      rate_limit:
+        delay: 1000 ms
