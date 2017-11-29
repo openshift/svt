@@ -140,8 +140,15 @@ def set_pbench_remote(master, nodes):
         return nodes[0]
     elif len(nodes) == 2:
         return nodes[1]
-    
 
+def set_pbench_remote_two(master, nodes):
+    if nodes is None:
+        return 'None'
+    elif len(nodes) == 1:
+        return nodes[0]
+    elif len(nodes) == 2:
+        return nodes[0]
+        
 def set_sender_region(master, nodes):
     if nodes is None:
         return 'both'
@@ -213,6 +220,8 @@ def main():
     args = parse_args()
 
     pbench_remote = set_pbench_remote(args.test_master, args.test_nodes)
+    if len(args.test_nodes) == 2:
+          pbench_remote_two = set_pbench_remote_two(args.test_master, args.test_nodes)    
     pbench_base_label = set_pbench_label(args.test_type, args.test_nodes)
 
     sender_region = set_sender_region(args.test_master, args.test_nodes)
@@ -230,12 +239,14 @@ def main():
                               'uperf_pod_number': pod_number,
                               'oc_process_option': oc_process_option,
                               'pbench_label': pbench_label,
+                              'pbench_remote_two': pbench_remote_two,
                               'pbench_remote': pbench_remote}
             run_tests(args, inventory_vars, sender_host, receiver_host)
     else:
             inventory_vars = {'sender_host': sender_host,
                               'receiver_host': receiver_host,
                               'pbench_label': pbench_base_label,
+                              'pbench_remote_two': pbench_remote_two,
                               'pbench_remote': pbench_remote}
             run_tests(args, inventory_vars, sender_host, receiver_host)
 
