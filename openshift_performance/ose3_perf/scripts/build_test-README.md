@@ -76,6 +76,7 @@ One and only one of -a (run all builds), -f (run builds defined in json file) or
 - -a run all builds defined in the cluster (default behavior - be careful if you have lots of builds defined)
 - -f *file* run the builds specified in this JSON file each iteration.  See examples
 - -r *number* run *number* random builds each iteration
+- -w *number* start *number* threads to do builds
 
 #### Number of iterations
 
