@@ -44,6 +44,9 @@
   - name: Create directory for fio resources
     file: path=/tmp/origin state=directory
 
+  - name: Copy clear cache
+    copy: src=scripts/drop-cache.sh dest=/tmp/drop-cache.sh mode=0775
+
   - name: Copy fio scc
     copy: src=content/fio-scc.json dest=/tmp/origin/fio-scc.json
 
@@ -96,10 +99,16 @@
       --test-types=read,write,rw
       --clients={{ fio_servers }}
       --config=SEQ_IO
-      --samples=3
+      --samples=1
       --max-stddev=20
-      --block-sizes=4,128,4096
+      --block-sizes=4,16,64
       --job-file=/tmp/sequential_io.job
+      
+  - name: Copy pbench results
+    shell: pbench-copy-results
+
+  - name: Clear pbench results
+    shell: pbench-clear-results          
 
   - name: Run pbench-fio-random
     shell: >
@@ -107,9 +116,9 @@
       --test-types=randread,randwrite,randrw
       --clients={{ fio_servers }}
       --config=RAND_IO
-      --samples=3
+      --samples=1
       --max-stddev=20
-      --block-sizes=4,128,4096
+      --block-sizes=4,16,64
       --job-file=/tmp/random_io.job      
 
   - name: Copy pbench results
