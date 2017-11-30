@@ -5,8 +5,8 @@
 [all:vars]
 # qcow specific
 #ansible_ssh_private_key_file= $HOME/.ssh/id_rsa_perf
-ansible_ssh_private_key_file= 
-base_image_url=http://dseownload.url/rhel-guest-image-7.2-20160302.0.x86_64.qcow2
+ansible_ssh_private_key_file=
+base_image_url=http://download.url/rhel-guest-image-7.2-20160302.0.x86_64.qcow2
 base_image_filename=rhel-guest-image-7.2-20160302.0.x86_64.qcow2
 content_mirror=false
 # amount of GB to extend root partition by.  default size is 10G so extend that by an additional # gb:
@@ -41,10 +41,19 @@ update_kernel=false
 kernel_url=https://example.com
 # aos-ansible
 aos_ansible_path=/root/aos-ansible
-aos_ansible_inventory=/root/aos-ansible/inventory/hosts 
+aos_ansible_inventory=/root/aos-ansible/inventory/hosts
+# required for authentication for new registry registry.reg-aws.openshift.com:443
+registry_name=
+registry_username=
+registry_password=
 puddle_url=
 # comment image_version for 'latest'
 image_version=v3.3.0.30
-# image naming
+# image naming, set qcow_type to atomic for atomic images
+qcow_type=rhel
 # set openshift_version to the rpm version, sometimes with a trailing -N
 openshift_version=3.3.0.30-1
+# Set this variable to delete the oldest file when creating a new image.
+target_directory=
+# set atomic to True for atomic image
+atomic=False

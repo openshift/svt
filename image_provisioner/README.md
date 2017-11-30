@@ -16,38 +16,38 @@ The image provisioner will support AWS and OpenStack, and be automated with Ansi
 
 This repo includes a set of playbooks that work in two phases, depending on what type of image you're generating.
 
-1) generate an image (openstack/kvm/ec2)
-2) customize the image (done via ansible, so requires only ssh and passwordless keys)
+1. generate an image (openstack/kvm/ec2)
+2. customize the image (done via ansible, so requires only ssh and passwordless keys)
 
 Instructions:
 
-You need a system capable of running KVM guests, and *you have to be root* on that system to do some of the filesystem resizing operations.
-sudo did not seem to work, but I will eventually try to make this work.
+You need a system capable of running KVM guests, and *you have to be root* on that system to do some of the filesystem resizing operations (sudo did not seem to work, but we will eventually make this work).
 
-````
+```
+$ sudo su -
 # cd $HOME
 # git clone https://github.com/openshift/svt
 # cd svt/image_provisioner
-# customize the inventory file
+(customize the inventory file)
 # ansible-playbook -i inventory/test playbooks/setup-image.yaml
 ```
 
-This takes about 2 minutes.
+This takes about 2 minutes and results with an image in the /tmp directory.
 
+Next, import the qcow2 into local libvirt:
 ```
-Import the qcow2 into local libvirt:
 # export NAME=gold ; virt-install --import --name $NAME --ram 4096 --vcpus 4 --disk path=/tmp/rhel-guest-image-7.2-20160302.0.x86_64.qcow2_resized_2016-07-20.qcow2 --disk path=/tmp/cidata.iso,device=cdrom --network bridge=br0 --graphics vnc --check path_in_use=off --noautoconsole --os-variant rhel7
 ```
 
 Login and get IP address
 ```
-# virsh console gold 
+# virsh console gold
 ```
 
-Feed that IP into the next playbook which will run all the ansible roles in this repo.  Time depends on speed to pull images.  QE people have an arp cache snoop that will obviate this step eventually.
+Feed that IP into the next playbook which will run all the ansible roles in this repo.  Time depends on speed to pull images.  The QE team has an ARP cache snoop that will obviate this step eventually.
 
 ```
-# ansible-playbook -i inventory/test playbooks/provision_gold_images.yaml 
+# ansible-playbook -i inventory/test playbooks/provision_gold_images.yaml
 ```
 
 Shutdown the guest and sync it to your target environment.  Compression steps are optional.

@@ -1,15 +1,52 @@
 ---
+- name: stat svt repo
+  stat:
+    path: /root/svt
+  register: svt
+
 - name: clone svt repo
-  git: repo=https://github.com/openshift/svt dest=/root/svt update=yes
+  git: 
+    repo: https://github.com/openshift/svt 
+    dest: /root/svt 
+    update: yes
+  when: svt.stat.exists == False
+
+- name: stat svt-private repo
+  stat:
+    path: /root/svt-private
+  register: svt_private
 
 - name: clone svt-private repo
-  git: repo=https://{{ github_token }}@github.com/openshift/svt-private dest=/root/svt-private update=yes force=yes
+  git: 
+    repo: https://{{ github_token }}@github.com/openshift/svt-private 
+    dest: /root/svt-private 
+    update: yes 
+    force: yes
+  when: svt_private.stat.exists == False
+
+- name: stat openshift-ansible repo
+  stat:
+    path: /root/openshift-ansible 
+  register: openshift_ansible
 
 - name: clone openshift-ansible repo
-  git: repo=https://@github.com/openshift/openshift-ansible dest=/root/openshift-ansible update=yes
-
+  git: 
+    repo: https://@github.com/openshift/openshift-ansible 
+    dest: /root/openshift-ansible 
+    update: yes
+  when: openshift_ansible.stat.exists == False
+  
 #- name: clone kubernetes repo
 #  git: repo=https://github.com/kubernetes/kubernetes dest=/root/kubernetes/kubernetes update=yes
 
+- name: stat kubernetes contrib repo
+  stat:
+    path: /root/kubernetes/contrib
+  register: kube_contrib
+
 - name: clone kubernetes contrib repo
-  git: repo=https://github.com/kubernetes/contrib dest=/root/kubernetes/contrib update=yes
+  git: 
+    repo: https://github.com/kubernetes/contrib 
+    dest: /root/kubernetes/contrib 
+    update: yes
+  when: kube_contrib.stat.exists == False

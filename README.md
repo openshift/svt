@@ -8,6 +8,9 @@ Unsurprisingly, performance analysis and tuning in the container and container-o
 
 Further tests quantify application performance when running in a container hosted by OpenShift, as well as measure reliability over time, searching for things like memory leaks.
 
+## IMPORTANT 
+While the tests in this repository are used by the Red Hat team to measure performance, these are **not supported in any OpenShift environments**, and Red Hat support services cannot provide assistance with any problems.
+
 # How this repository is organized:
 The hierarchy of this repository is as follows:
 
@@ -23,4 +26,27 @@ The hierarchy of this repository is as follows:
 └── reliability: Run tests over long periods of time (weeks), cycle object quantity up and down.
 ```
 
-Feedback, issues and pull requests happily accepted!
+# Dockerfiles and Dependencies
+Certain tests use the Quickstarts from the `openshift/origin` repository. Ensure that they are available in your `openshift` project environment before using any of the tests:
+
+https://github.com/openshift/origin/tree/master/examples/quickstarts
+
+Ensure also that the requisite image streams are available in your `openshift` project environment:
+
+https://github.com/openshift/origin/tree/master/examples/image-streams
+
+Also, for disconnected installations, the following Dockerfiles should be located somewhere in the target installation machines:
+
+```
+./reliability/Dockerfile
+./openshift_scalability/content/centos-stress/Dockerfile
+./openshift_scalability/content/logtest/Dockerfile
+./dockerfiles/Dockerfile
+./storage/fio/Dockerfile
+./networking/synthetic/stac-s2i-builder-image/Dockerfile
+./networking/synthetic/uperf/Dockerfile
+```
+
+# Feedback and Issues
+
+Feedback, issues and pull requests will be happily accepted. Feel free to submit any pull requests or issues.

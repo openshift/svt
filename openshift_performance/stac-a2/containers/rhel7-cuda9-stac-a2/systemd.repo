@@ -1,0 +1,7 @@
+[systemd]
+name=systemd
+baseurl=file:///root/systemd-219-42_4.1
+enabled=1
+gpgcheck=0
+priority=0
+skip_if_unavailable=1

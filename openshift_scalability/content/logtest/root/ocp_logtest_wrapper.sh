@@ -2,3 +2,4 @@
 
 params=`cat /var/lib/svt/ocp_logtest.cfg`
 python -u ./ocp_logtest.py ${params}
+sleep 1d

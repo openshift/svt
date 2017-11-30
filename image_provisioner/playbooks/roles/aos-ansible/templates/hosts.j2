@@ -16,7 +16,21 @@ aos_repo={{ puddle_url }}
 #qe_repo_image_versions=v3.1.1.6
 #qe_repo_image_versions=v3.1.1.900
 qe_repo_image_versions={{ image_version }}
-docker_login=no
+
+# New variables needed to set up the docker login and required
+# authentication to registry, for image pulls:
+docker_login=yes
+reg_name={{ registry_name }}
+reg_username={{ registry_username }}
+reg_password={{ registry_password }}
+## do not add the trailing slash:
+reg_openshift_prefix={{ registry_name }}/openshift3
+# Pulling s2i images from registry.access.redhat.com:
+reg_s2i_prefix=registry.access.redhat.com/openshift3
 
 [masters]
+{% if not atomic %}
 localhost
+{% else %}
+{{ inventory_hostname }}
+{% endif %}

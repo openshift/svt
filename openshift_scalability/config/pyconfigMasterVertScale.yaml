@@ -1,0 +1,34 @@
+projects:
+  - num: 5
+    basename: clusterproject
+    templates:
+      -
+        num: 3
+        file: ./content/build-config-template.json
+      -
+        num: 6
+        file: ./content/build-template.json
+      -
+        num: 1
+        file: ./content/image-stream-template.json
+      - 
+        num: 2   
+        file: ./content/deployment-config-1rep-template.json
+        parameters:
+          -
+            ENV_VALUE: "asodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij12"
+      -
+        num: 1
+        file: ./content/deployment-config-2rep-template.json
+        parameters:
+          -
+            ENV_VALUE: "asodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij12"
+      -
+        num: 20
+        file: ./content/ssh-secret-template.json
+      -
+        num: 3
+        file: ./content/route-template.json
+      # rcs and services are implemented in deployments.
+quotas:
+  - name: default

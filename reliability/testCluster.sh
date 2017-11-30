@@ -79,20 +79,27 @@ function access_applications
 }
 
 oc new-project cakephp
+oc label namespace cakephp --overwrite purpose=rel 
 oc new-app --template=cakephp-mysql-example    
 oc new-project eap
+oc label namespace eap --overwrite purpose=rel
 oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/secrets/eap-app-secret.json
 oc new-app --template=eap64-mysql-s2i
 oc new-project dancer
+oc label namespace dancer --overwrite purpose=rel
 oc new-app --template=dancer-mysql-example
 oc new-project ruby
+oc label namespace ruby --overwrite purpose=rel
 oc new-app --template=rails-postgresql-example
 oc new-project django
+oc label namespace django --overwrite purpose=rel
 oc new-app --template=django-psql-example
 oc new-project nodejs
+oc label namespace nodejs --overwrite purpose=rel
 oc new-app --template=nodejs-mongodb-example
 
 wait_for_deployment
 access_applications
 
+oc project default
 echo "######################### SUCCESS : COMPLETE ##########################"

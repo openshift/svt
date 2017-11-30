@@ -1,15 +1,39 @@
 ---
-- name: customize aos-ansible inventory file
-  template: src=hosts.j2 dest={{ aos_ansible_inventory }}
+- block:
+   - name: customize aos-ansible inventory file
+     template: 
+       src: hosts.j2 
+       dest: "{{ aos_ansible_inventory }}"
+ 
+   - name: run aos-ansible
+     shell: ansible-playbook -i {{ aos_ansible_inventory }} {{ aos_ansible_path }}/playbooks/aws_install_prep.yml --connection=local
+  when: not atomic | default(False) | bool  
 
-- name: run aos-ansible
-  shell: ansible-playbook -i {{ aos_ansible_inventory }} {{ aos_ansible_path }}/playbooks/aws_install_prep.yml --connection=local
+- block:
+   - name: customize aos-ansible inventory file
+     template: 
+       src: hosts.j2 
+       dest: "{{ aos_ansible_inventory }}"
+
+   - name: run aos-ansible
+     shell: ansible-playbook -i {{ aos_ansible_inventory }} {{ aos_ansible_path }}/playbooks/aws_install_prep.yml
+  when: atomic | default(False) | bool
+  delegate_to: localhost 
 
 - name: add iptables rule for cluster-loader
-  iptables: chain=INPUT protocol=tcp match=tcp ctstate=NEW destination_port=9090 jump=ACCEPT
+  iptables: 
+    chain: INPUT 
+    protocol: tcp 
+    match: tcp 
+    ctstate: NEW 
+    destination_port: 9090 
+    jump: ACCEPT
 
 - name: save iptables rules
   shell: iptables-save > /etc/sysconfig/iptables
 
 - name: enable iptables service
-  service: name=iptables state=started enabled=yes
+  service: 
+    name: iptables 
+    state: started 
+    enabled: yes

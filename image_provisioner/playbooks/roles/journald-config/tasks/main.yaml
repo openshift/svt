@@ -1,0 +1,56 @@
+---
+- name: Stop and disable rsyslog
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  with_items:
+    - rsyslog
+  when: not atomic | default(False) | bool
+
+- name: Enable journald persistence
+  ini_file:
+    dest: "/etc/systemd/journald.conf"
+    section: Journal
+    option: Storage
+    value: "Persistent"
+    no_extra_spaces: yes
+
+- name: Increase journald rate limit burst to 10000
+  ini_file:
+    dest: "/etc/systemd/journald.conf"
+    section: Journal
+    option: RateLimitBurst
+    value: "10000"
+    no_extra_spaces: yes
+
+- name: Decrease journald rate limit interval to 1 sec
+  ini_file:
+    dest: "/etc/systemd/journald.conf"
+    section: Journal
+    option: RateLimitIntervalSec
+    value: "1s"
+    no_extra_spaces: yes
+
+- name: Decrease journald rate limit interval to 1 sec
+  ini_file:
+    dest: "/etc/systemd/journald.conf"
+    section: Journal
+    option: RateLimitInterval
+    value: "1s"
+    no_extra_spaces: yes
+
+- name: Create /var/log/journal
+  file:
+    path: /var/log/journal
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+ 
+- name: Restart journald
+  systemd:
+    name: "{{ item }}"
+    state: restarted
+  with_items:
+    - systemd-journald

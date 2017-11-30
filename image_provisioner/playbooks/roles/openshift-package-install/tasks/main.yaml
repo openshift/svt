@@ -2,7 +2,6 @@
 - name: install openshift packages
   yum: name={{ item }} state=latest
   with_items:
-    - atomic-openshift-master
     - atomic-openshift-sdn-ovs
     - atomic-openshift-tests
     - atomic-openshift-node
