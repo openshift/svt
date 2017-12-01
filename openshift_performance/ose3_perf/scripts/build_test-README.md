@@ -4,6 +4,12 @@
 The build_test.py scripts is a flexible tool for driving builds in OpenShift.  It can execute builds concurrently, sequentially, randomly or in arbitrary combinations.
 
 
+### Install [pytimeparse](https://github.com/wroberts/pytimeparse) module
+
+```sh
+$ pip install pytimeparse
+```
+
 ### Setup
 
 **Projects and applicatons:**  It is recommended that [cluster-loader](https://github.com/openshift/svt/blob/master/openshift_scalability/README.md) be used to create projects, deployments, build configurations, etc.   **build_test** is a complimentary tool that can run the builds created by **cluster_loader**.
