@@ -26,7 +26,7 @@ PLACEMENT: Value of the placement tag to control which nodes the pods run on, de
 
 2. Run **cluster_loader** against the file:
 
-**./cluster_loader.py -f config/ocp-logtest.yaml**
+**./cluster-loader.py -f config/ocp-logtest.yaml**
 
 3. Verify by listing the logtest pods and tailing the logs
 ```
@@ -48,10 +48,35 @@ login to the host where the pod is running and verify the logs are going to jour
 - *--fixed-line* true or false - repeat the same line of text over and over or use new text for each line. Default is false
 - *--rate* lines per minute. Default is 10.0
 - *--file* file to read text from.  A sample.txt is included in the default docker image.  If running in a pod, a new image with the file should be built. No default.
+- *--journal* log to syslog/journald instead of to stdout.   See notes below for restrictions on using this.
 
 If no parameters are specified, it is equivalent to:
 
 ```python ocp_logtest.py --text-type random --line-length 100 --word-length 9 --fixed-line false --rate 10.0 --time 0```
+
+### Logging to syslog/journald
+When using the -j/--journal flag to log to syslog, the pod must be running as privileged to mount /dev/log and write to it.
+
+An additional yaml configuration for cluster_loader has been provided to create pods which run as privileged is now provided.  To use it follow the directions below.   The pods will not start immediately as the scc for the default user in the project must be updated.
+
+1. Edit **svt/openshift_scalability/config/ocp-logtest.py** if you want to change the parameters for the logtest pods - parameters as above.
+
+2. Run **cluster_loader** against the file:
+
+**./cluster-loader.py -f config/ocp-syslog-logtest.yaml**
+
+3. Update the scc for ALL projects created in step 2 and start the desired number of logging pods
+
+```
+oc project logtest0
+
+oc adm policy add-scc-to-user privileged -z default
+
+oc scale --replicas=3 rc/centos-logtest
+
+```
+
+**NOTE:** Giving the default system account the privileged scc has security implications.  The instructions here are only intended for test or sandbox systems.
 
 ### Examples
 
