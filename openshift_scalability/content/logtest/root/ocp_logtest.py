@@ -4,6 +4,8 @@ import string
 import time
 import random
 import socket
+import logging
+import logging.handlers
 
 
 fixed_line = ""
@@ -90,6 +92,7 @@ def create_message(seq_number, msg) :
     global hostname
     return hostname + " : " + str(seq_number) + " : " + msg
 
+
 # Fixed time period, in seconds
 def generate_for_time():
     now = time.time()
@@ -97,7 +100,7 @@ def generate_for_time():
     number_generated = 0
     while now <= then :
         number_generated += 1
-        print create_message(number_generated, single_line())
+        logger.info( create_message(number_generated, single_line()) )
         delay(options.sleep_time, number_generated)
         now = time.time()
 
@@ -114,7 +117,7 @@ def generate_num_lines() :
     number_generated = 0
     while (number_generated < number_to_generate) :
         number_generated += 1
-        print create_message(number_generated, single_line())
+        logger.info( create_message(number_generated, single_line()) )
         delay(options.sleep_time, number_generated)
 
 def generate_messages() :
@@ -126,6 +129,18 @@ def generate_messages() :
         generate_for_time()
     else:
         generate_num_lines()
+
+def init_logger(my_logger):
+    my_logger.setLevel(logging.INFO)
+
+    if options.journal :
+        jh = logging.handlers.SysLogHandler(address = '/dev/log')
+        my_logger.addHandler(jh)
+    else :
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        sh = logging.StreamHandler()
+        sh.setFormatter(formatter)
+        my_logger.addHandler(sh)
 
 
 if __name__ ==  "__main__":
@@ -141,6 +156,8 @@ if __name__ ==  "__main__":
                       help="the same line is repeated if true, variable line content if false")
     parser.add_option("-f","--file", dest="file", default="",
                      help="file for input text")
+    parser.add_option("-j","--journal", dest="journal", action="store_true", default=False,
+                      help="use logger to log messages to journald instead of stdout")
     parser.add_option("-r", "--rate", dest="rate", type="float", default=10.0,
                      help="rate in lines per minute")
     parser.add_option("-n", "--num-lines", dest="num_lines", type="int", default=0,
@@ -156,5 +173,9 @@ if __name__ ==  "__main__":
     options.sleep_time = 0.0
     if options.rate > 0.0 : 
         options.sleep_time = 60.0/options.rate
+
+    logger = logging.getLogger('SVTLogger')
+    init_logger(logger)
+
 
     generate_messages()

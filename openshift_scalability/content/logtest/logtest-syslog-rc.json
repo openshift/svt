@@ -1,0 +1,116 @@
+{
+    "apiVersion": "v1",
+    "kind": "Template",
+    "metadata": {
+        "name": "centos-logtest-template"
+    },
+    "objects": [
+        {
+            "apiVersion": "v1",
+            "data": {
+                "ocp_logtest.cfg": "${INITIAL_FLAGS}"
+            },
+            "kind": "ConfigMap",
+            "metadata": {
+                "name": "logtest-config"
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "ReplicationController",
+            "metadata": {
+                "name": "centos-logtest",
+                "labels": {
+                    "run": "centos-logtest",
+                    "test": "centos-logtest"
+                }
+            },
+            "spec": {
+                "replicas": "${REPLICAS}",
+                "template": {
+                    "metadata": {
+                        "generateName": "centos-logtest-",
+                        "labels": {
+                            "run": "centos-logtest",
+                            "test": "centos-logtest"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "env": [
+                                ],
+                                "image": "${LOGTEST_IMAGE}",
+                                "imagePullPolicy": "Always",
+                                "name": "centos-logtest",
+                                "resources": {},
+                                "securityContext": {
+                                    "capabilities": {},
+                                    "privileged": true
+                                },
+                                "volumeMounts": [
+                                    {
+                                        "name": "config",
+                                        "mountPath": "/var/lib/svt"
+                                    },
+                                    {
+                                        "name": "devlog",
+                                        "mountPath": "/dev/log"
+                                    }
+                                ],
+                                "terminationMessagePath": "/dev/termination-log"
+                            }
+                        ],
+                        "volumes": [
+                            {
+                                "name": "config",
+                                "configMap": {
+                                    "name": "logtest-config"
+                                }
+                            },
+                            {
+                               "hostPath": {
+                                    "path": "/dev/log"
+                               },
+                               "name": "devlog"
+                            }
+                        ],
+                        "imagePullSecrets": [
+                            {
+                                "name": "default-dockercfg-ukomu"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+    ],
+    "parameters": [
+        {
+            "name": "LOGTEST_IMAGE",
+            "displayName": "logtest image",
+            "value": "docker.io/mffiedler/ocp-logtest:latest"
+        },
+	{
+	    "name": "INITIAL_FLAGS",
+	    "description": "The initial flags to pass to ocp_logtest.py",
+	    "value": "--num-lines 0 --line-length 200 --word-length 9 --rate 60 --fixed-line\n"
+	},
+        {
+            "name": "IDENTIFIER",
+            "displayName": "identifier",
+            "value": "1"
+        },
+        {
+            "name": "REPLICAS",
+            "displayName": "Replicas",
+            "value": "1"
+        },
+        {
+            "name": "PLACEMENT",
+            "displayName": "Placement",
+            "value": "logtest"
+        }
+    ]
+}
+
