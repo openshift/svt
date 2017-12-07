@@ -29,13 +29,26 @@
     path: /root/openshift-ansible 
   register: openshift_ansible
 
-- name: clone openshift-ansible repo
-  git: 
-    repo: https://@github.com/openshift/openshift-ansible 
-    dest: /root/openshift-ansible 
-    update: yes
+- block:
+   - name: set openshift-ansible branch to be cloned
+     set_fact:
+       openshift_ansible_branch: release-{{ openshift_version.split('.')[0] }}.{{ openshift_version.split('.')[1] }}
+
+   - name: clone openshift-ansible repo
+     git: 
+       repo: https://@github.com/openshift/openshift-ansible 
+       dest: /root/openshift-ansible 
+       update: yes
+       version: "{{ openshift_ansible_branch }}"
+  rescue:
+   - name: clone master branch of openshift-ansible
+     git:
+       repo: https://@github.com/openshift/openshift-ansible
+       dest: /root/openshift-ansible
+       update: yes
+       version: master
   when: openshift_ansible.stat.exists == False
-  
+
 #- name: clone kubernetes repo
 #  git: repo=https://github.com/kubernetes/kubernetes dest=/root/kubernetes/kubernetes update=yes
 
