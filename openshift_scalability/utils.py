@@ -362,7 +362,7 @@ def create_user(usercfg, globalvars):
             subprocess.check_call("touch " + passfile, shell = True)
         subprocess.check_call("htpasswd -b " + passfile + " " + name + " " + \
                         password, shell=True)
-        oc_command("oadm policy add-role-to-user " + role + " " + name + \
+        oc_command("oc policy add-role-to-user " + role + " " + name + \
                         " -n " + namespace, globalvars)
         print "Created User: " + name + " :: " + "Project: " + namespace + \
               " :: " + "role: " + role
