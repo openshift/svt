@@ -39,7 +39,7 @@
       },
       "spec": {
         "serviceName": "server${IDENTIFIER}",
-        "replicas": "${REPLICAS}",
+        "replicas": "${{REPLICAS}}",
         "template": {
           "metadata": {
             "labels": {
