@@ -22,7 +22,7 @@ The hierarchy of this repository is as follows:
 ├── image_provisioner:  Ansible playbooks for building AMI and qcow2 images with OpenShift rpms and Docker images baked in.
 ├── networking: Performance tests for the OpenShift SDN and kube-proxy.
 ├── openshift_performance:  Performance tests for container build parallelism, projects and persistent storage (EBS, Ceph, Gluster and NFS)
-├── openshift_scalability: Home of the infamous "cluster-loader", details in openshift_scalability/README.md
+├── openshift_scalability: [DEPRECATED, moved to Origin Extended Tests] Home of the infamous "cluster-loader", details in openshift_scalability/README.md
 └── reliability: Run tests over long periods of time (weeks), cycle object quantity up and down.
 ```
 

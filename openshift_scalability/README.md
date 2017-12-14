@@ -1,3 +1,13 @@
+# DEPRECATION WARNING FOR PYTHON CLUSTER LOADER
+
+The python version of cluster-loader is DEPRECATED in favor of a re-implementation in golang, which is part of OpenShift Origin Extended Tests as of version 3.7.   cluster-loader is now included in the OpenShift product as part of the atomic-openshift-tests RPM.
+
+Documentation on how to use the new golang version of cluster-loader is here:
+
+https://docs.openshift.com/container-platform/3.7/scaling_performance/using_cluster_loader.html
+
+The python version of cluster-loader will be deprecated as soon as all capabilities are re-implemented in the golang version.
+
 # About OSE-Cluster-Loader
 This package is written in python and can be used to create an environment on top of an OpenShift installation. So, basically you can create any number of projects, each having any number of following objects -- ReplicationController, Pods, Services, etc..
 Note : As of now it supports only - Pods, Replicationcontrollers, Services, and Templates.
