@@ -9,7 +9,8 @@ PARALLEL_NODES=5
 PARALLEL_TESTS="EmptyDir|Conformance"
 PARALLEL_SKIP="Serial|Flaky|Disruptive|Slow|should be applied to XFS filesystem when a pod is created"
 # Need to debug
-PARALLEL_SKIP="Prometheus|" + $PARALLEL_SKIP
+PARALLEL_SKIP="Prometheus|"$PARALLEL_SKIP
+echo $PARALLEL_SKIP
 SERIAL_TESTS="Serial"
 SERIAL_SKIP="Flaky|Disruptive|Slow" 
 
