@@ -15,6 +15,11 @@ The following uperf tests are run:
 - The ssh-able hostnames given to this script match their node name in OpenShift
 - [pbench](https://github.com/distributed-system-analysis/pbench) is installed and configured on all hosts
 
+## Requirements
+```
+yum install ansible
+pip install ansible
+```
 
 ## Running the test
 The test is run using the network-test.py script.
