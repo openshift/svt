@@ -67,6 +67,7 @@
   - name: Create fio pods
     shell: >
       oc process
+      -p VOLUME_CAPACITY=1000Gi
       -p ROLE=receiver      
       -p REGION={{ receiver_region }}
       -f /tmp/origin/fio-pod-pv.json |
@@ -103,6 +104,7 @@
       --max-stddev=20
       --block-sizes=4,16,64
       --job-file=/tmp/sequential_io.job
+      --pre-iteration-script=/tmp/drop-cache.sh
       
   - name: Copy pbench results
     shell: pbench-copy-results
@@ -120,6 +122,7 @@
       --max-stddev=20
       --block-sizes=4,16,64
       --job-file=/tmp/random_io.job      
+      --pre-iteration-script=/tmp/drop-cache.sh
 
   - name: Copy pbench results
     shell: pbench-copy-results

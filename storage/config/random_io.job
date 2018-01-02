@@ -9,7 +9,8 @@ runtime=3600
 clocksource=clock_gettime
 ramp_time=300
 startdelay=5
-filename=/var/lib/fio/test
+directory=/var/lib/fio
+filename_format=test.$jobname.$jobnum.$filenum
 size=5g
 write_bw_log=fio
 write_iops_log=fio
@@ -22,4 +23,5 @@ log_hist_msec=60000
 [fio-1]
 bs=4k
 rw=randread
+nrfiles=16
 numjobs=1
