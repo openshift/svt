@@ -4,6 +4,13 @@
   args:
     creates: /opt/pbench-agent/config/pbench-agent.cfg
 
+- name: uncomment line in pbench-agent.cfg file for RHEL pandas-package
+  lineinfile:
+    path: /opt/pbench-agent/config/pbench-agent.cfg
+    regexp: '^# pandas-package = python-pandas'
+    line: "pandas-package = python-pandas"
+  when: not atomic | default(False) | bool
+
 - name: configure pbench target
   replace:
     dest: /opt/pbench-agent/config/pbench-agent.cfg
