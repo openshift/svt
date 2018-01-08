@@ -112,7 +112,7 @@
   lineinfile:
     path: /etc/sysconfig/docker
     regexp: '^OPTIONS'
-    line: "OPTIONS='--selinux-enabled --log-opt max-size=10M --log-opt max-file=3 --signature-verification=false'"
+    line: "OPTIONS='--selinux-enabled --log-opt max-size=100M --log-opt max-file=3 --signature-verification=false'"
 
 - block:
     - name: restore default selinux security context
