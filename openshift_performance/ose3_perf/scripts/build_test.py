@@ -215,6 +215,11 @@ def run_builds(executor, all_builds):
 
         logger.info("All threads started, starting builds")
         wait(futures)
+
+        with ThreadPoolExecutor(max_workers=global_config["worker"]) \
+                as executor1:
+            check_build_status(executor1)
+
         time.sleep(int(global_config["sleep_time"]))
 
 
@@ -312,9 +317,6 @@ def start():
                 as executor:
             run_builds(executor, all_builds)
 
-        with ThreadPoolExecutor(max_workers=global_config["worker"]) \
-                as executor1:
-            check_build_status(executor1)
 
     # output stats
     total_all_builds = 0
@@ -330,8 +332,9 @@ def start():
     for build in all_builds:
         idx = build["namespace"] + ":" + build["name"]
         num = global_build_stats[idx]["num"]
-        logger.info("Build: " + idx)
+
         if num > 0:
+            logger.info("Build: " + idx)
             logger.info("\tTotal builds: " +
                         str(global_build_stats[idx]["num"]) +
                         " Failures: " + str(global_build_stats[idx]["failed"]))
@@ -361,7 +364,8 @@ def start():
 
             total_builds += global_build_stats[idx]["num"]
         else:
-            logger.info("\tNo successful builds")
+            logger.debug(idx + ": No successful builds")
+
         total_failed += global_build_stats[idx]["failed"]
         total_invalid += global_build_stats[idx]["invalid"]
 
