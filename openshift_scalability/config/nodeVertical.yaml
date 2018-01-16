@@ -4,7 +4,7 @@ projects:
     ifexists: delete
     tuning: default
     pods:
-      - total: 1000
+      - total: 500
       - num: 100
         image: gcr.io/google_containers/pause-amd64:3.0
         basename: pausepods

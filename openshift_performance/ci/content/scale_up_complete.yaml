@@ -9,7 +9,7 @@
     - name: Create redhat user
       shell: htpasswd -b /etc/origin/htpasswd redhat redhat
     - name: Give redhat user cluster-admin
-      shell: oadm policy add-cluster-role-to-user cluster-admin redhat
+      shell: oc adm policy add-cluster-role-to-user cluster-admin redhat
     - name: Run cluster loader to create all projects
       args: 
          chdir: /root/svt/openshift_scalability

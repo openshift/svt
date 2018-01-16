@@ -57,9 +57,8 @@ echo -e "Creating a new /root/.kube dir on this host "
 mkdir -p /root/.kube
 ls -ltr /root/.kube/config
 
-echo -e "SCP the /root/.kube/config file from Master node ${MASTER_PUBLIC_DNS} to this Test Client host"
-scp root@${MASTER_PUBLIC_DNS}:/root/.kube/config /root/.kube/config
-## may want to copy first: /etc/origin/master/admin.kubeconfig to /root/.kube/config
+echo -e "SCP the /etc/origin/master/admin.kubeconfig file from Master node ${MASTER_PUBLIC_DNS} to this Test Client host"
+scp root@${MASTER_PUBLIC_DNS}:/etc/origin/master/admin.kubeconfig /root/.kube/config
 echo -e "Checking the newly copied /root/.kube/config file on this host: \n"
 
 ls -ltr /root/.kube/config
