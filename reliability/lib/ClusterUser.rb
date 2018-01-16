@@ -34,5 +34,17 @@ module OpenshiftReliability
       #deleting identity also because if the same user is created it wont have problem
       exec("oc delete identity htpasswd_auth:#{user_name}")
     end
+
+    def create_ds(project_name)
+      exec("oc create -f /root/svt/reliability/daemonset-pause-test.yaml -n #{project_name}")
+    end
+
+    def label_ds_nodes()
+      exec ("oc label nodes -l region=primary --overwrite ds-node=true")
+    end
+
+    def unlabel_ds_nodes()
+      exec ("oc label nodes -l region=primary --overwrite ds-node=false")
+    end
   end
 end

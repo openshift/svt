@@ -4,6 +4,7 @@ require 'User'
 module OpenshiftReliability
 
   class Project
+    @@admin=nil
     attr_reader :name, :template 
     def initialize(name,user, template:"cakephp-mysql-example")
       @name = name
@@ -16,6 +17,9 @@ module OpenshiftReliability
       @rcs=[]
       @routes=[]
       @services=[]
+      if @@admin.nil?
+        @@admin=ClusterUser.new()
+      end
     end
     def user_name
       return @user.name
@@ -125,7 +129,47 @@ module OpenshiftReliability
       @user.exec("oc new-app --template=#{@template} --labels=\"purpose=reliability\"")
       wait_until_ready
     end
-  
+
+    def create_ds()
+      @@admin.create_ds(@name)
+      @@admin.label_ds_nodes()
+    end
+
+    def scale_up_ds()
+      @@admin.label_ds_nodes()
+      wait_minute_num=12
+      i = 0
+      while i < wait_minute_num
+        res=@user.exec("oc get pods -n #{@name} --no-headers")
+        if res[:output].scan(/(?=Running)/).count == 2
+          $logger.info("DS Scale up complete")
+          return
+        else
+          sleep 10
+          i = i + 1
+        end
+     end
+      $logger.info("DS Scale up failed")
+    end
+
+    def scale_down_ds()
+      @@admin.unlabel_ds_nodes()
+      wait_minute_num=12
+      i = 0
+      while i < wait_minute_num
+        res=@user.exec("oc get pods -n #{@name} --no-headers")
+        if res[:output].lines.count == 0
+          $logger.info("DS Scale down complete")
+          return
+        else
+          sleep 10
+          i = i + 1
+          next
+        end
+      end
+      $logger.info("DS Scale down failed")
+    end
+
     def start_build()
       if @bcs.length == 0
          get_bc()
