@@ -25,18 +25,12 @@ module OpenshiftReliability
     end
 
     def create(numstr)
-
-#      if $config.authtype == 'htpasswd'
-         $logger.info " Create number users."
-         number=to_digit(numstr)
-         create_htpusers(number)
-#      else
-#         $logger.info " skip user creatation now."
-#      end
+      $logger.info " Create number users."
+      number=to_digit(numstr)
+      create_users(number)
     end
 
-    def create_htpusers(number)
-
+    def create_users(number)
       host=$config.master
       newusers=[]
       defaultpassword="redhat"
