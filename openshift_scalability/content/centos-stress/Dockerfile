@@ -2,7 +2,8 @@
 FROM centos:7
 
 ### Setup user for build execution and application runtime
-ENV APP_ROOT=/opt/stress PATH=${APP_ROOT}/bin:${PATH} HOME=${APP_ROOT}
+ENV APP_ROOT=/opt/stress
+ENV PATH=${APP_ROOT}/bin:${PATH} HOME=${APP_ROOT}
 WORKDIR ${APP_ROOT}
 COPY root ./
 
