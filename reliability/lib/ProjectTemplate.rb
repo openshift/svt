@@ -115,6 +115,7 @@ module OpenshiftReliability
       end
   
       @user.exec("oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/secrets/eap-app-secret.json")
+      @user.exec("oc create -f /root/svt/reliability/eap-secret.json")
       @user.exec("oc new-app --template=eap64-mysql-s2i")
       wait_until_ready
     end
