@@ -1,6 +1,6 @@
 projects:
   - num: 50
-    basename: proj
+    basename: svt-nodejs-
     ifexists: default
     tuning: default
 

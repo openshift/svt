@@ -24,7 +24,7 @@ function create_projects()
 
 function prepare_builds_file()
 {
-  bc_name=`oc get bc -n  proj0 --no-headers | awk {'print $1'}`
+  bc_name=`oc get bc -n  svt-$1-0 --no-headers | awk {'print $1'}`
   local running_build_file
   running_build_file="../content/running-builds.json"
   # generate running-builds.json on the fly
@@ -32,9 +32,9 @@ function prepare_builds_file()
   for (( c=0; c<"${PROJECT_NUM}"; c++ ))
   do
     if [[ "$c" == $((PROJECT_NUM - 1)) ]]; then
-      printf '%s\n' "{\"namespace\":\"proj${c}\", \"name\":\"$bc_name\"}" >> "${running_build_file}"
+      printf '%s\n' "{\"namespace\":\"svt-$1-${c}\", \"name\":\"$bc_name\"}" >> "${running_build_file}"
     else
-      printf '%s\n' "{\"namespace\":\"proj${c}\", \"name\":\"$bc_name\"}," >> "${running_build_file}"
+      printf '%s\n' "{\"namespace\":\"svt-$1-${c}\", \"name\":\"$bc_name\"}," >> "${running_build_file}"
     fi
   done
   printf '%s' "]" >> "${running_build_file}"
@@ -52,10 +52,10 @@ function run_builds()
 
 function wait_for_build_completion()
 {
-  running=`oc get pods --all-namespaces | grep proj | grep build | grep Running | wc -l`
+  running=`oc get pods --all-namespaces | grep svt | grep build | grep Running | wc -l`
   while [ $running -ne 0 ]; do
     sleep 5
-    running=`oc get pods --all-namespaces | grep proj | grep build | grep Running | wc -l`
+    running=`oc get pods --all-namespaces | grep svt | grep build | grep Running | wc -l`
     echo "$running builds are still running"
   done
 }
@@ -91,18 +91,18 @@ htpasswd -b /etc/origin/htpasswd redhat redhat
 oadm policy add-cluster-role-to-user admin redhat
 oadm policy add-cluster-role-to-user system:image-pruner redhat
 
-for proj in "${app_array[@]}"
+for app in "${app_array[@]}"
 do
   oc login -u system:admin
-  echo "Starting $proj builds" >> conc_builds_$proj.out
-  create_projects "../content/conc_builds_$proj.yaml"
+  echo "Starting $app builds" >> conc_builds_$app.out
+  create_projects "../content/conc_builds_$app.yaml"
   wait_for_build_completion
-  prepare_builds_file
-  run_builds $proj
+  prepare_builds_file $app
+  run_builds $app
   delete_projects
   wait_for_project_termination
-  echo "Finished $proj builds" >> conc_builds_$proj.out
-  cat conc_builds_$proj.out
+  echo "Finished $app builds" >> conc_builds_$app.out
+  cat conc_builds_$app.out
 #  clean_docker_images
 done
 
