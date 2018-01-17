@@ -1,6 +1,6 @@
 projects:
   - num: 50
-    basename: proj
+    basename: svt-django-
     ifexists: default
     tuning: default
 
