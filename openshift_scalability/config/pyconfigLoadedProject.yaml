@@ -1,25 +1,13 @@
 projects:
-  - num: 1
+  - num: 99
     basename: clusterproject
     tuning: default
-    users:
-      - num: 1
-        role: admin
-        basename: demo
-        password: demo
-        userpassfile: /etc/origin/openshift-passwd
     pods:
-      - total: 50
-      - num: 50
+      - total: 100
+      - num: 5
         image: gcr.io/google_containers/pause-amd64:3.0
         basename: pausepods
         file: content/pod-pause.json
-        storage:
-          - type: none
-      - num: 50
-        image: openshift/hello-openshift:v1.0.6
-        basename: hello-openshift-pod
-        file: content/pod-default.json
         storage:
           - type: none
     templates:
@@ -32,9 +20,6 @@ projects:
       -
         num: 20
         file: ./content/image-stream-all-template.json
-      -
-        num: 30
-        file: ./content/deployment-config-0rep-pause-template.json
       -
         num: 200
         file: ./content/ssh-secret-template.json
