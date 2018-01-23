@@ -84,6 +84,7 @@ oc new-app --template=cakephp-mysql-example
 oc new-project eap
 oc label namespace eap --overwrite purpose=rel
 oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/secrets/eap-app-secret.json
+oc create -f /root/svt/reliability/eap-secret.json
 oc new-app --template=eap64-mysql-s2i
 oc new-project dancer
 oc label namespace dancer --overwrite purpose=rel

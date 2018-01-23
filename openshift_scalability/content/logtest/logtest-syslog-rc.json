@@ -26,7 +26,7 @@
                 }
             },
             "spec": {
-                "replicas": "${REPLICAS}",
+                "replicas": "${{REPLICAS}}",
                 "template": {
                     "metadata": {
                         "generateName": "centos-logtest-",

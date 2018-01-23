@@ -13,6 +13,7 @@ module OpenshiftReliability
     def initialize(users)
       @users=users
       @projects=[]
+      @ds_project
       if $config.projectload
         load()
       end
@@ -119,6 +120,25 @@ module OpenshiftReliability
       end
     end
     alias check_project_info status
+
+    def create_ds()
+      user = guess_user
+      project_name = "ds-" + user.name + "-" + $config.seq
+      @ds_project=Project.new(project_name, user)
+      @ds_project.create()
+      @ds_project.create_ds()
+      @projects.push(@ds_project)
+    end
+
+    def scale_up_ds()
+      @ds_project.use()
+      @ds_project.scale_up_ds() 
+    end
+
+    def scale_down_ds()
+      @ds_project.use()
+      @ds_project.scale_down_ds()
+    end
   
     def to_digit(numstr)
       number=0

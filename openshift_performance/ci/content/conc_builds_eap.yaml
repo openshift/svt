@@ -1,6 +1,6 @@
 projects:
   - num: 50
-    basename: proj
+    basename: svt-eap-
     ifexists: default
     tuning: default
 

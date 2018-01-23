@@ -1,6 +1,12 @@
 ###  test tasks
-###
 #create "2" user
+#create ds
+#scale up ds
+#scale down ds
+#scale up ds
+#scale down ds
+#scale up ds
+#scale down ds
 #login "100%" users
 #create "1" project
 #create "1" app
@@ -11,10 +17,10 @@
 #scale down "80%" app
 #delete "10%" project
 #delete "1" user
-check project info
-monitor openshift
-monitor masters
-monitor nodes
-monitor etcds
-clean environment
+#check project info
+#monitor openshift
+#monitor masters
+#monitor nodes
+#monitor etcds
+#clean environment
 

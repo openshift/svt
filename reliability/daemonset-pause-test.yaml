@@ -1,0 +1,15 @@
+apiVersion: extensions/v1beta1                 
+kind: DaemonSet        
+metadata:              
+  name: daemonset-pause-test                   
+spec:
+  template:            
+    metadata:          
+      labels:          
+        name: daemonset-pause-test             
+    spec:
+      nodeSelector:
+        ds-node: "true"
+      containers:      
+      - image: gcr.io/google_containers/pause-amd64:3.0                                       
+        name: daemonset-pause-test             

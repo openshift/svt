@@ -1,6 +1,6 @@
 projects:
   - num: 50
-    basename: proj
+    basename: svt-rails-
     ifexists: default
     tuning: default
 
