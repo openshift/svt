@@ -2,6 +2,8 @@ apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
   name: pbench-agent
+  annotations:
+  openshift.io/scc: privileged
   labels:
     name: pbench-agent
 spec:
@@ -13,9 +15,9 @@ spec:
       hostPID: true
       hostNetwork: true
       containers:
-      - image: pbench-agent
+      - image: library/pbench-agent:latest
         name: pbench-agent
-        imagePullPolicy: "Never"
+        imagePullPolicy: Never
         securityContext:
           privileged: true
         env:
