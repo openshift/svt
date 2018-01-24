@@ -27,7 +27,7 @@ master=`cat config.yaml |egrep 'master:' | awk -F: '{print $2}'`
 nodes=`cat config.yaml |egrep 'nodes:' | awk -F: '{print $2}'`
 
 # make the master schedulable
-oc adm manage-node --schedulable "${master}"
+oc adm manage-node --schedulable=true ${master}
 
 i=0;
 for host in ${nodes//,/ }
@@ -35,6 +35,11 @@ do
   nodes_array[i]=${host// /}
   let i=i+1;
 done
+
+echo "INFO : $(date) #################### node to node  ####################"
+python network-test.py nodeIP --master $master --node ${nodes_array[0]} ${nodes_array[1]}
+sleep 120
+wait_for_project_delete
 
 for var in 1 2 4 8
 do

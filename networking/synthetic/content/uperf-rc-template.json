@@ -38,7 +38,7 @@
 		    "spec": {
 			"containers": [
 			    {
-				"image": "centos/uperf",
+				"image": "centos/uperf:latest",
 				"imagePullPolicy": "Never",
 				"name": "uperf",
 				"terminationMessagePath": "/dev/termination-log",

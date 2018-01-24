@@ -54,7 +54,7 @@
     with_items: "{{ groups['receiver'] }}"
 
   - name: Create uperf projects
-    shell: oc new-project uperf-{{ item }}
+    shell: oc adm new-project --node-selector="" uperf-{{ item }}
     with_sequence: start=1 end={{ uperf_pod_number }}
 
   - name: Create sender pods
