@@ -40,6 +40,7 @@
        dest: /root/openshift-ansible 
        update: yes
        version: "{{ openshift_ansible_branch }}"
+     ignore_errors: yes
   rescue:
    - name: clone master branch of openshift-ansible
      git:
