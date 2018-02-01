@@ -127,7 +127,7 @@ module OpenshiftReliability
       @ds_project=Project.new(project_name, user)
       @ds_project.create()
       @ds_project.create_ds()
-      @projects.push(@ds_project)
+      #@projects.push(@ds_project)
     end
 
     def scale_up_ds()

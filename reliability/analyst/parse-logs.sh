@@ -119,6 +119,12 @@ function extract_activity_data
   echo "Application Access Passed $(grep -e "Execute: curl.*${subdomain}.*-> pass" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "Application Access Failed $(grep -e "Execute: curl.*${subdomain}.*-> fail" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "Application Access Total $(grep -e "Execute: curl.*${subdomain}.*->" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "DS Scale Up Passed $(grep -e "DS Scale up complete" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "DS Scale Up Failed $(grep -e "DS Scale up failed" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "DS Scale Up Total $(grep -e "DS Scale up" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "DS Scale Down Passed $(grep -e "DS Scale down complete" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "DS Scale Down Failed $(grep -e "DS Scale down failed" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "DS Scale Down Total $(grep -e "DS Scale down" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
 
   echo "****************extracting activity data done****************"
 }
