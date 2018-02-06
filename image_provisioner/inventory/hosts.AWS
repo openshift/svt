@@ -8,6 +8,8 @@ aws_secret_key=
 region=us-west-2
 key_name=
 group_id=
+# for ena to be supported, the instance_type needs to be a C5, F1, G3, H1, I3, M5, P2, P3, R4, X1 or m4.16xlarge
+#instance_type=m5.large
 instance_type=m4.xlarge
 vpc_subnet_id=
 base_image=
@@ -32,6 +34,8 @@ pbench_alternate_hostname=
 config_repo=
 docker_login=no
 docker_storage_device=/dev/xvdb
+# for 5 series ena enabled instances
+#docker_storage_device=/dev/nvme1n1
 docker_storage_vgname=docker_vg
 docker_storage_driver=overlay2
 # updates the kernel if set to true
