@@ -1,0 +1,17 @@
+---
+- hosts: all
+
+  sudo: yes
+  user: root
+  tasks:
+    - name: Backup current master-config
+      copy: src=/etc/origin/master/master-config.yaml dest=/etc/origin/master/master-config.yaml.after.conformance
+    - name: Restore original master-config
+      copy: src=/etc/origin/master/master-config.yaml.before.conformance dest=/etc/origin/master/master-config.yaml
+    - name: Restart master services
+      systemd:
+        name: "{{ item }}"
+        state: restarted
+      with_items:
+        - atomic-openshift-master-controllers
+        - atomic-openshift-master-api
