@@ -31,6 +31,8 @@ docker_login=no
 docker_storage_device=/dev/nvme0n1
 docker_storage_vgname=docker_vg
 docker_storage_driver=overlay2
+docker_storage_mount_path=/var/lib/docker/overlay2
+container_root_lv_mount_path=/var/lib/docker
 update_kernel=true
 # baremetal DNS server config
 host=ocp.net
@@ -53,3 +55,8 @@ atomic=False
 registry_name=
 registry_username=
 registry_password=
+# cri-o
+crio=False
+crio_copy_images=False
+crio_registry=registry.access.redhat.com
+image_repository=

@@ -24,7 +24,7 @@
       volumes:
         - device_name: "{{ '/dev/sda1' if atomic | default(False) else '/dev/sdb' }}"
           volume_type: gp2
-          volume_size: 50
+          volume_size: "{{ volume_size | default(70) }}"
           delete_on_termination: true
       wait: yes
       user_data: "{{ lookup('file', '../cloud-init/user-data-aws') }}"
@@ -59,6 +59,7 @@
     - { role: os-kickstart }
     - { role: clone-repos, when: not atomic | default(False) | bool }
     - { role: docker-config }
+    - { role: cri-o, when: crio | default(False) | bool }
     - { role: pbench-config, when: not atomic | default(False) | bool }
     - { role: aos-ansible }
     - { role: ansible-update, when: not atomic | default(False) | bool }

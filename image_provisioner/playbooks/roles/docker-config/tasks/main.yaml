@@ -46,9 +46,9 @@
 
    - name: update fstab
      lineinfile:
-         path: /etc/fstab
-         line: "{{ docker_storage_device }} /var/lib/docker/overlay2                    xfs   defaults        0 0"
-         insertafter: EOF
+       path: /etc/fstab
+       line: "{{ docker_storage_device }} {{ docker_storage_mount_path | default(/var/lib/docker/overlay2) }}                    xfs   defaults        0 0"
+       insertafter: EOF
   when: docker_storage_driver == "overlay2" and not atomic | default(False) | bool
   
 - name: check that docker-storage has been deleted
@@ -116,7 +116,7 @@
 
 - block:
     - name: restore default selinux security context
-      command: restorecon -R /var/lib/docker/overlay2
+      command: restorecon -R {{ docker_storage_mount_path | default(/var/lib/docker/overlay2) }} 
 
     - name: autorelabel
       file:
