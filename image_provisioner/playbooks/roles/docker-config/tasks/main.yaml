@@ -47,7 +47,7 @@
    - name: update fstab
      lineinfile:
        path: /etc/fstab
-       line: "{{ docker_storage_device }} {{ docker_storage_mount_path | default(/var/lib/docker/overlay2) }}                    xfs   defaults        0 0"
+       line: "{{ docker_storage_device }} {{ docker_storage_mount_path | default("/var/lib/docker/overlay2") }}                    xfs   defaults        0 0"
        insertafter: EOF
   when: docker_storage_driver == "overlay2" and not atomic | default(False) | bool
   
