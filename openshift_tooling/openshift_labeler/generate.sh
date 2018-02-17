@@ -8,6 +8,8 @@ pbench_label="pbench_role=agent"
 inv_path=$3
 register_all_nodes=$4
 oc_client_url=$5
+ansible_controller=$6
+prometheus_path=/root/svt/openshift_tooling/openshift_labeler/prometheus_metrics.yml
 declare -a host
 declare -a group
 declare -a label
@@ -19,8 +21,8 @@ if [[ ! -s $HOME/.kube/config ]]; then
 fi
 
 # Check if oc client is installed
-which oc &>/dev/null
 echo "Checking if oc client is installed"
+which oc &>/dev/null
 if [[ $? != 0 ]]; then
 	echo "oc client is not installed"
 	echo "installing oc client"
@@ -52,16 +54,16 @@ function generate_inventory() {
 	second_label=$3
 	echo "[$group]" >> $inv_path
 	if [[ $group  == "pbench-controller" ]]; then
-        	echo $(hostname) >> $inv_path
+        	echo $ansible_controller >> $inv_path
 		echo -e "\n" >> $inv_path
 	elif [[ $group == "pbench-controller:vars" ]]; then
 		echo "register_all_nodes=$register_all_nodes" >> $inv_path		 
 	else
-        	for nodes in $(oc get nodes -l role=$node_label -o json | jq '.items[].metadata.name'); do
+        	for nodes in $(oc get nodes -l $label_prefix=$node_label -o json | jq '.items[].metadata.name'); do
                 	echo $nodes |  sed "s/\"//g" >> $inv_path
         	done
 		if [[ ! -z $second_label ]]; then
-			for nodes in $(oc get nodes -l role=$second_label -o json | jq '.items[].metadata.name'); do
+			for nodes in $(oc get nodes -l $label_prefix=$second_label -o json | jq '.items[].metadata.name'); do
                                 echo $nodes |  sed "s/\"//g" >> $inv_path
                         done
 		fi
@@ -123,11 +125,14 @@ generate_inventory glusterfs cns
 
 # prometheus-metrics
 echo "[prometheus-metrics]" >> $inv_path
-ansible-playbook -i $inv_path /root/openshift-labeler/prometheus_metrics.yml 
+ansible-playbook -i $inv_path $prometheus_path
 echo -e "\n" >> $inv_path
 
 # vars
 generate_inventory pbench-controller:vars
+
+# copy the tooling inventory to jump host
+scp $inv_path $ansible_controller:$inv_path
 
 # cleanup
 cleanup

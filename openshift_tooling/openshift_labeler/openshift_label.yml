@@ -1,5 +1,5 @@
 ---
-- hosts: master[0]
+- hosts: masters[0]
   user: root
   vars:
     - file: /run/openshift/register.hosts
@@ -14,7 +14,7 @@
 
     - name: clear file contents
       file: 
-        path: {{ file }} 
+        path: "{{ file }}" 
         state: absent
 
     - name: copy, set permissions on the register script
@@ -26,13 +26,20 @@
         mode: 0755
 
     - name: add masters to the file
-      shell: echo -e {{ item }} master  >> {{ file }}
+      lineinfile:
+        path: "{{ file }}"
+        line: "{{ item }} master >> {{ file }}"
+        create: yes
       with_items:
-       - "{{ groups['masters'] }}"
+        - "{{ groups['masters'] }}"
       when: groups['masters']|default([])
 
+
     - name: add nodes to the file
-      shell: echo -e {{ item }} node  >> {{ file }}
+      lineinfile:
+        path: "{{ file }}"
+        line: "{{ item }} node  >> {{ file }}"
+        create: yes
       with_items: 
        - "{{ groups['nodes'][-1] }}" 
        - "{{ groups['nodes'][-2] }}"
@@ -43,28 +50,45 @@
       when: groups['nodes']|default([]) and not ( label_all_nodes | default(False) | bool )
 
     - name: add cns nodes to file
-      shell: echo -e {{ item }} cns  >> {{ file }}
+      lineinfile:
+        path: "{{ file }}"
+        line: "{{ item }} cns  >> {{ file }}"
+        create: yes
       with_items:
        - "{{ groups['glusterfs'] }}"
       when: groups['glusterfs']|default([])
 
     - name: add nodes to the file
-      shell: echo -e {{ item }} node >> {{ file }}
+      lineinfile:
+        path: "{{ file }}"
+        line: "{{ item }} node >> {{ file }}"
+        create: yes
       with_items:
        - "{{ groups['nodes'] }}"
       when: groups['nodes']|default([]) and ( register_all_nodes | default(False) | bool )
 
     - name: add etcd nodes to the file
-      shell: echo -e {{ item }} etcd  >> {{ file }}
+      lineinfile:
+        path: "{{ file }}"
+        line: "{{ item }} etcd  >> {{ file }}"
+        create: yes
       with_items: 
        - "{{ groups['etcd'] }}"
       when: groups['etcd']|default([])
 
     - name: add lb to the file
-      shell: echo -e {{ item}} lb >> {{ file }}
+      lineinfile: 
+        path: "{{ file }}"
+        line: "{{ item}} lb >> {{ file }}"
+        create: yes
       with_items: 
        - "{{ groups['lb'] }}"
       when: groups['lb']|default([])
 
+    - name: get the local hostname
+      command: hostname
+      register: ansible_controller 
+      delegate_to: localhost
+  
     - name: label nodes
-      shell: sh /run/openshift/generate.sh {{ file }} {{ inventory_file }} {{ tooling_inv }} {{ register_all_nodes }} {{ oc_client_url }}
+      shell: sh /run/openshift/generate.sh {{ file }} {{ inventory_file }} {{ tooling_inv }} {{ register_all_nodes }} {{ oc_client_url }} {{ ansible_controller.stdout }}

@@ -56,4 +56,4 @@ spec:
           hostPath:
             path: /etc/pki
       nodeSelector: 
-        type: pbench
+        pbench_role: agent

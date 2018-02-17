@@ -18,7 +18,7 @@ The nodes in the openshift cluster are labeled as follows:
 - master                         - node_role=master, pbench_role=agent
 - nodes                          - node_role=node, pbench_role=agent
 - etcd                           - node_role=etcd, pbench_role=agent
-- infra                          - node_role=etcd, pbench_role=agent
+- infra                          - node_role=infra, pbench_role=agent
 - lb                             - node_role=lb, pbench_role=agent
 - glusterfs                      - node_role=cns, pbench_role=agent
 
