@@ -1,0 +1,34 @@
+provider: local
+ClusterLoader:
+  cleanup: false
+  projects:
+    - num: 1
+      basename: pod-affinity-s1-
+      tuning: default
+      ifexists: delete
+      pods:
+        - num: 250
+          image: docker.io/ocpqe/hello-pod
+          basename: pod-affinity-security-in-s1
+          file: pod-pod-affinity.json
+
+    - num: 1
+      basename: pod-anti-affinity-s1-
+      tuning: default
+      ifexists: delete
+      pods:
+        - num: 250
+          image: docker.io/ocpqe/hello-pod
+          basename: pod-anti-affinity-security-in-s1
+          file: pod-pod-anti-affinity.json
+
+
+  tuningsets:
+    - name: default
+      pods:
+        stepping:
+          stepsize: 50
+          pause: 180
+        ratelimit:
+          delay: 0
+
