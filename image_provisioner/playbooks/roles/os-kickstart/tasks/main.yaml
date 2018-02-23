@@ -34,6 +34,7 @@
       - iotop
       - iptables-services
       - kernel
+      - kernel-devel
       - ltrace
       - mailx
       - maven
