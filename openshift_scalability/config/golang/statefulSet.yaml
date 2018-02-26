@@ -1,0 +1,20 @@
+provider: local
+ClusterLoader:
+  cleanup: false
+  projects:
+    - num: 2
+      basename: clusterproject
+      tuning: default
+      ifexists: delete
+      templates:
+        - num: 3
+          file: statefulset-pv-template.go.json
+  tuningsets:
+    - name: default
+      pods:
+        stepping:
+          stepsize: 5
+          pause: 10 s
+        ratelimit:
+          delay: 250 ms
+
