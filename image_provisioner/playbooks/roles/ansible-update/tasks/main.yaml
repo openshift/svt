@@ -4,10 +4,10 @@
     name: ansible
     state: absent
 
-- name: install ansible from aos.repo
+- name: install ansible from rhel7-server-ansible.repo
   yum:
     name: ansible
-    disablerepo: epel,rhel-7-extras-next
-    enablerepo: aos
+    disablerepo: "*"
+    enablerepo: rhel-7-server-ansible
     state: present
 
