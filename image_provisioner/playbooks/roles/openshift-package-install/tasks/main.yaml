@@ -1,4 +1,13 @@
 ---
+## pre-installing the openvswitch version 2.9.0 so it won't pick up  
+## version "1:2.8.0-4.el7fdb" from rhel7-fast-datapath-htb  
+- name: install openvswitch-2.9.0 from rhel7-fast-datapath-rpms repo
+  yum:
+    name: openvswitch-2.9.0
+    disablerepo: "*"
+    enablerepo: rhel7-fast-datapath
+    state: present
+
 - name: install openshift packages
   yum: name={{ item }} state=latest
   with_items:
