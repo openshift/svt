@@ -1,0 +1,9 @@
+[rhel-7-server-ansible]
+name=rhel-7-server-ansible-2.4-rpms
+baseurl=https://mirror.openshift.com/enterprise/rhel/rhel-7-server-ansible-2.4-rpms/
+failovermethod=priority
+enabled=1
+gpgcheck=0
+sslverify=0
+sslclientcert=/var/lib/yum/client-cert.pem
+sslclientkey=/var/lib/yum/client-key.pem
