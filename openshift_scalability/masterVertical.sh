@@ -2,7 +2,7 @@
 
 # usage
 # ./pbench-register.sh 
-# pbench-user-benchmark -C testname -- ./mastervirt.sh
+# pbench-user-benchmark -C testname -- ./masterVertical.sh [golang|python]
 # pbench-move-results
 
 if [ "$#" -ne 1 ]; then
