@@ -1,0 +1,32 @@
+provider: local
+ClusterLoader:
+  cleanup: false
+  projects:
+    - num: 1
+      basename: taints-toleration-s1-
+      tuning: default
+      ifexists: delete
+      pods:
+        - num: 250
+          image: docker.io/ocpqe/hello-pod
+          basename: hellopods-taints-s1
+          file: pod-hello-s1-taints-tolerations.json
+
+    - num: 1
+      basename: taints-toleration-s2-
+      tuning: default
+      ifexists: delete
+      pods:
+        - num: 250
+          image: docker.io/ocpqe/hello-pod
+          basename: hellopods-taints-s2
+          file: pod-hello-s2-taints-tolerations.json
+
+  tuningsets:
+    - name: default
+      pods:
+        stepping:
+          stepsize: 50
+          pause: 60
+        ratelimit:
+          delay: 0
