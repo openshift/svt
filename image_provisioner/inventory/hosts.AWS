@@ -69,3 +69,5 @@ crio=False
 crio_copy_images=False
 crio_registry=registry.access.redhat.com
 image_repository=
+# multipath-blacklist
+multipath_blacklist=False
