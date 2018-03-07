@@ -23,7 +23,7 @@
 	    },
 	    "spec": {
 		"accessModes": [
-		    "ReadWriteMany"
+		    "ReadWriteOnce"
 		],
 		"resources": {
 		    "requests": {
@@ -137,7 +137,7 @@
 	    "name": "VOLUME_CAPACITY",
 	    "displayName": "Volume Capacity",
 	    "description": "Volume space available for data, e.g. 512Mi, 2Gi",
-	    "value": "10Gi",
+	    "value": "1000Gi",
 	    "required": true
 	},	
 	{
