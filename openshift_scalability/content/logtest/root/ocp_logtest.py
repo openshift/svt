@@ -136,6 +136,13 @@ def init_logger(my_logger):
     if options.journal :
         jh = logging.handlers.SysLogHandler(address = '/dev/log')
         my_logger.addHandler(jh)
+    elif options.log_on_file:
+        print 'log_on_file: {}'.format(options.log_on_file)
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        fh = logging.FileHandler(options.log_on_file)
+        fh.setFormatter(formatter)
+        my_logger.addHandler(fh)
     else :
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         sh = logging.StreamHandler()
@@ -158,6 +165,8 @@ if __name__ ==  "__main__":
                      help="file for input text")
     parser.add_option("-j","--journal", dest="journal", action="store_true", default=False,
                       help="use logger to log messages to journald instead of stdout")
+    parser.add_option("-o", "--log-on-file", dest="log_on_file",
+                      help="the file path to which the log outputs")
     parser.add_option("-r", "--rate", dest="rate", type="float", default=10.0,
                      help="rate in lines per minute")
     parser.add_option("-n", "--num-lines", dest="num_lines", type="int", default=0,
