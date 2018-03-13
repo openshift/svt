@@ -1,0 +1,22 @@
+provider: local
+ClusterLoader:
+  cleanup: false
+  projects:
+    - num: 1
+      basename: c
+      templates:
+        - num: 2
+          file: golang/deployment-config-pause-template.json
+          parameters:
+            REPLICAS: "1"
+            ENV_VALUE: "asodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij12"
+
+        - num: 1
+          file: golang/deployment-config-pause-template.json
+          parameters:
+            REPLICAS: "2"
+            ENV_VALUE: "asodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij12"
+
+
+### The result of the templates need to be transformed too
+### The current one is just a proof of concept that $IDENTIFIER works by auto-gen values

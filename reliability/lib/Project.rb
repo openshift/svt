@@ -140,7 +140,7 @@ module OpenshiftReliability
       wait_minute_num=12
       i = 0
       while i < wait_minute_num
-        res=@user.exec("oc get pods -n #{@name} --no-headers")
+        res=@@admin.exec("oc get pods -n #{@name} --no-headers")
         if res[:output].scan(/(?=Running)/).count == 2
           $logger.info("DS Scale up complete")
           return
@@ -157,7 +157,7 @@ module OpenshiftReliability
       wait_minute_num=12
       i = 0
       while i < wait_minute_num
-        res=@user.exec("oc get pods -n #{@name} --no-headers")
+        res=@@admin.exec("oc get pods -n #{@name} --no-headers")
         if res[:output].lines.count == 0
           $logger.info("DS Scale down complete")
           return

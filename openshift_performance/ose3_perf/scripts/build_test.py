@@ -56,15 +56,19 @@ def run_build(build_def):
         logger.error(e)
 
 
-def check_build_status(executor):
+def check_build_status(executor, futures, wait_flag):
     logger.info("check_build_status ...")
     # wait the first build is started
-    time.sleep(20)
+    if wait_flag:
+        logger.debug("wait 20 in check_build_status")
+        time.sleep(20)
+    else:
+        logger.debug("no wait in check_build_status")
     while not all_builds_completed():
         try:
             time.sleep(10)
             result = run("oc get build --all-namespaces --no-headers")
-            parse(executor, result)
+            parse(executor, result, futures)
         except Exception as e:
             logger.error(e)
 
@@ -77,7 +81,7 @@ def all_builds_completed():
     return True
 
 
-def parse(executor, result):
+def parse(executor, result, futures):
     for line in result.splitlines():
         words = line.split()
 
@@ -101,8 +105,9 @@ def parse(executor, result):
                         global_build_status[idx] = STATUS_COMPLETE
                     duration_string = words[-1]
                     if global_build_status[idx] < STATUS_LOGGING:
-                        executor.submit(do_post_actions, namespace, name,
-                                        timeparse(duration_string))
+                        futures.append(
+                            executor.submit(do_post_actions, namespace,
+                                            name, timeparse(duration_string)))
         else:
             logger.error("unexpected return "
                          "(oc get build --all-namespaces --no-headers): "
@@ -188,7 +193,7 @@ def select_random_builds(builds, num):
 
 
 # Run builds simultaneously in background threads
-def run_builds(executor, all_builds):
+def run_builds(executor, executor1, all_builds):
     global global_config
     if global_config["random"] > 0:
         selected_builds = select_random_builds(all_builds,
@@ -205,6 +210,7 @@ def run_builds(executor, all_builds):
     else:
         batch_size = global_config["batch"]
 
+    wait_flag = True
     while len(selected_builds) > 0:
         this_batch_count = 0
         futures = []
@@ -215,6 +221,13 @@ def run_builds(executor, all_builds):
 
         logger.info("All threads started, starting builds")
         wait(futures)
+
+        futures1 = []
+        check_build_status(executor1, futures1, wait_flag)
+        wait_flag = False
+        logger.debug("str(len(futures1)): " + str(len(futures1)))
+        wait(futures1)
+
         time.sleep(int(global_config["sleep_time"]))
 
 
@@ -310,11 +323,10 @@ def start():
 
         with ThreadPoolExecutor(max_workers=global_config["worker"]) \
                 as executor:
-            run_builds(executor, all_builds)
+            with ThreadPoolExecutor(max_workers=global_config["worker"]) \
+                    as executor1:
+                run_builds(executor, executor1, all_builds)
 
-        with ThreadPoolExecutor(max_workers=global_config["worker"]) \
-                as executor1:
-            check_build_status(executor1)
 
     # output stats
     total_all_builds = 0
@@ -330,8 +342,9 @@ def start():
     for build in all_builds:
         idx = build["namespace"] + ":" + build["name"]
         num = global_build_stats[idx]["num"]
-        logger.info("Build: " + idx)
+
         if num > 0:
+            logger.info("Build: " + idx)
             logger.info("\tTotal builds: " +
                         str(global_build_stats[idx]["num"]) +
                         " Failures: " + str(global_build_stats[idx]["failed"]))
@@ -361,7 +374,8 @@ def start():
 
             total_builds += global_build_stats[idx]["num"]
         else:
-            logger.info("\tNo successful builds")
+            logger.debug(idx + ": No successful builds")
+
         total_failed += global_build_stats[idx]["failed"]
         total_invalid += global_build_stats[idx]["invalid"]
 

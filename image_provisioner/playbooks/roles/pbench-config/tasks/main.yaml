@@ -11,6 +11,16 @@
     line: "pandas-package = python-pandas"
   when: not atomic | default(False) | bool
 
+- name: configure pbench-fio
+  blockinfile:
+    path: /opt/pbench-agent/config/pbench-agent.cfg
+    insertbefore: "[config]"
+    content: |
+      [pbench-fio]
+      version = 3.3
+      histogram_interval_msec = 10000
+  when: not atomic | default(False) | bool
+
 - name: configure pbench target
   replace:
     dest: /opt/pbench-agent/config/pbench-agent.cfg

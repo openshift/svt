@@ -9,7 +9,7 @@ DATA_SIZE=100%FREE
 {% elif docker_storage_driver == 'overlay2' %}
 {% if atomic | bool %}
 CONTAINER_ROOT_LV_NAME=docker-root-lv
-CONTAINER_ROOT_LV_MOUNT_PATH=/var/lib/docker
+CONTAINER_ROOT_LV_MOUNT_PATH={{ container_root_lv_mount_path }}
 CONTAINER_ROOT_LV_SIZE=100%FREE
 {% else %}
 DOCKER_ROOT_VOLUME=yes

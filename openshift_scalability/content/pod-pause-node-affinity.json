@@ -1,0 +1,67 @@
+{
+  "kind": "Pod",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "pause-amd64",
+    "creationTimestamp": null,
+    "labels": {
+      "name": "pause-amd64"
+    }
+  },
+  "spec": {
+    "containers": [
+      {
+        "name": "pause-amd64",
+        "image": "gcr.io/google_containers/pause-amd64:3.0",
+        "ports": [
+          {
+            "containerPort": 8080,
+            "protocol": "TCP"
+          }
+        ],
+        "resources": {
+				"requests": {
+					"cpu" : "15m",
+					"memory": "50Mi"
+				},
+				"limits": {
+					"cpu" : "15m",
+					"memory": "50Mi"
+				}
+        },
+        "terminationMessagePath": "/dev/termination-log",
+        "imagePullPolicy": "IfNotPresent",
+        "capabilities": {},
+        "securityContext": {
+          "capabilities": {},
+          "privileged": false
+        }
+      }
+    ],
+    "restartPolicy": "Always",
+    "dnsPolicy": "ClusterFirst",
+    "serviceAccount": "",
+    "affinity": {
+      "nodeAffinity": {
+         "requiredDuringSchedulingIgnoredDuringExecution": {
+           "nodeSelectorTerms": [
+             {
+              "matchExpressions": [
+                {
+                  "key": "cpu",
+                  "operator": "Gt",
+                  "values": [
+                     "4"
+                  ]
+                }
+               ]
+             }
+           ]
+         }
+       }
+     }
+  },
+
+  "status": {}
+}
+

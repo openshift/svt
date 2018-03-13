@@ -1,0 +1,91 @@
+---
+- name: Ensure container-selinux, atomic and runc are installed
+  package:
+     name: "{{ item }}"
+     state: present
+  with_items:
+     - container-selinux
+     - atomic
+     - runc
+  when: not atomic | default(False) | bool
+
+- name: Use RHEL based image
+  set_fact:
+    crio_image_prepend: "{{ crio_registry }}"
+    crio_image_name: "cri-o"
+
+- name: Set the full image name
+  set_fact:
+    crio_image: "{{ crio_image_prepend }}/{{ crio_image_name }}:latest"
+
+- name: Pre-pull CRI-O System Container image
+  atomic_image:
+     name: "{{ crio_image }}"
+     state: latest
+     backend: ostree
+
+- name: Install CRI-O container
+  command: "atomic install --system-package no --system {{ crio_image }}"
+
+- name: Ensure that selinux is set to true in the config
+  lineinfile:
+    path: /etc/crio/crio.conf
+    regexp: '^selinux'
+    line: 'selinux = true'
+
+- name: Ensure that systemd is the cgroup manager
+  lineinfile:
+    path: /etc/crio/crio.conf
+    regexp: '^cgroup_manager'
+    line: "cgroup_manager = \"systemd\""
+
+- name: Ensure that file locking is set to false
+  lineinfile:
+    path: /etc/crio/crio.conf
+    regexp: '^file_locking'
+    line: 'file_locking = false'
+
+- name: override overlay2 kernel check
+  lineinfile:
+    path: /etc/crio/crio.conf
+    insertafter: '^storage_option'
+    line: "\t\"overlay2.override_kernel_check=1\""
+    state: present
+
+- name: create cni directory to store network settings
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+     - /etc/cni/net.d
+     - /opt/cni/net.d
+
+- name: copy crio-bridge conf
+  copy:
+    src: crio-bridge.conf
+    dest: /etc/cni/net.d/10-mynet.conf
+
+- name: copy loopback conf
+  copy:
+    src: loopback.conf
+    dest: /etc/cni/net.d/99-loopback.conf
+
+- name: override overlay2 kernel check
+  lineinfile:
+    path: /etc/containers/storage.conf
+    insertafter: '^\[storage.options\]'
+    line: "override_kernel_check=\"true\""
+
+- name: Start the CRI-O service
+  systemd:
+    name: "cri-o"
+    enabled: yes
+    state: started
+    daemon_reload: yes
+
+- name: systemctl status
+  command: systemctl status cri-o
+  register: crio_status
+    
+- debug: msg="{{ crio_status.stdout }}"
+  when: crio_status.rc != 0 

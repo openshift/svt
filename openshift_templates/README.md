@@ -14,9 +14,9 @@ $ docker pull ravielluri/image:collectd
 $ docker tag ravielluri/image:agent collectd:latest
 ```
 
-### Label the nodes with a type=pbench label
+### Label the nodes with a pbench_role=agent label
 ```   
-$ oc label node <node> type=pbench
+$ oc label node <node> pbench_role=agent
 ```
 
 ### Create a service account and add it to the privileged scc

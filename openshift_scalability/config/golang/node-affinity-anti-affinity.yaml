@@ -1,0 +1,33 @@
+provider: local
+ClusterLoader:
+  cleanup: false
+  projects:
+    - num: 1
+      basename: node-affinity-
+      tuning: default
+      ifexists: delete
+      pods:
+        - num: 250
+          image: gcr.io/google_containers/pause-amd64:3.0
+          basename: pausepods
+          file: pod-pause-node-affinity.json
+
+    - num: 1
+      basename: node-anti-affinity-
+      tuning: default
+      ifexists: delete
+      pods:
+        - num: 250
+          image: docker.io/ocpqe/hello-pod
+          basename: hellopods
+          file: pod-hello-node-anti-affinity.json
+
+  tuningsets:
+    - name: default
+      pods:
+        stepping:
+          stepsize: 40
+          pause: 180
+        ratelimit:
+          delay: 0
+
