@@ -11,6 +11,7 @@ group_id=
 # for ena to be supported, the instance_type needs to be a C5, F1, G3, H1, I3, M5, P2, P3, R4, X1 or m4.16xlarge
 #instance_type=m5.large
 instance_type=m4.xlarge
+extra_tags=
 vpc_subnet_id=
 base_image=
 instance_tag=
