@@ -16,7 +16,6 @@ environment:
   port: 8443
   pbenchserver: pbench.example.com
   monitoring:
-    - pbench
     - cloudwatch
 exection:
   gituser: vikaslaad
