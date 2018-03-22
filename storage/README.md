@@ -1,44 +1,54 @@
-# FIO storage tests
-This test runs the fio benchmark (via [pbench-fio](https://github.com/distributed-system-analysis/pbench/blob/master/agent/bench-scripts/pbench-fio)). The test setup and the test run is defined in an ansible playbook with a python wrapper to run the playbook.
+# FIO test
 
-## Tests performed
-The tests are run with the following options:
-- Types of tests
-	-read
-	-write
-	-read/write
-	-random read
-	-random write
-	-random read/write
--direct=1 
--sync=1 
--block-sizes=4,64,1024 
--iodepth=2  
+## Where to run
 
-## Assumptions
-- You have copied a public ssh key for use by all nodes and pods to svt/storage/id_rsa.pub 
-- You already have a running OpenShift cluster
-- If master host is not connected to pods subnet, you have a pod running to serve as ansible host, ansible_pod.
-- The master_host/ansible_pod has the `oc` tool installed.
-- The `oc` tool is logged in as user `system:admin`
-- The ssh-able hostnames given to this script match their node name in OpenShift
-- [pbench](https://github.com/distributed-system-analysis/pbench) is installed and configured on all hosts
+Run the playbook on any host with `ansible` installed.
 
-## Requirements
-Ansible version <= 1.9.4
+So far it is tested with `ansible-2.4.2.0-1.el7.noarch`.
+
+## Run
+
+Change the inventory file
 
 ```
-# yum install ansible
-$ yum install --assumeyes ansible-1.9.4-1
+$ vi storage/inv.file
+...
+###The private key on the host to connect master
+ansible_ssh_private_key_file="/home/hongkliu/.ssh/id_rsa_perf"
+###The public key for the pod
+pub_key_file_path=/home/hongkliu/repo/me/svt-secret/cert/id_rsa.pub
+###The node list where the fio pod can run, usually compute nodes
+client_nodes='["ip-172-31-24-40.us-west-2.compute.internal", "ip-172-31-48-250.us-west-2.compute.internal"]'
 
-# pip install ansible
-$ pip install ansible==1.9.4
+[target]
+###master
+ec2-34-213-109-136.us-west-2.compute.amazonaws.com
 ```
 
-## Running the test
-The test is run using the storage-test.py script. Usage of the test:
-	python storage-test.py fio --master <<master host name>> --node <<node host name>>
-  pbench is run on the master and on the node pods are created, which use storage being tested.
-The test can be invoked automatically by CI tools by updating the config.yaml with the master and nodes. And invoking the start-storage-test.sh script
- 
- 
+Run the playbook:
+
+```sh
+$ ansible-playbook -i storage/inv.file storage/fio-test.yaml
+```
+
+Only the setup tags:
+```sh
+$ ansible-playbook -i storageinv.file storage/fio-test.yaml --tags setup
+```
+
+Only run the test:
+
+```sh
+$ ansible-playbook -i storage/inv.file storage/fio-test.yaml --tags run
+```
+
+Or on master
+
+```sh
+# bash -x /tmp/fio-test/files/scripts/test-storage.sh /tmp/fio-test/files
+```
+
+
+## TODOs
+
+* Create multiple pods: with cluster-loader?
