@@ -30,12 +30,23 @@
 
 - name: copy ssh key to pbench directory
   copy:
-    src: /root/svt-private/image_provisioner/id_rsa 
+    src: /root/svt-private/image_provisioner/id_rsa
     remote_src: True
     dest: /opt/pbench-agent/id_rsa
     owner: pbench
     group: pbench
     mode: 0600
+  when: not internal_server | default(False) | bool
+
+- name: copy internal server ssh key to pbench directory
+  copy:
+    src: /root/svt-private/image_provisioner/keys/internal/id_rsa
+    remote_src: True
+    dest: /opt/pbench-agent/id_rsa
+    owner: pbench
+    group: pbench
+    mode: 0600
+  when: internal_server | default(False) | bool
 
 - name: register tools
   shell: pbench-register-tool-set
