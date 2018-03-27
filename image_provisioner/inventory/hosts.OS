@@ -28,6 +28,7 @@ github_token=
 # pbench config
 pbench_internal_hostname=pbench\..*com$
 pbench_alternate_hostname=
+internal_server=
 # docker config
 # sda2 for openstack, sdb/xvdb for ec2
 config_repo=
