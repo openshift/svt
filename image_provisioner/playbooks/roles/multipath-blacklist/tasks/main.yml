@@ -1,0 +1,8 @@
+---
+- name: Create the multipath configuration directory
+  file: path="{{ multipathd_conf_dir }}" state=directory
+
+- name: Copy the multipathd blacklist file
+  copy:
+    src: blacklist.conf
+    dest: "{{ multipathd_conf_dir }}/50-blacklist.conf"

@@ -1,0 +1,2 @@
+---
+multipathd_conf_dir: "/etc/multipath/conf.d/"
