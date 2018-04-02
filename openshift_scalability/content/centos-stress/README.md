@@ -31,7 +31,7 @@ Add description.
 
 ### JMeter
 
-Add description.
+This method of traffic generation has been deprecated.
 
 ### mb
 
