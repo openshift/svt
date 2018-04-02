@@ -1,0 +1,1608 @@
+dashboard:
+  title: "Openshift Grafyaml"
+  time:
+    from: now-30m
+    to: now
+  templating:
+    - name: Node
+      query: label_values(kubernetes_io_hostname) 
+      refresh: true
+      type: query
+      datasource: $Datasource
+      includeAll: true
+    - name: Interval
+      query: $Interval,5m,10m,30m,1h,2h,4h,6h,12h,1d,2d,3d,4d,7d,14d
+      refresh: true
+      type: interval
+      includeAll: true
+      current:
+        value: 5m
+        text: 5m
+    - name: Datasource
+      query: prometheus 
+      refresh: true
+      type: datasource
+      current:
+        value: prometheus
+        text: prometheus
+    - name: systemd_service
+      type: custom
+      query: etcd,docker,atomic
+      refresh: true
+      current:
+        value: etcd
+        text: etcd
+      options:
+        - text: atomic
+          value: atomic
+        - text: docker
+          value: docker
+        - text: etcd
+          value: etcd
+    - name: loadavg_interval
+      query: 1,5,15
+      type: custom
+      refresh: true
+      current:
+        value: "1"
+        text: "1"
+      options:
+        - text: "1"
+          value: "1"
+        - text: "5"
+          value: "5"
+        - text: "15"
+          value: "15"
+    - name: Datasource2
+      query: prometheus
+      refresh: true
+      type: datasource
+      current:
+        value: prometheus
+        text: prometheus
+    - name: runtime
+      query: kubelet_runtime,kubelet_docker_runtime
+      refresh: true
+      type: custom
+      multi: true
+      includeAll: true
+      options:
+        - text: "All"
+          value: "$__all"
+        - text: "kubelet_runtime"
+          value: "kubelet_runtime"
+        - text: "kubelet_docker_runtime"
+          value: "kubelet_docker_runtime"
+    - name: hostname
+      query: kubernetes_io_hostname,$hostname
+      refresh: true
+      type: custom
+      multi: true
+      includeAll: false
+      options:
+        - text: "kubernetes_io_hostname"
+          value: "kubernetes_io_hostname"
+        - text: "hostname"
+          value: "hostname"
+    - name: node_type
+      query: master,node-infra,node-compute-0
+      refresh: true
+      type: custom
+      multi: true
+      includeAll: false
+      options:
+        - text: "master"
+          value: "master"
+        - text: "node-infra"
+          value: "node-infra"
+        - text: "node-compute-0"
+          value: "node-compute-0"
+  rows:
+    - title: Description
+      height: 100px
+      panels:
+        - title: Description
+          content: |
+            **This dashboard is managed by [Grafyaml](http://docs.openstack.org/infra/system-config/grafyaml.html).**
+            If you would like to make changes to this dashboard, please see the grafana directory in [project-config](https://git.openstack.org/cgit/openstack-infra/project-config/tree/grafana/nodepool.yaml).
+          type: text
+    # NEW PANEL
+    - title: Total usage
+      showTitle: true
+      height: 250px
+      panels:
+        - title: Mem Used
+          type: singlestat
+          span: 4
+          datasource: $Datasource
+          format: deckbytes
+          targets:
+          - expr: sum (container_memory_rss{$hostname=~"^$Node$"})
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            legendFormat: Received
+            step: 2
+        - title: Mem Total
+          type: singlestat
+          span: 4
+          datasource: $Datasource
+          format: bytes
+          targets:
+          - expr: sum (machine_memory_bytes{$hostname=~"^$Node$"})
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            legendFormat: Received
+            step: 2
+        - title: Core used
+          type: singlestat
+          span: 4
+          datasource: $Datasource
+          format: short
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{id="/",$hostname=~"^$Node$"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            legendFormat: cpu
+            step: 2
+        - title: Core total
+          type: singlestat
+          span: 4
+          datasource: $Datasource
+          format: short
+          targets:
+          - expr: sum (machine_cpu_cores{$hostname=~"^$Node$"})
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            legendFormat: cpu
+            step: 2
+        - title: Disk used
+          type: singlestat
+          span: 4
+          datasource: $Datasource
+          format: bytes
+          targets:
+          - expr: sum (container_fs_usage_bytes{device=~"^/dev/.*$",id="/",$hostname=~"^$Node$"})
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            legendFormat: disk
+            step: 2
+        - title: Disk total
+          type: singlestat
+          span: 4
+          datasource: $Datasource
+          format: bytes
+          targets:
+          - expr: sum (container_fs_limit_bytes{device=~"^/dev/.*$",id="/",$hostname=~"^$Node$"})
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            legendFormat: disk
+            step: 2
+        - title: Cluster memory usage
+          datasource: $Datasource
+          editable: true
+          error: false
+          format: percent
+          gauge:
+            maxValue: 100
+            minValue: 0
+            show: true
+            thresholdLabels: false
+            thresholdMarkers: true
+          targets:
+          - expr: sum (container_memory_rss{id="/",$hostname=~"^$Node$"}) / sum (machine_memory_bytes{$hostname=~"^$Node$"}) * 100
+            format: time_series
+            interval: 10s
+            intervalFactor: 1
+            step: 10
+          thresholds: 65, 90
+          type: singlestat
+        - title: Cluster CPU usage (1m avg)
+          datasource: $Datasource
+          editable: true
+          error: false
+          format: percent
+          gauge:
+            maxValue: 100
+            minValue: 0
+            show: true
+            thresholdLabels: false
+            thresholdMarkers: true
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{id="/",$hostname=~"^$Node$"}[$Interval])) / sum (machine_cpu_cores{$hostname=~"^$Node$"}) * 100
+            format: time_series
+            interval: 10s
+            intervalFactor: 1
+            step: 10
+          thresholds: 65, 90
+          type: singlestat
+        - title: Cluster filesystem usage 
+          datasource: $Datasource
+          editable: true
+          error: false
+          format: percent
+          gauge:
+            maxValue: 100
+            minValue: 0
+            show: true
+            thresholdLabels: false
+            thresholdMarkers: true
+          targets:
+          - expr: sum (container_fs_usage_bytes{device=~"^/dev/.*$",id="/",$hostname=~"^$Node$"}) / sum (container_fs_limit_bytes{device=~"^/dev/.*$",id="/",$hostname=~"^$Node$"}) * 100 
+            format: time_series
+            interval: 10s
+            intervalFactor: 1
+            step: 10
+          thresholds: 65, 90
+          type: singlestat
+        - title: Total Running Pods per Cluster
+          datasource: $Datasource
+          editable: true
+          error: false
+          format: short
+          targets:
+          - expr: sum(kubelet_running_pod_count) 
+            format: time_series
+            interval: 10s
+            intervalFactor: 1
+            step: 10
+          type: graph
+        - title: Rate of Namespace Adds
+          datasource: $Datasource
+          editable: true
+          error: false
+          format: short
+          targets:
+          - expr: rate(namespace_adds[$Interval]) 
+            format: time_series
+            interval: 10s
+            intervalFactor: 1
+            step: 10
+          type: graph
+    # NEW PANEL
+    - title: OpenWishk
+      showTitle: true
+      height: 250px
+      panels:
+        - title: CPU Usage of Pods in OpenWhisk Namespace
+          type: graph
+          span: 4
+          datasource: $Datasource
+          format: short
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{namespace=~"openwhisk"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            legendFormat: Received
+            step: 2
+        - title: Memory (RSS) Usage of Pods in OpenWhisk Namespace
+          type: graph
+          span: 4
+          datasource: $Datasource
+          yaxes:
+          - format: decgbytes
+            logBase: 1
+            show: true
+          - format: short
+            logBase: 1
+            show: true
+          targets:
+          - expr: sum (rate(container_memory_rss{namespace="openwhisk"}[$Interval])) by (pod_name) / 1048576
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            legendFormat: Received
+            step: 2
+    # NEW PANEL
+    - title: App Create Loop
+      showTitle: true
+      height: 250px
+      panels:
+        - title: App Create Loop
+          type: graph
+          span: 4
+          datasource: $Datasource
+          format: short
+          targets:
+          - expr: histogram_quantile(0.5, sum(rate(app_create_latency_seconds_bucket{step="new-app"}[$Interval])) by (le)) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            legendFormat: Received
+            step: 2
+    # NEW PANEL
+    - title: Metrics Process
+      showTitle: true
+      height: 250px
+      panels:
+        - title: CPU - prometheus alert
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{pod_name=~"^prometheus-0"}[$Interval])) by (pod_name) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: RSS - prometheus
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{pod_name=~"^prometheus-0"}[$Interval])) by (pod_name) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "{{ pod_name }}"
+        - title: CPU - hawkular-cassandra
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{pod_name=~"^hawkular-cassandra-.*"}[$Interval])) by (pod_name) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: RSS - hawkular-cassandra
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_memory_rss{pod_name=~"^hawkular-cassandra-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: CPU - hawkular-metrics
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{pod_name=~"^hawkular-metrics-.*"}[$Interval])) by (pod_name) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: RSS - hawkular-metrics
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_memory_rss{pod_name=~"^hawkular-metrics-.*"}[$Interval])) by (pod_name) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+    # NEW PANEL
+    - title: Web Console
+      showTitle: true
+      height: 250px
+      panels:
+        - title: apiserver_audit_event_total{app="openshift-web-console"}
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: apiserver_audit_event_total{app="openshift-web-console"} 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+    # NEW PANEL
+    - title: Prometheus
+      showTitle: true
+      height: 250px
+      panels:
+        - title: scrape_samples_scraped
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (type) (rate(scrape_samples_scraped[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: Prometheus container_cpu_usage_seconds_total
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate(container_cpu_usage_seconds_total{name=~"^k8s_prometheus_prometheus-0_.+"}[$Interval])) by (hostname)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: Prometheus Pod container_fs_reads/writes_total
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_fs_reads_total{pod_name=~"^prometheus-0"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+          - expr: sum (rate (container_fs_writes_total{pod_name=~"^prometheus-0"}[$Interval])) by (pod_name) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: Prometheus container container_memory_rss
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: (rate (container_memory_rss{name=~"^k8s_prometheus_prometheus-0_.+"}[$Interval])) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: Prometheus container_fs_reads/writes_total
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate(container_fs_writes_total{name=~"^k8s_prometheus_prometheus-0_.+"}[$Interval])) by (hostname)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "{{ hostname }}"
+          - expr: sum (rate(container_fs_reads_total{name=~"^k8s_prometheus_prometheus-0_.+"}[$Interval])) by (hostname) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "{{ hostname }}"
+    # NEW PANEL
+    - title: Upgrade Watchlist 
+      showTitle: true
+      height: 250px
+      panels:
+        - title: Pods per Node
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (kubelet_running_pod_count) by (hostname)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "{{ hostname }}"
+        - title: Pods per Cluster
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (kubelet_running_pod_count) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "{{ hostname }}"
+    # NEW PANEL
+    - title: Kubelet 
+      showTitle: true
+      height: 250px
+      panels:
+        - title: Top 10 nodes of Kubelet 90% latency (seconds) kubelet_docker_operations_latency_microseconds
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: kubelet_docker_operations_latency_microseconds{type="compute",quantile="0.9"} / 1000000
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+          - expr: topk(10, (rate(kubelet_docker_operations_latency_microseconds{type="compute",quantile="0.9"}[$Interval]))) / 1000
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: MILLISECONDS kubelet_pleg_relist_latency_microseconds
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate (kubelet_pleg_relist_latency_microseconds[$Interval])) / 1000
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: CPU atomic-openshift-node on $Datasource
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_cpu_usage_seconds_total{id=~"/system.slice/atomic-openshift-node.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: CPU atomic-openshift-node on $Datasource2
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_cpu_usage_seconds_total{id=~"/system.slice/atomic-openshift-node.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: kubelet_docker_operations_errors/timeout
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(kubelet_docker_operations_timeout[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "timeouts on {{ hostname }}"
+          - expr: sum by (hostname) (rate(kubelet_docker_operations_errors[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "errors on {{ hostname }}"
+    # NEW PANEL
+    - title: Dynamic Food Groups 
+      showTitle: true
+      height: 250px
+      panels:
+        - title: I/O by $systemd_service on $node_type
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_fs_reads_total{$hostname=~"$Datasource-$node_type.+",id=~"/system.slice/$systemd_service.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "writes {{ hostname }}"
+          - expr: sum by (hostname) (rate(container_fs_writes_total{$hostname=~"$Datasource-$node_type.+",id=~"/system.slice/$systemd_service.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "writes {{ hostname }}"
+        - title: RSS by $systemd_service on $node_type 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_memory_rss{$hostname=~"$Datasource-$node_type.+",id=~"/system.slice/$systemd_service.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "writes {{ hostname }}"
+        - title: CPU usage by $systemd_service on $node_type
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_cpu_usage_seconds_total{$hostname=~"$Datasource-$node_type.+",id=~"/system.slice/$systemd_service.service"}[$Interval])) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "writes {{ hostname }}"
+        - title: Network RX/TX by $systemd_service on $node_type
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_network_receive_bytes_total{$hostname=~"$Datasource-$node_type-.+"}[$Interval])) / 125000 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "{{ hostname }}"
+          - expr: sum (rate (container_network_transmit_bytes_total{$hostname=~"$Datasource-$node_type-.+"}[$Interval])) / 125000
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "{{ hostname }}"
+    # NEW PANEL
+    - title: Builds
+      showTitle: true
+      height: 250px
+      panels:
+        - title: "Builds Running for > 10 minutes"
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: count(openshift_build_active_time_seconds{phase="Running"} < time() - 600)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: Failed Builds offset $Interval
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: openshift_build_total{phase="Failed"} offset $Interval
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: "Builds Waiting for > 10 minutes"
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: count(openshift_build_active_time_seconds{phase="Pending"} < time() - 600) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: "Failed Builds"
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum(openshift_build_total{phase="Failed"}) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+    # NEW PANEL
+    - title: API Server Mutating (SLOW TO LOAD) 
+      showTitle: true
+      height: 250px
+      panels:
+        - title: Changes in your cluster container_start_time_seconds
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum(changes(container_start_time_seconds[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: AGGREGATION container_cpu_usage_rate 5m 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: container_cpu_usage_percent_by_host 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: Mutating API Requests apiserver_request_count POST|PUT|DELETE|PATC 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sort_desc((sum without (instance,type,code) (rate(apiserver_request_count{verb=~"POST|PUT|DELETE|PATCH"}[$Interval])))) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: NON-Mutating apiserver_request_count GET|LIST|WATCH 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sort_desc((sum without (instance,type,code) (rate(apiserver_request_count{verb=~"GET|LIST|WATCH"}[$Interval])))) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+    # NEW PANEL
+    - title: API Server Request Rate by Resource
+      showTitle: true
+      height: 250px
+      panels:
+            - title: API Server Request Rate by Resource
+              type: grafana-piechart-panel
+              span: 4
+              valueName: current
+              legendType: "Right side"
+              datasource: $Datasource
+              targets:
+              - expr: rate(apiserver_request_count_rate_by_resources[$Interval])
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+                legendType: "Right side"
+                legendFormat: "{{ resource }} {{ scope }} {{ verb }}"
+            - title: Query Load by API Server 
+              type: grafana-piechart-panel
+              span: 4
+              valueName: current
+              legendType: "Right side"
+              datasource: $Datasource
+              targets:
+              - expr: sum (rate(apiserver_request_count[$Interval])) by (instance) 
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+                legendType: "Right side"
+            - title: API Server queries by Client version 
+              type: grafana-piechart-panel
+              span: 4
+              valueName: current
+              legendType: "Right side"
+              datasource: $Datasource
+              targets:
+              - expr: sum (rate(apiserver_request_count[$Interval])) by (client)
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+                legendType: "Right side"
+            - title: EVENTS apiserver_request_count_rate_by_resources over $Interval 
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: apiserver_request_count_rate_by_resources{resource="events"} 
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+            - title: NODES apiserver_request_count_rate_by_resources 
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: apiserver_request_count_rate_by_resources{resource="nodes"}
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+            - title: ROUTES apiserver_request_count_rate_by_resources
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: apiserver_request_count_rate_by_resources{resource="routes"}
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+            - title: PROJECTS apiserver_request_count_rate_by_resources over $Interval
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: apiserver_request_count_rate_by_resources{resource="pods"}
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+            - title: PROJECTS apiserver_request_count_rate_by_resources
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: apiserver_request_count_rate_by_resources{resource="projects"}
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+            - title: SECRETS apiserver_request_count_rate_by_resources
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: apiserver_request_count_rate_by_resources{resource="secrets"}
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+            - title: JOBS apiserver_request_count_rate_by_resources
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: apiserver_request_count_rate_by_resources{resource="jobs"}
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+            - title: BUILDS apiserver_request_count_rate_by_resources
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: apiserver_request_count_rate_by_resources{resource="builds"}
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+            - title: OAUTHCLIENTAUTHORIZATIONS apiserver_request_count_rate_by_resources over $Interval
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: rate(apiserver_request_count_rate_by_resources{resource="oauthclientauthorizations"}[$Interval])
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+            - title: NAMESPACES apiserver_request_count_rate_by_resources over $Interval 
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: rate(apiserver_request_count_rate_by_resources{resource="namespaces"}[$Interval]) 
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+            - title: PVC apiserver_request_count_rate_by_resources over $Interval 
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: rate(apiserver_request_count_rate_by_resources{resource="persistentvolumeclaims"}[$Interval])
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+            - title: OAUTHCLIENTS apiserver_request_count_rate_by_resources over $Interval 
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: apiserver_request_count_rate_by_resources{resource="oauthclients"}
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+            - title: CONFIGMAPS apiserver_request_count_rate_by_resources over $Interval
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: rate(apiserver_request_count_rate_by_resources{resource="configmaps"}[$Interval])
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+            - title: IMAGESTREAMS apiserver_request_count_rate_by_resources over $Interval
+              type: graph
+              span: 4
+              datasource: $Datasource
+              targets:
+              - expr: rate(apiserver_request_count_rate_by_resources{resource="imagestreams"}[$Interval])
+                format: time_series
+                instant: false
+                interval: 1s
+                intervalFactor: 1
+                step: 2
+    # NEW PANEL
+    - title: OSO Services 
+      showTitle: true
+      height: 250px
+      panels:
+        - title: CPU - oso-clam-server
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{pod_name=~"^oso-clam-server-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: RSS - oso-clam-server
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_memory_rss{pod_name=~"^oso-clam-server-.*"}[$Interval])) by (pod_name) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: CPU - oso-image-inspector 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{pod_name=~"^oso-image-inspector-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: RSS - oso-image-inspector
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_memory_rss{pod_name=~"^oso-image-inspector-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+    # NEW PANEL
+    - title: Router Metrics
+      showTitle: true
+      height: 250px
+      panels:
+        - title: TODO as of 2018-01-22 starter clusters do not expose router metrics via prom/haproxy-exporter
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: ''
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+        - title: Router Pods RSS
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: container_memory_rss{namespace="default",pod_name=~"router.*"}
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            legendFormat: "{{ hostname }}"
+        - title: Router Pods CPU 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: rate(container_cpu_system_seconds_total{namespace="default",pod_name=~"router.*"}[$Interval])
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            legendFormat: "{{ hostname }}"
+    # NEW PANEL
+    - title: CPU - Control Plane Processes 
+      showTitle: true
+      height: 250px
+      panels:
+        - title: Load Averages for Masters 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: node_load1{$hostname=~"$Datasource-master.+"}
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+        - title: Load Averages for Compute nodes
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: node_load$loadavg_interval{$hostname=~"$Datasource-node-compute-.+"}
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            legendFormat: "{{ hostname }} {{ ip }}"
+        - title: Load Averages for Infra Nodes
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: node_load1{$hostname=~"$Datasource-node-infra.+"}
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+        - title: CPU etcd
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_cpu_usage_seconds_total{type="master",id=~"/system.slice/etcd.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+        - title: CPU atomic-openshift-node
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_cpu_usage_seconds_total{type="master",id=~"/system.slice/atomic-openshift-node.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+        - title: CPU atomic-openshift-master-controllers
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_cpu_usage_seconds_total{type="master",id=~"/system.slice/atomic-openshift-master-controllers.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+        - title: CPU ovs-vswitchd
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_cpu_usage_seconds_total{type="master",id=~"/system.slice/ovs-vswitchd.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+        - title: CPU atomic-openshift-master-api
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_cpu_usage_seconds_total{type="master",id=~"/system.slice/atomic-openshift-master-api.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+        - title: AGGREGATION container_cpu_usage_rate 5m
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: topk (5, container_cpu_usage_rate)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+    # NEW PANEL
+    - title: Storage I/O - Control Plane Processes
+      showTitle: true
+      height: 250px
+      panels:
+        - title: "TODO  why are reads zero? I/O atomic-openshift-node"
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_fs_writes_total{$hostname=~"$Datasource-node-compute-0.+",id=~"/system.slice/atomic-openshift-node.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: writes {{ hostname }}
+          - expr: sum by (hostname) (rate(container_fs_reads_total{$hostname=~"$Datasource-node-compute-0.+",id=~"/system.slice/atomic-openshift-node.service"}[$Interval])) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: reads {{ hostname }}
+        - title: THE WORLD IS ENDING etcd_disk_wal_fsync_duration_seconds_count 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: etcd_disk_wal_fsync_duration_seconds_count{type="master"}
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: "TODO  why are reads zero? I/O atomic-openshift-master-api"
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_fs_writes_total{type="master",id=~"/system.slice/atomic-openshift-master-api.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: writes {{ hostname }}
+          - expr: sum by (hostname) (rate(container_fs_reads_total{type="master",id=~"/system.slice/atomic-openshift-master-api.service"}[$Interval])) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: reads {{ hostname }}
+        - title: "TODO  why are reads zero? I/O atomic-openshift-master-controllers" 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_fs_writes_total{type="master",id=~"/system.slice/atomic-openshift-master-controllers.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: writes {{ hostname }}
+          - expr: sum by (hostname) (rate(container_fs_reads_total{type="master",id=~"/system.slice/atomic-openshift-master-controllers.service"}[$Interval])) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: reads {{ hostname }}
+        - title: "TODO  why are reads zero? I/O ovs vswitchd"
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_fs_writes_total{$hostname=~"$Datasource-node-compute-0.+",id=~"/system.slice/ovs-vswitchd.service"}[$Interval])) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: writes {{ hostname }}
+          - expr: sum by (hostname) (rate(container_fs_reads_total{$hostname=~"$Datasource-node-compute-0.+",id=~"/system.slice/ovs-vswitchd.service"}[$Interval])) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: reads {{ hostname }}
+        - title: "TODO  why are reads zero? I/O ovs etcd"
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_fs_writes_total{type="master",id=~"/system.slice/etcd.service"}[$Interval])) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: writes {{ hostname }}
+          - expr: sum by (hostname) (rate(container_fs_reads_total{type="master",id=~"/system.slice/etcd.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: reads {{ hostname }}
+        - title: "TODO  why are reads zero? I/O ovs docker"
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_fs_writes_total{$hostname=~"$Datasource-node-compute-0.+",id=~"/system.slice/docker.service"}[$Interval])) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: writes {{ hostname }}
+          - expr: sum by (hostname) (rate(container_fs_reads_total{$hostname=~"$Datasource-node-compute-0.+",id=~"/system.slice/docker.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: reads {{ hostname }}
+    # NEW PANEL
+    - title: Network I/O pressure
+      showTitle: true
+      height: 250px
+      panels:
+        - title: Network I/O pressure
+          type: graph
+          span: 4
+          datasource: $Datasource
+          yaxes:
+            - {
+                    format: Mbits
+            }
+            - {}
+          targets:
+          - expr: sum (rate (container_network_receive_bytes_total{$hostname=~"^$Node$"}[$Interval])) / 125000
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: Received
+            metric: network
+          - expr: sum (rate (container_network_transmit_bytes_total{$hostname=~"^$Node$"}[$Interval])) / 125000
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: Sent
+            metric: network
+    # NEW PANEL
+    - title: All processes network I/O
+      showTitle: true
+      height: 250px
+      panels:
+        - title: 'Top 10 Network Consuming Pods container_network_rx/tx_bytes_total'
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: 'topk(10, (sum by (pod_name) (rate(container_network_receive_bytes_total[$Interval]))))'
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: Received
+          - expr: 'topk(10, (sum by (pod_name) (rate(container_network_transmit_bytes_total[$Interval]))))'
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: Sent
+        - title: 'NET - network RX/TX by node '
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: '- sum (rate (container_network_transmit_bytes_total{id!="/",$hostname=~"^$Node$"}[$Interval])) by (hostname)'
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "{{ hostname }}"
+            metric: network
+          - expr: 'sum (rate (container_network_receive_bytes_total{id!="/",$hostname=~"^$Node$"}[$Interval])) by (hostname)'
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "{{ hostname }}"
+            metric: network
+    # NEW PANEL
+    - title: 'Memory - Control Plane Processes'
+      showTitle: true
+      height: 250px
+      panels:
+        - title: RSS atomic-openshift-node 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: 'sum by (hostname) (rate(container_memory_rss{$hostname=~"$Datasource-node-compute-0.+",id=~"/system.slice/atomic-openshift-node.service"}[$Interval]))'
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: RSS atomic-openshift-master-controllers
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_memory_rss{type="master",id=~"/system.slice/atomic-openshift-master-controllers.service"}[$Interval])) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: RSS atomic-openshift-master-api 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_memory_rss{type="master",id=~"/system.slice/atomic-openshift-master-api.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: RSS etcd 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_memory_rss{type="master",id=~"/system.slice/etcd.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: RSS ovs-vswitchd
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_memory_rss{$hostname=~"$Datasource-node-compute-0.+",id=~"/system.slice/ovs-vswitchd.service"}[$Interval]))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: RSS docker
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum by (hostname) (rate(container_memory_rss{$hostname=~"$Datasource-node-compute-0.+",id=~"/system.slice/docker.service"}[$Interval])) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+    # NEW PANEL
+    - title: Logging Processes
+      showTitle: true
+      height: 250px
+      panels:
+        - title: Load Averages for Infra Nodes
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: node_load1{$hostname=~"$Datasource-node-infra.+"}
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: CPU - logging-es-data-master 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{pod_name=~"^logging-es-data-master-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: Net RX/TX  - logging-es-data-master
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_network_transmit_bytes_total{pod_name=~"^logging-es-data-master-.*"}[$Interval])) by (pod_name) * 8
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: RSS - logging-es-data-master
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_memory_rss{pod_name=~"^logging-es-data-master-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: TODO I/O reads/writes - logging-es-data-master
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_fs_reads_total{pod_name=~"^logging-es-data-master-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "reads {{ pod_name }}"
+          - expr: sum (rate (container_fs_writes_total{pod_name=~"^logging-es-data-master-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "writes {{ pod_name }}"
+        - title: RSS - logging-fluentd 
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_memory_rss{pod_name=~"^logging-fluentd-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: CPU usage by fluentd
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{pod_name=~"^logging-fluentd-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: CPU usage by fluentd
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{pod_name=~"^logging-fluentd-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: CPU - logging-curator
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{pod_name=~"^logging-curator-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: RSS - logging-curator
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_memory_rss{pod_name=~"^logging-curator-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: EBS Volume % kubelet_volume_stats_used_bytes
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~"logging-es-.*"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~"logging-es-.*"}) * 100
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: CPU - logging-kibana
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_cpu_usage_seconds_total{pod_name=~"^logging-kibana-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+        - title: TODO I/O reads/writes - logging-fluentd
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: sum (rate (container_fs_reads_total{pod_name=~"^logging-fluentd-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "{{ pod_name }} reads"
+          - expr: sum (rate (container_fs_writes_total{pod_name=~"^logging-fluentd-.*"}[$Interval])) by (pod_name)
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            legendFormat: "{{ pod_name }} writes"
+    # NEW PANEL
+    - title: Pods CPU usage
+      showTitle: true
+      height: 250px
+      panels:
+        - title: TODO Top CPU Consuming Pods
+          type: graph
+          span: 4
+          datasource: $Datasource
+          targets:
+          - expr: topk(3, (sum (rate (container_cpu_usage_seconds_total{name!="",$hostname=~"^$Node$"}[$Interval])) by (pod_name))) 
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            metric: container_cpu
+            legendFormat: "{{ pod_name }}"
+          - expr: topk(3, (sum (rate (container_cpu_usage_seconds_total{name!=""}[$Interval])) by (pod_name)))
+            format: time_series
+            instant: false
+            interval: 1s
+            intervalFactor: 1
+            step: 2
+            metric: container_cpu
+            legendFormat: "{{ pod_name }}"
