@@ -1,19 +1,13 @@
 ### Daily tasks
 ###
-login "100%" users
-#create "5" user
-#create "5" project
-#create "1" app
+create "2" user
+create "4" project
+scale up "100%" app
 visit "100%" app
-#modify "20%" project
-#modify "40%" app
-scale up "80%" app
-scale down "80%" app
-#delete "10%" project
-#delete "1" user
-check project info
-#clean environment
-monitor masters
-monitor nodes
-#monitor etcds
-
+scale down "100%" app
+scale down ds
+scale up ds
+scale up ss
+delete ss pods
+scale down ss
+modify "100%" apps

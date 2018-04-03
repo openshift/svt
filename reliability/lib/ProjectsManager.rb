@@ -14,6 +14,7 @@ module OpenshiftReliability
       @users=users
       @projects=[]
       @ds_project
+      @ss_project
       if $config.projectload
         load()
       end
@@ -127,7 +128,6 @@ module OpenshiftReliability
       @ds_project=Project.new(project_name, user)
       @ds_project.create()
       @ds_project.create_ds()
-      #@projects.push(@ds_project)
     end
 
     def scale_up_ds()
@@ -139,7 +139,30 @@ module OpenshiftReliability
       @ds_project.use()
       @ds_project.scale_down_ds()
     end
-  
+ 
+    def create_ss()
+      user = guess_user
+      project_name = "ss-" + user.name + "-" + $config.seq
+      @ss_project=Project.new(project_name, user)
+      @ss_project.create()
+      @ss_project.create_ss()
+    end
+
+    def scale_up_ss()
+      @ss_project.use()
+      @ss_project.scale_up_ss()
+    end
+
+    def scale_down_ss()
+      @ss_project.use()
+      @ss_project.scale_down_ss()
+    end
+
+    def delete_ss_pods()
+      @ss_project.use()
+      @ss_project.delete_ss_pods()
+    end
+ 
     def to_digit(numstr)
       number=0
       percent_status=false
