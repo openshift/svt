@@ -1,11 +1,5 @@
 ###  Pre tasks at beginning
 ###
-#create "2" user
-#check project info
-#clean environment
-login "100%" users
-#monitor openshift
-monitor masters
-monitor nodes
-#monitor etcds
-
+create "2" user
+create ds
+create ss

@@ -170,6 +170,46 @@ module OpenshiftReliability
       $logger.info("DS Scale down failed")
     end
 
+    def create_ss()
+      @user.exec("oc process -f /root/svt/openshift_scalability/content/statefulset-pv-template.json | oc create -f - -n #{@name}")
+      check_ss_pods("Create SS", 2)
+    end
+
+    def scale_up_ss()
+      res=@user.exec("oc scale statefulset -n #{@name} --replicas=4 web1")
+      check_ss_pods("Scale Up", 4)
+    end
+
+    def scale_down_ss()
+      res=@user.exec("oc scale statefulset -n #{@name} --replicas=2 web1")
+      check_ss_pods("Scale Down", 2)
+    end
+
+    def delete_ss_pods()
+      res=@user.exec("oc delete pods -n #{@name} -l app=server1")
+      check_ss_pods("Delete", 4)
+    end
+
+    def check_ss_pods(command, pods)
+      $logger.info("check_ss_pods - #{command} - #{pods}")
+      wait_minute_num=12
+      i = 0
+      while i < wait_minute_num
+        res=@user.exec("oc get pods -n #{@name} --no-headers")
+        count=res[:output].scan(/(?=Running)/).count
+        $logger.info("count - #{count}")
+        if res[:output].scan(/(?=Running)/).count == pods
+          $logger.info("SS #{command} Complete")
+          return
+        else
+          sleep 15
+          i = i + 1
+          next
+        end
+      end
+      $logger.info("SS #{command} failed")
+    end
+
     def start_build()
       if @bcs.length == 0
          get_bc()

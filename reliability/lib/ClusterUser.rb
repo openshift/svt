@@ -36,7 +36,7 @@ module OpenshiftReliability
     end
 
     def create_ds(project_name)
-      exec("oc create -f /root/svt/reliability/daemonset-pause-test.yaml -n #{project_name}")
+      exec("oc create -f /root/svt/openshift_scalability/content/daemonset-pause-test.yaml -n #{project_name}")
     end
 
     def label_ds_nodes()
