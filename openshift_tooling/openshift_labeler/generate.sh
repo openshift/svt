@@ -33,6 +33,12 @@ else
 	echo "oc client already present"
 fi
 
+# check if the openshift inventory file exists and is non empty
+if [[ ! -s $inventory_file_path ]]; then
+	echo "Cannot find openshift inventory at $inventory_file_path or is empty, please check"
+	exit 1
+fi	
+
 if [[ -z $inv_path ]]; then
 	inv_path="/root/tooling_inventory"
 	echo "inventory path is not provided by the user, the inventory will be generated in the default location $inv_path"
