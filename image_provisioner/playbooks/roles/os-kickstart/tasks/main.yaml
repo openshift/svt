@@ -114,6 +114,16 @@
     dest: /etc/ssh/ssh_config 
     line: "StrictHostKeyChecking no"
 
+- name: increase sshd max sessions, startups limits and disable DNS checks
+  lineinfile:
+    path: "/etc/ssh/sshd_config"
+    regexp: "{{ item['find'] }}"
+    line: "{{ item['replace'] }}"
+  with_items:
+    - { find: "^#?MaxSessions.*", replace: "MaxSessions 200" }
+    - { find: "^#?MaxStartups.*", replace: "MaxStartups 200:30:400" }
+    - { find: "^#?UseDNS.*", replace: "UseDNS no" }
+
 - name: copy svt repo to atomic host
   synchronize:
     src: /root/svt
