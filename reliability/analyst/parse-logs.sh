@@ -125,13 +125,13 @@ function extract_activity_data
   echo "DS Scale Down Passed $(grep -e "DS Scale down complete" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "DS Scale Down Failed $(grep -e "DS Scale down failed" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "DS Scale Down Total $(grep -e "DS Scale down" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
-  echo "SS Scale Up Passed $(grep -e "SS Scale down complete" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
-  echo "SS Scale Up Failed $(grep -e "SS Scale down failed" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
-  echo "SS Scale Up Total $(grep -e "SS Scale down" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
-  echo "SS Scale Down Passed $(grep -e "SS Scale down complete" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
-  echo "SS Scale Down Failed $(grep -e "SS Scale down failed" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
-  echo "SS Scale Down Total $(grep -e "SS Scale down" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
-  echo "SS Delete Passed $(grep -e "SS Delete complete" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "SS Scale Up Passed $(grep -e "SS Scale Up Complete" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "SS Scale Up Failed $(grep -e "SS Scale Down failed" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "SS Scale Up Total $(grep -e "SS Scale Down" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "SS Scale Down Passed $(grep -e "SS Scale Down Complete" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "SS Scale Down Failed $(grep -e "SS Scale Down failed" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "SS Scale Down Total $(grep -e "SS Scale Down" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
+  echo "SS Delete Passed $(grep -e "SS Delete Complete" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "SS Delete Failed $(grep -e "SS Delete failed" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
   echo "SS Delete Total $(grep -e "SS Delete" ../logs/reliability.log* | wc -l)" >> results/activity_logs.txt
 
