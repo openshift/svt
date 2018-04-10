@@ -171,7 +171,8 @@ module OpenshiftReliability
     end
 
     def create_ss()
-      @user.exec("oc process -f /root/svt/openshift_scalability/content/statefulset-pv-template.json | oc create -f - -n #{@name}")
+      @user.exec("oc process -f /root/svt/openshift_scalability/content/statefulset-pv-template.json > /tmp/ss.json")
+      @user.exec("oc create -f /tmp/ss.json -n #{@name}")
       check_ss_pods("Create SS", 2)
     end
 
@@ -191,13 +192,11 @@ module OpenshiftReliability
     end
 
     def check_ss_pods(command, pods)
-      $logger.info("check_ss_pods - #{command} - #{pods}")
       wait_minute_num=12
       i = 0
       while i < wait_minute_num
         res=@user.exec("oc get pods -n #{@name} --no-headers")
         count=res[:output].scan(/(?=Running)/).count
-        $logger.info("count - #{count}")
         if res[:output].scan(/(?=Running)/).count == pods
           $logger.info("SS #{command} Complete")
           return
