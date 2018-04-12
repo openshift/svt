@@ -59,16 +59,6 @@
                                 "targetPort": 8765
                             }
                         ],
-                        "resources": {
-                           "limits": {
-                                "cpu": "800m",
-                                "memory": "20Mi"
-                            },
-                            "requests": {
-                                "cpu": "10m",
-                                "memory": "10Mi"
-                            }
-                        },
                         "volumeMounts": [
                             {
                                 "name": "${VOL_MOUNT_NAME}",
