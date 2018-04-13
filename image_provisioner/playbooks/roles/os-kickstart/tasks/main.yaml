@@ -74,6 +74,15 @@
       - deltarpm
       - jq
 
+  - name: Download binaries
+    get_url:
+      url: "{{ binary_url }}{{ item }}"
+      dest: "/usr/local/bin/{{ item }}"
+      mode: 0755
+    with_items:
+      - pbscraper
+      - pbcompare
+
   - name: install pbench internal
     yum: 
       name: pbench-agent-internal 
