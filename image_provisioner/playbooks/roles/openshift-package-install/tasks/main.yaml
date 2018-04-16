@@ -9,7 +9,7 @@
     - atomic-openshift-tests
     - atomic-openshift-node
     - atomic-openshift-pod
-    - atomic-openshift-utils
+    - atomic-openshift
     - atomic-openshift-clients
     - atomic-openshift-clients-redistributable
     - atomic-openshift-dockerregistry
