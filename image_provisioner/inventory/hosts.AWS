@@ -72,3 +72,5 @@ crio_registry=registry.access.redhat.com
 image_repository=
 # multipath-blacklist
 multipath_blacklist=False
+# pbench scrape binaries
+binary_url=https://github.com/redhat-performance/pbench-analyzer/releases/download/v0.1-alpha/
