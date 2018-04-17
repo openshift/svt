@@ -66,9 +66,9 @@ function short_sleep() {
 # cleanup deamonset if already exists
 function cleanup() {
 	# pbench cleanup
-	oc delete serviceaccount useroot
-	oc delete -f openshift_templates/performance_monitoring/pbench/pbench-agent-daemonset.yml
-	oc delete -f openshift_templates/performance_monitoring/pbench/pbench-namespace.yml
+	oc delete serviceaccount useroot -n pbench
+	oc delete -f openshift_templates/performance_monitoring/pbench/pbench-agent-daemonset.yml -n pbench
+	oc delete -f openshift_templates/performance_monitoring/pbench/pbench-namespace.yml -n pbench
 
 	# sleep for 20 seconds for the pods to get terminated
 	echo "Waiting for 20 seconds for pods to get terminated, namespace to be deleted if exists" 
@@ -77,8 +77,8 @@ function cleanup() {
 
 # Create a service account and add it to the privileged scc
 function create_service_account() {
-        oc create serviceaccount useroot
-        oc adm policy add-scc-to-user privileged -z useroot
+        oc create serviceaccount useroot -n pbench
+        oc adm policy add-scc-to-user privileged -z useroot -n pbench
 }
 	
 pushd /root/svt
@@ -91,16 +91,17 @@ if [[ $? == 0 ]]; then
 	cleanup
 fi
 oc create -f openshift_templates/performance_monitoring/pbench/pbench-namespace.yml
+oc project pbench
 create_service_account
 
 # Create pbench-agent pods and patch it
-oc create -f openshift_templates/performance_monitoring/pbench/pbench-agent-daemonset.yml
-oc patch daemonset pbench-agent --patch \ '{"spec":{"template":{"spec":{"serviceAccountName": "useroot"}}}}'
+oc create -f openshift_templates/performance_monitoring/pbench/pbench-agent-daemonset.yml -n pbench
+oc patch daemonset pbench-agent --patch \ '{"spec":{"template":{"spec":{"serviceAccountName": "useroot"}}}}' -n pbench
 
 popd
 
 # Setup jq if not already installed
-# jq is already baked in case you are using the image generated using image procisioner
+# jq is already baked in case you are using the image generated using image provisioner
 setup_jq
 
 # Check if the pbench pods are running
