@@ -1,0 +1,4 @@
+localhost
+
+[all:vars]
+github_token=
