@@ -11,11 +11,7 @@
         path: /etc/origin/master/master-config.yaml
         regexp: 'defaultNodeSelector: .*'
         replace: 'defaultNodeSelector: ""'
-    - name: Restart master services
-      systemd:
-        name: "{{ item }}"
-        state: restarted
-      with_items:
-        - atomic-openshift-master-controllers
-        - atomic-openshift-master-api
-
+    - name: Restart the static pod for api
+      shell: /usr/local/bin/master-restart api
+    - name: Restart the static pod for controllers
+      shell: /usr/local/bin/master-restart controllers
