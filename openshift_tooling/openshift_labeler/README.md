@@ -14,19 +14,17 @@ $ ansible-playbook -vv -i <openshift-inventory> openshift_label.yml
 ### Labeling of openshift nodes
 The nodes in the openshift cluster are labeled as follows:
 
-- master and etcd are co-located - node_role=master_etcd, pbench_role=agent
-- master                         - node_role=master, pbench_role=agent
-- nodes                          - node_role=node, pbench_role=agent
-- etcd                           - node_role=etcd, pbench_role=agent
-- infra                          - node_role=infra, pbench_role=agent
-- lb                             - node_role=lb, pbench_role=agent
-- glusterfs                      - node_role=cns, pbench_role=agent
+- master                         - node-role.kubernetes.io/master=true 
+- nodes                          - node-role.kubernetes.io/compute=true
+- etcd                           - node-role.kubernetes.io/master=true
+- infra                          - node-role.kubernetes.io/infra=true
+- lb                             - node-role.kubernetes.io/lb=true
+- glusterfs                      - node-role.kubernetes.io/cns=true
 
 ### Sample Inventory generated
 ```
 [pbench-controller]
 foo.controller.com
-
 
 [masters]
 foo.master.com
@@ -36,6 +34,9 @@ foo.node.com
 
 [etcd]
 foo.master.com
+
+[infra]
+foo.infra.com
 
 [lb]
 foo.lb.com
@@ -54,4 +55,4 @@ register_all_nodes=False
 ```
 
 ## Location of the inventory
-By default it genrates the inventory at /root/tooling_inventory, inv_path variable can be set to a different path to change the location.
+By default it genrates the inventory at /root/tooling_inventory, tooling_inv variable can be set to a different path to change the location.

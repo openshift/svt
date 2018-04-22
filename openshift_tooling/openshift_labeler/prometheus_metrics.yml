@@ -1,5 +1,5 @@
 ---
-- hosts: masters[0]
+- hosts: localhost
   user: root
   tasks:
     - name: add endpoints to monitor
