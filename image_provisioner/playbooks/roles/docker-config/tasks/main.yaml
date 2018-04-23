@@ -55,7 +55,7 @@
 
    - name: set docker_storage_mount_path if empty or undefined
      set_fact:
-        docker_storage_mount_path: "/var/lib/docker/overlay2"
+        docker_storage_mount_path: "/var/lib/docker"
      when: ( docker_storage_mount_path == "" or docker_storage_mount_path is not defined )
 
    - name: update fstab
