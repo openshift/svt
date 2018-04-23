@@ -33,7 +33,7 @@ import_wildfly() {
 
 fix_jenkins() {
    oc get -n openshift -o yaml is jenkins > /tmp/jenkins.yaml
-   sed -i.orig 's/jenkins-2-rhel7:v3.9/jenkins-2-rhel7:latest/g' /tmp/jenkins.yaml
+   sed -i.orig 's/jenkins-2-rhel7:v3.10/jenkins-2-rhel7:latest/g' /tmp/jenkins.yaml
    oc replace --namespace=openshift -f /tmp/jenkins.yaml
 }
 
