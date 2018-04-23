@@ -15,7 +15,7 @@ SERIAL_TESTS="Serial"
 SERIAL_SKIP="Flaky|Disruptive|Slow"
 
 setup_prereqs() {
-   yum -y install atomic-openshift-tests
+   yum -y install go atomic-openshift-tests
    mkdir /root/go
    export GOPATH=/root/go
    export PATH=$PATH:$GOPATH/bin
