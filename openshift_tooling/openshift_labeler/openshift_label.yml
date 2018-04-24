@@ -2,20 +2,14 @@
 - hosts: masters[0]
   user: root
   vars:
-    - file: /run/openshift/register.hosts
     - tooling_inv: /root/tooling_inventory
     - register_all_nodes : False
     - oc_client_url: "https://github.com/openshift/origin/releases/download/v1.2.1/openshift-origin-client-tools-v1.2.1-5e723f6-linux-64bit.tar.gz"
   tasks:
     - name: create openshift directory
-      file: 
-        path: /run/openshift 
+      file:
+        path: /run/openshift
         state: directory
-
-    - name: clear file contents
-      file: 
-        path: "{{ file }}" 
-        state: absent
 
     - name: copy, set permissions on the register script
       copy:
@@ -24,66 +18,13 @@
         owner: root
         group: root
         mode: 0755
-
-    - name: add masters to the file
-      lineinfile:
-        path: "{{ file }}"
-        line: "{{ item }} master >> {{ file }}"
-        create: yes
-      with_items:
-        - "{{ groups['masters'] }}"
-      when: groups['masters']|default([])
-
-
-    - name: add nodes to the file
-      lineinfile:
-        path: "{{ file }}"
-        line: "{{ item }} node  >> {{ file }}"
-        create: yes
-      with_items: 
-       - "{{ groups['nodes'][-1] }}" 
-       - "{{ groups['nodes'][-2] }}"
-      when: groups['nodes']|default([]) and not ( label_all_nodes | default(False) | bool )
     
-    - name: add infra nodes to the file
-      shell: index=1; for infra in $(cat {{ inventory_file }} | grep -w "'region'":" 'infra'" | cut -d ' ' -f1); do echo -e $infra infra $index >> {{ file }} && ((index+=1)); done
-      when: groups['nodes']|default([]) and not ( label_all_nodes | default(False) | bool )
-
-    - name: add cns nodes to file
-      lineinfile:
-        path: "{{ file }}"
-        line: "{{ item }} cns  >> {{ file }}"
-        create: yes
+    - name: label cns nodes
+      shell: oc label node {{ item }} node-role.kubernetes.io/cns=true
       with_items:
        - "{{ groups['glusterfs'] }}"
       when: groups['glusterfs']|default([])
-
-    - name: add nodes to the file
-      lineinfile:
-        path: "{{ file }}"
-        line: "{{ item }} node >> {{ file }}"
-        create: yes
-      with_items:
-       - "{{ groups['nodes'] }}"
-      when: groups['nodes']|default([]) and ( register_all_nodes | default(False) | bool )
-
-    - name: add etcd nodes to the file
-      lineinfile:
-        path: "{{ file }}"
-        line: "{{ item }} etcd  >> {{ file }}"
-        create: yes
-      with_items: 
-       - "{{ groups['etcd'] }}"
-      when: groups['etcd']|default([])
-
-    - name: add lb to the file
-      lineinfile: 
-        path: "{{ file }}"
-        line: "{{ item}} lb >> {{ file }}"
-        create: yes
-      with_items: 
-       - "{{ groups['lb'] }}"
-      when: groups['lb']|default([])
+      ignore_errors: true
 
     - name: get the local hostname
       command: hostname
@@ -91,4 +32,8 @@
       delegate_to: localhost
   
     - name: label nodes
-      shell: sh /run/openshift/generate.sh {{ file }} {{ inventory_file }} {{ tooling_inv }} {{ register_all_nodes }} {{ oc_client_url }} {{ ansible_controller.stdout }}
+      shell: sh /run/openshift/generate.sh {{ tooling_inv }} {{ register_all_nodes }} {{ oc_client_url }} {{ ansible_controller.stdout }}
+
+    - name: copy the inventory onto jump host
+      shell: scp {{ inventory_hostname }}:{{ tooling_inv }} {{ tooling_inv }}
+      delegate_to: localhost
