@@ -20,7 +20,7 @@ tuningsets:
   - name: default
     pods:
       stepping:
-        stepsize: 40
-        pause: 180 s
+        stepsize: 50
+        pause: 60 s
       rate_limit:
         delay: 0 ms
