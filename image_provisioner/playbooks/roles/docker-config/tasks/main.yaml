@@ -39,19 +39,10 @@
   when: atomic | default(False) | bool
 
 - block:
-   - name: create overlay2 physical volume
-     command: pvcreate -f {{ docker_storage_device }}
-
-   - name: create overlay2 volume group
-     command: vgcreate {{ docker_storage_vgname }}  {{ docker_storage_device }}
-
-   - name: create overlay2 logical volume
-     command: lvcreate --name lvol0 --extents 90%FREE {{ docker_storage_vgname }}
-
    - name: format the partition
      filesystem:
        fstype: xfs
-       dev: "/dev/mapper/{{ docker_storage_vgname }}-lvol0"
+       dev: "{{ docker_storage_device }}"
 
    - name: set docker_storage_mount_path if empty or undefined
      set_fact:
@@ -61,11 +52,11 @@
    - name: update fstab
      lineinfile:
        path: /etc/fstab
-       line: "/dev/mapper/{{ docker_storage_vgname }}-lvol0 {{ docker_storage_mount_path }}                    xfs   defaults        0 0"
+       line: "{{ docker_storage_device }} {{ docker_storage_mount_path }}                    xfs   defaults        0 0"
        insertafter: EOF
   when: docker_storage_driver == "overlay2" and not atomic | default(False) | bool
   
-- name: check that docker-storage has been deleted
+- name: check if docker-storage already exists
   stat:
     path: /etc/sysconfig/docker-storage
   register: ds_config

@@ -40,7 +40,8 @@ docker_storage_device=/dev/xvdb
 #docker_storage_device=/dev/nvme1n1
 docker_storage_vgname=docker_vg
 docker_storage_driver=overlay2
-docker_storage_mount_path=/var/lib/docker/overlay2
+# docker_storage_mount_path should be: "/var/lib/docker" as of BZ 1568450
+docker_storage_mount_path=/var/lib/docker
 container_root_lv_mount_path=/var/lib/docker
 # updates the kernel if set to true
 update_kernel=false
