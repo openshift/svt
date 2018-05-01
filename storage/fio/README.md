@@ -28,18 +28,18 @@ ec2-34-213-109-136.us-west-2.compute.amazonaws.com
 Run the playbook:
 
 ```sh
-$ ansible-playbook -i storage/inv.file storage/fio-test.yaml
+$ ansible-playbook -i fio/storage/inv.file storage/fio-test.yaml
 ```
 
 Only the setup tags:
 ```sh
-$ ansible-playbook -i storage/inv.file storage/fio-test.yaml --tags setup
+$ ansible-playbook -i fio/storage/inv.file storage/fio-test.yaml --tags setup
 ```
 
 Only run the test:
 
 ```sh
-$ ansible-playbook -i storage/inv.file storage/fio-test.yaml --tags run
+$ ansible-playbook -i fio/storage/inv.file storage/fio-test.yaml --tags run
 ```
 
 Or on master
