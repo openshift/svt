@@ -11,7 +11,7 @@ tmp_folder=/tmp/fio-test
 test_project_name=storage-test
 volume_capacity=1000Gi
 storage_class_name=gp2
-image=registry.reg-aws.openshift.com:443/hongkliu-test/fio:002
+image=registry.reg-aws.openshift.com:443/hongkliu-test/fio:3.10.0-0.31.0
 
 [target]
 ec2-54-191-75-86.us-west-2.compute.amazonaws.com

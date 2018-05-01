@@ -33,7 +33,7 @@ $ ansible-playbook -i storage/inv.file storage/fio-test.yaml
 
 Only the setup tags:
 ```sh
-$ ansible-playbook -i storageinv.file storage/fio-test.yaml --tags setup
+$ ansible-playbook -i storage/inv.file storage/fio-test.yaml --tags setup
 ```
 
 Only run the test:
