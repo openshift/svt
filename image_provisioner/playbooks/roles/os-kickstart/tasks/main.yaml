@@ -73,6 +73,14 @@
       - iscsi-initiator-utils
       - deltarpm
       - jq
+      - cockpit
+      - cockpit-docker
+      - device-mapper-multipath
+      - dnsmasq
+      - haproxy
+      - libarchive
+      - ostree
+      - skopeo
 
   - name: Download binaries
     get_url:
