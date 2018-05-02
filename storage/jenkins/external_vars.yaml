@@ -1,0 +1,24 @@
+---
+test_project_name: storage-test
+test_project_number: 10
+delete_test_project_before_test: true
+tmp_folder: /tmp/jenkins-test
+MEMORY_LIMIT: 6144Mi
+VOLUME_CAPACITY: 10Gi
+STORAGE_CLASS_NAME: glusterfs-storage-block
+JENKINS_IMAGE_STREAM_TAG: jenkins:2
+JJB_STORAGE_CLASS_NAME: glusterfs-storage-block
+###Get a login here: http://www.oracle.com/technetwork/java/javase/downloads/index.html
+###That will be used for installing JDK on Jenkins
+###Change me
+jdk_username: jdk_username
+###Change me
+jdk_password: jdk_password
+iteration: 2
+pbench_registration: false
+pbench_copy_result: false
+###this number <30
+test_build_number: 29
+###in minutes
+benchmark_timeout: 360
+jump_node: true

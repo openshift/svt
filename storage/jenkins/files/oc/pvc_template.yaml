@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: pvc_template
+objects:
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: ${PVC_NAME}
+  spec:
+    accessModes:
+    - ${PVC_MODE}
+    resources:
+      requests:
+        storage: ${PVC_SIZE}
+    storageClassName: ${STORAGE_CLASS_NAME}
+parameters:
+- description: PVC Name
+  displayName: PVC Name
+  name: PVC_NAME
+  required: true
+- description: PVC Mode
+  displayName: PVC Mode
+  name: PVC_MODE
+  value: ReadWriteOnce
+- description: PVC size
+  displayName: PVC size
+  name: PVC_SIZE
+  value: 3Gi
+- description: Storage Class Name
+  displayName: Storage Class Name
+  name: STORAGE_CLASS_NAME
+  required: true
+  value: gp2

@@ -1,0 +1,33 @@
+kind: "DeploymentConfig"
+apiVersion: "v1"
+metadata:
+  name: "jjb"
+spec:
+  template:
+    metadata:
+      labels:
+        name: "jjb"
+    spec:
+      containers:
+        - name: "jjb"
+          image: "docker.io/hongkailiu/jjb:2.0.6"
+          env:
+            - name: PYTHONHTTPSVERIFY
+              value: "0"
+            - name: XDG_CACHE_HOME
+              value: "/data"
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/jenkins_jobs/
+            - name: "pvol"
+              mountPath: "/data"
+      volumes:
+        - name: config-volume
+          configMap:
+            name: jjb-config
+        - name: "pvol"
+          persistentVolumeClaim:
+            claimName: "jjb-pvc"
+  triggers:
+    - type: "ConfigChange"
+  replicas: 1
