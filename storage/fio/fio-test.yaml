@@ -84,12 +84,12 @@
         shell: oc get pod -n "{{ test_project_name }}" | grep -v deploy | grep Running
         register: pod_ready_result
         until: pod_ready_result.rc == 0
-        retries: 5
+        retries: 17
         delay: 10
         ignore_errors: True
-      - name: fail the test if the pod is NOT running after 60s
+      - name: fail the test if the pod is NOT running after 180s
         fail:
-          msg: "the pod is NOT running after 60s"
+          msg: "the pod is NOT running after 180s"
         when: pod_ready_result|failed
     tags:
       - setup
