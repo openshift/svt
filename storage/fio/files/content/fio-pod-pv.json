@@ -1,0 +1,145 @@
+{
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "fio",
+    "annotations": {
+      "description": "An example fio pod",
+      "tags": "fio"
+    }
+  },
+  "labels": {
+    "template": "fio-example"
+  },
+  "objects": [
+    {
+      "kind": "PersistentVolumeClaim",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${FIO_NAME}"
+      },
+      "spec": {
+        "accessModes": [
+          "ReadWriteOnce"
+        ],
+        "resources": {
+          "requests": {
+            "storage": "${VOLUME_CAPACITY}"
+          }
+        },
+        "storageClassName": "${STORAGE_CLASS_NAME}"
+      }
+    },
+    {
+      "kind": "DeploymentConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "labels": {
+          "test": "${FIO_NAME}"
+        },
+        "name": "${FIO_NAME}",
+        "annotations": {
+          "description": "Defines how to deploy fio"
+        }
+      },
+      "spec": {
+        "strategy": {
+          "type": "Recreate"
+        },
+        "replicas": 1,
+        "selector": {
+          "name": "fio"
+        },
+        "template": {
+          "metadata": {
+            "name": "${FIO_NAME}",
+            "labels": {
+              "name": "fio",
+              "test": "${FIO_NAME}"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "fio",
+                "image": "${IMAGE}",
+                "imagePullPolicy": "${IMAGE_PULL_POLICY}",
+                "securityContext": {
+                  "privileged": true
+                },
+                "volumeMounts": [
+                  {
+                    "name": "${FIO_NAME}-data",
+                    "mountPath": "/var/lib/fio"
+                  },
+                  {
+                    "mountPath": "/root/.ssh/authorized_keys",
+                    "name": "${FIO_NAME}-ssh"
+                  }
+                ]
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "nodeSelector": {
+              "${NS_KEY}": "${NS_VALUE}"
+            },
+            "volumes": [
+              {
+                "name": "${FIO_NAME}-data",
+                "persistentVolumeClaim": {
+                  "claimName": "${FIO_NAME}"
+                }
+              },
+              {
+                "hostPath": {
+                  "path": "/root/.ssh/id_rsa.pub"
+                },
+                "name": "${FIO_NAME}-ssh"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "VOLUME_CAPACITY",
+      "displayName": "Volume Capacity",
+      "description": "Volume space available for data, e.g. 512Mi, 2Gi",
+      "value": "1000Gi"
+    },
+    {
+      "name": "FIO_NAME",
+      "displayName": "FIO Name",
+      "value": "fio"
+    },
+    {
+      "name": "STORAGE_CLASS_NAME",
+      "description": "storage class for the PVC",
+      "required": true
+    },
+    {
+      "name": "IMAGE",
+      "description": "image of the container",
+      "required": true
+    },
+    {
+      "name": "IMAGE_PULL_POLICY",
+      "description": "image pull policy",
+      "value": "IfNotPresent"
+    }
+  ,
+    {
+      "name": "NS_KEY",
+      "description": "node selector key",
+      "value": "region"
+    }
+  ,
+    {
+      "name": "NS_VALUE",
+      "description": "node selector value",
+      "value": "primary"
+    }
+  ]
+}

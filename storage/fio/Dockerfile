@@ -12,6 +12,8 @@ COPY ndokos-pbench-epel-7.repo /etc/yum.repos.d/ndokos-pbench-epel-7.repo
 COPY ndokos-pbench-interim.repo /etc/yum.repos.d/ndokos-pbench-interim.repo
 
 RUN echo "root:redhat" | chpasswd; \
+    yum clean all; \
+    rm -rf /var/cache/yum; \
     yum install -y openssh-server pbench-agent pbench-fio
 
 CMD ["/usr/sbin/init"]
