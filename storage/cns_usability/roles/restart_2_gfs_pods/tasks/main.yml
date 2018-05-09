@@ -1,0 +1,22 @@
+- name: kill 2 gfs pods together
+  shell:  "{{ tmp_folder }}/files/scripts/test-with-2-gfs-pods-restart.sh  {{ test_project_name }}"
+
+- name: wait until the log test tool pod finishes logging
+  shell: oc exec -n "{{ test_project_name }}" "$(oc get pod -n {{ test_project_name }} | grep fio | awk '{print $1}')"  -- tail -n 1 /mnt/pvcmount/test.log | awk '{print $10}'
+  register: last_line_number
+  until: last_line_number.stdout == "300000"
+  retries: 11
+  delay: 60
+
+- name: get the line number
+  shell: oc exec -n "{{ test_project_name }}" "$(oc get pod -n {{ test_project_name }} | grep fio | awk '{print $1}')" -- wc -l /mnt/pvcmount/test.log | awk '{print $1}'
+  register: line_number
+
+- name: show line number
+  debug:
+    msg: "{{ line_number.stdout }}"
+
+- name: fail the test if the line number is 300000
+  fail:
+    msg: "line_number is {{ line_number.stdout }}, but expecting smaller than 300000"
+  when: line_number.stdout == "300000"

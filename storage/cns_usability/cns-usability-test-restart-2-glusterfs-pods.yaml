@@ -1,0 +1,9 @@
+---
+- hosts: all
+  vars_files:
+    - external_vars.yaml
+  roles:
+    - setup
+    - restart_2_gfs_pods
+
+

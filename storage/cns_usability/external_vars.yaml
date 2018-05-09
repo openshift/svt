@@ -1,0 +1,14 @@
+---
+test_project_name: storage-test
+test_project_number: 1
+delete_test_project_before_test: true
+tmp_folder: /tmp/cns-test
+client_nodes: '["ip-172-31-57-249.us-west-2.compute.internal", "ip-172-31-47-176.us-west-2.compute.internal"]'
+node_selector_key: fio
+node_selector_value: fio
+STORAGE_CLASS: "glusterfs-storage"
+STORAGE_SIZE: "3Gi"
+###Please do NOT change the following variables
+MOUNT_PATH: "/mnt/pvcmount"
+DOCKER_IMAGE: "docker.io/hongkailiu/ocp-logtest:20180307"
+INITIAL_FLAGS: "-o /mnt/pvcmount/test.log --line-length 1024 --word-length 7 --rate 30000 --time 0 --fixed-line --num-lines 300000\n"
