@@ -1,5 +1,6 @@
 ---
 test_project_name: storage-test-mongo
+test_project_number: 3
 delete_test_project_before_test: true
 tmp_folder: /tmp/mongodb-test
 MEMORY_LIMIT: 4096Mi
