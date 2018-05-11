@@ -1,0 +1,43 @@
+provider: local
+ClusterLoader:
+  cleanup: false
+  projects:
+    - num: 99
+      basename: clusterproject
+      tuning: default
+      ifexists: delete
+      pods:
+        - num: 5
+          image: gcr.io/google_containers/pause-amd64:3.0
+          basename: pausepods
+          file: pod-pause.json
+      
+      templates:
+        -
+          num: 10
+          file: ./build-config-template.json
+        -
+          num: 10
+          file: ./build-template.json
+        -
+          num: 20
+          file: ./image-stream-all-template.json
+        -
+          num: 200
+          file: ./ssh-secret-template.json
+        -
+          num: 10
+          file: ./route-template.json
+          # rcs and services are implemented in deployments.
+  
+  tuningsets:
+    - name: default
+      pods:
+        stepping:
+          stepsize: 20
+          pause: 5 s
+        ratelimit:
+          delay: 250 ms
+  quotas:
+    - name: default
+

@@ -105,9 +105,10 @@
   - name: Register pbench tools on master
     shell: pbench-register-tool-set --label={{ pbench_label }}
 
-  - name: Register pbench tools on remote
-    shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ pbench_remote }}
-    when: pbench_remote != "None"
+  - name: Register pbench tools on remotes
+    shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ item }}
+    when: pbench_remotes != "None"
+    with_items: "{{ pbench_remotes }}"
 
   - name: Register pbench tools on remote two
     shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ pbench_remote_two }}

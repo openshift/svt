@@ -15,7 +15,7 @@ ClusterLoader:
     - name: default
       pods:
         stepping:
-          stepsize: 40
-          pause: 180
+          stepsize: 50
+          pause: 60
         ratelimit:
           delay: 0

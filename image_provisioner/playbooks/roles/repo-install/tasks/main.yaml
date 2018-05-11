@@ -74,6 +74,11 @@
           src: rhel7-server-ansible.repo
           dest: /etc/yum.repos.d
 
+      - name: install rhel-7-fast-datapath-stage-rpms mirror.openshift.com repo
+        copy:
+          src: rhel7-fast-datapath-stage.repo
+          dest: /etc/yum.repos.d
+
       #- name: install pbench-internal repo
       #  template:
       #    src: etc/yum.repos.d/pbench.repo.j2

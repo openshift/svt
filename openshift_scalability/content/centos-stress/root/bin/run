@@ -240,13 +240,11 @@ main() {
         die 1 "${RUN} failed: 1: no targets provided."
       fi
 
-      $timeout \
-        $mb \
-          -d${RUN_TIME:-600} \
-          -r${MB_RAMP_UP:-0} \
-          -i ${requests_json} \
-          -o ${results_csv}.$$ > $mb_log 2>&1
-      timeout_exit_status || die $? "${RUN} failed: $?"
+      $mb \
+        -d${RUN_TIME:-600} \
+        -r${MB_RAMP_UP:-0} \
+        -i ${requests_json} \
+        -o ${results_csv}.$$ > $mb_log 2>&1 || warn "${RUN} failed: $?"
       LC_ALL=C sort -t, -n -k1 ${results_csv}.$$ > ${results_csv}
       rm -f ${results_csv}.$$
       $graph_sh ${graph_dir} ${results_csv} $dir_out/graphs $interval

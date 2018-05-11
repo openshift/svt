@@ -129,7 +129,7 @@
       cron:
         name: "clean images, builds, deployments"
         minute: "0"
-        hour: "0"
+        hour: "*/3"
         job: "/root/svt/reliability/cleanup.sh"
     - name: Setup pruning user
       command: "htpasswd -c -b {{ env.environment.htpasswd }} redhat redhat"

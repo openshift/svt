@@ -10,17 +10,26 @@
 - hosts: sender:receiver
   remote_user: root
   tasks:
-  - name: Install openssh client and servers
-    shell: yum install --assumeyes openssh-clients openssh-server
-
-  - name: Yum clean-up
-    shell: yum clean all
+  - name: Install openssh clients and server
+    yum:
+      name: 
+        - openssh-clients
+        - openssh-server
+      state: latest
+      update_cache: yes  
 
   - name: Enable epel
-    shell: curl -o /etc/yum.repos.d/pbench.repo https://copr.fedorainfracloud.org/coprs/ndokos/pbench/repo/epel-7/ndokos-pbench-epel-7.repo
+    get_url:
+      url: https://copr.fedorainfracloud.org/coprs/ndokos/pbench/repo/epel-7/ndokos-pbench-epel-7.repo
+      dest: /etc/yum.repos.d/pbench.repo
 
   - name: Install configtools, pbench-agent, pbench-uperf
-    shell: yum install --assumeyes configtools pbench-agent pbench-uperf
+    yum:
+      name: 
+        - configtools
+        - pbench-agent
+        - pbench-uperf
+      state: latest
 
   - name: Source pbench profile.
     shell: source /etc/profile.d/pbench-agent.sh
@@ -41,9 +50,10 @@
   - name: Register pbench tools on master
     shell: pbench-register-tool-set --label={{ pbench_label }}
 
-  - name: Register pbench tools on remote
-    shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ pbench_remote }}
-    when: pbench_remote != "None"
+  - name: Register pbench tools on remotes
+    shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ item }}
+    when: pbench_remotes != "None"
+    with_items: "{{ pbench_remotes }}"
 
   - name: Run pbench-uperf for TCP benchmarks
     shell: >

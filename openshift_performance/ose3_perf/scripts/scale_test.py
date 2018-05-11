@@ -13,7 +13,7 @@ def run(cmd):
     return result
 
 def count_pods(namespace,dc) :
-    pod_list = run("oc get pods --show-all=false --no-headers --show-labels -n " + namespace + " -l deploymentconfig=" + dc).rstrip().split('\n')
+    pod_list = run("oc get pods --no-headers --show-labels -n " + namespace + " -l deploymentconfig=" + dc).rstrip().split('\n')
     running = 0
     active = 0
     for pod in pod_list:

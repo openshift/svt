@@ -1,4 +1,0 @@
----
-environment:
-  master: master.example.com
-  nodes: node1.example.com node2.example.com

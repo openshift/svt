@@ -41,9 +41,9 @@ Execute
 ===========================
 1) pre execution<br/>
   edit config/config.yaml <br/>
+  update awscreds file with AWSAccessKeyId and AWSSecretKey which will be used for cloudwatch monitoring.</br>
   ansible-playbook setup.yml <br/>
   define tasks under config/tasks/<br/>
-  update awscreds file with AWSAccessKeyId and AWSSecretKey which will be used for cloudwatch monitoring.</br>
 2) run testing<br/>
    ./reliabilityTests.sh start (to start the tests)<br/>
    ./reliabilityTests.sh stop (to stop the tests)<br/>

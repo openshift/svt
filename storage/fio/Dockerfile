@@ -1,52 +1,19 @@
-FROM centos
+FROM registry.access.redhat.com/rhel7/rhel
 
-MAINTAINER Siva Reddy "schituku@redhat.com"
+### make sure you have the following files in the current folder. Otherwise, find them
+### https://github.com/openshift/svt/tree/master/image_provisioner/playbooks/roles/repo-install/files
+### https://github.com/openshift/aos-ansible/tree/master/playbooks/roles/ops_mirror_bootstrap/files
 
-ENV container docker
+COPY epel.repo /etc/yum.repos.d/epel.repo
+COPY rhel7next.repo /etc/yum.repos.d/rhel7next.repo
+COPY client-cert.pem /var/lib/yum/client-cert.pem
+COPY client-key.pem /var/lib/yum/client-key.pem
+COPY ndokos-pbench-epel-7.repo /etc/yum.repos.d/ndokos-pbench-epel-7.repo
+COPY ndokos-pbench-interim.repo /etc/yum.repos.d/ndokos-pbench-interim.repo
 
-RUN yum install --assumeyes \
-    	openssh-clients \
-    	openssh-server; \
+RUN echo "root:redhat" | chpasswd; \
     yum clean all; \
-    yum -y install systemd; \
-    yum clean all; \ 
-    (cd /lib/systemd/system/sysinit.target.wants/; \
-    for i in *; do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i; done); \
-    rm -f /lib/systemd/system/multi-user.target.wants/*; \
-    rm -f /etc/systemd/system/*.wants/*; \
-    rm -f /lib/systemd/system/local-fs.target.wants/*; \
-    rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
-    rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
-    rm -f /lib/systemd/system/basic.target.wants/*; \
-    rm -f /lib/systemd/system/anaconda.target.wants/*; \
-    rm -f /lib/systemd/system/systemd*udev*; \
-    rm -f /lib/systemd/system/getty.target; \
-    ssh-keygen -A; \
-    systemctl enable sshd; \
-    echo "root:redhat" | chpasswd
-
-RUN curl -o /etc/yum.repos.d/pbench.repo https://copr.fedorainfracloud.org/coprs/ndokos/pbench/repo/epel-7/ndokos-pbench-epel-7.repo; \
-    yum clean expire-cache; \
-    yum install --assumeyes \
-    	configtools \
-	pbench-agent \
-	pbench-uperf; \
-    yum clean all; \
-    source /etc/profile.d/pbench-agent.sh
-
-RUN yum install --assumeyes \
-    	wget; \
-	yum install --assumeyes \    	
-		epel-release; \
-    yum clean expire-cache; \
-    yum install --assumeyes \
-        sysstat \
-        fio \
-        python-pip \
-        python-pandas; \
-    yum clean all; \
-    echo "ending" 
-
-VOLUME [ "/sys/fs/cgroup" ]
+    rm -rf /var/cache/yum; \
+    yum install -y openssh-server pbench-agent pbench-fio
 
 CMD ["/usr/sbin/init"]

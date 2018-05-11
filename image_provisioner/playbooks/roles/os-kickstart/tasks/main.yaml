@@ -73,6 +73,23 @@
       - iscsi-initiator-utils
       - deltarpm
       - jq
+      - cockpit
+      - cockpit-docker
+      - device-mapper-multipath
+      - dnsmasq
+      - haproxy
+      - libarchive
+      - ostree
+      - skopeo
+
+  - name: Download binaries
+    get_url:
+      url: "{{ binary_url }}{{ item }}"
+      dest: "/usr/local/bin/{{ item }}"
+      mode: 0755
+    with_items:
+      - pbscraper
+      - pbcompare
 
   - name: install pbench internal
     yum: 
@@ -113,6 +130,16 @@
   lineinfile: 
     dest: /etc/ssh/ssh_config 
     line: "StrictHostKeyChecking no"
+
+- name: increase sshd max sessions, startups limits and disable DNS checks
+  lineinfile:
+    path: "/etc/ssh/sshd_config"
+    regexp: "{{ item['find'] }}"
+    line: "{{ item['replace'] }}"
+  with_items:
+    - { find: "^#?MaxSessions.*", replace: "MaxSessions 200" }
+    - { find: "^#?MaxStartups.*", replace: "MaxStartups 200:30:400" }
+    - { find: "^#?UseDNS.*", replace: "UseDNS no" }
 
 - name: copy svt repo to atomic host
   synchronize:

@@ -1,0 +1,34 @@
+---
+- hosts: localhost
+  vars:
+    result_directory: /root/results/
+    bin_directory: /usr/local/bin/
+    binary_url: https://github.com/redhat-performance/pbench-analyzer/releases/download/v0.1-alpha/
+  tasks:
+    - name: Clone existing result repo
+      git:
+        repo: 'https://{{ github_token }}@github.com/redhat-performance/scale-ci-results'
+        dest: "{{ result_directory }}"
+
+    - name: Get last file
+      shell: cd {{ result_directory }}; git diff-tree --no-commit-id --name-only -r HEAD
+      register: old_file
+
+    - name: Run R2R
+      command: pbcompare -old {{ result_directory }}{{ old_file.stdout }} -new {{ new_file }}
+      register: command_result
+      failed_when: command_result.rc != 0
+
+    - name: Move good result to repo
+      copy:
+        src: "{{ new_file }}"
+        dest: "{{ result_directory }}/out-{{ ansible_date_time.iso8601_basic }}.json"
+
+    - name: Commit new file if good R2R result
+      shell: |
+        cd {{ result_directory }}
+        git config user.name "Pipeline bot"
+        git config user.email sejug@redhat.com
+        git add .
+        git commit -am "new result"
+        git push -u origin master

@@ -53,15 +53,6 @@ enabled=1
 gpgcheck=0
 sslverify=0
 
-# This htb repo gets us openvswitch-2.6, and is required until the htb bits are promoted to the above GA channel (GA is openvswitch-2.5 for now).
-[rhel7-fast-datapath-htb]
-name=RHEL7 fast-datapath HTB
-baseurl=http://{{ jump_node_ip }}/rhel7-fast-datapath-htb
-failovermethod=priority
-enabled=1
-gpgcheck=0
-sslverify=0
-
 [oso-rhui-rhel-server-extras]
 name=OpenShift Online RHUI Mirror RH Enterprise Linux 7 - Extras
 baseurl=http://{{ jump_node_ip }}/oso-rhui-rhel-server-extras

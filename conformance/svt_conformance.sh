@@ -15,7 +15,7 @@ SERIAL_TESTS="Serial"
 SERIAL_SKIP="Flaky|Disruptive|Slow"
 
 setup_prereqs() {
-   yum -y install atomic-openshift-tests
+   yum -y install go atomic-openshift-tests
    mkdir /root/go
    export GOPATH=/root/go
    export PATH=$PATH:$GOPATH/bin
@@ -33,7 +33,7 @@ import_wildfly() {
 
 fix_jenkins() {
    oc get -n openshift -o yaml is jenkins > /tmp/jenkins.yaml
-   sed -i.orig 's/jenkins-2-rhel7:v3.9/jenkins-2-rhel7:latest/g' /tmp/jenkins.yaml
+   sed -i.orig 's/jenkins-2-rhel7:v3.10/jenkins-2-rhel7:latest/g' /tmp/jenkins.yaml
    oc replace --namespace=openshift -f /tmp/jenkins.yaml
 }
 

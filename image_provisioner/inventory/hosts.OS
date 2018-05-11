@@ -28,6 +28,7 @@ github_token=
 # pbench config
 pbench_internal_hostname=pbench\..*com$
 pbench_alternate_hostname=
+internal_server=
 # docker config
 # sda2 for openstack, sdb/xvdb for ec2
 config_repo=
@@ -35,7 +36,8 @@ docker_login=no
 docker_storage_device=/dev/xvdb
 docker_storage_vgname=docker_vg
 docker_storage_driver=overlay2
-docker_storage_mount_path=/var/lib/docker/overlay2
+# docker_storage_mount_path should be: "/var/lib/docker" as of BZ 1568450
+docker_storage_mount_path=/var/lib/docker
 container_root_lv_mount_path=/var/lib/docker
 # updates the kernel if set to true
 update_kernel=false
@@ -64,3 +66,7 @@ crio=False
 crio_copy_images=False
 crio_registry=registry.access.redhat.com
 image_repository=
+# multipath-blacklist
+multipath_blacklist=False
+# pbench scrape binaries
+binary_url=https://github.com/redhat-performance/pbench-analyzer/releases/download/v0.1-alpha/

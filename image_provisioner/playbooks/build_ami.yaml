@@ -60,6 +60,7 @@
     - { role: clone-repos, when: not atomic | default(False) | bool }
     - { role: docker-config }
     - { role: cri-o, when: crio | default(False) | bool }
+    - { role: multipath-blacklist, when: multipath_blacklist | default(False) | bool }
     - { role: pbench-config, when: not atomic | default(False) | bool }
     - { role: aos-ansible }
     - { role: ansible-update, when: not atomic | default(False) | bool }
@@ -79,6 +80,16 @@
     set_fact:
       ami_type: "{{ 'atomic' if atomic | default(False) else 'rhel' }}"
 
+  - name: set ami_name when extra_tags is defined
+    set_fact:
+      ami_name: ocp-{{ openshift_version }}-{{ ami_type }}-{{ extra_tags }}-gold
+    when: extra_tags is defined
+
+  - name: set ami_name when extra_tags is not defined or is empty
+    set_fact:
+      ami_name:  ocp-{{ openshift_version }}-{{ ami_type }}-gold
+    when: extra_tags is not defined or extra_tags == ""
+
   - name: bundle ami
     action: 
       module: ec2_ami
@@ -88,7 +99,7 @@
       region: "{{ region }}"
       state: present
       description: This was provisioned {{ ansible_date_time.iso8601 }}
-      name: ocp-{{ openshift_version }}-{{ ami_type }}-gold
+      name: "{{ ami_name }}"
       wait: yes
     register: amioutput
 

@@ -1,0 +1,100 @@
+---
+- hosts: target
+  tasks:
+  - name: print hostname
+    debug:
+      msg: "hostname: {{ inventory_hostname }}"
+    tags:
+      - setup
+
+  - name: label the compute nodes
+    shell: oc label node "{{ item }}" --overwrite {{ node_selector_key }}={{ node_selector_value }}
+    with_items: "{{ client_nodes }}"
+    tags:
+      - setup
+
+  - name: clean tmp folder
+    file:
+      state: absent
+      path: "{{ tmp_folder }}/"
+    tags:
+      - setup
+
+  - name: copy files to remote
+    copy:
+      src: files
+      dest: "{{ tmp_folder }}"
+    tags:
+      - setup
+
+  - name: scp the pub key file
+    copy:
+      src: "{{ pub_key_file_path }}"
+      dest: "{{ tmp_folder }}/id_rsa.pub"
+    tags:
+      - setup
+
+  - name: scp the pub key file
+    shell: scp "{{ tmp_folder }}/id_rsa.pub" "{{ item }}:~/.ssh/"
+    with_items: "{{ client_nodes }}"
+    tags:
+      - setup
+
+  - block:
+    - name: list all scripts
+      find:
+        paths: "{{ tmp_folder }}/files/scripts"
+        patterns: "*.sh"
+      register: tmp_script_glob
+
+    - name: make scripts executable
+      file:
+        path: "{{ item.path }}"
+        mode: 0744
+      with_items:
+        - "{{ tmp_script_glob.files }}"
+    tags:
+      - setup
+
+  - name: check if scc fio exists
+    command: oc get scc fio
+    register: scc_result
+    ignore_errors: True
+    tags:
+      - setup
+
+  - name: create scc fio
+    command:  oc create -f "{{ tmp_folder }}/files/content/fio-scc.json"
+    when: scc_result.rc != 0
+    tags:
+      - setup
+
+  - name: create test project
+    command:  oc new-project {{ test_project_name }}
+    tags:
+      - setup
+
+  - name: create objects
+    shell: oc process -p "VOLUME_CAPACITY={{ volume_capacity }}" -p "STORAGE_CLASS_NAME={{ storage_class_name }}" -p "IMAGE={{ image }}" -p "NS_KEY={{ node_selector_key }}" -p "NS_VALUE={{ node_selector_value }}" -f "{{ tmp_folder }}/files/content/fio-pod-pv.json" | oc create --namespace="{{ test_project_name }}" -f -
+    tags:
+      - setup
+
+  - block:
+      - name: wait until the pod is running
+        shell: oc get pod -n "{{ test_project_name }}" | grep -v deploy | grep Running
+        register: pod_ready_result
+        until: pod_ready_result.rc == 0
+        retries: 17
+        delay: 10
+        ignore_errors: True
+      - name: fail the test if the pod is NOT running after 180s
+        fail:
+          msg: "the pod is NOT running after 180s"
+        when: pod_ready_result|failed
+    tags:
+      - setup
+
+  - name: run the fio test
+    command:  "{{ tmp_folder }}/files/scripts/test-storage.sh  {{ tmp_folder }}/files"
+    tags:
+      - run

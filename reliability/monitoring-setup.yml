@@ -27,11 +27,11 @@
     minutes: 3
   when: "'Atomic' in redhat_release.stdout" 
 
-- name: Download and unzip monitoring file 
-  unarchive:
-    src: http://aws-cloudwatch.s3.amazonaws.com/downloads/CloudWatchMonitoringScripts-1.2.1.zip
-    dest: /root
-    remote_src: True
+- name: Clone git cloudwatch monitoring repo
+  git:
+    repo: https://github.com/vikaslaad/aws-scripts-mon.git
+    dest: /root/aws-scripts-mon
+    force: yes
 
 - name: copy aws conf
   copy: 
@@ -42,7 +42,7 @@
   cron:
     name: "send results"
     minute: "0"
-    job: "/root/aws-scripts-mon/mon-put-instance-data.pl --mem-util --aws-credential-file=/root/aws-scripts-mon/awscreds.template --disk-space-util --disk-path=/"
+    job: "/root/aws-scripts-mon/mon-put-instance-data.pl --mem-util --aws-credential-file=/root/aws-scripts-mon/awscreds.template --disk-space-util --disk-path=/dev/xvdb"
 
 - name: Copy monitor script to masters, nodes and etcds
   copy:
