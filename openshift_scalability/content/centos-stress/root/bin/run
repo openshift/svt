@@ -205,7 +205,7 @@ main() {
 
     mb)
       local requests_awk=requests-mb.awk
-      local dir_out=${RESULTS_DIR:-${RUN}-${HOSTNAME:-${IDENTIFIER:-0}}}
+      local dir_out=${RUN}-${HOSTNAME}-${IDENTIFIER:-0}
       local SERVER_RESULTS=${SERVER_RESULTS:-$GUN}
       local mb_log=$dir_out/${RUN}.log
       local targets_list=/opt/wlg/targets.txt

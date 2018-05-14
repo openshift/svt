@@ -98,10 +98,6 @@
                                 "name": "GUN_PORT",
                                 "value": "${GUN_PORT}"
                             },
-                            {   
-                                "name": "RESULTS_DIR",
-                                "value": "${RESULTS_DIR}"
-                            },
                             {
                                 "name": "SERVER_RESULTS",
                                 "value": "${SERVER_RESULTS}"
@@ -284,12 +280,6 @@
             "displayName": "GUN Port Number",
             "description": "The port number of the machine running cluster loader",
             "value": "9090"
-        },
-        {
-            "name": "RESULTS_DIR",
-            "displayName": "Test result directory",
-            "description": "Local/Container test results directory, if empty, default will be used",
-            "value": ""
         },
         {
             "name": "SERVER_RESULTS",
