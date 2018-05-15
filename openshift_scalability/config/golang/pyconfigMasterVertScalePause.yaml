@@ -4,6 +4,7 @@ ClusterLoader:
   projects:
     - num: 3
       basename: c
+      ifexists: reuse
       templates:
         -
           num: 3
