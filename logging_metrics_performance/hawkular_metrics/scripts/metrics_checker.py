@@ -21,11 +21,13 @@ def all_pods(prefix):
         current_pod={}
         pod_props = pod.split()
         if len(pod_props) == 4:
-            current_pod["namespace"] = pod_props[0]
-            current_pod["name"] = pod_props[1]
-            current_pod["uid"] = pod_props[2]
-            current_pod["containername"] = pod_props[3]
-            pods.append(current_pod)
+           if pod_props[0].find(prefix) != -1:
+              current_pod["namespace"] = pod_props[0]
+              #print pod_props[0]
+              current_pod["name"] = pod_props[1]
+              current_pod["uid"] = pod_props[2]
+              current_pod["containername"] = pod_props[3]
+              pods.append(current_pod)
     return pods
 
 def test_pod_metrics(pod, hawkular_host, bearer, start_time, bucket_duration):
