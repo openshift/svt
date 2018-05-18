@@ -31,7 +31,7 @@ This translates to "Check projects starting with svt.  Check past 5 2 minute buc
 ```python metrics_checker.py <optional-arguments>```
 
 - **-B** bearer token from oc whoami -t
-- **-p** project prefix (possibly broken right now, but required)
+- **-p** project sub-string. It will query for pods in the projects that contain this string.
 - **-H** Hawkular hostname from oc get routes.  Or, internal IP of hawkular-metrics pod from oc get pods -o wide
 - **-s** start time of buckets.  Example:  -10mn is 10 minutes in the past.  See:  http://www.hawkular.org/docs/rest/rest-metrics.html
 - **-d** bucket duration.  See:  http://www.hawkular.org/docs/rest/rest-metrics.html
