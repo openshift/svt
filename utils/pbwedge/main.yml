@@ -2,13 +2,13 @@
 - hosts: localhost
   vars:
     result_directory: /root/results/
-    bin_directory: /usr/local/bin/
-    binary_url: https://github.com/redhat-performance/pbench-analyzer/releases/download/v0.1-alpha/
+    test_branch: master
   tasks:
     - name: Clone existing result repo
       git:
         repo: 'https://{{ github_token }}@github.com/redhat-performance/scale-ci-results'
         dest: "{{ result_directory }}"
+        version: "{{ test_branch }}"
 
     - name: Get last file
       shell: cd {{ result_directory }}; git diff-tree --no-commit-id --name-only -r HEAD
