@@ -1,4 +1,4 @@
-localhost
+localhost ansible_connection=local
 
 [all:vars]
 github_token=
