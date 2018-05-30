@@ -1,16 +1,18 @@
 ---
-test_project_name: storage-test
+test_project_name: storage-test-mongo
 delete_test_project_before_test: true
 tmp_folder: /tmp/mongodb-test
 MEMORY_LIMIT: 4096Mi
 MONGODB_USER: redhat
 MONGODB_PASSWORD: redhat
 MONGODB_DATABASE: testdb
-VOLUME_CAPACITY: 1000Gi
-STORAGE_CLASS_NAME: gp2
+VOLUME_CAPACITY: 150Gi 
+STORAGE_CLASS_NAME: glusterfs-storage
 MONGODB_VERSION: 3.2
-pbench_registration: true
-pbench_copy_result: true
-iteration: 2
-ycsb_threads: 60
-workload: workloada,workload_template
+pbench_registration: false
+pbench_copy_result: false
+iteration: 10
+ycsb_threads: 16
+workload: workloada,workloadb,workloadc,workloadd,workloade,workloadf,workload_template
+recordcount: 1000       
+operationcount: 1000

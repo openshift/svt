@@ -47,12 +47,12 @@
         shell: oc get project {{ test_project_name }}
         register: get_project_result
         until: get_project_result.stderr.find(" not found") != -1
-        retries: 11
+        retries: 30 
         delay: 10
         ignore_errors: True
-      - name: fail the test if the project is still there after 120s
+      - name: fail the test if the project is still there after 300s
         fail:
-          msg: "the pod is NOT deleted after 120s"
+          msg: "the pod is NOT deleted after 300s"
         when: get_project_result.rc == 0
     when: delete_test_project_before_test|bool == true
     tags:
@@ -73,12 +73,12 @@
         shell: oc get pod -n "{{ test_project_name }}" | grep -v deploy | grep mongodb | grep Running
         register: pod_ready_result
         until: pod_ready_result.rc == 0
-        retries: 11
+        retries: 30
         delay: 10
         ignore_errors: True
-      - name: fail the test if the pod is NOT running after 120s
+      - name: fail the test if the pod is NOT running after 30s
         fail:
-          msg: "the pod is NOT running after 120s"
+          msg: "the pod is NOT running after 300s"
         when: pod_ready_result|failed
     tags:
       - setup
@@ -93,12 +93,12 @@
         shell: oc get pod -n "{{ test_project_name }}" | grep -v deploy | grep ycsb | grep Running
         register: pod_ready_result
         until: pod_ready_result.rc == 0
-        retries: 11
+        retries: 30
         delay: 10
         ignore_errors: True
-      - name: fail the test if the pod is NOT running after 120s
+      - name: fail the test if the pod is NOT running after 300s
         fail:
-          msg: "the pod is NOT running after 120s"
+          msg: "the pod is NOT running after 300s"
         when: pod_ready_result|failed
     tags:
       - setup
@@ -122,7 +122,7 @@
       - run
 
   - name: run the benchmarks
-    command: pbench-user-benchmark --config="mongodb_storage_test_{{ STORAGE_CLASS_NAME }}_{{ workload }}_{{ MEMORY_LIMIT }}" -- "{{ tmp_folder }}/files/scripts/test-mongo.sh" "{{ test_project_name }}" "{{ iteration }}" "{{ ycsb_threads }}" "{{ workload }}"
+    command: pbench-user-benchmark --sysinfo=none --config="mongodb_storage_test_{{ STORAGE_CLASS_NAME }}_{{ workload }}_{{ MEMORY_LIMIT }}_recordcount_{{ recordcount }}_operationcount_{{ operationcount }}" -- "{{ tmp_folder }}/files/scripts/test-mongo.sh" "{{ test_project_name }}" "{{ iteration }}" "{{ ycsb_threads }}" "{{ workload }}" "{{ recordcount }}" "{{ operationcount }}" 
     tags:
       - run
 
