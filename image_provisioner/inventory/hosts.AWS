@@ -75,3 +75,5 @@ image_repository=
 multipath_blacklist=False
 # pbench scrape binaries
 binary_url=https://github.com/redhat-performance/pbench-analyzer/releases/download/v0.1-alpha/
+# scale-ci results github token
+scale_ci_results_token=
