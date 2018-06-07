@@ -1,0 +1,8 @@
+setuptools
+python-crontab
+PyYAML
+requests
+kubernetes
+openshift
+colorama
+datetime
