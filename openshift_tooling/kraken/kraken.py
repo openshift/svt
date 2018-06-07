@@ -22,26 +22,66 @@ poll_timeout = 30
 crash_poll_timeout = 120
 init()
 
-def get_leader(master_label, current_master):
+def get_etcd_leader(master_label, current_master):
+
+    # pick a random master to start with
     random_master_node = get_random_node(master_label)
+    print(Fore.YELLOW + 'get_etcd_leader: starting random_master_node is: %s\n') %(random_master_node)
+
     while True:
-      if random_master_node == current_master:
+        # keep cycling through to skip master nodes "undefined", or master node specified in "current_master" argument
+        if random_master_node == current_master:
             random_master_node = get_random_node(master_label)
-      else:
+            print(Fore.YELLOW + 'get_etcd_leader: picking anothre master node, since random_master_node == current master, random_master_node is: %s\n') %(random_master_node)
+        else:
             break
-    random_master_node = get_random_node(master_label)
-    url = "https://%s:2379/v2/stats/self" %(random_master_node)
-    leader_info = requests.get(url, cert=('/etc/etcd/peer.crt', '/etc/etcd/peer.key'), verify=False)
-    leader_data = json.loads(leader_info.text)
-    leader_hash = leader_data['leaderInfo']['leader']
+
+    print(Fore.YELLOW + 'get_etcd_leader: random_master_node is: %s\n') %(random_master_node)
+
+    # build the list of etcd members in a json object
+    print(Fore.YELLOW + 'get_etcd_leader: sending REST API request to get list of etcd  members, sent to random_master_node returned earlier: %s\n') %(random_master_node)
+
+    # Build url to send the members API reqest call to random_master_node
     url = "https://%s:2379/v2/members" %(random_master_node)
-    members = requests.get(url, cert=('/etc/etcd/peer.crt', '/etc/etcd/peer.key'), verify=False)
+
+    temp_etcd_leader = random_master_node
+
+##  Make sure these certs exist in the test client since they are on master nodes
+##  scp the etcd crt and key from a master node to this directory currently named "etcd_cert_key" in the kraken dir:
+##  members = requests.get(url, cert=('/etc/etcd/peer.crt', '/etc/etcd/peer.key'), verify=False)
+##  members = requests.get(url, cert=('/etc/origin/master/master.etcd-client.crt', '/etc/origin/master/master.etcd-client.key'), verify=False)
+    members = requests.get(url, cert=('/root/kraken/etcd_cert_key/master.etcd-client.crt', '/root/kraken/etcd_cert_key/master.etcd-client.key'), verify=False)
     members_data = json.loads(members.text)
     members_info = members_data['members']
+   
+    print(Fore.YELLOW + 'get_etcd_leader:  cycling through all the returned etcd members, with enumerate')
     for index, value in enumerate(members_info):
-       if leader_hash in members_info[index]['id']:
-           leader_node = members_info[index]['name']
-    return leader_node
+        print(Fore.YELLOW + 'get_etcd_leader: index is: %s\n') %(index)
+        print(Fore.YELLOW + 'get_etcd_leader: value is: %s\n') %(value)
+
+        temp_etcd_leader = members_info[index]['name']
+        print(Fore.YELLOW + 'get_etcd_leader: temp_etcd_leader is: %s\n') %(temp_etcd_leader) 
+
+        # Skip this master node if it is current_master
+        if temp_etcd_leader == current_master:
+            print(Fore.YELLOW + 'get_etcd_leader: temp_etcd_leader is == current_master : %s\n') %(temp_etcd_leader) 
+            # skip to the next iteration
+            continue
+
+        print(Fore.YELLOW + 'get_etcd_leader:  temp_etcd_leader is: %s\n') %(temp_etcd_leader)
+
+        # stats/self api request will return "state": "StateLeader" or "StateFollower"
+        url = "https://%s:2379/v2/stats/self" %(temp_etcd_leader)
+        stats_self = requests.get(url, cert=('/root/kraken/etcd_cert_key/master.etcd-client.crt', '/root/kraken/etcd_cert_key/master.etcd-client.key'), verify=False)  
+        stats_self_data = json.loads(stats_self.text)
+        stats_self_state = stats_self_data['state']
+        print(Fore.YELLOW + 'get_etcd_leader: stats_self_state is: %s\n') %(stats_self_state)
+
+        if stats_self_state == "StateLeader":
+            print(Fore.YELLOW + 'get_etcd_leader:  Bingo !!! found etcd leader: %s\n') %(temp_etcd_leader)        
+            break
+
+    return temp_etcd_leader
 
 def list_nodes(label):
     nodes = []
@@ -77,6 +117,7 @@ def check_master(picked_node, master_label, label):
     return picked_node
 
 def get_random_node(label):
+    print(Fore.YELLOW + 'get_random_node: label is: %s\n') %(label)
     if label == "undefined":
         ret = cli.list_node()
     else:
@@ -85,6 +126,7 @@ def get_random_node(label):
         nodes.append(data.metadata.name)
     # pick random node to kill
     random_node = random.choice(nodes)
+    print(Fore.YELLOW + 'get_random_node: label random_node to return is: %s\n') %(random_node)
     return random_node
 
 def node_status(node):
@@ -96,7 +138,7 @@ def node_status(node):
     return status
 
 def node_pod_count(node):
-    cmd = "oadm manage-node %s --list-pods" %(node)
+    cmd = "oc adm manage-node %s --list-pods" %(node)
     with open("/tmp/pods","w") as list_pods:
         subprocess.Popen(cmd, shell=True, stdout=list_pods).communicate()[0]
     with open("/tmp/pods","r") as pods_file:
@@ -152,17 +194,21 @@ def node_test(label, master_label):
 def etcd_test(label, master_label):
     print (Fore.YELLOW + 'Assuming that etcd and master are co-located')
     # pick random node to kill
-    leader_node = get_leader(master_label, "undefined")
+    # passing in "undefined" for current_master argument
+    leader_node = get_etcd_leader(master_label, "undefined")
     print (Fore.YELLOW + '%s is the current leader\n') %(leader_node)
-    print (Fore.GREEN + 'killing %s\n') %(leader_node)
+    print (Fore.YELLOW + 'killing %s\n') %(leader_node)
     #cmd = "pkill etcd"
-    cmd = "systemctl stop etcd"
+    # For OCP 3.10: we have static pods:
+    cmd = "cp /etc/origin/node/pods/etcd.yaml /root/etcd.yaml_ORIG; mv /etc/origin/node/pods/etcd.yaml /root/etcd.yaml"
+    print ( Fore.YELLOW + '%s is the leader_node\n') %(leader_node)
+
     subprocess.Popen(["ssh", "%s" % leader_node, cmd],
                        shell=False,
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE)
-    time.sleep(5)
-    new_leader = get_leader(master_label, leader_node)
+    time.sleep(15)
+    new_leader = get_etcd_leader(master_label, leader_node)
     print (Fore.GREEN + '%s is the newly elected leader\n') %(new_leader)
     if leader_node == new_leader:
         print (Fore.RED + 'Looks like the same node got elected\n')
@@ -226,8 +272,8 @@ def master_test(label, master_label):
     # pick random node to kill
     master_node = get_random_node(master_label)
     print (Fore.GREEN + 'killing %s\n') %(master_node)
-    #cmd = "systemctl stop atomic-openshift-master-controllers.service"
-    cmd = "systemctl stop atomic-openshift-master-apiserver.service"
+    # For OCP 3.10: we have static pods:
+    cmd = "cp /etc/origin/node/pods/apiserver.yaml /root/apiserver.yaml_ORIG; cp /etc/origin/node/pods/controller.yaml /root/controller.yaml_ORIG; mv /etc/origin/node/pods/apiserver.yaml /root/apiserver.yaml; mv /etc/origin/node/pods/controller.yaml /root/controller.yaml"
     subprocess.Popen(["ssh", "%s" % master_node, cmd],
                        shell=False,
                        stdout=subprocess.PIPE,
@@ -250,6 +296,10 @@ def main(cfg):
         namespace = config.get('kraken','name')
         label = config.get('kraken', 'label')
         master_label = config.get('kraken', 'master_label')
+        # wabouham ADDED: master_label is normally "node_type=master" 
+        print (Fore.YELLOW + 'label is: %s\n') %(label)
+        print (Fore.YELLOW + 'master_label is: %s\n') %(master_label)
+
         if (label is None):
             print (Fore.YELLOW + 'label is not provided, assuming you are okay with deleting any of the available nodes except the master\n')
             label = "undefined"
