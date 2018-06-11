@@ -1,0 +1,75 @@
+---
+- hosts: all
+  vars_files:
+    - external_vars.yaml
+  tasks:
+  - name: print hostname
+    debug:
+      msg: "hostname: {{ inventory_hostname }} and test_project_name: {{ test_project_name }}"
+    tags:
+      - setup
+
+  - name: clean tmp folder
+    file:
+      state: absent
+      path: "{{ tmp_folder }}/"
+    tags:
+      - setup
+
+  - name: copy files to remote
+    copy:
+      src: files
+      dest: "{{ tmp_folder }}"
+    tags:
+      - setup
+
+  - block:
+    - name: list all scripts
+      find:
+        paths: "{{ tmp_folder }}/files/scripts"
+        patterns: "*.sh"
+      register: tmp_script_glob
+
+    - name: make scripts executable
+      file:
+        path: "{{ item.path }}"
+        mode: 0744
+      with_items:
+        - "{{ tmp_script_glob.files }}"
+    tags:
+      - setup
+
+  - name: create oc objects
+    shell: "{{ tmp_folder }}/files/scripts/create-oc-objects.sh {{ test_project_name }} {{ test_project_number }} {{ tmp_folder }} {{ delete_test_project_before_test }} {{ VOLUME_CAPACITY }} {{ STORAGE_CLASS_NAME }}"
+    tags:
+      - setup
+      - test
+
+  - name: register pbench
+    shell: "{{ tmp_folder }}/files/scripts/pbench-register.sh {{ jump_node }}"
+    tags:
+      - run
+
+  - name: run the benchmarks
+    command:  pbench-user-benchmark --config="git_storage_test_{{ test_project_number }}_{{ STORAGE_CLASS_NAME }}" -- "{{ tmp_folder }}/files/scripts/test-git-m.sh" "{{ test_project_name }}" "{{ test_project_number }}" "{{ iteration }}" "{{ tmp_folder }}"
+    async: "{{ benchmark_timeout * 60 }}"
+    poll: 0
+    register: pbench_sleeper
+    tags:
+      - run
+
+  - name: check the benchmarks task
+    async_status:
+      jid: "{{ pbench_sleeper.ansible_job_id }}"
+    register: job_result
+    until: job_result.finished
+    retries: "{{ benchmark_timeout }}"
+    delay: 60
+    tags:
+      - run
+
+  - name: pbench copy results
+    command: pbench-copy-results
+    when: pbench_copy_result|bool == true
+    tags:
+      - run
