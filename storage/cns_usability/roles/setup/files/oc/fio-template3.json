@@ -1,0 +1,171 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "aaa-rc-json",
+        "creationTimestamp": null
+    },
+    "objects": [
+        {
+            "apiVersion": "v1",
+            "data": {
+                "ocp_logtest.cfg": "${INITIAL_FLAGS}"
+            },
+            "kind": "ConfigMap",
+            "metadata": {
+                "name": "logtest-config-${IDENTIFIER}"
+            }
+        },
+        {
+        "apiVersion": "v1",
+        "kind": "PersistentVolumeClaim",
+        "metadata": {
+            "name": "${PVC_NAME}",
+            "annotations": {
+                "volume.beta.kubernetes.io/storage-class": "${STORAGE_CLASS}"
+            }
+        },
+        "spec": {
+            "accessModes": [
+                "${ACCESS_MODES}"
+            ],
+            "resources": {
+                "requests": {
+                    "storage": "${STORAGE_SIZE}"
+                }
+            }
+        }
+    },
+        {
+        "kind": "ReplicationController",
+        "apiVersion": "v1",
+        "metadata": {
+            "name": "fio-${IDENTIFIER}",
+            "labels": {
+                "test": "fio"
+            }
+        },
+        "spec": {
+            "replicas": "${{REPLICAS}}",
+            "template": {
+                "metadata": {
+                    "generateName": "centos-logtest-",
+                    "labels": {
+                        "run": "fio",
+                        "test": "fio"
+                    }
+                },
+                "spec": {
+                    "volumes": [{
+                        "name": "${VOL_MOUNT_NAME}",
+                        "persistentVolumeClaim": {
+                            "claimName": "${PVC_NAME}"
+                        }
+                    },
+                        {
+                            "name": "config",
+                            "configMap": {
+                                "name": "logtest-config-${IDENTIFIER}"
+                            }
+                        }
+                    ],
+                    "nodeSelector": {
+			"${NS_KEY}": "${NS_VALUE}"
+		},
+                    "containers": [{
+                        "name": "fio",
+                        "image": "${DOCKER_IMAGE}",
+                        "ports": [
+                            {
+                                "containerPort": 8080,
+                                "protocol": "TCP"
+                            }
+                        ],
+                        "resources": {},
+                        "volumeMounts": [{
+                            "name": "${VOL_MOUNT_NAME}",
+                            "mountPath": "${MOUNT_PATH}"
+                        },
+                            {
+                                "name": "config",
+                                "mountPath": "/var/lib/svt"
+                            }],
+                        "terminationMessagePath": "/dev/termination-log",
+                        "terminationMessagePolicy": "File",
+                        "imagePullPolicy": "IfNotPresent"
+                    }]
+                }
+            }
+        }
+    }],
+    "parameters": [
+        {
+            "name": "REPLICAS",
+            "displayName": "Replicas",
+            "value": "1"
+        },
+        {
+            "name": "VOL_MOUNT_NAME",
+            "description" : "Name of volume mount",
+            "required": true,
+            "value": "persistentvolume"
+        },
+        {
+            "name": "PVC_NAME",
+            "description": "PVC name",
+            "from": "pvc[a-z0-9]{10}",
+            "required": true,
+            "generate": "expression"
+        },
+        {
+            "name": "DOCKER_IMAGE",
+            "description": "Docker image name - it has to have sshd service enabled and started. Pbench fio needs sshd service and fio ports",
+            "required": true,
+            "value": "dockerimage"
+        },
+        {
+            "name" : "STORAGE_CLASS",
+            "description": "Storagecclass to use - here we expect storageclass name",
+            "required": true,
+            "value": "storageclassname"
+        },
+        {
+            "name": "STORAGE_SIZE",
+            "description": "The PVC size - default is 1Gi",
+            "required": true,
+            "value": "1Gi"
+        },
+        {
+            "name": "ACCESS_MODES",
+            "description": "PVC access mode - this will have different values for different storage backends",
+            "value": "ReadWriteOnce"
+        },
+        {
+            "name": "IDENTIFIER",
+            "description": "Number to append to the name of resources",
+            "required": true,
+            "value": "1"
+        },
+        {
+            "name": "MOUNT_PATH",
+            "description": "The location where inside pod PVC will be mounted",
+            "required": true,
+            "value":"/mnt/pvcmount"
+        },
+        {
+            "name": "INITIAL_FLAGS",
+            "description": "The initial flags to pass to ocp_logtest.py",
+            "value": "-o /mnt/pvcmount/test.log --num-lines 0 --line-length 200 --word-length 9 --rate 60 --fixed-line\n"
+        },
+        {
+            "name": "NS_KEY",
+            "description": "node selector key",
+            "value": "region"
+        },
+        {
+            "name": "NS_VALUE",
+            "description": "node selector value",
+            "value": "primary"
+        }
+    ]
+}

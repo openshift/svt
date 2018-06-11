@@ -1,0 +1,67 @@
+- name: print hostname
+  debug:
+    msg: "hostname: {{ inventory_hostname }} and test_project_name: {{ test_project_name }}"
+
+- name: clean tmp folder
+  file:
+    state: absent
+    path: "{{ tmp_folder }}/"
+
+- name: copy files to remote
+  copy:
+    src: files
+    dest: "{{ tmp_folder }}"
+
+- block:
+  - name: list all scripts
+    find:
+      paths: "{{ tmp_folder }}/files/scripts"
+      patterns: "*.sh"
+    register: tmp_script_glob
+
+  - name: make scripts executable
+    file:
+      path: "{{ item.path }}"
+      mode: 0744
+    with_items:
+      - "{{ tmp_script_glob.files }}"
+
+- block:
+    - name: delete project
+      shell: oc delete project {{ test_project_name }}
+      ignore_errors: True
+    - name: wait until the project is gone
+      shell: oc get project {{ test_project_name }}
+      register: get_project_result
+      until: get_project_result.stderr.find(" not found") != -1
+      retries: 11
+      delay: 10
+      ignore_errors: True
+    - name: fail the test if the project is still there after 120s
+      fail:
+        msg: "the pod is NOT deleted after 120s"
+      when: get_project_result.rc == 0
+  when: delete_test_project_before_test|bool == true
+
+- name: label the compute nodes
+  shell: oc label node "{{ item }}" --overwrite {{ node_selector_key }}={{ node_selector_value }}
+  with_items: "{{ client_nodes }}"
+
+- name: create test project
+  command:  oc new-project {{ test_project_name }} --skip-config-write=true
+
+- name: create log test tool
+  shell: oc process -f {{ tmp_folder }}/files/oc/fio-template3.json -p STORAGE_CLASS={{ STORAGE_CLASS }} -p STORAGE_SIZE={{ STORAGE_SIZE }} -p MOUNT_PATH={{ MOUNT_PATH }} -p DOCKER_IMAGE={{ DOCKER_IMAGE }} -p INITIAL_FLAGS="{{ INITIAL_FLAGS }}" -p NS_KEY="{{ node_selector_key }}" -p NS_VALUE="{{ node_selector_value }}" | oc create --namespace={{ test_project_name }} -f -
+
+- block:
+    - name: wait until the log test tool pod is running
+      shell: oc get pod -n "{{ test_project_name }}" | grep -v deploy | grep fio | grep Running
+      register: pod_ready_result
+      until: pod_ready_result.rc == 0
+      retries: 11
+      delay: 10
+      ignore_errors: True
+    - name: fail the test if the pod is NOT running after 120s
+      fail:
+        msg: "the pod is NOT running after 120s"
+      when: pod_ready_result|failed
