@@ -16,18 +16,46 @@ The following uperf tests are run:
 - [pbench](https://github.com/distributed-system-analysis/pbench) is installed and configured on all hosts
 
 ## Requirements
-Ansible version <= 1.9.4
+Ansible version >= 2.4
 
 ```
 # yum install ansible
-$ yum install --assumeyes ansible-1.9.4-1
 
 # pip install ansible
-$ pip install ansible==1.9.4
+
 ```
 
 ## Running the test
 The test is run using the network-test.py script.
+
+	usage: network-test.py [-h] [-v OS_VERSION] [-a TCP_TESTS] [-b UDP_TESTS]
+                       [-s MSG_SIZES] [-t TOTAL_SAMPLES] -m TEST_MASTER
+                       [-n [TEST_NODES [TEST_NODES ...]]]
+                       [-p [POD_NUMBERS [POD_NUMBERS ...]]]
+                       {podIP,svcIP,nodeIP}
+
+	positional arguments:
+  			{podIP,svcIP,nodeIP}
+
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  -v OS_VERSION, --version OS_VERSION
+	                        OpenShift version
+	  -a TCP_TESTS, --tcp_tests TCP_TESTS
+	                        The network test types, have to be comma seperated. Default: stream,rr 
+	  -b UDP_TESTS, --udp_tests UDP_TESTS
+	                        The network test types, have to be comma seperated. Default: stream,rr
+	  -s MSG_SIZES, --message-sizes MSG_SIZES
+	                        The sizes of messages to be used to perform the tests,
+	                        have to be comma seperated. Default: 64,1024,16384
+	  -t TOTAL_SAMPLES, --total-samples TOTAL_SAMPLES
+	                        Number of samples to be used for the tests. Default: 3
+	  -m TEST_MASTER, --master TEST_MASTER
+	                        OpenShift master node
+	  -n [TEST_NODES [TEST_NODES ...]], --node [TEST_NODES [TEST_NODES ...]]
+	                        OpenShift node
+	  -p [POD_NUMBERS [POD_NUMBERS ...]], --pods [POD_NUMBERS [POD_NUMBERS ...]]
+	                        Sequence of pod numbers to test
 
 ### loopback
 
@@ -57,6 +85,16 @@ $ python network-test.py nodeIP --master <machine1-ip> --node <machine2-ip>
 - Run the tests with following 
 ```
 $ nohup ./start-network-test.sh >> run.log & tail -f run.log
+OR
+$ nohup ./start-network-test.sh FULL >> run.log & tail -f run.log
+```
+
+### Running the tests in CI friendly mode
+- Update config.yaml with master and nodes
+- Run the tests with following 
+```
+$ nohup ./start-network-test.sh CI >> run.log & tail -f run.log
+
 ```
 
 # STAC-N1 tests
@@ -90,4 +128,3 @@ Sample stac_config file is content/stac_config.sample
 4. Run the test:
 ```
 $ ./run-stac-test.sh 
-
