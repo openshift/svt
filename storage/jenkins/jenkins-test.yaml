@@ -1,0 +1,117 @@
+---
+- hosts: all
+  vars_files:
+    - external_vars.yaml
+  tasks:
+  - name: print hostname
+    debug:
+      msg: "hostname: {{ inventory_hostname }} and test_project_name: {{ test_project_name }}"
+    tags:
+      - setup
+
+  - name: install jq
+    yum:
+      name: jq
+      state: present
+    tags:
+      - setup
+
+  - name: clean tmp folder
+    file:
+      state: absent
+      path: "{{ tmp_folder }}/"
+    tags:
+      - setup
+
+  - name: copy files to remote
+    copy:
+      src: files
+      dest: "{{ tmp_folder }}"
+    tags:
+      - setup
+
+  - block:
+    - name: list all scripts
+      find:
+        paths: "{{ tmp_folder }}/files/scripts"
+        patterns: "*.sh"
+      register: tmp_script_glob
+
+    - name: make scripts executable
+      file:
+        path: "{{ item.path }}"
+        mode: 0744
+      with_items:
+        - "{{ tmp_script_glob.files }}"
+    tags:
+      - setup
+
+  - name: copy groovy templates
+    template:
+      src: "{{ item }}"
+      dest: "{{ tmp_folder }}/files/groovy/{{ item | basename | regex_replace('\\.j2','') }}"
+    with_fileglob:
+      - templates/groovy/*.j2
+    tags:
+      - setup
+
+  - name: create oc objects
+    shell: "{{ tmp_folder }}/files/scripts/create-oc-objects.sh {{ test_project_name }} {{ test_project_number }} {{ tmp_folder }} {{ delete_test_project_before_test }} {{ MEMORY_LIMIT }} {{ VOLUME_CAPACITY }} {{ STORAGE_CLASS_NAME }} {{ JENKINS_IMAGE_STREAM_TAG }} {{ JJB_STORAGE_CLASS_NAME }}"
+    tags:
+      - setup
+
+  - name: register pbench from jump node
+    shell: |
+      pbench-kill-tools
+      pbench-clear-tools
+      pbench-clear-results
+      pbench-register-tool-set
+      pbench-register-tool --name=oc
+      NODES=($(oc get node  --no-headers | awk '{print $1}'))
+      for node in "${NODES[@]}"
+      do
+        pbench-register-tool-set --remote="${node}"
+      done
+    when: (pbench_registration|bool == true) and (jump_node|bool == true)
+    tags:
+      - run
+
+  - name: register pbench from master
+    shell: |
+      pbench-kill-tools
+      pbench-clear-tools
+      pbench-clear-results
+      pbench-register-tool-set
+      pbench-register-tool --name=oc
+      NODES=($(oc get node  --no-headers | grep -v master | awk '{print $1}'))
+      for node in "${NODES[@]}"
+      do
+        pbench-register-tool-set --remote="${node}"
+      done
+    when: (pbench_registration|bool == true) and (jump_node|bool == false)
+    tags:
+      - run
+
+  - name: run the benchmarks
+    command:  pbench-user-benchmark --config="jenkins_storage_test_{{ test_project_number }}_{{ test_build_number }}_{{ STORAGE_CLASS_NAME }}_{{ MEMORY_LIMIT }}" -- "{{ tmp_folder }}/files/scripts/test-jenkins-m.sh" "{{ test_project_name }}" "{{ test_project_number }}" "{{ iteration }}" "{{ tmp_folder }}" "{{ test_build_number }}"
+    async: "{{ benchmark_timeout * 60 }}"
+    poll: 0
+    register: pbench_sleeper
+    tags:
+      - run
+
+  - name: check the benchmarks task
+    async_status:
+      jid: "{{ pbench_sleeper.ansible_job_id }}"
+    register: job_result
+    until: job_result.finished
+    retries: "{{ benchmark_timeout }}"
+    delay: 60
+    tags:
+      - run
+
+  - name: pbench copy results
+    command: pbench-copy-results
+    when: pbench_copy_result|bool == true
+    tags:
+      - run

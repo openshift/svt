@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: config_map_jjb
+objects:
+- apiVersion: v1
+  data:
+    jenkins_jobs.ini: |
+      [jenkins]
+      user=${JENKINS_USER}
+      password=${JENKINS_PASSWORD}
+      url=${JENKINS_URL}
+      query_plugins_info=False
+  kind: ConfigMap
+  metadata:
+    creationTimestamp: null
+    name: jjb-config
+parameters:
+- description: Jenkins User
+  displayName: Jenkins User
+  name: JENKINS_USER
+  required: true
+  value: admin
+- description: Jenkins Password
+  displayName: Jenkins Password
+  name: JENKINS_PASSWORD
+  required: true
+  value: password
+- description: Jenkins URL, eg, https://jenkins-ttt.apps.0327-nbn.qe.rhcloud.com
+  displayName: Jenkins URL
+  name: JENKINS_URL
+  required: true

@@ -1,0 +1,6 @@
+import jenkins.model.*
+import hudson.model.*
+  
+def inst = Jenkins.getInstance()
+def desc = inst.getDescriptor("hudson.tools.JDKInstaller")
+println desc.doPostCredential('{{ jdk_username }}','{{ jdk_password }}')
