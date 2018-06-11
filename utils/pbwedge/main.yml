@@ -8,16 +8,27 @@
         repo: 'https://{{ github_token }}@github.com/redhat-performance/scale-ci-results'
         dest: "{{ result_directory }}"
         version: "{{ git_test_branch }}"
-        force: yes
+      register: clone_result
+      ignore_errors: true
 
-    - name: Get last file
-      shell: cd {{ result_directory }}; git diff-tree --no-commit-id --name-only -r HEAD
-      register: old_file
+    - name: Create new branch
+      shell: |
+        cd {{ result_directory }}
+        git checkout master
+        git checkout -b {{ git_test_branch }}
+        echo -e '\n## {{ git_test_branch }}' >> README.md
+      when: clone_result.rc is defined and clone_result.rc == 1
 
-    - name: Run R2R
-      command: pbcompare -old {{ result_directory }}{{ old_file.stdout }} -new {{ new_file }}
-      register: command_result
-      failed_when: command_result.rc != 0
+    - block:
+      - name: Get last file
+        shell: cd {{ result_directory }}; git diff-tree --no-commit-id --name-only -r HEAD
+        register: old_file
+
+      - name: Run R2R
+        command: pbcompare -old {{ result_directory }}{{ old_file.stdout }} -new {{ new_file }}
+        register: command_result
+        failed_when: command_result.rc != 0
+      when: clone_result.rc is not defined
 
     - name: Move good result to repo
       copy:
@@ -31,4 +42,4 @@
         git config user.email sejug@redhat.com
         git add .
         git commit -am "new result"
-        git push -u origin master
+        git push -u origin HEAD
