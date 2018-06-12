@@ -60,35 +60,9 @@
     tags:
       - setup
 
-  - name: register pbench from jump node
-    shell: |
-      pbench-kill-tools
-      pbench-clear-tools
-      pbench-clear-results
-      pbench-register-tool-set
-      pbench-register-tool --name=oc
-      NODES=($(oc get node  --no-headers | awk '{print $1}'))
-      for node in "${NODES[@]}"
-      do
-        pbench-register-tool-set --remote="${node}"
-      done
-    when: (pbench_registration|bool == true) and (jump_node|bool == true)
-    tags:
-      - run
-
-  - name: register pbench from master
-    shell: |
-      pbench-kill-tools
-      pbench-clear-tools
-      pbench-clear-results
-      pbench-register-tool-set
-      pbench-register-tool --name=oc
-      NODES=($(oc get node  --no-headers | grep -v master | awk '{print $1}'))
-      for node in "${NODES[@]}"
-      do
-        pbench-register-tool-set --remote="${node}"
-      done
-    when: (pbench_registration|bool == true) and (jump_node|bool == false)
+  - name: register pbench
+    shell: "{{ tmp_folder }}/files/scripts/pbench-register.sh {{ jump_node }}"
+    when: pbench_registration|bool == true
     tags:
       - run
 

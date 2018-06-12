@@ -47,6 +47,7 @@
 
   - name: register pbench
     shell: "{{ tmp_folder }}/files/scripts/pbench-register.sh {{ jump_node }}"
+    when: pbench_registration|bool == true
     tags:
       - run
 
