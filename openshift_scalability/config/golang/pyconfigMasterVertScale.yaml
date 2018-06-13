@@ -4,6 +4,7 @@ ClusterLoader:
   projects:
     - num: 5
       basename: clusterproject
+      ifexists: reuse
       templates:
         -
           num: 3
