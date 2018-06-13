@@ -1,0 +1,57 @@
+---
+- hosts: pbench-controller
+  user: root
+  vars:
+#    - config: "{{ ansible_env.HOME }}"/.kube/config
+    - config: "{{ ansible_env.HOME }}/.kube/config"
+  tasks:
+     - name: create .kube directory to store config file
+       file:
+#         path: "{{ ansible_env.HOME }}"/.kube
+         path: "{{ ansible_env.HOME }}/.kube"
+         state: directory
+
+     - name: get kube config from openshift master
+       shell: scp {{ item }}:{{ config }} {{ config }}
+       with_items:
+        - "{{ groups['masters'][0] }}"
+
+     - name: label master nodes
+#       shell: oc label node {{ item }} node_node_type=master
+       shell: oc label node {{ item }} node_type=master
+       with_items:
+        - "{{ groups['masters'] }}"
+       when: groups['masters']|default([])
+
+     - name: label nodes
+#       shell: for node in $(cat {{ inventory_file }} | grep -v "'region'":" 'infra'" | cut -d ' ' -f1); do oc label node node_type=node; done
+       shell: for node in $(cat {{ inventory_file }} | grep -v "'region'":" 'infra'" | cut -d ' ' -f1); do oc label node {{ item }} node_type=node; done
+       with_items:
+        - "{{ groups['nodes'] }}"
+       when: groups['nodes']|default([])
+
+     - name: label etcd nodes
+       shell: oc label node {{ item }} node_type=etcd
+       with_items:
+        - "{{ groups['etcd'] }}"
+       when: groups['etcd']|default([])
+
+     - name: label lb nodes
+       shell: oc label node {{ item }} node_type=lb
+       with_items:
+         - "{{ groups['glusterfs'] }}"
+       when: groups['lb']|default([])
+
+     - name: label cns nodes
+       shell: oc label node {{ item }} node_type=cns
+       with_items:
+        - "{{ groups['glusterfs'] }}"
+       when: groups['glusterfs']|default([])
+
+     - name: label infra nodes
+       shell: for infra in $(cat {{ inventory_file }} | grep -w "'region'":" 'infra'" | cut -d ' ' -f1); do oc label node node_type=infra; done
+       when: groups['nodes']|default([])
+
+     - name: label all the nodes with node_type=pbench
+       shell: oc label node --all node_type=pbench
+       when: label_pbench | default(False) | bool
