@@ -141,6 +141,13 @@
     - { find: "^#?MaxStartups.*", replace: "MaxStartups 200:30:400" }
     - { find: "^#?UseDNS.*", replace: "UseDNS no" }
 
+- name: add token needed for uploading r2r results
+  lineinfile:
+    path: "/root/svt/utils/pbwedge/hosts"
+    regexp: "github_token"
+    line: "github_token={{ scale_ci_results_token }}"
+  when: scale_ci_results_token is defined
+
 - name: copy svt repo to atomic host
   synchronize:
     src: /root/svt
