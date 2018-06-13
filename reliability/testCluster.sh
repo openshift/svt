@@ -78,6 +78,12 @@ function access_applications
   fi
 }
 
+if [ "${1}" == "access" ]; then
+  access_applications
+  echo "######################### SUCCESS : COMPLETE ##########################"
+  exit
+fi
+
 oc new-project cakephp
 oc label namespace cakephp --overwrite purpose=rel 
 oc new-app --template=cakephp-mysql-example    
