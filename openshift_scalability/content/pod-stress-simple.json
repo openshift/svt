@@ -1,0 +1,37 @@
+{
+  "kind": "Pod",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "stress-pod",
+    "creationTimestamp": null,
+    "labels": {
+      "name": "stress"
+    }
+  },
+  "spec": {
+    "containers": [
+      {
+        "name": "stress",
+        "image": "lorel/docker-stress-ng",
+        "ports": [
+          {
+            "containerPort": 8080,
+            "protocol": "TCP"
+          }
+        ],
+	"command": ["stress-ng", "--cpu", "1", "--cpu-load", "5", "--vm", "1"],
+        "terminationMessagePath": "/dev/termination-log",
+        "imagePullPolicy": "IfNotPresent",
+        "capabilities": {},
+        "securityContext": {
+          "capabilities": {},
+          "privileged": false
+        }
+      }
+    ],
+    "restartPolicy": "Always",
+    "dnsPolicy": "ClusterFirst",
+    "serviceAccount": ""
+  },
+  "status": {}
+}
