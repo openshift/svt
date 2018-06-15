@@ -1,4 +1,4 @@
-/^nginx-route-/ { # insecure routes
+/server-http-/ { # insecure routes
   if (i) {printf "\n  },\n" }
   printf "  {\n"
 #  printf "    \"host_from": \"192.168.0.102\",
@@ -21,7 +21,7 @@
   printf "    }"
   i++
 }
-/^secure-nginx-route-/ { # secure routes
+/server-tls-/ { # secure routes
   if (i) {printf "\n  },\n" }
   printf "  {\n"
   printf "    \"scheme\": \"https\",\n"

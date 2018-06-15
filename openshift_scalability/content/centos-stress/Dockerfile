@@ -8,8 +8,9 @@ WORKDIR ${APP_ROOT}
 COPY root ./
 
 ### Install required packages
-RUN yum -y --setopt=tsflags=nodocs install bc epel-release gcc git gnuplot go \
-        java-1.8.0-openjdk make openssh-clients patch rsync tar unzip && \
+RUN yum -y --setopt=tsflags=nodocs install automake autotools bc epel-release \
+        gcc git gnuplot go java-1.8.0-openjdk libtool make openssh-clients \
+        patch rsync tar unzip && \
     yum -y --setopt=tsflags=nodocs install stress && \
     mkdir -p build && cd build && \
     git clone https://github.com/openshift/svt.git && \
@@ -17,7 +18,7 @@ RUN yum -y --setopt=tsflags=nodocs install bc epel-release gcc git gnuplot go \
     git clone -b stable https://github.com/jmencak/mb.git && \
       cd mb && make && cp ./mb /usr/local/bin && cd .. && \
     cd && rm -rf build && \
-    yum remove gcc go make patch -y && \
+    yum remove automake autotools gcc go libtool make patch -y && \
     yum clean all
 
 ### Setup JMeter
