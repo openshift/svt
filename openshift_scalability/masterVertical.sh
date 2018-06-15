@@ -22,7 +22,7 @@ golang_clusterloader() {
 }
 
 python_clusterloader() {
-  MY_CONFIG=config/pyconfigMasterVertScale.yaml
+  MY_CONFIG=config/pyconfigMasterVertScalePause.yaml
   python cluster-loader.py -f $MY_CONFIG
 }
 
