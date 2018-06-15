@@ -16,7 +16,6 @@
         cd {{ result_directory }}
         git checkout master
         git checkout -b {{ git_test_branch }}
-        echo -e '\n## {{ git_test_branch }}' >> README.md
       when: clone_result.rc is defined and clone_result.rc == 1
 
     - block:
@@ -31,9 +30,7 @@
       when: clone_result.rc is not defined
 
     - name: Move good result to repo
-      copy:
-        src: "{{ new_file }}"
-        dest: "{{ result_directory }}/out-{{ ansible_date_time.iso8601_basic }}.json"
+      shell: jq . {{ new_file }} > {{ result_directory }}/out-{{ ansible_date_time.iso8601_basic }}.json
 
     - name: Commit new file if good R2R result
       shell: |
