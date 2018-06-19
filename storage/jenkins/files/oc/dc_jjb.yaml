@@ -19,15 +19,14 @@ spec:
           volumeMounts:
             - name: config-volume
               mountPath: /etc/jenkins_jobs/
-            - name: "pvol"
+            - name: "data-vol"
               mountPath: "/data"
       volumes:
         - name: config-volume
           configMap:
             name: jjb-config
-        - name: "pvol"
-          persistentVolumeClaim:
-            claimName: "jjb-pvc"
+        - name: "data-vol"
+          emptyDir: {}
   triggers:
     - type: "ConfigChange"
   replicas: 1

@@ -14,7 +14,6 @@ readonly MEMORY_LIMIT=$5
 readonly VOLUME_CAPACITY=$6
 readonly STORAGE_CLASS_NAME=$7
 readonly JENKINS_IMAGE_STREAM_TAG=$8
-readonly JJB_STORAGE_CLASS_NAME=$9
 
 function wait_until_the_project_is_gone {
   local project
@@ -102,9 +101,6 @@ do
       -p JENKINS_IMAGE_STREAM_TAG=${JENKINS_IMAGE_STREAM_TAG} \
       | oc create --namespace=${NAMESPACE} -f -
 
-  oc process -f ${TMP_FOLDER}/files/oc/pvc_template.yaml \
-      -p PVC_NAME=jjb-pvc -p STORAGE_CLASS_NAME=${JJB_STORAGE_CLASS_NAME} \
-      | oc create -n "${NAMESPACE}" -f -
   oc process -f ${TMP_FOLDER}/files/oc/cm_jjb_template.yaml \
       -p "JENKINS_URL=https://$(oc get route -n ${NAMESPACE} --no-headers | awk '{print $2}')" \
       | oc create -n "${NAMESPACE}" -f -

@@ -7,6 +7,7 @@ VOLUME_CAPACITY: 10Gi
 STORAGE_CLASS_NAME: gp2
 iteration: 2
 pbench_registration: true
+pbench_post: true
 pbench_copy_result: true
 ###in minutes
 benchmark_timeout: 360

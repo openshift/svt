@@ -51,21 +51,37 @@
     tags:
       - run
 
-  - name: run the benchmarks
-    command:  pbench-user-benchmark --config="git_storage_test_{{ test_project_number }}_{{ STORAGE_CLASS_NAME }}" -- "{{ tmp_folder }}/files/scripts/test-git-m.sh" "{{ test_project_name }}" "{{ test_project_number }}" "{{ iteration }}" "{{ tmp_folder }}"
-    async: "{{ benchmark_timeout * 60 }}"
-    poll: 0
-    register: pbench_sleeper
+  - block:
+      - name: run the benchmarks with post
+        command:  pbench-user-benchmark --pbench-post='/usr/local/bin/pbscraper -i $benchmark_results_dir/tools-default -o $benchmark_results_dir; ansible-playbook -vv -i /root/svt/utils/pbwedge/hosts /root/svt/utils/pbwedge/main.yml -e new_file=$benchmark_results_dir/out.json -e git_test_branch=gitWorkload' --config="git_storage_test_{{ test_project_number }}_{{ STORAGE_CLASS_NAME }}_{{ iteration }}" -- "{{ tmp_folder }}/files/scripts/test-git-m.sh" "{{ test_project_name }}" "{{ test_project_number }}" "{{ iteration }}" "{{ tmp_folder }}"
+        async: "{{ benchmark_timeout * 60 }}"
+        poll: 0
+        register: pbench_sleeper
+      - name: check the benchmarks task
+        async_status:
+          jid: "{{ pbench_sleeper.ansible_job_id }}"
+        register: job_result
+        until: job_result.finished
+        retries: "{{ benchmark_timeout }}"
+        delay: 60
+    when: pbench_post|bool == true
     tags:
       - run
 
-  - name: check the benchmarks task
-    async_status:
-      jid: "{{ pbench_sleeper.ansible_job_id }}"
-    register: job_result
-    until: job_result.finished
-    retries: "{{ benchmark_timeout }}"
-    delay: 60
+  - block:
+      - name: run the benchmarks without post
+        command:  pbench-user-benchmark --config="git_storage_test_{{ test_project_number }}_{{ STORAGE_CLASS_NAME }}_{{ iteration }}" -- "{{ tmp_folder }}/files/scripts/test-git-m.sh" "{{ test_project_name }}" "{{ test_project_number }}" "{{ iteration }}" "{{ tmp_folder }}"
+        async: "{{ benchmark_timeout * 60 }}"
+        poll: 0
+        register: pbench_sleeper
+      - name: check the benchmarks task
+        async_status:
+          jid: "{{ pbench_sleeper.ansible_job_id }}"
+        register: job_result
+        until: job_result.finished
+        retries: "{{ benchmark_timeout }}"
+        delay: 60
+    when: pbench_post|bool == false
     tags:
       - run
 
