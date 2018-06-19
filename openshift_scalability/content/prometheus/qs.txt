@@ -1,0 +1,116 @@
+sum by (persistentvolumeclaim) (kubelet_volume_stats_used_bytes{persistentvolumeclaim=~".*"} / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~".*"}) * 100
+(rate (container_memory_rss{name=~"^k8s_prometheus_prometheus-0_.+"}[2m]))
+sum by (endpoint) (apiserver_audit_event_total)
+apiserver_request_count{resource="builds"}
+apiserver_request_count{resource="events"}
+apiserver_request_count{resource="jobs"}
+apiserver_request_count{resource="nodes"}
+apiserver_request_count{resource="oauthclients"}
+apiserver_request_count{resource="pods"}
+apiserver_request_count{resource="projects"}
+apiserver_request_count{resource="routes"}
+apiserver_request_count{resource="secrets"}
+node:node_cpu_utilisation:avg1m
+container_memory_rss{namespace="default",pod_name=~"router.*"}
+count(openshift_apps_deploymentconfigs_complete_rollouts_total{phase="pending"} < time() - 600)
+count(openshift_apps_deploymentconfigs_complete_rollouts_total{phase="available"} < time() - 600)
+etcd_disk_wal_fsync_duration_seconds_count{}
+kubelet_docker_operations_latency_microseconds{endpoint="https-metrics", quantile="0.9"} / 1000000
+node_load1{instance=~".*"}
+node_load1{service="node-exporter"}
+openshift_apps_deploymentconfigs_complete_rollouts_total{phase="failed"} offset 2m
+rate(apiserver_request_count[2m])
+rate(apiserver_request_count{resource="configmaps"}[2m])
+rate(apiserver_request_count{resource="imagestreams"}[2m])
+rate(apiserver_request_count{resource="namespaces"}[2m])
+rate(apiserver_request_count{resource="oauthclientauthorizations"}[2m])
+rate(apiserver_request_count{resource="persistentvolumeclaims"}[2m])
+rate(container_cpu_system_seconds_total{namespace="default",pod_name=~"router.*"}[2m])
+rate(namespace_adds[2m])
+sort_desc((sum without (instance,type,code) (rate(apiserver_request_count{verb=~"GET|LIST|WATCH"}[2m]))))
+sort_desc((sum without (instance,type,code) (rate(apiserver_request_count{verb=~"POST|PUT|DELETE|PATCH"}[2m]))))
+sum (container_fs_limit_bytes{device=~"^/dev/.*",id="/",instance=~"^.*"})
+sum (container_fs_usage_bytes{device=~"^/dev/.*",id="/",instance=~"^.*"})
+sum (container_fs_usage_bytes{device=~"^/dev/.*",id="/",instance=~"^.*"}) / sum (container_fs_limit_bytes{device=~"^/dev/.*",id="/",instance=~"^.*"}) * 100
+sum (container_memory_rss{id="/",instance=~"^.*"}) / sum (machine_memory_bytes{instance=~"^.*"}) * 100
+sum (container_memory_rss{instance=~"^.*"})
+sum (kubelet_running_pod_count)
+sum (kubelet_running_pod_count) by (instance)
+sum (machine_cpu_cores{instance=~"^.*"})
+sum (machine_memory_bytes{instance=~"^.*"})
+sum (rate (container_cpu_usage_seconds_total{id="/",instance=~"^.*"}[2m]))
+sum (rate (container_cpu_usage_seconds_total{id="/",instance=~"^.*"}[2m])) / sum (machine_cpu_cores{instance=~"^.*"}) * 100
+sum (rate (container_cpu_usage_seconds_total{namespace=~"openshift-node"}[2m])) by (pod_name)
+sum (rate (container_cpu_usage_seconds_total{namespace=~"openshift-monitoring"}[2m])) by (pod_name)
+sum (rate (container_cpu_usage_seconds_total{namespace=~"openshift-web-console"}[2m])) by (pod_name)
+sum (rate (container_cpu_usage_seconds_total{namespace=~"glusterfs"}[2m])) by (pod_name)
+sum (rate (container_cpu_usage_seconds_total{namespace=~"default"}[2m])) by (pod_name)
+sum (rate (container_cpu_usage_seconds_total{namespace=~"openshift-logging"}[2m])) by (pod_name)
+sum (rate (container_cpu_usage_seconds_total{namespace=~"openshift-sdn"}[2m])) by (pod_name)
+sum (rate (container_cpu_usage_seconds_total{namespace=~"kube-system"}[2m])) by (pod_name)
+sum (rate (container_fs_reads_total{pod_name=~"^logging-es-data-master-.*"}[2m])) by (pod_name)
+sum (rate (container_fs_reads_total{pod_name=~"^logging-fluentd-.*"}[2m])) by (pod_name)
+sum (rate (container_fs_reads_total{pod_name=~"^prometheus-0"}[2m])) by (pod_name)
+sum (rate (container_fs_writes_total{pod_name=~"^logging-es-data-master-.*"}[2m])) by (pod_name)
+sum (rate (container_fs_writes_total{pod_name=~"^logging-fluentd-.*"}[2m])) by (pod_name)
+sum (rate (container_fs_writes_total{pod_name=~"^prometheus-0"}[2m])) by (pod_name)
+sum (rate (container_memory_rss{pod_name=~"^.*"}[2m])) by (pod_name)
+sum (rate (container_memory_rss{pod_name=~"^logging-curator-.*"}[2m])) by (pod_name)
+sum (rate (container_memory_rss{pod_name=~"^logging-es-data-master-.*"}[2m])) by (pod_name)
+sum (rate (container_memory_rss{pod_name=~"^logging-fluentd-.*"}[2m])) by (pod_name)
+sum (rate (container_memory_rss{pod_name=~"^oso-clam-server-.*"}[2m])) by (pod_name)
+sum (rate (container_memory_rss{pod_name=~"^oso-image-inspector-.*"}[2m])) by (pod_name)
+sum (rate (container_network_receive_bytes_total{id!="/",instance=~"^.*"}[2m])) by (hostname)
+sum (rate (container_network_receive_bytes_total{instance=~".*-$node_type-.+"}[2m])) / 125000
+sum (rate (container_network_receive_bytes_total{instance=~"^.*"}[2m])) / 125000
+sum (rate (container_network_transmit_bytes_total{id!="/",instance=~"^.*"}[2m])) by (hostname)
+sum (rate (container_network_transmit_bytes_total{instance=~".*-$node_type-.+"}[2m])) / 125000
+sum (rate (container_network_transmit_bytes_total{instance=~"^.*"}[2m])) / 125000
+sum (rate (container_network_transmit_bytes_total{pod_name=~"^logging-es-data-master-.*"}[2m])) by (pod_name) * 8
+sum (rate(apiserver_request_count[2m])) by (client)
+sum (rate(apiserver_request_count[2m])) by (instance)
+sum (rate(container_cpu_usage_seconds_total{name=~"^k8s_prometheus_prometheus-0_.+"}[2m])) by (hostname)
+sum (rate(container_fs_reads_total{name=~"^k8s_prometheus_prometheus-0_.+"}[2m])) by (hostname)
+sum (rate(container_fs_writes_total{name=~"^k8s_prometheus_prometheus-0_.+"}[2m])) by (hostname)
+sum (rate(container_memory_rss{namespace="openwhisk"}[2m])) by (pod_name) / 1048576
+sum by (instance) (rate (kubelet_pleg_relist_latency_microseconds[2m])) / 1000
+sum by (instance) (rate(container_cpu_usage_seconds_total{id=~"/system.slice/atomic-openshift-node.service"}[2m]))
+sum by (instance) (rate(container_cpu_usage_seconds_total{instance=~".*-$node_type.+",id=~"/system.slice/$systemd_service.service"}[2m]))
+sum by (instance) (rate(container_cpu_usage_seconds_total{id=~"/system.slice/atomic-openshift-master-api.service"}[2m]))
+sum by (instance) (rate(container_cpu_usage_seconds_total{id=~"/system.slice/atomic-openshift-master-controllers.service"}[2m]))
+sum by (instance) (rate(container_cpu_usage_seconds_total{id=~"/system.slice/atomic-openshift-node.service"}[2m]))
+sum by (instance) (rate(container_cpu_usage_seconds_total{id=~"/system.slice/etcd.service"}[2m]))
+sum by (instance) (rate(container_cpu_usage_seconds_total{id=~"/system.slice/ovs-vswitchd.service"}[2m]))
+sum by (instance) (rate(container_fs_reads_total{instance=~".*",id=~"/system.slice/atomic-openshift-node.service"}[2m]))
+sum by (instance) (rate(container_fs_reads_total{instance=~".*",id=~"/system.slice/docker.service"}[2m]))
+sum by (instance) (rate(container_fs_reads_total{instance=~".*",id=~"/system.slice/ovs-vswitchd.service"}[2m]))
+sum by (instance) (rate(container_fs_reads_total{instance=~".*-$node_type.+",id=~"/system.slice/$systemd_service.service"}[2m]))
+sum by (instance) (rate(container_fs_reads_total{id=~"/system.slice/atomic-openshift-master-api.service"}[2m]))
+sum by (instance) (rate(container_fs_reads_total{id=~"/system.slice/atomic-openshift-master-controllers.service"}[2m]))
+sum by (instance) (rate(container_fs_reads_total{id=~"/system.slice/etcd.service"}[2m]))
+sum by (instance) (rate(container_fs_writes_total{instance=~".*",id=~"/system.slice/atomic-openshift-node.service"}[2m]))
+sum by (instance) (rate(container_fs_writes_total{instance=~".*",id=~"/system.slice/docker.service"}[2m]))
+sum by (instance) (rate(container_fs_writes_total{instance=~".*",id=~"/system.slice/ovs-vswitchd.service"}[2m]))
+sum by (instance) (rate(container_fs_writes_total{instance=~".*-$node_type.+",id=~"/system.slice/$systemd_service.service"}[2m]))
+sum by (instance) (rate(container_fs_writes_total{id=~"/system.slice/atomic-openshift-master-api.service"}[2m]))
+sum by (instance) (rate(container_fs_writes_total{id=~"/system.slice/atomic-openshift-master-controllers.service"}[2m]))
+sum by (instance) (rate(container_fs_writes_total{id=~"/system.slice/etcd.service"}[2m]))
+sum by (instance) (rate(container_memory_rss{instance=~".*",id=~"/system.slice/atomic-openshift-node.service"}[2m]))
+sum by (instance) (rate(container_memory_rss{instance=~".*",id=~"/system.slice/docker.service"}[2m]))
+sum by (instance) (rate(container_memory_rss{instance=~".*",id=~"/system.slice/ovs-vswitchd.service"}[2m]))
+sum by (instance) (rate(container_memory_rss{instance=~".*-$node_type.+",id=~"/system.slice/$systemd_service.service"}[2m]))
+sum by (instance) (rate(container_memory_rss{id=~"/system.slice/atomic-openshift-master-api.service"}[2m]))
+sum by (instance) (rate(container_memory_rss{id=~"/system.slice/atomic-openshift-master-controllers.service"}[2m]))
+sum by (instance) (rate(container_memory_rss{id=~"/system.slice/etcd.service"}[2m]))
+sum by (instance) (rate(kubelet_docker_operations_errors[2m]))
+sum by (instance) (rate(kubelet_docker_operations_timeout[2m]))
+sum by (type) (rate(scrape_samples_scraped[2m]))
+sum(changes(container_start_time_seconds[2m]))
+sum(kubelet_running_pod_count)
+sum(openshift_build_total{phase="Failed"})
+topk (5, container_cpu_usage_rate)
+topk(10, (rate(kubelet_docker_operations_latency_microseconds{type="compute",quantile="0.9"}[2m]))) / 1000
+topk(10, (sum by (pod_name) (rate(container_network_receive_bytes_total[2m]))))
+topk(10, (sum by (pod_name) (rate(container_network_transmit_bytes_total[2m]))))
+topk(3, (sum (rate (container_cpu_usage_seconds_total{name!="",instance=~"^.*"}[2m])) by (pod_name)))
+topk(3, (sum (rate (container_cpu_usage_seconds_total{name!=""}[2m])) by (pod_name)))
