@@ -17,10 +17,10 @@
     - { role: os-kickstart }
     - { role: clone-repos, when: not atomic | default(False) | bool }
     - { role: docker-config }
-    - { role: cri-o, when: crio | default(False) | bool }
     - { role: multipath-blacklist, when: multipath_blacklist | default(False) | bool }
     - { role: pbench-config, when: not atomic | default(False) | bool}
     - { role: aos-ansible }
+    - { role: cri-o, when: crio | default(False) | bool }
     - { role: pbench-kickstart }
     - { role: collectd-install }
     - { role: journald-config }

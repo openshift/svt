@@ -61,6 +61,7 @@ crio=False
 crio_copy_images=False
 crio_registry=registry.access.redhat.com
 image_repository=
+crio_system_container=False
 # multipath-blacklist
 multipath_blacklist=False
 # pbench scrape binaries
