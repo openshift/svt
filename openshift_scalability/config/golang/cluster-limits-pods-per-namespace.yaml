@@ -1,13 +1,14 @@
+# 12 projects @ 5,000 pods each creates 60,000 pods which fits into a 250 node cluster
 provider: local
 ClusterLoader:
   cleanup: true
   projects:
-    - num: 1
+    - num: 12
       basename: clusterproject
       tuning: default
       ifexists: delete
       pods:
-        - num: 3000
+        - num: 5000
           image: gcr.io/google_containers/pause-amd64:3.0
           basename: pausepods
           file: pod-pause.json
