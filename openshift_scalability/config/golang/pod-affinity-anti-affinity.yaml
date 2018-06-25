@@ -7,7 +7,7 @@ ClusterLoader:
       tuning: default
       ifexists: delete
       pods:
-        - num: 250
+        - num: 240
           image: docker.io/ocpqe/hello-pod
           basename: pod-affinity-security-in-s1
           file: pod-pod-affinity.json
@@ -17,7 +17,7 @@ ClusterLoader:
       tuning: default
       ifexists: delete
       pods:
-        - num: 250
+        - num: 240
           image: docker.io/ocpqe/hello-pod
           basename: pod-anti-affinity-security-in-s1
           file: pod-pod-anti-affinity.json
@@ -28,7 +28,7 @@ ClusterLoader:
       pods:
         stepping:
           stepsize: 50
-          pause: 180
+          pause: 120
         ratelimit:
           delay: 0
 

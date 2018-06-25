@@ -9,15 +9,15 @@ oc get node --show-labels
 oc describe node | grep Runtime
 
 
-compute_nodes=$(oc get nodes -l region=primary | awk '{print $1}' | grep -v NAME | xargs)
+compute_nodes=$(oc get nodes -l 'node-role.kubernetes.io/compute=true' | awk '{print $1}' | grep -v NAME | xargs)
 
 echo -e "\nComputes nodes are: $compute_nodes"
 
 declare -a node_array
 counter=1
 
-oc get nodes -l region=primary
-oc describe nodes -l region=primary 
+oc get nodes -l 'node-role.kubernetes.io/compute=true'
+oc describe nodes -l 'node-role.kubernetes.io/compute=true' 
 
 initial_node_label="beta.kubernetes.io/arch=amd64"
 

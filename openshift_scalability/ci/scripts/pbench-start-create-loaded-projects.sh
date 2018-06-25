@@ -214,15 +214,15 @@ echo -e "\nPbench main results URL:   ${PBENCH_RESULTS_URL}"
 # /EC2::ip-172-31-37-120/${PBENCH_RESULTS_DIR_NAME}/tools-default/ip-172-31-57-127.us-west-2.compute.internal/sar/memory.html"
 
 # Find infra nodes other than master internal ip addresses:
-INFRA_NODES_IPS=$(oc get nodes -l region=infra | grep -v master | grep -v NAME | awk '{print $1}')
+INFRA_NODES_IPS=$(oc get nodes -l 'node-role.kubernetes.io/infra=true' | grep -v NAME | awk '{print $1}')
 echo -e "\nInfra Nodes internal ip addresses: \n${INFRA_NODES_IPS}"
 
 # Find the compute nodes
-COMPUTE_NODES_IPS=$(oc get nodes -l region=primary | grep -v NAME | awk '{print $1}')
+COMPUTE_NODES_IPS=$(oc get nodes -l 'node-role.kubernetes.io/compute=true' | grep -v NAME | awk '{print $1}')
 echo -e "\nCompute Nodes internal ip addresses: \n${COMPUTE_NODES_IPS}"
 
 # Find the Master Nodes
-MASTER_NODES_IPS=$(oc get nodes  | grep master | grep -v NAME | awk '{print $1}') 
+MASTER_NODES_IPS=$(oc get nodes -l 'node-role.kubernetes.io/master=true'  | grep -v NAME | awk '{print $1}')
 echo -e "\nMaster nodes internal ip addresses: \n${MASTER_NODES_IPS}"
 
 # Find Standalone Etcd nodes
@@ -231,5 +231,4 @@ if [ "${STANDALONE_ETCDS_PRIVATE_DNS}" != "" ]; then
 fi
 
 exit
-
 
