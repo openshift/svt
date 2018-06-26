@@ -7,7 +7,7 @@ ClusterLoader:
       tuning: default
       ifexists: delete
       pods:
-        - num: 3000
+        - num: 15000
           image: gcr.io/google_containers/pause-amd64:3.0
           basename: pausepods
           file: pod-pause.json
@@ -15,7 +15,7 @@ ClusterLoader:
     - name: default
       pods:
         stepping:
-          stepsize: 150
-          pause: 60
+          stepsize: 500
+          pause: 30
         ratelimit:
           delay: 0
