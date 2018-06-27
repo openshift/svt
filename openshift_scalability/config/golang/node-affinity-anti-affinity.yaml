@@ -7,7 +7,7 @@ ClusterLoader:
       tuning: default
       ifexists: delete
       pods:
-        - num: 250
+        - num: 240
           image: gcr.io/google_containers/pause-amd64:3.0
           basename: pausepods
           file: pod-pause-node-affinity.json
@@ -17,7 +17,7 @@ ClusterLoader:
       tuning: default
       ifexists: delete
       pods:
-        - num: 250
+        - num: 240
           image: docker.io/ocpqe/hello-pod
           basename: hellopods
           file: pod-hello-node-anti-affinity.json
@@ -27,7 +27,7 @@ ClusterLoader:
       pods:
         stepping:
           stepsize: 40
-          pause: 180
+          pause: 120
         ratelimit:
           delay: 0
 

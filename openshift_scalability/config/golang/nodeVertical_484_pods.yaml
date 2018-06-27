@@ -1,0 +1,21 @@
+provider: local
+ClusterLoader:
+  cleanup: false
+  projects:
+    - num: 1
+      basename: clusterproject
+      tuning: default
+      ifexists: delete
+      pods:
+        - num: 484
+          image: gcr.io/google_containers/pause-amd64:3.0
+          basename: pausepods
+          file: pod-pause.json
+  tuningsets:
+    - name: default
+      pods:
+        stepping:
+          stepsize: 50
+          pause: 60
+        ratelimit:
+          delay: 0

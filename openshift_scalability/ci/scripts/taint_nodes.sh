@@ -5,15 +5,15 @@ date
 uname -a
 openshift version
 
-compute_nodes=$(oc get nodes -l region=primary | awk '{print $1}' | grep -v NAME | xargs)
+compute_nodes=$(oc get nodes -l 'node-role.kubernetes.io/compute=true' | awk '{print $1}' | grep -v NAME | xargs)
 
 echo -e "\nComputes nodes are: $compute_nodes"
 
 declare -a node_array
 counter=1
 
-oc get nodes -l region=primary
-oc describe nodes -l region=primary | grep Taints
+oc get nodes -l 'node-role.kubernetes.io/compute=true'
+oc describe nodes -l 'node-role.kubernetes.io/compute=true' | grep Taints
 
 # Taint nodes
 for n in ${compute_nodes}; do
@@ -24,7 +24,7 @@ for n in ${compute_nodes}; do
   counter=$((counter+1))
 done
 
-oc describe nodes -l region=primary | grep Taints
+oc describe nodes -l 'node-role.kubernetes.io/compute=true' | grep Taints
 
 for i in {1..2}; do
   echo "Array element node_array index $i has value : ${node_array[${i}]}"
@@ -42,7 +42,6 @@ function check_no_error_pods()
 
 sleep 5
 
-oc describe nodes -l region=primary | grep Taint
 
 # start GoLang cluster-loader
 export KUBECONFIG=${KUBECONFIG-$HOME/.kube/config}

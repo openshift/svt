@@ -81,12 +81,10 @@ pbench-clear-results
 
 
 # get the internal node ip addresses now that we have the /root/.kube/config copied over:
-## NODES=$(oc get nodes | grep -v "SchedulingDisabled" | grep -v NAME | awk '{print $1}'  | xargs)
 ## NODES are used when we want to register pbench from scratch
 NODES=$(oc get nodes | grep -v "master" | grep -v NAME | awk '{print $1}'  | xargs)
 
 ALL_NODES_INTERNAL=$(oc get nodes | grep -v NAME | awk '{print $1}'  | xargs)
-## MASTER_INTERNAL_IP=$(oc get nodes | grep "SchedulingDisabled" | awk '{print $1}')
 MASTER_INTERNAL_IP=$(oc get nodes --no-headers -l node-role.kubernetes.io/master=true | cut -f1 -d" ")
 
 echo -e "\nChecking node config master node:"
@@ -183,7 +181,8 @@ oc version
 openshift version
 oc get nodes -o wide
 oc get nodes --show-labels
-oc get nodes -l region=primary
+## oc get nodes -l region=primary
+oc get nodes -l 'node-role.kubernetes.io/compute=true'
 oc get pods --all-namespaces -o wide
 
 docker version
@@ -194,6 +193,23 @@ oc describe node | grep Runtime
 cd /root/svt/openshift_scalability
 pwd
 ls -ltr
+
+## Replace "cleanup: true" with "cleanup: false"
+## in Golang Cluster-loader nodeVertical.yaml config file
+## and save original config file
+echo -e "\nContents of Golang Cluster loader config dir '/root/svt/openshift_scalability/config/golang/' : " 
+ls -ltr /root/svt/openshift_scalability/config/golang/
+echo -e "\nContents of original Node Vertical Golang Cluster loader config file:  ${CLUSTER_LOADER_CONFIG_FILE} : " 
+cat /root/svt/openshift_scalability/config/golang/${CLUSTER_LOADER_CONFIG_FILE}
+MY_DATE_TS=$(date +"%m-%d-%Y-%T")
+echo -e "\nSaving original Node Vertical Golang Cluster loader config file:  ${CLUSTER_LOADER_CONFIG_FILE} with timestamp extension ${MY_DATE_TS}"
+cp /root/svt/openshift_scalability/config/golang/${CLUSTER_LOADER_CONFIG_FILE} /root/svt/openshift_scalability/config/golang/${CLUSTER_LOADER_CONFIG_FILE}_${MY_DATE_TS}
+echo -e "\nContents of Golang Cluster loader config dir '/root/svt/openshift_scalability/config/golang/' after saving a copy of file  ${CLUSTER_LOADER_CONFIG_FILE}: " 
+ls -ltr /root/svt/openshift_scalability/config/golang/
+echo -e "\nChanging 'cleanup: true' to 'cleanup: false' in Node Vertical config file '${CLUSTER_LOADER_CONFIG_FILE}': " 
+sed -i "s/cleanup: true/cleanup: false/" /root/svt/openshift_scalability/config/golang/${CLUSTER_LOADER_CONFIG_FILE}
+echo -e "Contents of modified Node Vertical Golang Cluster loader config file:  ${CLUSTER_LOADER_CONFIG_FILE} : " 
+cat /root/svt/openshift_scalability/config/golang/${CLUSTER_LOADER_CONFIG_FILE}
 
 
 echo -e "\n\n############## Running Golang cluster-loader ######################"
@@ -211,6 +227,17 @@ echo -e "\nRunning: '/usr/libexec/atomic-openshift/extended.test --ginkgo.focus=
 rc=$?
 
 echo -e "\nFinished executing GoLang cluster-loader: exit code was: $rc"
+
+# Restore the Node Vertical config file back to original
+echo -e "\nRestoring Node Vertical Golang Cluster loader config file to:  ${CLUSTER_LOADER_CONFIG_FILE}_${MY_DATE_TS}"
+ls -ltr /root/svt/openshift_scalability/config/golang/
+cp /root/svt/openshift_scalability/config/golang/${CLUSTER_LOADER_CONFIG_FILE}_${MY_DATE_TS} /root/svt/openshift_scalability/config/golang/${CLUSTER_LOADER_CONFIG_FILE}
+ls -ltr /root/svt/openshift_scalability/config/golang/
+echo -e "\nContents of restored Node Vertical Golang Cluster loader config file ${CLUSTER_LOADER_CONFIG_FILE} :"
+cat /root/svt/openshift_scalability/config/golang/${CLUSTER_LOADER_CONFIG_FILE}
+DIFF_NV_CONFIG_FILES=$(diff /root/svt/openshift_scalability/config/golang/${CLUSTER_LOADER_CONFIG_FILE}_${MY_DATE_TS} /root/svt/openshift_scalability/config/golang/${CLUSTER_LOADER_CONFIG_FILE})
+echo -e "\nDiff of original and restored NV config files: '${DIFF_NV_CONFIG_FILES}'"
+
 
 oc get pods --all-namespaces -o wide
 echo -e "\nChecking total number of running pods: $(oc get pods --all-namespaces -o wide | grep -v default | grep -ci running)"
@@ -264,7 +291,7 @@ echo -e "\nTest Client instance internal uname based on internal ip address:  ${
 WEBSERVER=$(cat /opt/pbench-agent/config/pbench-agent.cfg | grep "web_server =" | cut -d'=' -f 2 | cut -d' ' -f 2)
 echo -e "\nExternal pbench results server: ${WEBSERVER}"
 
-## 03-27-2018:  new pbench server for (alternate server , external:  pbench.dev.opehsift.com)
+## 03-27-2018:  new pbench server for (alternate server , external:  pbench.dev.openshift.com)
 ## PBENCH_RESULTS_URL="http://${WEBSERVER}/pbench/results/${TEST_CLIENT_UNAME}/${PBENCH_RESULTS_DIR_NAME}/tools-default"
 PBENCH_EXTERNAL_RESULTS_URL="http://${WEBSERVER}/results/${TEST_CLIENT_UNAME}/${PBENCH_RESULTS_DIR_NAME}/tools-default"
 echo -e "\nExternal Pbench main results URL:   ${PBENCH_EXTERNAL_RESULTS_URL}"
@@ -275,15 +302,15 @@ echo -e "\nPbench main results URL:   ${PBENCH_RESULTS_URL}"
 # /EC2::ip-172-31-37-120/${PBENCH_RESULTS_DIR_NAME}/tools-default/ip-172-31-57-127.us-west-2.compute.internal/sar/memory.html"
 
 # Find infra nodes other than master internal ip addresses:
-INFRA_NODES_IPS=$(oc get nodes -l region=infra | grep -v master | grep -v NAME | awk '{print $1}')
+INFRA_NODES_IPS=$(oc get nodes -l 'node-role.kubernetes.io/infra=true' | grep -v NAME | awk '{print $1}')
 echo -e "\nInfra Nodes internal ip addresses: \n${INFRA_NODES_IPS}"
 
 # Find the compute nodes
-COMPUTE_NODES_IPS=$(oc get nodes -l region=primary | grep -v NAME | awk '{print $1}')
+COMPUTE_NODES_IPS=$(oc get nodes -l 'node-role.kubernetes.io/compute=true' | grep -v NAME | awk '{print $1}')
 echo -e "\nCompute Nodes internal ip addresses: \n${COMPUTE_NODES_IPS}"
 
 # Find the Master Nodes
-MASTER_NODES_IPS=$(oc get nodes  | grep master | grep -v NAME | awk '{print $1}') 
+MASTER_NODES_IPS=$(oc get nodes -l 'node-role.kubernetes.io/master=true'  | grep -v NAME | awk '{print $1}') 
 echo -e "\nMaster nodes internal ip addresses: \n${MASTER_NODES_IPS}"
 
 # Find Standalone Etcd nodes
