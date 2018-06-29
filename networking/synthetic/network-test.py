@@ -89,6 +89,34 @@ def parse_args():
                         default = '3.5',
                         help = 'OpenShift version')
     
+    parser.add_argument('-a',
+                        '--tcp_tests',
+                        required = False,
+                        dest = 'tcp_tests',
+                        default = 'stream,rr',
+                        help = 'The network test types (stream, request-response')
+
+    parser.add_argument('-b',
+                        '--udp_tests',
+                        required = False,
+                        dest = 'udp_tests',
+                        default = 'stream,rr',
+                        help = 'The network test types, have to be comma seperated.')
+
+    parser.add_argument('-s',
+                        '--message-sizes',
+                        required = False,
+                        dest = 'msg_sizes',
+                        default = '64,1024,16384',
+                        help = 'The sizes of messages to be used to perform the tests, have to be comma seperated')
+
+    parser.add_argument('-t',
+                        '--total-samples',
+                        required = False,
+                        dest = 'total_samples',
+                        default = '3',
+                        help = 'Number of samples to be used for the tests')
+
     parser.add_argument('-m',
                         '--master',
                         required = True,
@@ -211,7 +239,7 @@ def main():
     sender_region = set_sender_region(args.test_master, args.test_nodes)
     receiver_region = set_receiver_region(args.test_master, args.test_nodes)
     sender_host = set_sender(args.test_master, args.test_nodes)
-    receiver_host = set_receiver(args.test_master, args.test_nodes)
+    receiver_host = set_receiver(args.test_master, args.test_nodes)    
 
     if args.test_type != 'nodeIP':
         oc_process_option = get_option(args.os_version);
@@ -221,6 +249,10 @@ def main():
             inventory_vars = {'sender_region': sender_region,
                               'receiver_region': receiver_region,
                               'uperf_pod_number': pod_number,
+                              'tcp_tests': args.tcp_tests,
+                              'udp_tests': args.udp_tests,
+                              'msg_sizes': args.msg_sizes,
+                              'samples': args.total_samples, 
                               'oc_process_option': oc_process_option,
                               'pbench_label': pbench_label,
                               'pbench_remotes': pbench_remotes}

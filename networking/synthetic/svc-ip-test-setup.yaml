@@ -149,12 +149,12 @@
   - name: Run pbench-uperf for TCP benchmarks
     shell: >
       pbench-uperf
-      --test-types=stream,rr
+      --test-types={{ tcp_tests }}
       --runtime=30
-      --message-sizes=64,1024,16384
+      --message-sizes={{ msg_sizes }}
       --protocols=tcp
       --instances=1
-      --samples=3
+      --samples={{ samples }}
       --max-stddev=10
       --clients={{ uperf_clients }}
       --servers={{ uperf_servers }}
@@ -163,12 +163,12 @@
   - name: Run pbench-uperf for UDP benchmarks
     shell: >
       pbench-uperf
-      --test-types=stream,rr
+      --test-types={{ udp_tests }}
       --runtime=30
-      --message-sizes=64,1024,16384
+      --message-sizes={{ msg_sizes }}
       --protocols=udp
       --instances=1
-      --samples=3
+      --samples={{ samples }}
       --max-stddev=10
       --clients={{ uperf_clients }}
       --servers={{ uperf_servers }}
