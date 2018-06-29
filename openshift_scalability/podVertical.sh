@@ -14,8 +14,6 @@ long_sleep() {
   sleep $sleep_time
 }
 
-clean() { echo "Cleaning environment"; oc delete project clusterproject0; }
-
 golang_clusterloader() {
   # Export kube config
   export KUBECONFIG=${KUBECONFIG-$HOME/.kube/config}
@@ -39,8 +37,6 @@ elif [ "$TYPE" == "python" ]; then
   python_clusterloader
   # sleeping again to gather steady-state metrics after environment is loaded
   long_sleep
-  # clean up environment
-  clean
 else
   echo "$TYPE is not a valid option, available options: golang, python"
   exit 1
