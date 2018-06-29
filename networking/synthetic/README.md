@@ -16,14 +16,9 @@ The following uperf tests are run:
 - [pbench](https://github.com/distributed-system-analysis/pbench) is installed and configured on all hosts
 
 ## Requirements
-Ansible version <= 1.9.4
-
 ```
-# yum install ansible
-$ yum install --assumeyes ansible-1.9.4-1
-
-# pip install ansible
-$ pip install ansible==1.9.4
+yum install ansible
+pip install ansible
 ```
 
 ## Running the test
