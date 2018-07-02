@@ -1,0 +1,56 @@
+FROM registry.access.redhat.com/rhel7/rhel
+
+MAINTAINER Vikas Choudhary "vichoudh@redhat.com"
+
+RUN yum install -y --nogpgcheck \
+        python-devel \
+        libtool \
+        openssh-clients \
+        openssh-server \
+        net-tools \
+        libevent \
+        screen \
+        bc \
+        numactl \
+        sysstat \
+        rpm-build\
+        perl \
+        make \
+        ntpdate \
+        wget; \
+    yum clean all; \
+    (cd /lib/systemd/system/sysinit.target.wants/; \
+    for i in *; do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+    rm -f /lib/systemd/system/multi-user.target.wants/*; \
+    rm -f /etc/systemd/system/*.wants/*; \
+    rm -f /lib/systemd/system/local-fs.target.wants/*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+    rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+    rm -f /lib/systemd/system/basic.target.wants/*; \
+    rm -f /lib/systemd/system/anaconda.target.wants/*; \
+    rm -f /lib/systemd/system/systemd*udev*; \
+    rm -f /lib/systemd/system/getty.target; \
+    ln -s /usr/lib64/libgmp.so.10 /usr/lib64/libgmp.so.3
+
+RUN wget http://download.eng.pek2.redhat.com/rel-eng/latest-RHEL-7/compose/Server/x86_64/os/Packages/kernel-`uname -r`.rpm \
+    && wget http://download.eng.pek2.redhat.com/rel-eng/latest-RHEL-7/compose/Server/x86_64/os/Packages/kernel-devel-`uname -r`.rpm \
+    && wget http://download.eng.pek2.redhat.com/rel-eng/latest-RHEL-7/compose/Server-optional/x86_64/os/Packages/libpcap-devel-1.5.3-9.el7.i686.rpm \
+    && yum install -y *.rpm
+
+RUN wget -q http://www.openonload.org/download/openonload-201606-u1.3.tgz \
+    && wget http://perf1.perf.lab.eng.bos.redhat.com/psuriset/vikas/vikas-pstac-n.tar.gz \
+    && wget ftp://fr2.rpmfind.net/linux/Mandriva/devel/cooker/x86_64/media/contrib/release/netperf-2.6.0-1-mdv2012.0.x86_64.rpm
+
+RUN wget https://github.com/libevent/libevent/archive/release-2.1.6-beta.tar.gz
+RUN tar xf release-2.1.6-beta.tar.gz
+RUN cd libevent-release-2.1.6-beta  \
+    && ./autogen.sh && ./configure && make \
+    && make install
+
+
+COPY start-stac-test .
+#RUN rpmbuild -tb openonload-201606-u1.3.tgz --quiet
+#RUN rpm -ivh netperf-2.6.0-1-mdv2012.0.x86_64.rpm
+
+#RUN yum localinstall -y -q /root/rpmbuild/RPMS/x86_64/openonload*rpm
+#ENTRYPOINT ["/usr/sbin/init"]
