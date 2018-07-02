@@ -1,0 +1,13 @@
+projects:
+  - num: 1
+    basename: cluster
+    ifexists: delete
+    templates:
+      - 
+        num: 2000 
+        file: ./content/deployment-config-cluster-limits-deployments.json
+        parameters:
+          -
+            ENV_VALUE: "asodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij12"
+quotas:
+  - name: default
