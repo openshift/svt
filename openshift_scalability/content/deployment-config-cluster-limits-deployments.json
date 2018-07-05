@@ -5,7 +5,7 @@
     "name": "deploymentConfigTemplate",
     "creationTimestamp": null,
     "annotations": {
-      "description": "This template will create a deploymentConfig with 1 replica, 4 env vars, and a service.",
+      "description": "This template will create a deploymentConfig with 1 replica and 4 env vars",
       "tags": ""
     }
   },

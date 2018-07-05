@@ -67,7 +67,7 @@ fi
 for app_node in $(oc get nodes -l "$LABEL" -o json | jq '.items[].metadata.name'); do
 	app_node=$(echo $app_node | sed "s/\"//g")
 	if [[ "$ENVIRONMENT" == "alderaan" ]]; then
-		if [[ ! $(echo ${CORE_NODES[@]} | grep -q -w $app_node) ]]; then
+		if ! ($(echo ${CORE_NODES[@]} | grep -q -w $app_node)); then
 			NODE_COUNT=$(( NODE_COUNT+1 ))
 			oc label node $app_node "$TEST_LABEL"
 		fi
