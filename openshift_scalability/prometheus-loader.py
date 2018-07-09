@@ -125,6 +125,7 @@ class PrometheusLoader(object):
             self.log.error('bad request {0} response {1}'.format(req, res))
         if res.status_code is not 200 or len(res.text) == 0:
             self.log.error('bad request {0} response {1}'.format(req, res))
+        self.log.debug('duration:{0} {1}'.format(res.elapsed.total_seconds(), req))        
 
     def run_loader(self):
         ''' fire http requests simultaneously in threads batch '''
