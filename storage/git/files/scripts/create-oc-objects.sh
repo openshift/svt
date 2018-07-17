@@ -74,6 +74,7 @@ do
   then
     oc delete project ${NAMESPACE}
   fi
+  sleep 10
 done
 
 for i in $(seq 1 ${ITERATION});
@@ -96,6 +97,7 @@ do
       -p PVC_SIZE=${VOLUME_CAPACITY} \
       -p STORAGE_CLASS_NAME=${STORAGE_CLASS_NAME} \
       | oc create --namespace=${NAMESPACE} -f -
+  sleep 10
 done
 
 

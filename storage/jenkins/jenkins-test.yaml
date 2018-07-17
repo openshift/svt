@@ -56,7 +56,7 @@
       - setup
 
   - name: create oc objects
-    shell: "{{ tmp_folder }}/files/scripts/create-oc-objects.sh {{ test_project_name }} {{ test_project_number }} {{ tmp_folder }} {{ delete_test_project_before_test }} {{ MEMORY_LIMIT }} {{ VOLUME_CAPACITY }} {{ STORAGE_CLASS_NAME }} {{ JENKINS_IMAGE_STREAM_TAG }} {{ JJB_STORAGE_CLASS_NAME }}"
+    shell: "{{ tmp_folder }}/files/scripts/create-oc-objects.sh {{ test_project_name }} {{ test_project_number }} {{ tmp_folder }} {{ delete_test_project_before_test }} {{ MEMORY_LIMIT }} {{ VOLUME_CAPACITY }} {{ STORAGE_CLASS_NAME }} {{ JENKINS_IMAGE_STREAM_TAG }}"
     tags:
       - setup
 

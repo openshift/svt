@@ -7,7 +7,6 @@ MEMORY_LIMIT: 6144Mi
 VOLUME_CAPACITY: 10Gi
 STORAGE_CLASS_NAME: glusterfs-storage-block
 JENKINS_IMAGE_STREAM_TAG: jenkins:2
-JJB_STORAGE_CLASS_NAME: glusterfs-storage-block
 ###Get a login here: http://www.oracle.com/technetwork/java/javase/downloads/index.html
 ###That will be used for installing JDK on Jenkins
 ###Change me
