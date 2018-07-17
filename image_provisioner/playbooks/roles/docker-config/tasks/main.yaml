@@ -49,6 +49,11 @@
         docker_storage_mount_path: "/var/lib/docker"
      when: ( docker_storage_mount_path == "" or docker_storage_mount_path is not defined )
 
+   - name: set docker_storage_mount_path if empty or undefined
+     set_fact:
+        docker_storage_mount_path: "/var/lib/containers"
+     when: crio | default(False) | bool and ( docker_storage_mount_path == "" or docker_storage_mount_path is not defined )
+
    - name: update fstab
      lineinfile:
        path: /etc/fstab

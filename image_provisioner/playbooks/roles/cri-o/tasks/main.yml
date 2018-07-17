@@ -1,5 +1,5 @@
 ---
-- name: Ensure container-selinux, atomic and runc are installed
+- name: Ensure container-selinux atomic, cri-tools, podman and runc are installed
   package:
      name: "{{ item }}"
      state: present
@@ -7,25 +7,35 @@
      - container-selinux
      - atomic
      - runc
+     - cri-tools
+     - podman
   when: not atomic | default(False) | bool
 
-- name: Use RHEL based image
-  set_fact:
-    crio_image_prepend: "{{ crio_registry }}"
-    crio_image_name: "cri-o"
-
-- name: Set the full image name
-  set_fact:
-    crio_image: "{{ crio_image_prepend }}/{{ crio_image_name }}:latest"
-
-- name: Pre-pull CRI-O System Container image
-  atomic_image:
-     name: "{{ crio_image }}"
+- name: Install crio rpm
+  package:
+     name: cri-o
      state: latest
-     backend: ostree
+  when: not atomic | default(False) | bool and not crio_system_container | default(False) | bool
 
-- name: Install CRI-O container
-  command: "atomic install --system-package no --system {{ crio_image }}"
+- block:
+   - name: Use RHEL based image
+     set_fact:
+       crio_image_prepend: "{{ crio_registry }}"
+       crio_image_name: "cri-o"
+
+   - name: Set the full image name
+     set_fact:
+       crio_image: "{{ crio_image_prepend }}/{{ crio_image_name }}:latest"
+
+   - name: Pre-pull CRI-O System Container image
+     atomic_image:
+       name: "{{ crio_image }}"
+       state: latest
+       backend: ostree
+
+   - name: Install CRI-O container
+     command: "atomic install --system-package no --system {{ crio_image }}"
+  when: crio_system_container | default(False) | bool
 
 - name: Ensure that selinux is set to true in the config
   lineinfile:
@@ -88,4 +98,22 @@
   register: crio_status
     
 - debug: msg="{{ crio_status.stdout }}"
-  when: crio_status.rc != 0 
+  when: crio_status.rc != 0
+
+- block:
+   - name: check if skopeo is installed
+     command: which skopeo
+     register: skopeo_status
+
+   - name: Install skopeo if not installed
+     yum:
+       name: skopeo
+       state: latest
+     when: not atomic | default(False) | bool and skopeo_status.rc != 0
+
+   - name: copy images to container storage
+     shell: for image in $(docker images {{ image_repository }}  --format {% raw %} '{{.Repository}}:{{.Tag}}' {% endraw %}); do \
+                skopeo copy docker-daemon:$image containers-storage:$image; done
+     when: skopeo_status.rc == 0
+  when: crio_copy_images | default(False) | bool
+

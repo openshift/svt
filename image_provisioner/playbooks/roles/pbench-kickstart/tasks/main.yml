@@ -29,3 +29,10 @@
 
 - name: tag pbench-controller image
   command: docker tag ravielluri/image:controller pbench-controller:latest
+
+- name: add token needed for uploading r2r results
+  lineinfile:
+    path: "/root/svt/utils/pbwedge/hosts"
+    regexp: "github_token"
+    line: "github_token={{ scale_ci_results_token }}"
+  when: scale_ci_results_token is defined

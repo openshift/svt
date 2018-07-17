@@ -37,20 +37,3 @@
     name: iptables 
     state: started 
     enabled: yes
-
-- block:
-   - name: check if skopeo is installed
-     command: which skopeo
-     register: skopeo_status
-
-   - name: Install skopeo if not installed
-     yum:
-       name: skopeo
-       state: latest
-     when: not atomic | default(False) | bool and skopeo_status.rc != 0
-
-   - name: copy images to container storage
-     shell: for image in $(docker images {{ image_repository }}  --format {% raw %} '{{.Repository}}:{{.Tag}}' {% endraw %}); do \
-                skopeo copy docker-daemon:$image containers-storage:$image; done
-     when: skopeo_status.rc == 0
-  when: crio | default(False) | bool and crio_copy_images | default(False) | bool
