@@ -52,11 +52,19 @@ def parse_args():
                         dest='period',
                         help='a time period for query in min')
 
+    parser.add_argument('-r',
+                        '--resolution',
+                        type=int,
+                        required=False,
+                        default=15,
+                        dest='resolution',
+                        help='graph resolution in seconds')
+
     return parser.parse_args()
 
 
 class PrometheusLoader(object):
-    def __init__(self, file, threads=30, period=30):
+    def __init__(self, file, threads=30, period=30, resolution=15):
         # args
         self.queries_file = file
         self.threads = threads
@@ -71,6 +79,7 @@ class PrometheusLoader(object):
         self.log_format = "%(asctime)s - %(levelname)s - %(message)s"
         self.log_file = log_file
         self.pattern = time_pattern
+        self.steping = resolution
 
         self.logger()
         self.read_queries_from_file()
@@ -99,7 +108,12 @@ class PrometheusLoader(object):
         self.token = 'Bearer ' + os.popen('oc sa get-token prometheus-k8s'
                                           ' -n openshift-monitoring'
                                           ).read()
-        self.headers = {'Authorization': self.token}
+        self.headers = {'Authorization': self.token,
+                        'Accept': 'application/json, text/plain, */*',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Connection': 'keep-alive',
+                        'X-Grafana-Org-Id': '1'
+                       }
         self.promethues_server = os.popen("oc get route prometheus-k8s"
                                           " -n openshift-monitoring "
                                           " |grep prometheus |awk '{print $2}'"
@@ -112,10 +126,8 @@ class PrometheusLoader(object):
         time_now = os.popen('date "+%s"').read().rstrip()
         query = self.queries[random.randint(1, len(self.queries) - 1)]
         return "https://{0}/api/v1/query_range?query={1}&start={2}&end={3}" \
-            "&step=1".format(self.promethues_server,
-                             query,
-                             time_from,
-                             time_now)
+            "&step={4}".format(self.promethues_server,
+                             query, time_from, time_now, self.steping)
 
     def request(self, req):
         ''' fire http request '''
@@ -125,7 +137,7 @@ class PrometheusLoader(object):
             self.log.error('bad request {0} response {1}'.format(req, res))
         if res.status_code is not 200 or len(res.text) == 0:
             self.log.error('bad request {0} response {1}'.format(req, res))
-        self.log.debug('duration:{0} {1}'.format(res.elapsed.total_seconds(), req))        
+        self.log.debug('duration:{0} {1}'.format(res.elapsed.total_seconds(), req))
 
     def run_loader(self):
         ''' fire http requests simultaneously in threads batch '''
@@ -134,7 +146,7 @@ class PrometheusLoader(object):
 
 if __name__ == "__main__":
     args = parse_args()
-    p = PrometheusLoader(args.file, args.threads, args.period)
+    p = PrometheusLoader(args.file, args.threads, args.period, args.resolution)
     while True:
         p.run_loader()
         time.sleep(args.interval)
