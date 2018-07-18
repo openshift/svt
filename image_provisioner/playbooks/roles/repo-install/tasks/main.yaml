@@ -48,6 +48,11 @@
           src: oso-rhui-rhel-server-releases.repo
           dest: /etc/yum.repos.d
   
+      - name: install oso-rhui-rhel-server-releases-optional
+        copy:
+          src: oso-rhui-rhel-server-releases-optional.repo
+          dest: /etc/yum.repos.d
+  
       - name: install oso-rhui-rhel-server-extras
         copy:
           src: oso-rhui-rhel-server-extras.repo
