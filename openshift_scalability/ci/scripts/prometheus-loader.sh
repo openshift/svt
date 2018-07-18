@@ -25,9 +25,11 @@ ${pbench_copy_results}
 # stop the promehteus load.
 kill -9 $loader_pid
 # dump logs
-oc logs prometheus-k8s-0 -c prometheus > ~/prometheus_oc_logs.log
-oc logs prometheus-k8s-1 -c prometheus >> ~/prometheus_oc_logs.log
-grep ERROR /tmp/prometheus_loader.log > ~/prometheus_errors.log
-grep duration /tmp/prometheus_loader.log |grep -v 'duration: 0' |awk '{print $7}' |sort > ~/prometheus_top_longest_queries.log
+mkdir -p ${benchmark_run_dir}/promethues
+oc logs prometheus-k8s-0 -c prometheus > ${benchmark_run_dir}/promethues/oc_logs.log
+oc logs prometheus-k8s-1 -c prometheus >> ${benchmark_run_dir}/promethues/oc_logs.log
+grep ERROR /tmp/prometheus_loader.log > ${benchmark_run_dir}/promethues/errors.log
+grep duration /tmp/prometheus_loader.log |grep -v 'duration: 0' |awk '{print $7}' |sort > ${benchmark_run_dir}/promethues/top_longest_queries.log
+rm -fr /tmp/prometheus_loader.log
 #TODO: analyze the logs and add pass criteria for this job.
 exit 0
