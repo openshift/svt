@@ -62,7 +62,7 @@
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=tcp
-      --instances=1
+      --instances=2
       --samples=3
       --max-stddev=10
       --clients={{ sender_host }}
@@ -76,7 +76,7 @@
       --runtime=30
       --message-sizes=64,1024,16384
       --protocols=udp
-      --instances=1
+      --instances=2
       --samples=3
       --max-stddev=10
       --clients={{ sender_host }}

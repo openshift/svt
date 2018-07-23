@@ -237,12 +237,7 @@
 					"name": "RAILS_ENV",
 					"value": "${RAILS_ENV}"
 				    }
-				],
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_LIMIT}"
-				    }
-				}
+				]
 			    }
 			]
 		    }

@@ -54,7 +54,7 @@
     with_items: "{{ groups['receiver'] }}"
 
   - name: Create uperf projects
-    shell: oc adm new-project --node-selector="" uperf-{{ item }}
+    shell: oc new-project uperf-{{ item }}
     with_sequence: start=1 end={{ uperf_pod_number }}
 
   - name: Create sender pods
@@ -109,6 +109,10 @@
     shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ item }}
     when: pbench_remotes != "None"
     with_items: "{{ pbench_remotes }}"
+
+  - name: Register pbench tools on remote two
+    shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ pbench_remote_two }}
+    when: pbench_remote_two != "None"    
 
   - name: Run pbench-uperf for TCP benchmarks
     shell: >

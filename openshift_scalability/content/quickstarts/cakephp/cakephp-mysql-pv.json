@@ -246,12 +246,7 @@
 					"name": "OPCACHE_REVALIDATE_FREQ",
 					"value": "${OPCACHE_REVALIDATE_FREQ}"
 				    }
-				],
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_LIMIT}"
-				    }
-				}
+				]
 			    }
 			]
 		    }
@@ -361,11 +356,6 @@
 					"value": "${DATABASE_NAME}"
 				    }
 				],
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_MYSQL_LIMIT}"
-				    }
-				},
 				"volumeMounts": [
 				    {
 					"name": "${DATABASE_SERVICE_NAME}-data",

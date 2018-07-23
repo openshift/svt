@@ -568,12 +568,7 @@
                                         "name": "JWS_ADMIN_PASSWORD",
                                         "value": "${JWS_ADMIN_PASSWORD}"
                                     }
-                                ],
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_LIMIT}"
-				    }
-				}
+                                ]
                             }
                         ],
                         "volumes": [
@@ -680,12 +675,7 @@
                                         "name": "MONGODB_QUIET",
                                         "value": "${MONGODB_QUIET}"
                                     }
-                                ],
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_MONGODB_LIMIT}"
-				    }
-				}
+                                ]
                             }
                         ],
                         "volumes": [
