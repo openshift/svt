@@ -10,6 +10,9 @@
 ##  -- changes for issue #448 : 06.06.2018 
 ##      - add code for running tests based on mode
 ##      - remove/select test scenarios based on mode  
+##      - remove the config.yaml 
+##      - copy the public key from svt private repo
+##              ( this assumes that the private repo is present already )
 ################################################
 
 function wait_for_project_delete {
@@ -44,10 +47,17 @@ fi
 
 echo "INFO : $(date) ###### STARTING NETWORK TESTS: $run_mode ######"
 
+# copy the public key from the svt private repo
+cp /root/svt-private/image_provisioner/id_rsa_perf.pub id_rsa.pub
+
 # parse the master and nodes from the config file
-cur_dir=`pwd`
-master=`cat config.yaml |egrep 'master:' | awk -F: '{print $2}'`
-nodes=`cat config.yaml |egrep 'nodes:' | awk -F: '{print $2}'`
+#cur_dir=`pwd`
+#master=`cat config.yaml |egrep 'master:' | awk -F: '{print $2}'`
+#nodes=`cat config.yaml |egrep 'nodes:' | awk -F: '{print $2}'`
+master=`oc get nodes | grep master | awk '{print $1}'`
+nodes=`oc get nodes | grep ' compute' | awk '{print $1}'`
+
+
 
 # make the master schedulable --no longer needed-- 
 #oc adm manage-node --schedulable=true ${master}
