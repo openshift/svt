@@ -54,13 +54,20 @@ cp /root/svt-private/image_provisioner/id_rsa_perf.pub id_rsa.pub
 #cur_dir=`pwd`
 #master=`cat config.yaml |egrep 'master:' | awk -F: '{print $2}'`
 #nodes=`cat config.yaml |egrep 'nodes:' | awk -F: '{print $2}'`
-master=`oc get nodes | grep master | awk '{print $1}'`
+masters=`oc get nodes | grep master | awk '{print $1}'`
 nodes=`oc get nodes | grep ' compute' | awk '{print $1}'`
 
 
 
 # make the master schedulable --no longer needed-- 
 #oc adm manage-node --schedulable=true ${master}
+
+i=0;
+for master in ${masters//,/ }
+do
+  masters_array[i]=${master// /}
+  let i=i+1;
+done
 
 i=0;
 for host in ${nodes//,/ }
@@ -76,11 +83,13 @@ echo "INFO: $(date) Number of procs on node: $nprocs "
 
 pods_var="1"
 
+echo ${nodes_array[0]} ${nodes_array[1]} ${masters_array[0]}
+
 if [ "$run_mode" == "FULL" ];
  then
   echo "INFO : $(date) #################### node to node  ####################"
   # run the node node tests
-  python network-test.py nodeIP --master $master --node ${nodes_array[0]} ${nodes_array[1]}
+  python network-test.py nodeIP --master ${masters_array[0]} --node ${nodes_array[0]} ${nodes_array[1]}
   
   # prepare the pods variable for running the network tests
   over_nprocs=$[10#${nprocs}+4]
@@ -103,32 +112,32 @@ do
   if [ "$run_mode" == "FULL" ];
    then
     echo "INFO : $(date) ################# loopback on master for pod - $var pods ##################"
-    python network-test.py podIP --master $master --pods $var
+    python network-test.py podIP --master ${masters_array[0]} --pods $var
     wait_for_project_delete
     sleep 5
 
     echo "INFO : $(date) ################# loopback on master for svc - $var pods ###################"
-    python network-test.py svcIP --master $master --pods $var
+    python network-test.py svcIP --master ${masters_array[0]} --pods $var
     wait_for_project_delete
     sleep 5
 
     echo "INFO : $(date) ################ cross host on master to node for pod - $var pods ##########"
-    python network-test.py podIP --master $master --node ${nodes_array[0]} --pods $var
+    python network-test.py podIP --master ${masters_array[0]} --node ${nodes_array[0]} --pods $var
     wait_for_project_delete
     sleep 5
 
     echo "INFO : $(date) ################ cross host on master to node for svc - $var pods ###########"
-    python network-test.py svcIP --master $master --node ${nodes_array[0]} --pods $var
+    python network-test.py svcIP --master ${masters_array[0]} --node ${nodes_array[0]} --pods $var
     wait_for_project_delete
     sleep 5
   	
     echo "INFO : $(date) ############### cross host on node to node for pod - $var pods ##############"
-    python network-test.py podIP --master $master --node ${nodes_array[0]} ${nodes_array[1]} --pods $var
+    python network-test.py podIP --master ${masters_array[0]} --node ${nodes_array[0]} ${nodes_array[1]} --pods $var
     wait_for_project_delete
     sleep 5
 
     echo "INFO : $(date) ############## cross host on node to node for svc - $var pods ###############"
-    python network-test.py svcIP --master $master --node ${nodes_array[0]} ${nodes_array[1]} --pods $var
+    python network-test.py svcIP --master ${masters_array[0]} --node ${nodes_array[0]} ${nodes_array[1]} --pods $var
     wait_for_project_delete
     sleep 5
   else
@@ -139,12 +148,12 @@ do
     samples="1"
     
     echo "INFO : $(date) ############### cross host on node to node for pod with $var pods $msg_sizes msg size and $samples samples ##############"
-    python network-test.py podIP -m $master -n ${nodes_array[0]} ${nodes_array[1]} -p $var -a $tcp_tests -b $udp_tests -s $msg_sizes -t $samples 
+    python network-test.py podIP -m ${masters_array[0]} -n ${nodes_array[0]} ${nodes_array[1]} -p $var -a $tcp_tests -b $udp_tests -s $msg_sizes -t $samples 
     wait_for_project_delete
     sleep 5
 
     echo "INFO : $(date) ############## cross host on node to node for svc - $var pods $msg_sizes msg size and $samples samples ###############"
-    python network-test.py svcIP -m $master -n ${nodes_array[0]} ${nodes_array[1]} -p $var -a $tcp_tests -b $udp_tests -s $msg_sizes -t $samples
+    python network-test.py svcIP -m ${masters_array[0]} -n ${nodes_array[0]} ${nodes_array[1]} -p $var -a $tcp_tests -b $udp_tests -s $msg_sizes -t $samples
     wait_for_project_delete
     sleep 5
 
