@@ -20,7 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 time_pattern = "YYYY-MM-DD HH:MM:SS.mmm"
 log_file = "/tmp/prometheus_loader.log"
-log_level = "DEBUG"
+log_level = "INFO"
 log_format = None
 
 
@@ -80,6 +80,7 @@ class PrometheusLoader(object):
         self.log_file = log_file
         self.pattern = time_pattern
         self.steping = resolution
+        self.query = ""
 
         self.logger()
         self.read_queries_from_file()
@@ -124,29 +125,36 @@ class PrometheusLoader(object):
         time_from = os.popen('date "+%s" -d "{0} min ago"'.format(
                                 self.period)).read().rstrip()
         time_now = os.popen('date "+%s"').read().rstrip()
-        query = self.queries[random.randint(1, len(self.queries) - 1)]
+        self.query = self.queries[random.randint(1, len(self.queries) - 1)]
         return "https://{0}/api/v1/query_range?query={1}&start={2}&end={3}" \
             "&step={4}".format(self.promethues_server,
-                             query, time_from, time_now, self.steping)
+                             self.query, time_from, time_now, self.steping)
 
     def request(self, req):
         ''' fire http request '''
         try:
             res = requests.get(req, verify=False, headers=self.headers)
-        except Exception as e:
+        except (IOError, RequestException) as e:
+            self.log.error('bad request {0} response {1}'.format(req, e))
+        if len(res.text) == 0:
             self.log.error('bad request {0} response {1}'.format(req, res))
-        if res.status_code is not 200 or len(res.text) == 0:
-            self.log.error('bad request {0} response {1}'.format(req, res))
-        self.log.debug('duration:{0} {1}'.format(res.elapsed.total_seconds(), req))
+        self.log.info('duration: {0} - {1}'.format(res.elapsed.total_seconds(),
+                                                self.query))
 
     def run_loader(self):
         ''' fire http requests simultaneously in threads batch '''
         for i in range(self.threads):
             self.executor.submit(self.request, self.generate_req())
 
+    def health_collector(self):
+        # check promethues scrapping success rate
+        self.executor.submit(self.request, 'topk(10, rate(up[10m]))')
+
+
 if __name__ == "__main__":
     args = parse_args()
     p = PrometheusLoader(args.file, args.threads, args.period, args.resolution)
     while True:
         p.run_loader()
+        p.health_collector()
         time.sleep(args.interval)
