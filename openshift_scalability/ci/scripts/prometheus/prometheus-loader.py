@@ -31,30 +31,30 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-f',
                         '--file',
-                        required=False,
+                        required=True,
                         dest='file',
                         help='queries file')
-
     parser.add_argument('-t',
                         '--threads',
-                        required=False,
+                        required=True,
                         type=int,
+                        default=20,
                         dest='threads',
                         help='simultaneously requests')
     parser.add_argument('-i',
                         '--interval',
                         type=int,
                         required=True,
+                        default=20,
                         dest='interval',
                         help='sleep interval for each block iteration in sec')
-
     parser.add_argument('-p',
                         '--period',
                         type=int,
                         required=True,
+                        default=15,
                         dest='period',
                         help='a time period for query in min')
-
     parser.add_argument('-r',
                         '--resolution',
                         type=int,
