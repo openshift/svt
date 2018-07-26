@@ -31,7 +31,7 @@ def login(url, user, passwd):
 
 
 def run_build(build_def):
-    build_regex = re.compile("build \"(.*)\" started")
+    build_regex = re.compile("build.build.openshift.io \"(.*)\" started")
 
     namespace = build_def["namespace"]
     name = build_def["name"]
