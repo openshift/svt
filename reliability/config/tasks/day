@@ -1,8 +1,8 @@
 ### Daily tasks
 ###
 create "2" user
-create "4" project
-scale up "100%" app
+create "3" project
+scale up "50%" app
 visit "100%" app
 scale down "100%" app
 scale down ds

@@ -6,13 +6,14 @@
 ##
 ################################################
 if [ "${1}" == "start" ]; then
-  ruby relia.rb >> logs/running.log
-  echo "INFO: reliability tests complete"
+  nohup ruby relia.rb >> logs/running.log &
+  echo "INFO: reliability tests started"
 elif [ "${1}" == "test" ]; then
   ruby test.rb
   echo "INFO: Test run complete"
 elif [ "${1}" == "stop" ]; then
   kill -9 $(ps -ef | grep "ruby relia.rb" | grep -v grep | awk '{print $2}')
+  echo "INFO: reliability tests stopped" 
 elif [ "${1}" == "pause" ]; then
   kill -STOP $(ps -ef | grep "ruby relia.rb" | grep -v grep | awk '{print $2}')
 elif [ "${1}" == "resume" ]; then

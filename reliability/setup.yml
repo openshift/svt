@@ -69,13 +69,14 @@
         name: filewatcher
         version: 0.5.4
         state: present
+    - name: gem install net-ssh
+      gem:
+        name: net-ssh
+        state: present
+        version: 2.9.2
     - name: gem install net-scp
       gem:
         name: net-scp
-        state: present
-    - name: gem install net-sshs
-      gem:
-        name: net-ssh
         state: present
 
 - name: Copy configs from master
