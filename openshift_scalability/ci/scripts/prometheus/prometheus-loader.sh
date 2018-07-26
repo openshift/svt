@@ -8,6 +8,7 @@ duration=$4
 enable_pbench=$5
 pbench_copy_results=$6
 pbench_user_benchmark=$7
+stepping=$8
 
 cd /root/svt/openshift_scalability # go to svt working dir
 
@@ -15,8 +16,13 @@ oc login -u system:admin
 if [ "${enable_pbench}" == "true" ]; then
     pbench-register-tool-set
 fi
+
+if [ -z "${stepping}" ]; then
+    stepping=15
+fi
+
 # start the prometheus load.
-nohup python prometheus-loader.py -f content/promethues/qs.txt -i ${refresh_interval} -t ${concurrency} -p ${graph_period}  > /dev/null 2>&1 &
+nohup python prometheus-loader.py -f content/promethues/qs.txt -i ${refresh_interval} -t ${concurrency} -p ${graph_period} -r ${stepping} > /dev/null 2>&1 &
 loader_pid=$(echo $!)
 # sleep x hours, and monitor the load by pbench.
 ${pbench_user_benchmark} sleep ${duration}; sleep 10; pbench-stop-tools
