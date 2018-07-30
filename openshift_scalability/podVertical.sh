@@ -1,12 +1,16 @@
 #!/bin/sh
 
-if [ "$#" -ne 1 ]; then
+if [ "$#" -ne 2 ]; then
   echo "syntax: $0 <TYPE>"
   echo "<TYPE> should be either golang or python"
+  echo "<CONFIG> config file shold be one of config the files under ./config/"
+  echo "example:"
+  echo "./podVertical golang ./config/golang/cluster-limits-pods-per-namespace"
   exit 1
 fi
 
 TYPE=$1
+CONFIG=$2
 
 long_sleep() {
   local sleep_time=180
@@ -17,14 +21,12 @@ long_sleep() {
 golang_clusterloader() {
   # Export kube config
   export KUBECONFIG=${KUBECONFIG-$HOME/.kube/config}
-  MY_CONFIG=config/golang/cluster-limits-pods-per-namespace
   # loading cluster based on yaml config file
-  /usr/libexec/atomic-openshift/extended.test --ginkgo.focus="Load cluster" --viper-config=$MY_CONFIG
+  /usr/libexec/atomic-openshift/extended.test --ginkgo.focus="Load cluster" --viper-config=$CONFIG
 }
 
 python_clusterloader() {
-  MY_CONFIG=config/cluster-limits-pods-per-namespace.yaml
-  ./cluster-loader.py --file=$MY_CONFIG
+  ./cluster-loader.py --file=$CONFIG
 }
 
 # sleeping to gather some steady-state metrics, pre-test
