@@ -75,6 +75,7 @@ def parse_args():
                         dest='sa',
                         help='promethues service_account')
 
+    return parser.parse_args()
 
 class PrometheusLoader(object):
     def __init__(self, file, threads, period, resolution, ns, sa):
