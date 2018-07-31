@@ -56,15 +56,28 @@ def parse_args():
                         '--resolution',
                         type=int,
                         required=False,
-                        default=15,
                         dest='resolution',
                         help='graph resolution in seconds')
 
-    return parser.parse_args()
+    parser.add_argument('-n',
+                        '--namespace',
+                        type=str,
+                        required=False,
+                        default='openshift-monitoring',
+                        dest='ns',
+                        help='promethues namespace')
+
+    parser.add_argument('-s',
+                        '--sa',
+                        type=str,
+                        required=False,
+                        default='prometheus-k8s',
+                        dest='sa',
+                        help='promethues service_account')
 
 
 class PrometheusLoader(object):
-    def __init__(self, file, threads=30, period=30, resolution=15):
+    def __init__(self, file, threads, period, resolution, ns, sa):
         # args
         self.queries_file = file
         self.threads = threads
@@ -81,10 +94,17 @@ class PrometheusLoader(object):
         self.pattern = time_pattern
         self.steping = resolution
         self.query = ""
-
+        self.ns = ns
+        self.sa = sa
+        
         self.logger()
         self.read_queries_from_file()
         self.get_prometheus_info()
+        
+        if resolution is None:
+            self.steping = self.compute_stepping()
+        else:
+            self.steping = resolution        
 
     def logger(self):
         try:
@@ -106,19 +126,22 @@ class PrometheusLoader(object):
 
     def get_prometheus_info(self):
         ''' get token and route for prometeus '''
-        self.token = 'Bearer ' + os.popen('oc sa get-token prometheus-k8s'
-                                          ' -n openshift-monitoring'
+        self.token = 'Bearer ' + os.popen('oc sa get-token {0}'
+                                          ' -n {1}'.format(self.sa, self.ns)
                                           ).read()
+
         self.headers = {'Authorization': self.token,
                         'Accept': 'application/json, text/plain, */*',
                         'Accept-Encoding': 'gzip, deflate, br',
                         'Connection': 'keep-alive',
                         'X-Grafana-Org-Id': '1'
                        }
-        self.promethues_server = os.popen("oc get route prometheus-k8s"
-                                          " -n openshift-monitoring "
+
+        self.promethues_server = os.popen("oc get route {0}"
+                                          " -n {1}".format(self.sa, self.ns) +
                                           " |grep prometheus |awk '{print $2}'"
                                           ).read().rstrip()
+
 
     def generate_req(self):
         ''' gernerate query as http format '''
@@ -150,10 +173,30 @@ class PrometheusLoader(object):
         # check promethues scrapping success rate
         self.executor.submit(self.request, 'topk(10, rate(up[10m]))')
 
+    def compute_stepping(self):
+        ''' run once.
+        compute the step size for high resolution
+        '''
+        last3, last6, last12, last24, lastwk = 180, 360, 720, 1440, 10080
+        if self.period < 60:
+            return 15
+        elif self.period > 60 and self.period < last3:
+            return 30
+        elif self.period > last3 and self.period < last6:
+            return 60
+        elif self.period > last6 and self.period < last12:
+            return 300
+        elif self.period > last12 and self.period < last24:
+            return 600
+        elif self.period > lastwk: # last week
+            return 1200
+        else:
+            return 15
 
 if __name__ == "__main__":
     args = parse_args()
-    p = PrometheusLoader(args.file, args.threads, args.period, args.resolution)
+    p = PrometheusLoader(args.file, args.threads, args.period, args.resolution,
+                         args.ns, args.sa)
     while True:
         p.run_loader()
         p.health_collector()
