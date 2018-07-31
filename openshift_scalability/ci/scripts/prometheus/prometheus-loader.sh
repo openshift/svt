@@ -26,9 +26,6 @@ nohup python prometheus-loader.py -f content/promethues/qs.txt -i ${refresh_inte
 loader_pid=$(echo $!)
 # sleep x hours, and monitor the load by pbench.
 ${pbench_user_benchmark} sleep ${duration}
-# stop pbench and copy results.
-${pbench_copy_results}
-pbench-stop-tools
 # stop the promehteus load.
 kill -9 $loader_pid
 # dump logs
@@ -38,5 +35,8 @@ oc logs prometheus-k8s-1 -c prometheus >> ${benchmark_run_dir}/promethues/oc_log
 grep ERROR /tmp/prometheus_loader.log > ${benchmark_run_dir}/promethues/errors.log
 grep duration /tmp/prometheus_loader.log |grep -v 'duration: 0' |awk '{print $7}' |sort > ${benchmark_run_dir}/promethues/top_longest_queries.log
 rm -fr /tmp/prometheus_loader.log
+# stop pbench and copy results.
+${pbench_copy_results}
+pbench-stop-tools
 #TODO: analyze the logs and add pass criteria for this job.
 exit 0
