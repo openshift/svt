@@ -14,7 +14,7 @@ cd /root/svt/openshift_scalability # go to svt working dir
 
 oc login -u system:admin
 if [ "${enable_pbench}" == "true" ]; then
-    pbench-register-tool-set
+    for n in `oc get no |grep -v app |awk '{print $1}'`; do pbench-register-tool-set --remote=$n; done
 fi
 
 if [ -z "${stepping}" ]; then
