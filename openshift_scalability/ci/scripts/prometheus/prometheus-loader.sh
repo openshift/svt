@@ -25,9 +25,10 @@ fi
 nohup python prometheus-loader.py -f content/promethues/qs.txt -i ${refresh_interval} -t ${concurrency} -p ${graph_period} -r ${stepping} > /dev/null 2>&1 &
 loader_pid=$(echo $!)
 # sleep x hours, and monitor the load by pbench.
-${pbench_user_benchmark} sleep ${duration}; sleep 10; pbench-stop-tools
+${pbench_user_benchmark} sleep ${duration}
 # stop pbench and copy results.
 ${pbench_copy_results}
+pbench-stop-tools
 # stop the promehteus load.
 kill -9 $loader_pid
 # dump logs
