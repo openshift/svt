@@ -31,7 +31,7 @@ mkdir -p ${benchmark_run_dir}/promethues
 oc logs prometheus-k8s-0 -c prometheus -n openshift-monitoring > ${benchmark_run_dir}/promethues/oc_logs.log
 oc logs prometheus-k8s-1 -c prometheus -n openshift-monitoring >> ${benchmark_run_dir}/promethues/oc_logs.log
 grep ERROR /tmp/prometheus_loader.log > ${benchmark_run_dir}/promethues/errors.log
-grep duration /tmp/prometheus_loader.log |grep -v 'duration: 0' |awk '{print $7}' |sort > ${benchmark_run_dir}/promethues/top_longest_queries.log
+grep 'duration: ' /tmp/prometheus_loader.log |grep -v 'duration: 0' |awk '{print $7 $9}' |sort > ${benchmark_run_dir}/promethues/top_longest_queries.log
 rm -fr /tmp/prometheus_loader.log
 # stop pbench and copy results.
 ${pbench_copy_results}
