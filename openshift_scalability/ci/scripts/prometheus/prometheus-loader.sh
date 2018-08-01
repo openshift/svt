@@ -10,8 +10,6 @@ pbench_copy_results=$6
 pbench_user_benchmark=$7
 stepping=$8
 
-cd /root/svt/openshift_scalability # go to svt working dir
-
 oc login -u system:admin
 if [ "${enable_pbench}" == "true" ]; then
     for n in `oc get no |grep -v app |awk '{print $1}'`; do pbench-register-tool-set --remote=$n; done
