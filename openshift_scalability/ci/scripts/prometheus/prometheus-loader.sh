@@ -22,7 +22,7 @@ if [ -z "${stepping}" ]; then
 fi
 
 # start the prometheus load.
-nohup python prometheus-loader.py -f content/prometheus/qs.txt -i ${refresh_interval} -t ${concurrency} -p ${graph_period} -r ${stepping} > /dev/null 2>&1 &
+python prometheus-loader.py -f content/prometheus/qs.txt -i ${refresh_interval} -t ${concurrency} -p ${graph_period} -r ${stepping}
 loader_pid=$(echo $!)
 # sleep x hours, and monitor the load by pbench.
 ${pbench_user_benchmark} sleep ${duration}
