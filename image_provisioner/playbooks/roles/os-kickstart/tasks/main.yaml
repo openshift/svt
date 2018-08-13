@@ -149,12 +149,3 @@
 
 - name: install pytimeparse module
   command: pip install pytimeparse
-
-- name: update vm.max_map_count
-  lineinfile: 
-    dest: /home/mifiedle/tmp/sysctl.conf
-    line: "vm.max_map_count=262144"
-    state: present
-    insertafter: EOF
-    create: True
-
