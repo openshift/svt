@@ -1,0 +1,23 @@
+###########################################################################
+# pbench "official" repos
+# Internal repo
+[pbench]
+name=Pbench $releasever - $basearch
+baseurl=http://{{ pbench_alternate_hostname }}/repo/$releasever/
+arch=$basearch
+enabled=1
+gpgcheck=0
+skip_if_unavailable=1
+
+###########################################################################
+# pbench test repos - disabled by default.
+# If you need to use them, use --enablerepo=pbench-test --enablerepo=copr-pbench-test
+
+# internal repo
+[pbench-test]
+name=Pbench $releasever - $basearch
+baseurl=http://{{ pbench_alternate_hostname }}/test-repo/$releasever/
+arch=$basearch
+enabled=0
+gpgcheck=0
+skip_if_unavailable=1

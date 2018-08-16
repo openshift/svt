@@ -1,15 +1,43 @@
 ---
-- name: rename pbench config
-  command: mv /opt/pbench-agent/config/pbench-agent.cfg.example /opt/pbench-agent/config/pbench-agent.cfg
-  args:
-    creates: /opt/pbench-agent/config/pbench-agent.cfg
+- block:
+   - name: rename pbench config
+     command: mv /opt/pbench-agent/config/pbench-agent.cfg.example /opt/pbench-agent/config/pbench-agent.cfg
+     args:
+       creates: /opt/pbench-agent/config/pbench-agent.cfg
 
-- name: uncomment line in pbench-agent.cfg file for RHEL pandas-package
-  lineinfile:
-    path: /opt/pbench-agent/config/pbench-agent.cfg
-    regexp: '^# pandas-package = python-pandas'
-    line: "pandas-package = python-pandas"
-  when: not atomic | default(False) | bool
+   - name: uncomment line in pbench-agent.cfg file for RHEL pandas-package
+     lineinfile:
+       path: /opt/pbench-agent/config/pbench-agent.cfg
+       regexp: '^# pandas-package = python-pandas'
+       line: "pandas-package = python-pandas"
+
+   - name: configure pbench target
+     replace:
+       dest: /opt/pbench-agent/config/pbench-agent.cfg
+       regexp: '{{ pbench_internal_hostname }}'
+       replace: '{{ pbench_alternate_hostname }}'
+       backup: yes
+
+   - name: copy ssh key to pbench directory
+     copy:
+       src: /root/svt-private/image_provisioner/id_rsa
+       remote_src: True
+       dest: /opt/pbench-agent/id_rsa
+       owner: pbench
+       group: pbench
+       mode: 0600
+     when: not internal_server | default(False) | bool
+
+   - name: copy internal server ssh key to pbench directory
+     copy:
+       src: /root/svt-private/image_provisioner/keys/internal/id_rsa
+       remote_src: True
+       dest: /opt/pbench-agent/id_rsa
+       owner: pbench
+       group: pbench
+       mode: 0600
+     when: internal_server | default(False) | bool
+  when: not internal_image | default(False) | bool
 
 - name: configure pbench-fio
   blockinfile:
@@ -19,34 +47,6 @@
       [pbench-fio]
       version = 3.3
       histogram_interval_msec = 10000
-  when: not atomic | default(False) | bool
-
-- name: configure pbench target
-  replace:
-    dest: /opt/pbench-agent/config/pbench-agent.cfg
-    regexp: '{{ pbench_internal_hostname }}'
-    replace: '{{ pbench_alternate_hostname }}'
-    backup: yes
-
-- name: copy ssh key to pbench directory
-  copy:
-    src: /root/svt-private/image_provisioner/id_rsa
-    remote_src: True
-    dest: /opt/pbench-agent/id_rsa
-    owner: pbench
-    group: pbench
-    mode: 0600
-  when: not internal_server | default(False) | bool
-
-- name: copy internal server ssh key to pbench directory
-  copy:
-    src: /root/svt-private/image_provisioner/keys/internal/id_rsa
-    remote_src: True
-    dest: /opt/pbench-agent/id_rsa
-    owner: pbench
-    group: pbench
-    mode: 0600
-  when: internal_server | default(False) | bool
 
 - name: register tools
   shell: pbench-register-tool-set
