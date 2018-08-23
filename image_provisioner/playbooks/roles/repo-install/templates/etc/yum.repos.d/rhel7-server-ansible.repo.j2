@@ -1,6 +1,6 @@
 [rhel-7-server-ansible]
-name=rhel-7-server-ansible-2.4-rpms
-baseurl=https://mirror.openshift.com/enterprise/rhel/rhel-7-server-ansible-2.4-rpms/
+name=rhel-7-server-ansible
+baseurl={{ ansible_url }}
 failovermethod=priority
 enabled=1
 gpgcheck=0
