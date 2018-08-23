@@ -18,6 +18,7 @@ instance_tag=
 volume_size=
 # repo install
 rhel_int_repo_hostname=
+ansible_url=
 # os kickstart
 ssh_repo=
 # collectd install

@@ -15,6 +15,7 @@ rhel_repo_hostname=download.devel.redhat.com
 root_password=
 # repo install
 rhel_int_repo_hostname=
+ansible_url=
 # os kickstart
 ssh_repo=
 # collectd install
