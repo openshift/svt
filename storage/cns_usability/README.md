@@ -37,8 +37,12 @@ $ ansible-playbook -i "<ocp_master_node>," storage/cns_usability/cns-usability-t
 
 ### Kill 2 glusterfs pods together
 
-In this case, we expect some loss of logging entires.
+In this case, we expect some loss of logging entries.
 
 ```sh
 $ ansible-playbook -i "<ocp_master_node>," storage/cns_usability/cns-usability-test-restart-2-glusterfs-pods.yaml
 ```
+
+*Note* that the above test is for `gluster-file`, ie, `STORAGE_CLASS: "glusterfs-storage"` in the
+`external_vars.yaml` file. If `STORAGE_CLASS: "glusterfs-storage-block"` is used, we expect no loss
+of logging entries even if 2 glusterfs pods are killed at the same time.
