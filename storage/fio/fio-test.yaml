@@ -95,6 +95,6 @@
       - setup
 
   - name: run the fio test
-    command:  "{{ tmp_folder }}/files/scripts/test-storage.sh  {{ tmp_folder }}/files"
+    command:  "{{ tmp_folder }}/files/scripts/test-storage.sh  {{ tmp_folder }}/files {{ storage_class_name }}"
     tags:
       - run
