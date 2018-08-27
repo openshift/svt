@@ -10,9 +10,11 @@ test_build_number="${7}"
 pbench_registration="${8}"
 pbench_copy_result="${9}"
 benchmark_timeout="${10}"
+jdk_username="${11}"
+jdk_password="${12}"
 
 for sc in $(echo ${STORAGE_CLASS_NAMES} | sed -e s/,/" "/g); do
   echo "===search-me: sc: ${sc}"
   ansible-playbook -i "${JUMP_HOST}," jenkins-test.yaml \
-  --extra-vars "MEMORY_LIMIT=${MEMORY_LIMIT} test_project_name=${test_project_name} STORAGE_CLASS_NAME=${sc} iteration=${ITERATIONS} test_build_number=${test_build_number} test_project_number=${test_project_number} pbench_registration=${pbench_registration} pbench_copy_result=${pbench_copy_result} benchmark_timeout=${benchmark_timeout}"
+  --extra-vars "MEMORY_LIMIT=${MEMORY_LIMIT} test_project_name=${test_project_name} STORAGE_CLASS_NAME=${sc} iteration=${ITERATIONS} test_build_number=${test_build_number} test_project_number=${test_project_number} pbench_registration=${pbench_registration} pbench_copy_result=${pbench_copy_result} benchmark_timeout=${benchmark_timeout} jdk_username=${jdk_username} jdk_password=${jdk_password}"
 done 
