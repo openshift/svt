@@ -8,6 +8,14 @@ So far it is tested with `ansible-2.4.2.0-1.el7.noarch`.
 
 ## Run
 
+Register pbench
+
+```sh
+### on master:
+# curl -LO https://raw.githubusercontent.com/openshift/svt/master/storage/git/files/scripts/pbench-register.sh
+# bash -x pbench-register.sh
+```
+
 Change the inventory file
 
 ```
@@ -28,24 +36,24 @@ ec2-34-213-109-136.us-west-2.compute.amazonaws.com
 Run the playbook:
 
 ```sh
-$ ansible-playbook -i fio/storage/inv.file storage/fio-test.yaml
+$ ansible-playbook -i storage/fio/inv.file storage/fio/fio-test.yaml
 ```
 
 Only the setup tags:
 ```sh
-$ ansible-playbook -i fio/storage/inv.file storage/fio-test.yaml --tags setup
+$ ansible-playbook -i storage/fio/inv.file storage/fio/fio-test.yaml --tags setup
 ```
 
 Only run the test:
 
 ```sh
-$ ansible-playbook -i fio/storage/inv.file storage/fio-test.yaml --tags run
+$ ansible-playbook -i storage/fio/inv.file storage/fio/fio-test.yaml --tags run
 ```
 
 Or on master
 
 ```sh
-# bash -x /tmp/fio-test/files/scripts/test-storage.sh /tmp/fio-test/files
+# bash -x /tmp/fio-test/files/scripts/test-storage.sh /tmp/fio-test/files <storage_class_name>
 ```
 
 

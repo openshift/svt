@@ -75,9 +75,9 @@
           dest: /etc/yum.repos.d
 
       - name: install rhel-7-server-ansible-rpms mirror.openshift.com repo
-        copy:
-          src: rhel7-server-ansible.repo
-          dest: /etc/yum.repos.d
+        template:
+          src: etc/yum.repos.d/rhel7-server-ansible.repo.j2
+          dest: /etc/yum.repos.d/rhel7-server-ansible.repo
 
       - name: install rhel-7-fast-datapath-stage-rpms mirror.openshift.com repo
         copy:
@@ -109,6 +109,12 @@
         copy:
           src: ndokos-pbench-interim.repo
           dest: /etc/yum.repos.d
+
+      - name: copy pbench-internal repo
+        template:
+          src: etc/yum.repos.d/pbench-internal.repo.j2
+          dest: /etc/yum.repos.d/pbench-internal.repo
+
     when: not atomic | default(False) | bool 
   when: vm_install | default(True) | bool
 

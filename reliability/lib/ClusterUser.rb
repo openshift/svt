@@ -40,11 +40,11 @@ module OpenshiftReliability
     end
 
     def label_ds_nodes()
-      exec ("oc label nodes -l region=primary --overwrite ds-node=true")
+      exec ("oc label nodes -l node-role.kubernetes.io/compute=true --overwrite ds-node=true")
     end
 
     def unlabel_ds_nodes()
-      exec ("oc label nodes -l region=primary --overwrite ds-node=false")
+      exec ("oc label nodes -l node-role.kubernetes.io/compute=true --overwrite ds-node=false")
     end
   end
 end

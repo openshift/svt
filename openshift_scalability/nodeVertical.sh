@@ -23,7 +23,7 @@ long_sleep() {
   sleep $sleep_time
 }
 
-clean() { echo "Cleaning environment"; oc delete project clusterproject0; }
+clean() { echo "Cleaning environment"; oc delete project --wait=true clusterproject0; }
 
 golang_clusterloader() {
   # Export kube config
