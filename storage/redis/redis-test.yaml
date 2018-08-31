@@ -1,0 +1,109 @@
+---
+- hosts: all
+  vars_files:
+    - external_vars.yaml
+  tasks:
+  - name: print hostname
+    debug:
+      msg: "hostname: {{ inventory_hostname }} and test_project_name: {{ test_project_name }}"
+    tags:
+      - setup
+
+  - name: clean tmp folder
+    file:
+      state: absent
+      path: "{{ tmp_folder }}/"
+    tags:
+      - setup
+
+  - name: copy files to remote
+    copy:
+      src: files
+      dest: "{{ tmp_folder }}"
+    tags:
+      - setup
+
+  - block:
+    - name: list all scripts
+      find:
+        paths: "{{ tmp_folder }}/files/scripts"
+        patterns: "*.sh"
+      register: tmp_script_glob
+
+    - name: make scripts executable
+      file:
+        path: "{{ item.path }}"
+        mode: 0744
+      with_items:
+        - "{{ tmp_script_glob.files }}"
+    tags:
+      - setup
+
+
+  - name: delete projects
+    shell: oc delete project "{{ test_project_name }}-{{item}}" --wait=true
+    ignore_errors: True
+    when: delete_test_project_before_test|bool == true
+    with_sequence: start=1 end={{ test_project_number }}
+    tags:
+      - setup
+
+  - name: create test projects
+    command:  oc new-project "{{ test_project_name }}-{{item}}" --skip-config-write=true
+    with_sequence: start=1 end={{ test_project_number }}
+    tags:
+      - setup
+
+  - name: deploy redis instances
+    shell: oc process -f {{ tmp_folder }}/files/oc/redis-persistent-template.yaml -p MEMORY_LIMIT={{ MEMORY_LIMIT }} -p REDIS_PASSWORD={{ REDIS_PASSWORD }} -p VOLUME_CAPACITY={{ VOLUME_CAPACITY }} -p REDIS_VERSION={{ REDIS_VERSION }} -p STORAGE_CLASS_NAME={{ STORAGE_CLASS_NAME }} | oc create --namespace="{{ test_project_name }}-{{item}}" -f -
+    with_sequence: start=1 end={{ test_project_number }}
+    tags:
+      - setup
+
+  - name: wait until the redis pod is ready
+    shell: oc get pod -n "{{ test_project_name }}-{{item}}" | grep -v deploy | grep redis | grep 1/1 | grep Running
+    register: pod_ready_result
+    until: pod_ready_result.rc == 0
+    retries: "{{ pod_reday_retries }}"
+    delay: 10
+    with_sequence: start=1 end={{ test_project_number }}
+    tags:
+      - setup
+
+  - name: deploy ycsb instances
+    shell: oc create  --namespace="{{ test_project_name }}-{{item}}" -f {{ tmp_folder }}/files/oc/dc_ycsb.yaml
+    with_sequence: start=1 end={{ test_project_number }}
+    tags:
+      - setup
+
+  - name: wait until the ycsb pod is ready
+    shell: oc get pod -n "{{ test_project_name }}-{{item}}" | grep -v deploy | grep ycsb | grep 1/1 | grep Running
+    register: pod_ready_result
+    until: pod_ready_result.rc == 0
+    retries: "{{ pod_reday_retries }}"
+    delay: 10
+    with_sequence: start=1 end={{ test_project_number }}
+    tags:
+      - setup
+
+  - block:
+      - name: run the benchmarks
+        command: pbench-user-benchmark --config="redis_storage_test_{{ test_project_number }}_{{ STORAGE_CLASS_NAME }}_{{ workload }}_{{ MEMORY_LIMIT }}" -- "{{ tmp_folder }}/files/scripts/test-redis-m.sh" "{{ test_project_name }}" "{{ test_project_number }}" "{{ iteration }}" "{{ ycsb_threads }}" "{{ workload }}"
+        async: "{{ benchmark_timeout * 60 }}"
+        poll: 0
+        register: pbench_sleeper
+      - name: check the benchmarks task
+        async_status:
+          jid: "{{ pbench_sleeper.ansible_job_id }}"
+        register: job_result
+        until: job_result.finished
+        retries: "{{ benchmark_timeout }}"
+        delay: 60
+    tags:
+      - run
+
+  - name: pbench copy results
+    command: pbench-copy-results
+    when: pbench_copy_result|bool == true
+    tags:
+      - run
