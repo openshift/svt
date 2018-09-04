@@ -1,0 +1,16 @@
+kind: "DeploymentConfig"
+apiVersion: "v1"
+metadata:
+  name: "ycsb"
+spec:
+  template:
+    metadata:
+      labels:
+        name: "ycsb"
+    spec:
+      containers:
+        - name: "ycsb"
+          image: "docker.io/hongkailiu/ycsb:0.15.0"
+  triggers:
+    - type: "ConfigChange"
+  replicas: 1
