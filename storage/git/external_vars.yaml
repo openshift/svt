@@ -3,7 +3,7 @@ test_project_name: storage-test
 test_project_number: 3
 delete_test_project_before_test: true
 tmp_folder: /tmp/git-test
-VOLUME_CAPACITY: 10Gi
+VOLUME_CAPACITY: 3Gi
 STORAGE_CLASS_NAME: gp2
 iteration: 2
 pbench_registration: true

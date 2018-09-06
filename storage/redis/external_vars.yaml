@@ -1,0 +1,19 @@
+---
+test_project_name: storage-test-redis
+test_project_number: 2
+delete_test_project_before_test: true
+tmp_folder: /tmp/redis-test
+###minimal 6Gi for workload_template
+MEMORY_LIMIT: 6144Mi
+REDIS_PASSWORD: redhat
+###minimal 3Gi for workload_template
+VOLUME_CAPACITY: 3Gi
+STORAGE_CLASS_NAME: gp2
+REDIS_VERSION: 3.2
+pbench_copy_result: false
+pod_reday_retries: 30
+iteration: 3
+ycsb_threads: 16
+#workload: workloada,workloadb,workloadc,workloadd,workloade,workloadf,workload_template
+workload: workload_template
+benchmark_timeout: 360
