@@ -1,0 +1,26 @@
+kind: "DeploymentConfig"
+apiVersion: "v1"
+metadata:
+  name: "amq-perf"
+spec:
+  template:
+    metadata:
+      labels:
+        name: "amq-perf"
+    spec:
+      containers:
+        - name: "amq-perf"
+          image: "docker.io/hongkailiu/amq-perf-test:5.15.4"
+          volumeMounts:
+            - name: "data-vol"
+              mountPath: "/data"
+            - name: "repo-vol"
+              mountPath: "/repo"
+      volumes:
+        - name: "data-vol"
+          emptyDir: {}
+        - name: "repo-vol"
+          emptyDir: {}
+  triggers:
+    - type: "ConfigChange"
+  replicas: 1
