@@ -57,6 +57,8 @@
   - name: deploy redis instances
     shell: oc process -f {{ tmp_folder }}/files/oc/redis-persistent-template.yaml -p MEMORY_LIMIT={{ MEMORY_LIMIT }} -p REDIS_PASSWORD={{ REDIS_PASSWORD }} -p VOLUME_CAPACITY={{ VOLUME_CAPACITY }} -p REDIS_VERSION={{ REDIS_VERSION }} -p STORAGE_CLASS_NAME={{ STORAGE_CLASS_NAME }} | oc create --namespace="{{ test_project_name }}-{{item}}" -f -
     with_sequence: start=1 end={{ test_project_number }}
+    loop_control:
+      pause: 10
     tags:
       - setup
 
@@ -73,6 +75,8 @@
   - name: deploy ycsb instances
     shell: oc create  --namespace="{{ test_project_name }}-{{item}}" -f {{ tmp_folder }}/files/oc/dc_ycsb.yaml
     with_sequence: start=1 end={{ test_project_number }}
+    loop_control:
+      pause: 10
     tags:
       - setup
 
