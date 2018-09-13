@@ -12,6 +12,14 @@ fi
 TYPE=$1
 CONFIG=$2
 
+# use the default config if it's not defined by the user
+if [[ -z "$CONFIG" ]] && [[ "$TYPE" == golang ]]; then
+	CONFIG=config/golang/cluster-limits-pods-per-namespace
+fi
+if [[ -z "$CONFIG" ]] && [[ "$TYPE" == python ]]; then
+        CONFIG=config/cluster-limits-pods-per-namespace.yaml
+fi
+
 long_sleep() {
   local sleep_time=180
   echo "Sleeping for $sleep_time"
