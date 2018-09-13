@@ -22,7 +22,11 @@ if [ -z "${stepping}" ]; then
 fi
 
 # start the prometheus load.
+<<<<<<< HEAD:openshift_scalability/ci/scripts/prometheus/prometheus-loader.sh
 nohup python prometheus-loader.py ${refresh_interval} -t ${concurrency} -p ${graph_period} -r ${stepping} > /dev/null 2>&1 &
+=======
+nohup python prometheus-loader.py -f ./content/prometheus/qs.txt -i ${refresh_interval} -t ${concurrency} -p ${graph_period}  > /dev/null 2>&1 &
+>>>>>>> 4eff782... typo fix for dir path:openshift_scalability/ci/scripts/prometheus-loader.sh
 loader_pid=$(echo $!)
 # sleep x hours, and monitor the load by pbench.
 ${pbench_user_benchmark} sleep ${duration}; sleep 10; pbench-stop-tools
