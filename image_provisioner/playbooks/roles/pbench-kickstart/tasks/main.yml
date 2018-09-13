@@ -30,6 +30,11 @@
 - name: tag pbench-controller image
   command: docker tag ravielluri/image:controller pbench-controller:latest
 
+- name: pull ycsb image from docker.io
+  docker_image:
+    name: docker.io/hongkailiu/ycsb
+    tag: 0.15.0
+
 - name: add token needed for uploading r2r results
   lineinfile:
     path: "/root/svt/utils/pbwedge/hosts"
