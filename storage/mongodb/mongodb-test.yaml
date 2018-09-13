@@ -73,12 +73,12 @@
         shell: oc get pod -n "{{ test_project_name }}" | grep -v deploy | grep mongodb | grep Running
         register: pod_ready_result
         until: pod_ready_result.rc == 0
-        retries: 30
+        retries: 60
         delay: 10
         ignore_errors: True
-      - name: fail the test if the pod is NOT running after 30s
+      - name: fail the test if the pod is NOT running after 600s
         fail:
-          msg: "the pod is NOT running after 300s"
+          msg: "the pod is NOT running after 600s"
         when: pod_ready_result|failed
     tags:
       - setup
@@ -93,12 +93,12 @@
         shell: oc get pod -n "{{ test_project_name }}" | grep -v deploy | grep ycsb | grep Running
         register: pod_ready_result
         until: pod_ready_result.rc == 0
-        retries: 30
+        retries: 60
         delay: 10
         ignore_errors: True
-      - name: fail the test if the pod is NOT running after 300s
+      - name: fail the test if the pod is NOT running after 600s
         fail:
-          msg: "the pod is NOT running after 300s"
+          msg: "the pod is NOT running after 600s"
         when: pod_ready_result|failed
     tags:
       - setup
