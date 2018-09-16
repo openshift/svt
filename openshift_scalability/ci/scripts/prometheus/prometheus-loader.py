@@ -4,7 +4,7 @@
 An loader tool to simulate grafana dashboard queries against prometheus.
 
 Usage:
-python prometheusLoader.py -i 20 -t 50 -p 15
+python prometheusLoader.py
 
 Log:
 /tmp/prometheus_loader.log
@@ -190,7 +190,7 @@ class PrometheusLoader(object):
             "&step={4}".format(self.promethues_server,
                              q, time_from, time_now, self.steping)
 
-    def request(self, req):
+    def request(self, req, health=False):
         ''' fire http request '''
         reqinfo = ' [{0}] - concurrency:{1} - query:{2}'.format(
                                             self.dashboardname,
@@ -206,6 +206,8 @@ class PrometheusLoader(object):
             self.log.error('bad request {0} response {1}'.format(reqinfo, res))
         self.log.info('duration: {0} - {1}'.format(res.elapsed.total_seconds(),
                                                 reqinfo))
+        if health:
+            # TODO: log the health from the query results set
 
     def run_loader(self, queries):
         ''' fire http requests simultaneously in threads batch '''
@@ -215,6 +217,8 @@ class PrometheusLoader(object):
     def health_collector(self):
         # check promethues scrapping success rate
         self.executor.submit(self.request, 'topk(10, rate(up[10m]))')
+        self.executor.submit(self.request, 'sum(scrape_samples_scraped)')
+        self.executor.submit(self.request, 'example of kube-state query')
 
     def compute_stepping(self):
         ''' run once.
