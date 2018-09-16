@@ -10,8 +10,6 @@ pbench_copy_results=$6
 pbench_user_benchmark=$7
 stepping=$8
 
-cd /root/svt/openshift_scalability # go to svt working dir
-
 oc login -u system:admin
 if [ "${enable_pbench}" == "true" ]; then
     pbench-register-tool-set
@@ -21,19 +19,28 @@ if [ -z "${stepping}" ]; then
     stepping=15
 fi
 
+function db_aging() {
+  while true;
+    echo "$(date +'%m-%d-%y-%H:%M:%S') $(oc exec prometheus-k8s-0 -n openshift-monitoring -c prometheus -- df |grep -v tmp |grep '/prometheus')" >> ${benchmark_run_dir}/promethues/pvc_monitor_0.log
+    echo "$(date +'%m-%d-%y-%H:%M:%S') $(oc exec prometheus-k8s-1 -n openshift-monitoring -c prometheus -- df |grep -v tmp |grep '/prometheus')" >> ${benchmark_run_dir}/promethues/pvc_monitor_1.log
+}
+
+# create logs
+benchmark_run_dir="$(mktemp)"
+mkdir -p ${benchmark_run_dir}/promethues
+
 # start the prometheus load.
-<<<<<<< HEAD:openshift_scalability/ci/scripts/prometheus/prometheus-loader.sh
-nohup python prometheus-loader.py ${refresh_interval} -t ${concurrency} -p ${graph_period} -r ${stepping} > /dev/null 2>&1 &
-=======
-nohup python prometheus-loader.py -f ./content/prometheus/qs.txt -i ${refresh_interval} -t ${concurrency} -p ${graph_period}  > /dev/null 2>&1 &
->>>>>>> 4eff782... typo fix for dir path:openshift_scalability/ci/scripts/prometheus-loader.sh
+nohup python prometheus-loader.py -g True > /dev/null 2>&1 &
 loader_pid=$(echo $!)
+#db grow monitor
+nohup db_aging > /dev/null 2>&1 &
+db_aging_pid=$(echo $!)
 # sleep x hours, and monitor the load by pbench.
 ${pbench_user_benchmark} sleep ${duration}; sleep 10; pbench-stop-tools
 # stop pbench and copy results.
 ${pbench_copy_results}
 # stop the promehteus load.
-kill -9 $loader_pid
+kill -9 $loader_pid $db_aging_pid
 # dump logs
 mkdir -p ${benchmark_run_dir}/promethues
 oc logs prometheus-k8s-0 -c prometheus > ${benchmark_run_dir}/promethues/oc_logs.log
