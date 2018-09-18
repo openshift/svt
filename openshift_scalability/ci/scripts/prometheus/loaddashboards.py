@@ -27,11 +27,19 @@ def parse_args():
                         required=False,
                         dest='printit',
                         help='print results')
+    parser.add_argument('-i',
+                        '--ignore',
+                        type=bool,
+                        required=False,
+                        default=False,
+                        dest='ignore',
+                        help='ignore templating')
     return parser.parse_args()
 
 class Dashboards(object):
-    def __init__(self, file):
+    def __init__(self, file, ignore=False):
         self.dashboards = []
+        self.ignore = ignore
 
         if 'http' in file:
             import urllib
@@ -62,17 +70,20 @@ class Dashboards(object):
                 for target in panel['targets']:
                     t = target['expr']
                     # TODO: // make sure to have templating values
-                    if 'node=\"$node\"' in t:
-                        t.replace('node=\"$node\"','node=~\"^.*\"')
-                    if 'namespace=\"$namespace\"' in t:
-                        t.replace('namespace=\"$namespace\"','namespace=~\"^.*\"')
-                    if 'pod_name=\"$pod\"' in t:
-                        t.replace('pod_name=\"$pod\"','pod_name=~\"^.*\"')
-                    if 'instance=\"$instance\"' in t:
-                        t.replace('instance=\"$instance\"','instance=~\"^.*\"')
-                    if 'statefulset=\"$statefulset\"' in t:
-                        t.replace('statefulset=\"$statefulset\"','statefulset=~\"^.*\"')
-                    exprs.append(quote(q))
+                    if self.ignore:
+                        if 'node=\"$node\"' in t:
+                            t = t.replace('node=\"$node\"','node=~"^.*"')
+                        if 'job="$cluster"' in t:
+                            t = t.replace('job="$cluster"','job=~".*"')
+                        if 'namespace=\"$namespace\"' in t:
+                            t = t.replace('namespace=\"$namespace\"','namespace=~"^.*"')
+                        if 'pod_name=\"$pod\"' in t:
+                            t = t.replace('pod_name=\"$pod\"','pod_name=~"^.*"')
+                        if 'instance=\"$instance\"' in t:
+                            t = t.replace('instance=\"$instance\"','instance=~"^.*"')
+                        if 'statefulset=\"$statefulset\"' in t:
+                            t = t.replace('statefulset=\"$statefulset\"','statefulset=~"^.*"')
+                    exprs.append(quote(t))
         return exprs
 
     def get_dashboards(self):

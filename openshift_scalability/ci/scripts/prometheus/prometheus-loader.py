@@ -29,14 +29,21 @@ log_format = None
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-g',
+                        '--ignore',
+                        type=bool,
+                        required=False,
+                        default=False,
+                        dest='ig',
+                        help='ignore templating')
     parser.add_argument('-f',
                         '--file',
-                        required=True,
+                        required=False,
                         dest='file',
                         help='queries file')
     parser.add_argument('-t',
                         '--threads',
-                        required=True,
+                        required=False,
                         type=int,
                         default=20,
                         dest='threads',
@@ -44,15 +51,15 @@ def parse_args():
     parser.add_argument('-i',
                         '--interval',
                         type=int,
-                        required=True,
-                        default=20,
+                        required=False,
+                        default=10,
                         dest='interval',
                         help='sleep interval for each block iteration in sec')
     parser.add_argument('-p',
                         '--period',
                         type=int,
-                        required=True,
-                        default=15,
+                        required=False,
+                        default=60,
                         dest='period',
                         help='a time period for query in min')
     parser.add_argument('-r',
@@ -89,7 +96,8 @@ def parse_args():
     return parser.parse_args()
 
 class PrometheusLoader(object):
-    def __init__(self, file, threads, period, resolution, ns, sa, yaml, interval):
+    def __init__(self, file, threads, period, resolution, ns, sa, yaml,
+                interval, ig):
         # args
         self.threads = threads
         self.period = period
@@ -110,6 +118,7 @@ class PrometheusLoader(object):
         self.dashboardname = ""
         self.con = 0
         self.interval = interval
+        self.ignore_templats = ig
         self.logger()
         self.get_prometheus_info()
         self.lock = threading.Lock()
@@ -147,7 +156,7 @@ class PrometheusLoader(object):
 
     def load_queries_from_source(self, yaml):
         ''' load and qute queries from source (yaml mixin) '''
-        self.dashboards = Dashboards(yaml).get_dashboards()
+        self.dashboards = Dashboards(yaml, self.ignore_templats).get_dashboards()
 
     def get_prometheus_info(self):
         ''' get token and route for prometeus '''
@@ -198,7 +207,7 @@ class PrometheusLoader(object):
         self.log.info('duration: {0} - {1}'.format(res.elapsed.total_seconds(),
                                                 reqinfo))
 
-    def run_loader(self, qs):
+    def run_loader(self, queries):
         ''' fire http requests simultaneously in threads batch '''
         for query in queries:
             self.executor.submit(self.request, self.generate_req(query))
@@ -252,6 +261,6 @@ class PrometheusLoader(object):
 if __name__ == "__main__":
     args = parse_args()
     p = PrometheusLoader(args.file, args.threads, args.period, args.resolution,
-                         args.ns, args.sa, args.yaml, args.interval)
+                         args.ns, args.sa, args.yaml, args.interval, args.ig)
     # start the loader.
     p.start()
