@@ -81,6 +81,7 @@
       - libarchive
       - ostree
       - skopeo
+      - python-boto
 
   - name: Download binaries
     get_url:
@@ -95,7 +96,6 @@
     yum: 
       name: pbench-agent-internal 
       state: latest
-    when: internal_image | bool
 
   # yum module doesn't support clean
   - name: clean yum cache
