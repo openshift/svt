@@ -1,355 +1,414 @@
 {
+    "apiVersion": "template.openshift.io/v1",
     "kind": "Template",
-    "apiVersion": "v1",
-    "metadata": {
-	"name": "dancer-mysql-example",
-	"annotations": {
-	    "description": "An example Dancer application with a MySQL database",
-	    "source": "https://github.com/openshift/online/blob/master/templates/examples/dancer-mysql.json",
-	    "tags": "quickstart,perl,dancer,mysql",
-	    "iconClass": "icon-perl"
-	}
-    },
     "labels": {
-	"template": "dancer-mysql-example"
+        "app": "dancer-mysql-example",
+        "template": "dancer-mysql-example"
+    },
+    "message": "The following service(s) have been created in your project: ${NAME}, ${DATABASE_SERVICE_NAME}.\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/openshift/dancer-ex/blob/master/README.md.",
+    "metadata": {
+        "annotations": {
+            "description": "An example Dancer application with a MySQL database. For more information about using this template, including OpenShift considerations, see https://github.com/openshift/dancer-ex/blob/master/README.md.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.",
+            "iconClass": "icon-perl",
+            "openshift.io/display-name": "Dancer + MySQL (Ephemeral)",
+            "openshift.io/documentation-url": "https://github.com/openshift/dancer-ex",
+            "openshift.io/long-description": "This template defines resources needed to develop a Dancer based application, including a build configuration, application deployment configuration, and database deployment configuration.  The database is stored in non-persistent storage, so this configuration should be used for experimental purposes only.",
+            "openshift.io/provider-display-name": "Red Hat, Inc.",
+            "openshift.io/support-url": "https://access.redhat.com",
+            "tags": "quickstart,perl,dancer,mysql",
+            "template.openshift.io/bindable": "false"
+        },
+        "name": "dancer-mysql-example"
     },
     "objects": [
-	{
-	    "kind": "Service",
-	    "apiVersion": "v1",
-	    "metadata": {
-		"name": "dancer-mysql-example",
-		"annotations": {
-		    "description": "Exposes and load balances the application pods"
-		}
-	    },
-	    "spec": {
-		"ports": [
-		    {
-			"name": "web",
-			"port": 8080,
-			"targetPort": 8080
-		    }
-		],
-		"selector": {
-		    "name": "dancer-mysql-example"
-		}
-	    }
-	},
-	{
-	    "kind": "Route",
-	    "apiVersion": "v1",
-	    "metadata": {
-		"name": "dancer-mysql-example"
-	    },
-	    "spec": {
-		"host": "${APPLICATION_DOMAIN}",
-		"to": {
-		    "kind": "Service",
-		    "name": "dancer-mysql-example"
-		}
-	    }
-	},
-	{
-	    "kind": "DeploymentConfig",
-	    "apiVersion": "v1",
-	    "metadata": {
-		"name": "dancer-mysql-example",
-		"annotations": {
-		    "description": "Defines how to deploy the application server"
-		}
-	    },
-	    "spec": {
-		"triggers": [
-		    {
-			"type": "ImageChange",
-			"imageChangeParams": {
-			    "automatic": true,
-			    "containerNames": [
-				"dancer-mysql-example"
-			    ],
-			    "from": {
-				"kind": "ImageStreamTag",
-				"name": "dancer-mysql-example:latest",
-				"namespace": "openshift"
-			    }
-			}
-		    },
-		    {
-			"type": "ConfigChange"
-		    }
-		],
-		"replicas": 1,
-		"selector": {
-		    "name": "dancer-mysql-example"
-		},
-		"template": {
-		    "metadata": {
-			"name": "dancer-mysql-example",
-			"labels": {
-			    "name": "dancer-mysql-example"
-			}
-		    },
-		    "spec": {
-			"containers": [
-			    {
-				"name": "dancer-mysql-example",
-				"image": "dancer-mysql-example",
-				"ports": [
-				    {
-					"containerPort": 8080
-				    }
-				],
-				"readinessProbe": {
-				    "timeoutSeconds": 3,
-				    "initialDelaySeconds": 3,
-				    "httpGet": {
-					"path": "/health",
-					"port": 8080
-				    }
-				},
-				"livenessProbe": {
-				    "timeoutSeconds": 3,
-				    "initialDelaySeconds": 30,
-				    "httpGet": {
-					"path": "/",
-					"port": 8080
-				    }
-				},
-				"env": [
-				    {
-					"name": "DATABASE_SERVICE_NAME",
-					"value": "${DATABASE_SERVICE_NAME}"
-				    },
-				    {
-					"name": "MYSQL_USER",
-					"value": "${DATABASE_USER}"
-				    },
-				    {
-					"name": "MYSQL_PASSWORD",
-					"value": "${DATABASE_PASSWORD}"
-				    },
-				    {
-					"name": "MYSQL_DATABASE",
-					"value": "${DATABASE_NAME}"
-				    },
-				    {
-					"name": "SECRET_KEY_BASE",
-					"value": "${SECRET_KEY_BASE}"
-				    },
-				    {
-					"name": "PERL_APACHE2_RELOAD",
-					"value": "${PERL_APACHE2_RELOAD}"
-				    }
-				],
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_LIMIT}"
-				    }
-				}
-			    }
-			]
-		    }
-		}
-	    }
-	},
-	{
-	    "kind": "Service",
-	    "apiVersion": "v1",
-	    "metadata": {
-		"name": "${DATABASE_SERVICE_NAME}",
-		"annotations": {
-		    "description": "Exposes the database server"
-		}
-	    },
-	    "spec": {
-		"ports": [
-		    {
-			"name": "mysql",
-			"port": 3306,
-			"targetPort": 3306
-		    }
-		],
-		"selector": {
-		    "name": "${DATABASE_SERVICE_NAME}"
-		}
-	    }
-	},
-	{
-	    "kind": "DeploymentConfig",
-	    "apiVersion": "v1",
-	    "metadata": {
-		"name": "${DATABASE_SERVICE_NAME}",
-		"annotations": {
-		    "description": "Defines how to deploy the database"
-		}
-	    },
-	    "spec": {
-		"strategy": {
-		    "type": "Recreate"
-		},
-		"triggers": [
-		    {
-			"type": "ImageChange",
-			"imageChangeParams": {
-			    "automatic": true,
-			    "containerNames": [
-				"mysql"
-			    ],
-			    "from": {
-				"kind": "ImageStreamTag",
-				"namespace": "openshift",
-				"name": "mysql:5.6"
-			    }
-			}
-		    },
-		    {
-			"type": "ConfigChange"
-		    }
-		],
-		"replicas": 1,
-		"selector": {
-		    "name": "${DATABASE_SERVICE_NAME}"
-		},
-		"template": {
-		    "metadata": {
-			"name": "${DATABASE_SERVICE_NAME}",
-			"labels": {
-			    "name": "${DATABASE_SERVICE_NAME}"
-			}
-		    },
-		    "spec": {
-			"containers": [
-			    {
-				"name": "mysql",
-				"image": "mysql",
-				"ports": [
-				    {
-					"containerPort": 3306
-				    }
-				],
-				"readinessProbe": {
-				    "timeoutSeconds": 1,
-				    "initialDelaySeconds": 5,
-				    "exec": {
-					"command": [ "/bin/sh", "-i", "-c", "MYSQL_PWD='${DATABASE_PASSWORD}' mysql -h 127.0.0.1 -u ${DATABASE_USER} -D ${DATABASE_NAME} -e 'SELECT 1'" ]
-				    }
-				},
-				"livenessProbe": {
-				    "timeoutSeconds": 1,
-				    "initialDelaySeconds": 30,
-				    "tcpSocket": {
-					"port": 3306
-				    }
-				},
-				"env": [
-				    {
-					"name": "MYSQL_USER",
-					"value": "${DATABASE_USER}"
-				    },
-				    {
-					"name": "MYSQL_PASSWORD",
-					"value": "${DATABASE_PASSWORD}"
-				    },
-				    {
-					"name": "MYSQL_DATABASE",
-					"value": "${DATABASE_NAME}"
-				    }
-				],
-				"resources": {
-				    "limits": {
-					"memory": "${MEMORY_MYSQL_LIMIT}"
-				    }
-				},
-				"volumeMounts": [
-				    {
-					"name": "data",
-					"mountPath": "/var/lib/mysql/data"
-				    }
-				]
-			    }
-			],
-			"volumes": [
-			    {
-				"name": "data",
-				"emptyDir": {}
-			    }
-			]
-		    }
-		}
-	    }
-	}
+        {
+            "apiVersion": "v1",
+            "kind": "Secret",
+            "metadata": {
+                "name": "${NAME}"
+            },
+            "stringData": {
+                "database-password": "${DATABASE_PASSWORD}",
+                "database-user": "${DATABASE_USER}",
+                "keybase": "${SECRET_KEY_BASE}"
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "annotations": {
+                    "description": "Exposes and load balances the application pods",
+                    "service.alpha.openshift.io/dependencies": "[{\"name\": \"${DATABASE_SERVICE_NAME}\", \"kind\": \"Service\"}]"
+                },
+                "name": "${NAME}"
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "web",
+                        "port": 8080,
+                        "targetPort": 8080
+                    }
+                ],
+                "selector": {
+                    "name": "${NAME}"
+                }
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Route",
+            "metadata": {
+                "name": "${NAME}"
+            },
+            "spec": {
+                "host": "${APPLICATION_DOMAIN}",
+                "to": {
+                    "kind": "Service",
+                    "name": "${NAME}"
+                }
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "DeploymentConfig",
+            "metadata": {
+                "annotations": {
+                    "description": "Defines how to deploy the application server",
+                    "template.alpha.openshift.io/wait-for-ready": "true"
+                },
+                "name": "${NAME}"
+            },
+            "spec": {
+                "replicas": 1,
+                "selector": {
+                    "name": "${NAME}"
+                },
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "name": "${NAME}"
+                        },
+                        "name": "${NAME}"
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "env": [
+                                    {
+                                        "name": "DATABASE_SERVICE_NAME",
+                                        "value": "${DATABASE_SERVICE_NAME}"
+                                    },
+                                    {
+                                        "name": "MYSQL_USER",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "key": "database-user",
+                                                "name": "${NAME}"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "MYSQL_PASSWORD",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "key": "database-password",
+                                                "name": "${NAME}"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "MYSQL_DATABASE",
+                                        "value": "${DATABASE_NAME}"
+                                    },
+                                    {
+                                        "name": "SECRET_KEY_BASE",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "key": "keybase",
+                                                "name": "${NAME}"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "PERL_APACHE2_RELOAD",
+                                        "value": "${PERL_APACHE2_RELOAD}"
+                                    }
+                                ],
+                                "image": " ",
+                                "livenessProbe": {
+                                    "httpGet": {
+                                        "path": "/health",
+                                        "port": 8080
+                                    },
+                                    "initialDelaySeconds": 30,
+                                    "timeoutSeconds": 3
+                                },
+                                "name": "dancer-mysql-example",
+                                "ports": [
+                                    {
+                                        "containerPort": 8080
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "httpGet": {
+                                        "path": "/health",
+                                        "port": 8080
+                                    },
+                                    "initialDelaySeconds": 3,
+                                    "timeoutSeconds": 3
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "memory": "${MEMORY_LIMIT}"
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "triggers": [
+                    {
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "dancer-mysql-example"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "name": "${NAME}:latest"
+                            }
+                        },
+                        "type": "ImageChange"
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "annotations": {
+                    "description": "Exposes the database server"
+                },
+                "name": "${DATABASE_SERVICE_NAME}"
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "mysql",
+                        "port": 3306,
+                        "targetPort": 3306
+                    }
+                ],
+                "selector": {
+                    "name": "${DATABASE_SERVICE_NAME}"
+                }
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "DeploymentConfig",
+            "metadata": {
+                "annotations": {
+                    "description": "Defines how to deploy the database",
+                    "template.alpha.openshift.io/wait-for-ready": "true"
+                },
+                "name": "${DATABASE_SERVICE_NAME}"
+            },
+            "spec": {
+                "replicas": 1,
+                "selector": {
+                    "name": "${DATABASE_SERVICE_NAME}"
+                },
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "name": "${DATABASE_SERVICE_NAME}"
+                        },
+                        "name": "${DATABASE_SERVICE_NAME}"
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "env": [
+                                    {
+                                        "name": "MYSQL_USER",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "key": "database-user",
+                                                "name": "${NAME}"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "MYSQL_PASSWORD",
+                                        "valueFrom": {
+                                            "secretKeyRef": {
+                                                "key": "database-password",
+                                                "name": "${NAME}"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "name": "MYSQL_DATABASE",
+                                        "value": "${DATABASE_NAME}"
+                                    }
+                                ],
+                                "image": " ",
+                                "livenessProbe": {
+                                    "initialDelaySeconds": 30,
+                                    "tcpSocket": {
+                                        "port": 3306
+                                    },
+                                    "timeoutSeconds": 1
+                                },
+                                "name": "mysql",
+                                "ports": [
+                                    {
+                                        "containerPort": 3306
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "/bin/sh",
+                                            "-i",
+                                            "-c",
+                                            "MYSQL_PWD='${DATABASE_PASSWORD}' mysql -h 127.0.0.1 -u ${DATABASE_USER} -D ${DATABASE_NAME} -e 'SELECT 1'"
+                                        ]
+                                    },
+                                    "initialDelaySeconds": 5,
+                                    "timeoutSeconds": 1
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "memory": "${MEMORY_MYSQL_LIMIT}"
+                                    }
+                                },
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/var/lib/mysql/data",
+                                        "name": "data"
+                                    }
+                                ]
+                            }
+                        ],
+                        "volumes": [
+                            {
+                                "emptyDir": {},
+                                "name": "data"
+                            }
+                        ]
+                    }
+                },
+                "triggers": [
+                    {
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "mysql"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "name": "mysql:5.7",
+                                "namespace": "${NAMESPACE}"
+                            }
+                        },
+                        "type": "ImageChange"
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ]
+            }
+        }
     ],
     "parameters": [
-	{
-	    "name": "MEMORY_LIMIT",
-	    "displayName": "Memory Limit",
-	    "description": "Maximum amount of memory the Perl Dancer container can use.",
-	    "value": "512Mi"
-	},
-	{
-	    "name": "MEMORY_MYSQL_LIMIT",
-	    "displayName": "Memory Limit (MySQL)",
-	    "description": "Maximum amount of memory the MySQL container can use.",
-	    "value": "512Mi"
-	},
-	{
-	    "name": "APPLICATION_DOMAIN",
-	    "displayName": "Application Hostname",
-	    "description": "The exposed hostname that will route to the Dancer service, if left blank a value will be defaulted.",
-	    "value": ""
-	},
-	{
-	    "name": "ADMIN_USERNAME",
-	    "displayName": "Administrator Username",
-	    "generate": "expression",
-	    "from": "admin[A-Z0-9]{3}"
-	},
-	{
-	    "name": "ADMIN_PASSWORD",
-	    "displayName": "Administrator Password",
-	    "generate": "expression",
-	    "from": "[a-zA-Z0-9]{8}"
-	},
-	{
-	    "name": "DATABASE_SERVICE_NAME",
-	    "displayName": "Database Service Name",
-	    "value": "database"
-	},
-	{
-	    "name": "DATABASE_USER",
-	    "displayName": "Database Username",
-	    "generate": "expression",
-	    "from": "user[A-Z0-9]{3}"
-	},
-	{
-	    "name": "DATABASE_PASSWORD",
-	    "displayName": "Database Password",
-	    "generate": "expression",
-	    "from": "[a-zA-Z0-9]{8}"
-	},
-	{
-	    "name": "DATABASE_NAME",
-	    "displayName": "Database Name",
-	    "value": "sampledb"
-	},
-	{
-	    "name": "PERL_APACHE2_RELOAD",
-	    "displayName": "Perl Module Reload",
-	    "description": "Set this to \"true\" to enable automatic reloading of modified Perl modules.",
-	    "value": ""
-	},
-	{
-	    "name": "SECRET_KEY_BASE",
-	    "displayName": "Secret Key",
-	    "description": "Your secret key for verifying the integrity of signed cookies.",
-	    "generate": "expression",
-	    "from": "[a-z0-9]{127}"
-	},
-    {
-      "name": "IDENTIFIER",
-      "description": "Number to append to the name of resources",
-      "value": "1"
-    }
+        {
+            "description": "The name assigned to all of the frontend objects defined in this template.",
+            "displayName": "Name",
+            "name": "NAME",
+            "required": true,
+            "value": "dancer-mysql-example"
+        },
+        {
+            "description": "The OpenShift Namespace where the ImageStream resides.",
+            "displayName": "Namespace",
+            "name": "NAMESPACE",
+            "required": true,
+            "value": "openshift"
+        },
+        {
+            "description": "Maximum amount of memory the Perl Dancer container can use.",
+            "displayName": "Memory Limit",
+            "name": "MEMORY_LIMIT",
+            "required": true,
+            "value": "512Mi"
+        },
+        {
+            "description": "Maximum amount of memory the MySQL container can use.",
+            "displayName": "Memory Limit (MySQL)",
+            "name": "MEMORY_MYSQL_LIMIT",
+            "required": true,
+            "value": "512Mi"
+        },
+        {
+            "description": "The exposed hostname that will route to the Dancer service, if left blank a value will be defaulted.",
+            "displayName": "Application Hostname",
+            "name": "APPLICATION_DOMAIN"
+        },
+        {
+            "displayName": "Database Service Name",
+            "name": "DATABASE_SERVICE_NAME",
+            "required": true,
+            "value": "database"
+        },
+        {
+            "displayName": "Database Username",
+            "from": "user[A-Z0-9]{3}",
+            "generate": "expression",
+            "name": "DATABASE_USER"
+        },
+        {
+            "displayName": "Database Password",
+            "from": "[a-zA-Z0-9]{8}",
+            "generate": "expression",
+            "name": "DATABASE_PASSWORD"
+        },
+        {
+            "displayName": "Database Name",
+            "name": "DATABASE_NAME",
+            "required": true,
+            "value": "sampledb"
+        },
+        {
+            "description": "Set this to \"true\" to enable automatic reloading of modified Perl modules.",
+            "displayName": "Perl Module Reload",
+            "name": "PERL_APACHE2_RELOAD"
+        },
+        {
+            "description": "Your secret key for verifying the integrity of signed cookies.",
+            "displayName": "Secret Key",
+            "from": "[a-z0-9]{127}",
+            "generate": "expression",
+            "name": "SECRET_KEY_BASE"
+        },
+        {
+            "name": "IDENTIFIER",
+            "description": "Number to append to the name of resources",
+            "value": "1"
+        }
+
     ]
 }
