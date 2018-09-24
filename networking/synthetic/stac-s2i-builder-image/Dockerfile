@@ -7,10 +7,13 @@ ENV container docker
 ARG github_url_stac_config
 
 RUN git clone ${github_url_stac_config}
-RUN wget http://mirror.centos.org/centos/7/updates/x86_64/Packages/kernel-`uname -r`.rpm \
-    && wget http://mirror.centos.org/centos/7/updates/x86_64/Packages/kernel-devel-`uname -r`.rpm \
-    && yum install -y kernel*.rpm
-RUN yum install --assumeyes \
+RUN set -x && config_repo=`echo "${github_url_stac_config}" | rev | cut -d / -f 1 | rev` \
+    && source ${config_repo%.git*}/stac_config
+
+RUN yum-config-manager --add-repo=${rhel_repo}
+RUN yum install -y --nogpgcheck \
+        kernel \
+        kernel-devel \
         python-devel \
         libtool \
         libpcap-devel \
@@ -38,10 +41,10 @@ RUN yum install --assumeyes \
     rm -f /lib/systemd/system/systemd*udev*; \
     rm -f /lib/systemd/system/getty.target; \
     ln -s /usr/lib64/libgmp.so.10 /usr/lib64/libgmp.so.3
-COPY  s2i/bin/* /usr/libexec/s2i/
-RUN set -x && config_repo=`echo "${github_url_stac_config}" | rev | cut -d / -f 1 | rev`\
-    && source ${config_repo%.git*}/stac_config \
-    && wget -q ${Onload_tar_url} \
-    && onload_tar_file=`echo "$Onload_tar_url" | rev | cut -d / -f 1 | rev` \
-    && rpmbuild -tb $onload_tar_file --quiet
 
+COPY  s2i/bin/* /usr/libexec/s2i/
+
+RUN wget -q ${Onload_tar_url} \
+    && onload_tar_file=`echo "$Onload_tar_url" | rev | cut -d / -f 1 | rev` \
+    && rpmbuild -tb $onload_tar_file --quiet \
+    && wget ${stac_tar_url}
