@@ -141,8 +141,8 @@
   - name: Copy pbench results
     shell: pbench-copy-results
 
-#  - name: Kill pbench tools
-#    shell: pbench-kill-tools
+  - name: Kill pbench tools
+    shell: pbench-kill-tools
 
 #  - name: Clear pbench tools
 #    shell: pbench-clear-tools
