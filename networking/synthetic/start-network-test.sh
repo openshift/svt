@@ -13,6 +13,8 @@
 ##      - remove the config.yaml 
 ##      - copy the public key from svt private repo
 ##              ( this assumes that the private repo is present already )
+##  -- updates  : 09.06.2018
+##      - add another intemediate mode  
 ################################################
 
 function wait_for_project_delete {
@@ -35,11 +37,11 @@ run_mode=$1
 
 if [ -z $run_mode ];
  then
-   echo "INFO : $(date)  No mode specified and hence running the FULL suite of tests"
-   run_mode="FULL"
-elif [ "$run_mode" != "FULL" ] && [ "$run_mode" != "CI" ]
+   echo "INFO : $(date)  No mode specified and hence running the INTERMEDIATE suite of tests"
+   run_mode="INT"
+elif [ "$run_mode" != "FULL" ] && [ "$run_mode" != "CI" ] && [ "$run_mode" != "INT" ]
  then
-   echo "ERROR : Incorrect mode specified. Permissible mode values [ FULL / CI ] "
+   echo "ERROR : Incorrect mode specified. Permissible mode values [ FULL / CI / INT ] "
    echo " Usage: "  
    echo "   ./start-network-test.sh << mode >> "  
    exit 1
@@ -56,8 +58,6 @@ cp /root/svt-private/image_provisioner/id_rsa_perf.pub id_rsa.pub
 #nodes=`cat config.yaml |egrep 'nodes:' | awk -F: '{print $2}'`
 masters=`oc get nodes | grep master | awk '{print $1}'`
 nodes=`oc get nodes | grep ' compute' | awk '{print $1}'`
-
-
 
 # make the master schedulable --no longer needed-- 
 #oc adm manage-node --schedulable=true ${master}
@@ -81,9 +81,11 @@ nprocs=`ssh ${nodes_array[0]} grep -c ^processor /proc/cpuinfo`
 #nprocs=4
 echo "INFO: $(date) Number of procs on node: $nprocs "
 
-pods_var="1"
+pods_var=""
 
-echo ${nodes_array[0]} ${nodes_array[1]} ${masters_array[0]}
+echo "The master node is: ${masters_array[0]} "
+echo "Node one is: ${nodes_array[0]} "
+echo "Node two is: ${nodes_array[1]} "
 
 if [ "$run_mode" == "FULL" ];
  then
@@ -92,6 +94,7 @@ if [ "$run_mode" == "FULL" ];
   python network-test.py nodeIP --master ${masters_array[0]} --node ${nodes_array[0]} ${nodes_array[1]}
   
   # prepare the pods variable for running the network tests
+  pods_var="1"
   over_nprocs=$[10#${nprocs}+4]
   for ((procs=0; procs<=$nprocs; procs=$[10#${procs}+2])); do
       if [ $procs -ne 0 ];
@@ -102,6 +105,31 @@ if [ "$run_mode" == "FULL" ];
   pods_var="$pods_var $over_nprocs"
   # wait for the projects from node-node test to get deleted.
   wait_for_project_delete
+
+elif [ "$run_mode" == "INT" ];
+   then
+    echo "INFO : $(date) #################### node to node  ####################"
+    # run the node node tests
+    python network-test.py nodeIP --master ${masters_array[0]} --node ${nodes_array[0]} ${nodes_array[1]}
+
+    # prepare the pods variable for running the network tests
+    pods_var=$[10#${nprocs}-2]
+    procs=$[10#${nprocs}]
+    over_nprocs=$[10#${nprocs}+2]
+    if [ "$pods_var" -gt "0" ];
+     then
+      pods_var="$pods_var $procs $over_nprocs"
+    elif [ "$pods_var" -eq "0" ];
+     then
+      pods_var="1"
+      pods_var="$pods_var $procs $over_nprocs"
+    else
+     pods_var="$procs $over_nprocs"
+    fi
+  
+    # wait for the projects from node-node test to get deleted.
+    wait_for_project_delete
+
 else
   pods_var=$nprocs
 fi
@@ -140,6 +168,21 @@ do
     python network-test.py svcIP --master ${masters_array[0]} --node ${nodes_array[0]} ${nodes_array[1]} --pods $var
     wait_for_project_delete
     sleep 5
+  elif [ "$run_mode" == "INT" ];
+   then
+    
+    samples="2"
+  	
+    echo "INFO : $(date) ############### cross host on node to node for pod - $var pods ##############"
+    python network-test.py podIP --master ${masters_array[0]} --node ${nodes_array[0]} ${nodes_array[1]} --pods $var -t $samples
+    wait_for_project_delete
+    sleep 5
+
+    echo "INFO : $(date) ############## cross host on node to node for svc - $var pods ###############"
+    python network-test.py svcIP --master ${masters_array[0]} --node ${nodes_array[0]} ${nodes_array[1]} --pods $var -t $samples
+    wait_for_project_delete
+    sleep 5
+
   else
 
     tcp_tests="stream"

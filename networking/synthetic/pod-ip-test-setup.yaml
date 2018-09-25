@@ -144,8 +144,8 @@
   - name: Kill pbench tools
     shell: pbench-kill-tools
 
-  - name: Clear pbench tools
-    shell: pbench-clear-tools
+#  - name: Clear pbench tools
+#    shell: pbench-clear-tools
 
   - name: Delete uperf projects
     shell: oc delete project uperf-{{ item }}
