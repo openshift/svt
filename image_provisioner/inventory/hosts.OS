@@ -74,3 +74,8 @@ multipath_blacklist=False
 binary_url=https://github.com/redhat-performance/pbench-analyzer/releases/download/v0.1-alpha/
 # scale-ci results github token
 scale_ci_results_token=
+
+# required to support Terms Based registry registry.redhat.io:
+registry_redhat_io_login=True
+registry_redhat_io_username=
+registry_redhat_io_password=
