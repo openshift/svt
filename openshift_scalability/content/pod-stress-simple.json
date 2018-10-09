@@ -13,13 +13,7 @@
       {
         "name": "stress",
         "image": "lorel/docker-stress-ng",
-        "ports": [
-          {
-            "containerPort": 8080,
-            "protocol": "TCP"
-          }
-        ],
-	"command": ["stress-ng", "--cpu", "1", "--cpu-load", "5", "--vm", "1"],
+	      "command": ["stress-ng", "--cpu", "1"],
         "terminationMessagePath": "/dev/termination-log",
         "imagePullPolicy": "IfNotPresent",
         "capabilities": {},
