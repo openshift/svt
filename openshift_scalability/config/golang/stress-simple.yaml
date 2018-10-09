@@ -1,20 +1,20 @@
 provider: local
 ClusterLoader:
-  cleanup: true
+  cleanup: false
   projects:
-    - num: 1
-      basename: clusterproject
+    - num: 3
+      basename: clusterloader0
       tuning: default
-      ifexists: delete
+      ifexists: reuse
       pods:
-        - num: 1000
+        - num: 3000
           basename: stress-test
           file: pod-stress-simple.json
   tuningsets:
     - name: default
       pods:
         stepping:
-          stepsize: 50
-          pause: 60
+          stepsize: 100
+          pause: 5
         ratelimit:
-          delay: 0
+          delay: 1
