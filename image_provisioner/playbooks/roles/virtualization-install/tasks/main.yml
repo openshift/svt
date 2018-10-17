@@ -1,0 +1,23 @@
+---
+- name: Install virtualization packages
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - qemu-kvm 
+    - libvirt
+    - virt-install 
+    - libvirt-python 
+    - virt-manager 
+    - libvirt-client
+
+- name: Allow root user access
+  lineinfile:
+    path: /etc/libvirt/qemu.conf 
+    regexp: '^#user'
+    line: 'user = root'
+
+- name: Ensure that libvirtd is running
+  service:
+    name: libvirtd
+    state: started
