@@ -15,9 +15,9 @@ spec:
       hostPID: true
       hostNetwork: true
       containers:
-      - image: library/pbench-agent:latest
+      - image: docker.io/ravielluri/image:agent
         name: pbench-agent
-        imagePullPolicy: Never
+        imagePullPolicy: IfNotPresent 
         securityContext:
           privileged: true
         env:
