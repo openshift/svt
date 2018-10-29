@@ -21,14 +21,8 @@
 - name: pull pbench-agent from dockerhub
   command: docker pull ravielluri/image:agent
 
-- name: tag pbench-agent image
-  command: docker tag ravielluri/image:agent library/pbench-agent:latest
-
 - name: pull pbench-controller image from dockerhub
   command: docker pull ravielluri/image:controller
-
-- name: tag pbench-controller image
-  command: docker tag ravielluri/image:controller pbench-controller:latest
 
 - name: pull ycsb image from docker.io
   docker_image:
