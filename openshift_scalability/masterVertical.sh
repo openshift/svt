@@ -2,16 +2,28 @@
 
 # usage
 # ./pbench-register.sh 
-# pbench-user-benchmark -C testname -- ./masterVertical.sh [golang|python]
+# pbench-user-benchmark -C testname -- ./masterVertical.sh [golang|python] [CI|FULL]
 # pbench-move-results
 
-if [ "$#" -ne 1 ]; then
-  echo "syntax: $0 <TYPE>"
+if [ "$#" -ne 2 ]; then
+  echo "syntax: $0 <TYPE> <MODE>"
   echo "<TYPE> should be either golang or python"
+  echo "<MODE> should be either CI or FULL"
   exit 1
 fi
 
 TYPE=$1
+MODE=$2
+
+if [[ "$MODE" == "CI" ]]; then
+	STARTUP_TIME=10
+	SETTLE_TIME=30
+elif [[ "$MODE" == "FULL" ]]; then
+	STARTUP_TIME=5m
+	SETTLE_TIME=15m
+else
+	echo "$MODE is not a valid option, please check"
+fi
 
 golang_clusterloader() {
   # Export kube config
@@ -27,7 +39,7 @@ python_clusterloader() {
 }
 
 echo "Startup delay + entropy collection" 
-sleep 5m
+sleep $STARTUP_TIME
 
 echo "Run tests" 
 if [ "$TYPE" == "golang" ]; then
@@ -39,5 +51,5 @@ else
   exit 1
 fi
 
-echo "sleeping 15 minutes for settling after tests"
-sleep 15m
+echo "sleeping $SETTLE_TIME for settling after tests"
+sleep $SETTLE_TIME

@@ -15,12 +15,14 @@ RUN rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.
     pip install requests && \
     yum clean all && \
     sed -i "s/#Port 22/Port 2022/" /etc/ssh/sshd_config && \
+    sed -i "/^#UsePrivilegeSeparation/c UsePrivilegeSeparation no" /etc/ssh/sshd_config && \
     systemctl enable sshd
 
 EXPOSE 2022
 
 # Mount /proc
 COPY mount.sh /root/mount.sh
+RUN chmod +x /root/mount.sh
 COPY pbench.service /etc/systemd/system/pbench.service
 RUN systemctl enable pbench.service
 RUN mkdir -p /run/systemd/system

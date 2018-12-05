@@ -1,5 +1,5 @@
 ---
-- hosts: masters[0]
+- hosts: localhost
   user: root
   vars:
     - tooling_inv: /root/tooling_inventory
@@ -11,16 +11,19 @@
         path: /run/openshift
         state: directory
 
-    - name: copy, set permissions on the register script
-      copy:
-        src: generate.sh
-        dest: /run/openshift/generate.sh
-        owner: root
-        group: root
-        mode: 0755
+        #    - name: copy, set permissions on the register script
+        #copy:
+        #src: generate.sh
+        #dest: /run/openshift/generate.sh
+        #owner: root
+        #group: root
+        #mode: 0755
+
+    - name: copy register script
+      shell: cp -r --preserve=context /root/svt/openshift_tooling/openshift_labeler/generate.sh /run/openshift/generate.sh; chmod +x /run/openshift/generate.sh
     
     - name: label cns nodes
-      shell: oc label node {{ item }} node-role.kubernetes.io/cns=true
+      shell: oc label node {{ item }} node-role.kubernetes.io/cns
       with_items:
        - "{{ groups['glusterfs'] }}"
       when: groups['glusterfs']|default([])
@@ -33,7 +36,3 @@
   
     - name: label nodes
       shell: sh /run/openshift/generate.sh {{ tooling_inv }} {{ register_all_nodes }} {{ oc_client_url }} {{ ansible_controller.stdout }}
-
-    - name: copy the inventory onto jump host
-      shell: scp {{ inventory_hostname }}:{{ tooling_inv }} {{ tooling_inv }}
-      delegate_to: localhost
