@@ -28,13 +28,8 @@ clean() { echo "Cleaning environment"; oc delete project --wait=true clusterproj
 golang_clusterloader() {
   # Export kube config
   export KUBECONFIG=${KUBECONFIG-$HOME/.kube/config}
-  if [[ "$ENVIRONMENT" == "alderaan" ]]; then
-  	MY_CONFIG=config/golang/nodeVertical-labeled-nodes
+  MY_CONFIG=config/golang/nodeVertical-labeled-nodes
 	sed -i "/- num: 1000/c \ \ \ \ \ \ \ \ \- num: $total_pod_count" /root/svt/openshift_scalability/config/golang/nodeVertical-labeled-nodes.yaml
-  else
-  	MY_CONFIG=config/golang/nodeVertical
-	sed -i "/- num: 1000/c \ \ \ \ \ \ \ \ \- num: $total_pod_count" /root/svt/openshift_scalability/config/golang/nodeVertical.yaml
-  fi
   # loading cluster based on yaml config file
   /usr/libexec/atomic-openshift/extended.test --ginkgo.focus="Load cluster" --viper-config=$MY_CONFIG
 }
