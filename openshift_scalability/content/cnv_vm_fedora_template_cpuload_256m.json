@@ -1,0 +1,79 @@
+{
+  "apiVersion": "v1",
+  "kind": "Template",
+  "metadata": {
+    "creationTimestamp": null,
+    "name": "test-vms-fedora"
+  },
+  "objects": [
+    {
+      "apiVersion": "kubevirt.io/v1alpha3",
+      "kind": "VirtualMachine",
+      "metadata": {
+        "labels": {
+          "kubevirt.io/vm": "vm-fedora-${IDENTIFIER}"
+        },
+        "name": "vm-fedora-${IDENTIFIER}"
+      },
+      "spec": {
+        "running": true,
+        "template": {
+          "metadata": {
+            "labels": {
+              "kubevirt.io/vm": "vm-fedora-${IDENTIFIER}"
+            }
+          },
+          "spec": {
+            "domain": {
+              "devices": {
+                "disks": [
+                  {
+                    "disk": {
+                      "bus": "virtio"
+                    },
+                    "name": "containerdisk"
+                  },
+                  {
+                    "disk": {
+                      "bus": "virtio"
+                    },
+                    "name": "cloudinitdisk"
+                  }
+                ]
+              },
+              "machine": {
+                "type": ""
+              },
+              "resources": {
+                "requests": {
+                  "memory": "256Mi"
+                }
+              }
+            },
+            "terminationGracePeriodSeconds": 0,
+            "volumes": [
+              {
+                "containerDisk": {
+                  "image": "kubevirt/fedora-cloud-container-disk-demo:latest"
+                },
+                "name": "containerdisk"
+              },
+              {
+                "cloudInitNoCloud": {
+                  "userData": "password: fedora\nchpasswd: { expire: False }        \nruncmd: \n  - \"yes > /dev/null &\""
+                },
+                "name": "cloudinitdisk"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "IDENTIFIER",
+      "description": "vm_name"
+    }
+  ]
+}

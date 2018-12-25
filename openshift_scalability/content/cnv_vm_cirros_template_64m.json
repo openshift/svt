@@ -1,0 +1,79 @@
+{
+  "apiVersion": "v1",
+  "kind": "Template",
+  "metadata": {
+    "creationTimestamp": null,
+    "name": "test-vms-cirros"
+  },
+  "objects": [
+    {
+      "apiVersion": "kubevirt.io/v1alpha3",
+      "kind": "VirtualMachine",
+      "metadata": {
+        "labels": {
+          "kubevirt.io/vm": "vm-cirros-${IDENTIFIER}"
+        },
+        "name": "vm-cirros-${IDENTIFIER}"
+      },
+      "spec": {
+        "running": true,
+        "template": {
+          "metadata": {
+            "labels": {
+              "kubevirt.io/vm": "vm-cirros-${IDENTIFIER}"
+            }
+          },
+          "spec": {
+            "domain": {
+              "devices": {
+                "disks": [
+                  {
+                    "disk": {
+                      "bus": "virtio"
+                    },
+                    "name": "containerdisk"
+                  },
+                  {
+                    "disk": {
+                      "bus": "virtio"
+                    },
+                    "name": "cloudinitdisk"
+                  }
+                ]
+              },
+              "machine": {
+                "type": ""
+              },
+              "resources": {
+                "requests": {
+                  "memory": "64Mi"
+                }
+              }
+            },
+            "terminationGracePeriodSeconds": 0,
+            "volumes": [
+              {
+                "containerDisk": {
+                  "image": "kubevirt/cirros-container-disk-demo:latest"
+                },
+                "name": "containerdisk"
+              },
+              {
+                "cloudInitNoCloud": {
+                  "userData": "echo 'printed from cloud-init userdata'\n"
+                },
+                "name": "cloudinitdisk"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "IDENTIFIER",
+      "description": "vm_name"
+    }
+  ]
+}

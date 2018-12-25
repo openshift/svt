@@ -1,0 +1,21 @@
+provider: local
+ClusterLoader:
+  cleanup: false
+  projects:
+  - num: 20
+    basename: cnv-vm-testing-fedora
+    tuning: default
+    ifexists: delete
+    templates:
+    - num: NUMBER_OF_VMS
+      basename: vm-fedora
+      file: cnv_vm_fedora_template_cpuload_256m.json
+
+  tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 50
+        pause: 30
+      ratelimit:
+        delay: 350 ms
