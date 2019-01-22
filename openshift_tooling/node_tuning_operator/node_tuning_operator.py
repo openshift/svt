@@ -2,10 +2,16 @@
 
 import subprocess
 import time
+import sys
 
 #############################################################
 # Test: Node Tuning Operator: core functionality is working #
 #############################################################
+
+path_to_ssh_key = sys.argv[1]
+if len(path_to_ssh_key) == 0:
+    print ("Please run with path to ssh key. Ex. python node_tuning_operator.py /home/user/.ssh/libra.pem")
+    raise SystemExit
 
 # TODO - turn off colors on demand
 # Setting the output colors
@@ -59,8 +65,8 @@ def execute_command(command_to_execute):
     return value_to_return
 
 
-def execute_command_on_node(externall_address, node_address, command_to_execute):
-    command_on_node = "ssh -i ~/.ssh/libra.pem -o ProxyCommand='ssh -A -i ~/.ssh/libra.pem -W %h:%p core@{}' core@{} {}".format(externall_address, node_address, command_to_execute)
+def execute_command_on_node(external_address, node_address, command_to_execute):
+    command_on_node = "ssh -i {} -o ProxyCommand='ssh -A -i {} -W %h:%p core@{}' core@{} {}".format(path_to_ssh_key, path_to_ssh_key, external_address, node_address, command_to_execute)
     return execute_command(command_on_node)
 
 
