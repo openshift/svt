@@ -39,8 +39,6 @@ spec:
             mountPath: /var/lib/pbench-agent
           - name: tools
             mountPath: /var/lib/pbench-agent/tools-default
-          - name: clusterloader
-            mountPath: /root/openshift-tests
         ports:
           - containerPort: 9090
           - containerPort: 2022
@@ -63,9 +61,6 @@ spec:
         - name: tools
           hostPath: 
             path: /var/lib/pbench-agent/tools-default
-        - name: clusterloader
-          hostPath:
-            path: /root/openshift-tests
       serviceAccountName: useroot 
       nodeSelector:
         role: controller

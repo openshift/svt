@@ -59,14 +59,20 @@ while [[ $(oc --namespace=default get pods $controller_pod -n $controller_namesp
 		exit 1
 	fi
 done
-logs_counter_limit=50
+
+# logging
 logs_counter=0
+logs_counter_limit=500
 oc logs -f $controller_pod -n $controller_namespace
 while true; do
         logs_counter=$((logs_counter+1))
         if [[ $(oc --namespace=default get pods $controller_pod -n $controller_namespace -o json | jq -r ".status.phase") == "Running" ]]; then
                 if [[ $logs_counter -le $logs_counter_limit ]]; then
-                        echo "Attempt $logs_counter to reconnect to fetch the controller pod logs"
+			echo "=================================================================================================================================================================="
+			echo "Attempt $logs_counter to reconnect and fetch the controller pod logs"
+			echo "=================================================================================================================================================================="
+			echo "------------------------------------------------------------------------------------------------------------------------------------------------------------------"
+			echo "------------------------------------------------------------------------------------------------------------------------------------------------------------------"
                         oc logs -f $controller_pod -n $controller_namespace
                 else
                         echo "Exceeded the retry limit trying to get the controller logs: $logs_counter_limit, exiting."
