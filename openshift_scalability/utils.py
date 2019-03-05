@@ -72,11 +72,7 @@ def create_template(templatefile, num, parameters, globalvars):
     if globalvars["debugoption"]:
         print "create_template function called"
 
-    # process parameters flag for oc 3.4 and earlier is -v.  Starting in 3.5 it is -p.
-    if not globalvars["kubeopt"] and (int(globalvars["version_info"]["major"]) <= 3 and int(globalvars["version_info"]["minor"]) <= 4):
-        parameter_flag = "-v"
-    else:
-        parameter_flag = "-p"
+    parameter_flag = "-p"
 
     if globalvars["autogen"] and parameters:
         localhost, router_ip, jmeter_ips = get_route()
