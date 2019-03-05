@@ -94,7 +94,14 @@
     tags:
       - setup
 
-  - name: run the fio test
+  - name: run the fio test with pbench-fio
     command:  "{{ tmp_folder }}/files/scripts/test-storage.sh  {{ tmp_folder }}/files {{ storage_class_name }}"
     tags:
       - run
+      - pbench-fio
+
+  - name: run the fio test with fio
+    command:  "{{ tmp_folder }}/files/scripts/test-storage-fio.sh {{ tmp_folder }} {{ test_project_name }}"
+    tags:
+      - run
+      - fio

@@ -1,0 +1,10 @@
+
+
+testParameters:
+   - filePath: app1
+     fileURL: http://nodejs-mongodb-example-nodejs-mongodb0.apps.0405-o22.qe.rhcloud.com
+     numberOfUsers: [10]
+     rampUpTime: [5]
+     numberOfUserLoops: [ 1 ]
+     numberOfAppLoops: [10, 20] 
+     intervalBetweenAppHits: [500]

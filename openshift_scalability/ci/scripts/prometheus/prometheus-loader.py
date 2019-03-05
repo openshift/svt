@@ -36,7 +36,7 @@ def parse_args():
                         default=False,
                         dest='ig',
                         help='ignore templating')
-                        
+
     parser.add_argument('-f',
                         '--file',
                         required=False,

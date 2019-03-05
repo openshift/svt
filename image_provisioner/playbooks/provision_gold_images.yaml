@@ -15,6 +15,7 @@
     - { role: delete-oldest, when: target_directory != "" }
     - { role: repo-install, when: not atomic | default(False) | bool }
     - { role: os-kickstart }
+    - { role: virtualization-install }
     - { role: clone-repos, when: not atomic | default(False) | bool }
     - { role: docker-config }
     - { role: multipath-blacklist, when: multipath_blacklist | default(False) | bool }

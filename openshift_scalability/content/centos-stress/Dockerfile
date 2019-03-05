@@ -9,9 +9,9 @@ COPY root ./
 
 ### Install required packages
 RUN yum -y --setopt=tsflags=nodocs install automake autotools bc epel-release \
-        gcc git gnuplot go java-1.8.0-openjdk libtool make openssh-clients \
+        gcc git gnuplot java-1.8.0-openjdk libtool make openssh-clients \
         patch rsync tar unzip && \
-    yum -y --setopt=tsflags=nodocs install stress && \
+    yum -y --setopt=tsflags=nodocs install go stress && \
     mkdir -p build && cd build && \
     git clone https://github.com/openshift/svt.git && \
       cd svt/utils/pctl && go build pctl.go && cp pctl /usr/local/bin && cd ../../.. && \

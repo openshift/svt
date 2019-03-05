@@ -12,11 +12,11 @@
   tasks:
   - name: Install openssh clients and server
     yum:
-      name: 
+      name:
         - openssh-clients
         - openssh-server
       state: latest
-      update_cache: yes  
+      update_cache: yes
 
   - name: Enable epel
     get_url:
@@ -25,7 +25,7 @@
 
   - name: Install configtools, pbench-agent, pbench-uperf
     yum:
-      name: 
+      name:
         - configtools
         - pbench-agent
         - pbench-uperf
@@ -36,6 +36,8 @@
 
 - hosts: master
   remote_user: root
+  vars:
+    register_pbench: true
   tasks:
   - name: Create SSH directory /root/.ssh if it does not exist
     file: path=/root/.ssh state=directory
@@ -49,10 +51,13 @@
 
   - name: Register pbench tools on master
     shell: pbench-register-tool-set --label={{ pbench_label }}
+    when: register_pbench
 
   - name: Register pbench tools on remotes
     shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ item }}
-    when: pbench_remotes != "None"
+    when:
+      - pbench_remotes != "None"
+      - register_pbench
     with_items: "{{ pbench_remotes }}"
 
   - name: Run pbench-uperf for TCP benchmarks
@@ -89,8 +94,8 @@
   - name: Kill pbench tools
     shell: pbench-kill-tools
 
-  - name: Clear pbench tools
-    shell: pbench-clear-tools
+#  - name: Clear pbench tools
+#    shell: pbench-clear-tools
 
   - name: Clear pbench results
     shell: pbench-clear-results

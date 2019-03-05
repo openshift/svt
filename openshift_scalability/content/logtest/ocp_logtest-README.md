@@ -40,7 +40,7 @@ login to the host where the pod is running and verify the logs are going to jour
 
 ```python ocp_logtest.py <optional-arguments>```
 
-- --time how long to run for in seconds.  0 means run forever.  Not compatible with --num-lines.  No default
+- *--time* how long to run for in seconds.  0 means run forever.  Not compatible with --num-lines.  No default
 - *--num-lines* number of lines to generate.  Not compatible with *--time* .  Default is 0
 - *--text-type* random or input.   Generate random text or read text from the input file specified by *--file*.  Default is random
 - *--line-length* length of each line. Default is 100
@@ -48,6 +48,7 @@ login to the host where the pod is running and verify the logs are going to jour
 - *--fixed-line* true or false - repeat the same line of text over and over or use new text for each line. Default is false
 - *--rate* lines per minute. Default is 10.0
 - *--file* file to read text from.  A sample.txt is included in the default docker image.  If running in a pod, a new image with the file should be built. No default.
+- *--raw* logs raw lines as-is out of a file with no timestamps or sequence counters.  Only works if *--text-type*=input and a *--file* is specified
 - *--journal* log to syslog/journald instead of to stdout.   See notes below for restrictions on using this.
 
 If no parameters are specified, it is equivalent to:

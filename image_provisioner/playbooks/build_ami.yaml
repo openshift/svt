@@ -30,9 +30,9 @@
       user_data: "{{ lookup('file', '../cloud-init/user-data-aws') }}"
       exact_count: 1
       count_tag:
-         Name: "{{ instance_tag | default('ami_builder') }}"
+         Name: "{{ instance_tag | default('ami_builder') }}-{{ openshift_version }}"
       instance_tags:
-         Name: "{{ instance_tag | default('ami_builder') }}"
+         Name: "{{ instance_tag | default('ami_builder') }}-{{ openshift_version }}"
     register: ami_instance
 
   - name: waiting for ssh to start

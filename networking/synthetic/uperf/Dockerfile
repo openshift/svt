@@ -1,6 +1,6 @@
-FROM centos
+FROM centos/tools
 
-MAINTAINER Rob Smith "rosmith@redhat.com"
+MAINTAINER Siva Reddy "schituku@redhat.com"
 
 ENV container docker
 
@@ -23,10 +23,11 @@ RUN yum install --assumeyes \
     systemctl enable sshd; \
     echo "root:redhat" | chpasswd
 
-RUN curl -o /etc/yum.repos.d/pbench.repo https://copr.fedorainfracloud.org/coprs/ndokos/pbench/repo/epel-7/ndokos-pbench-epel-7.repo; \
+RUN rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm; \
+    curl -o /etc/yum.repos.d/pbench.repo https://copr.fedorainfracloud.org/coprs/ndokos/pbench/repo/epel-7/ndokos-pbench-epel-7.repo; \
     yum clean expire-cache; \
     yum install --assumeyes \
-    	configtools \
+        configtools \
 	pbench-agent \
 	pbench-uperf; \
     yum clean all; \

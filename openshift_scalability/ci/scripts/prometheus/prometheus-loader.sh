@@ -18,6 +18,11 @@ function db_aging() {
   done
 }
 
+function db_aging() {
+  while true;
+    echo "$(date +'%m-%d-%y-%H:%M:%S') $(oc exec prometheus-k8s-0 -n openshift-monitoring -c prometheus -- df |grep -v tmp |grep '/prometheus')" >> ${benchmark_run_dir}/promethues/pvc_monitor_0.log
+    echo "$(date +'%m-%d-%y-%H:%M:%S') $(oc exec prometheus-k8s-1 -n openshift-monitoring -c prometheus -- df |grep -v tmp |grep '/prometheus')" >> ${benchmark_run_dir}/promethues/pvc_monitor_1.log
+}
 # start the prometheus load.
 nohup python prometheus-loader.py -g True -p ${graph_period} > /dev/null 2>&1 &
 loader_pid=$(echo $!)
@@ -32,8 +37,6 @@ ${pbench_user_benchmark} sleep ${duration};
 
 # stop the promehteus load.
 kill -9 $loader_pid $db_aging_pid
-
-# test idle
 sleep 300
 
 # dump logs
