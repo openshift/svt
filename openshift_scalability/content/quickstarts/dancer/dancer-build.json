@@ -4,27 +4,27 @@
     "metadata": {
 	"name": "dancer-mysql-example",
 	"annotations": {
+	    "description": "An example Dancer application with a MySQL database",
 	    "source": "https://github.com/openshift/online/blob/master/templates/examples/dancer-mysql.json",
-            "description": "An example Dancer application with a MySQL database. For more information about using this template, including OpenShift considerations, see https://github.com/openshift/dancer-ex/blob/master/README.md.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.",
-            "iconClass": "icon-perl",
-            "tags": "quickstart,perl,dancer,mysql"
+	    "tags": "quickstart,perl,dancer,mysql",
+	    "iconClass": "icon-perl"
 	}
     },
     "labels": {
 	"template": "dancer-mysql-example"
     },
     "objects": [
-        {
-            "apiVersion": "v1",
-            "kind": "ImageStream",
-            "metadata": {
-                "annotations": {
-                    "description": "Keeps track of changes in the application image"
-                },
-                "name": "${NAME}"
-            }
-        },
-        { 
+	{
+	    "kind": "ImageStream",
+	    "apiVersion": "v1",
+	    "metadata": {
+		"name": "dancer-mysql-example",
+		"annotations": {
+		    "description": "Keeps track of changes in the application image"
+		}
+	    }
+	},
+	{
 	    "kind": "BuildConfig",
 	    "apiVersion": "v1",
 	    "metadata": {
@@ -42,32 +42,22 @@
 		    },
 		    "contextDir": "${CONTEXT_DIR}"
 		},
-                "strategy": {
-                    "sourceStrategy": {
-                        "env": [
-                            {
-                                "name": "CPAN_MIRROR",
-                                "value": "${CPAN_MIRROR}"
-                            }
-                        ],
-                        "from": {
-                            "kind": "ImageStreamTag",
-                            "name": "perl:5.24",
-                            "namespace": "${NAMESPACE}"
-                        }
-                    },
-                    "type": "Source"
-                },
+		"strategy": {
+		    "type": "Source",
+		    "sourceStrategy": {
+			"from": {
+			    "kind": "ImageStreamTag",
+			    "namespace": "openshift",
+			    "name": "perl:5.20"
+			}
+		    }
+		},
 		"output": {
 		    "to": {
 			"kind": "ImageStreamTag",
-                        "name": "${NAME}:latest"
-
+			"name": "dancer-mysql-example:latest"
 		    }
 		},
-                "postCommit": {
-                    "script": "perl -I extlib/lib/perl5 -I lib t/*"
-                },
 		"triggers": [
 		    {
 			"type": "ImageChange"
@@ -86,25 +76,11 @@
 	}
     ],
     "parameters": [
-        {
-            "description": "The name assigned to all of the frontend objects defined in this template.",
-            "displayName": "Name",
-            "name": "NAME",
-            "required": true,
-            "value": "dancer-mysql-example"
-        },
-        {
-            "description": "The OpenShift Namespace where the ImageStream resides.",
-            "displayName": "Namespace",
-            "name": "NAMESPACE",
-            "required": true,
-            "value": "openshift"
-        },
 	{
 	    "name": "SOURCE_REPOSITORY_URL",
 	    "displayName": "Git Repository URL",
 	    "description": "The URL of the repository with your application source code.",
-	    "value": "https://github.com/openshift/dancer-ex.git"
+	    "value": "https://github.com/redhat-performance/dancer-ex.git"
 	},
 	{
 	    "name": "SOURCE_REPOSITORY_REF",
@@ -123,11 +99,6 @@
 	    "generate": "expression",
 	    "from": "[a-zA-Z0-9]{40}"
 	},
-        {
-            "description": "The custom CPAN mirror URL",
-            "displayName": "Custom CPAN Mirror URL",
-            "name": "CPAN_MIRROR"
-        },
     {
       "name": "IDENTIFIER",
       "description": "Number to append to the name of resources",

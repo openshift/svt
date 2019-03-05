@@ -89,7 +89,6 @@ def parse(executor, result, futures):
             status = words[4]
             namespace = words[0]
             name = words[1]
-            duration_string = words[-1]
             idx = namespace + ":" + name
             if (status.startswith("Failed")) or (status == "Cancelled") or \
                     (status.startswith("Error")):
@@ -102,8 +101,9 @@ def parse(executor, result, futures):
             elif "Complete" == words[4]:
                 if idx in global_build_status.keys():
                     if global_build_status[idx] < STATUS_COMPLETE:
-                        logger.info(idx + " Complete, Duration = " + duration_string)
+                        logger.info(idx + " Complete")
                         global_build_status[idx] = STATUS_COMPLETE
+                    duration_string = words[-1]
                     if global_build_status[idx] < STATUS_LOGGING:
                         futures.append(
                             executor.submit(do_post_actions, namespace,

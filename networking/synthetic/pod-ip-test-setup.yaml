@@ -12,10 +12,10 @@
   tasks:
   - name: Create directory for uperf docker image resources
     file: path=/tmp/uperf state=directory
-
+    
   - name: Copy Dockerfile to sender
     copy: src=uperf/Dockerfile dest=/tmp/uperf/Dockerfile
-
+    
   - name: Build uperf docker image
     shell: docker build --tag centos/uperf /tmp/uperf
 
@@ -27,11 +27,11 @@
 
   - stat: path=/root/.ssh/id_rsa
     register: id_rsa
-
+    
   - name: Create /root/.ssh/id_rsa if it does not exist
     shell: ssh-keygen -f /root/.ssh/id_rsa -N ''
     when: id_rsa.stat.islnk is not defined
-
+    
   - name: Create directory for uperf resources
     file: path=/tmp/origin state=directory
 
@@ -44,7 +44,7 @@
   - name: Add uperf scc
     shell: oc create -f /tmp/origin/uperf-scc.json
     ignore_errors: yes
-
+    
   - name: Label sender nodes
     shell: oc label node {{ item }} --overwrite region={{ sender_region }}
     with_items: "{{ groups['sender'] }}"
@@ -93,7 +93,6 @@
     register: oc_get_receivers
 
   vars:
-    register_pbench: true
     uperf_clients: "{{ (oc_get_senders.stdout | from_json)['items'] | join(',', attribute='status.podIP') }}"
     uperf_servers: "{{ (oc_get_receivers.stdout | from_json)['items'] | join(',', attribute='status.podIP') }}"
 
@@ -102,16 +101,13 @@
 #    patch: >
 #      src=content/pbench-uperf.patch
 #      dest=/opt/pbench-agent/bench-scripts/pbench-uperf
-
+      
   - name: Register pbench tools on master
     shell: pbench-register-tool-set --label={{ pbench_label }}
-    when: register_pbench
 
   - name: Register pbench tools on remotes
     shell: pbench-register-tool-set --label={{ pbench_label }} --remote={{ item }}
-    when:
-      - pbench_remotes != "None"
-      - register_pbench
+    when: pbench_remotes != "None"
     with_items: "{{ pbench_remotes }}"
 
   - name: Run pbench-uperf for TCP benchmarks
@@ -148,12 +144,12 @@
   - name: Kill pbench tools
     shell: pbench-kill-tools
 
-#  - name: Clear pbench tools
-#    shell: pbench-clear-tools
+  - name: Clear pbench tools
+    shell: pbench-clear-tools
 
   - name: Delete uperf projects
     shell: oc delete project uperf-{{ item }}
     with_sequence: start=1 end={{ uperf_pod_number }}
-
+    
   - name: Clear pbench results
-    shell: pbench-clear-results
+    shell: pbench-clear-results    

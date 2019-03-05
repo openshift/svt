@@ -81,31 +81,21 @@ $ python network-test.py nodeIP --master <machine1-ip> --node <machine2-ip>
 ```
 
 ### Running all the combinations
-- The network tests can be run for various protocols and msg sizes. 
-  If we want to run ALL the tests for all the combinations then run the following:
+- Update config.yaml with master and nodes
+- Run the tests with following 
 ```
+$ nohup ./start-network-test.sh >> run.log & tail -f run.log
+OR
 $ nohup ./start-network-test.sh FULL >> run.log & tail -f run.log
 ```
 
 ### Running the tests in CI friendly mode
-  If we want to run network tests just as part of the CI pipeline then
-  Run the tests with following: 
+- Update config.yaml with master and nodes
+- Run the tests with following 
 ```
 $ nohup ./start-network-test.sh CI >> run.log & tail -f run.log
 
 ```
-
-### Running the tests in INT mode
-  If we want to run network tests majority of tests but not all,
-  which constitutes the intermediate mode then
-  run the tests with following: 
-```
-$ nohup ./start-network-test.sh INT >> run.log & tail -f run.log
-OR
-$ nohup ./start-network-test.sh >> run.log & tail -f run.log
-
-```
-
 
 # STAC-N1 tests
 

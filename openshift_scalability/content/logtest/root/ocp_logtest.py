@@ -17,6 +17,7 @@ hostname = socket.gethostname()
 #  - run until stopped
 def determine_run_time() :
     if int(options.time) > 0 :
+        print "time option found, num-lines option ignored"
         fixed_count = False
         infinite = False
         fixed_time = True
@@ -52,21 +53,18 @@ def delay(sleep_time,num_messages) :
 # When file input used, pull a line from the file or re-open file if wrapped/eof
 def next_line_from_file() :
     global infile
+    current_line = ""
     if infile :
-        in_line = infile.readline()
-        if in_line == "" :
-            infile.close()
-            infile = open(options.file,'r')
+        while len(current_line) < options.line_length :
             in_line = infile.readline()
+            if in_line == "" :
+                infile.close()
+                infile = open(options.file,'r')
+            else :
+                current_line = current_line + " " + in_line.rstrip()
 
-    return in_line.rstrip()
 
-def next_line_from_file_by_length(line_length):
-    current_line = next_line_from_file()
-    while (len(current_line) < line_length) :
-        current_line = current_line + " " + next_line_from_file()
-
-    return current_line[:line_length]
+    return current_line[:options.line_length]
 
 def get_word() :
     return ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(options.word_length))
@@ -78,18 +76,13 @@ def get_new_line():
         while len(current_line) < options.line_length :
             current_line = current_line + get_word() + " "
     else:
-        current_line = next_line_from_file_by_length(options.length)
+        current_line = next_line_from_file()
 
     return current_line[:options.line_length]
-
-def get_raw_line():
-    return next_line_from_file()
 
 def single_line():
     if options.fixed_line and (not fixed_line == ""):
         single_line = fixed_line
-    elif options.raw:
-        single_line = get_raw_line()
     else:
         single_line = get_new_line()
 
@@ -97,9 +90,7 @@ def single_line():
 
 def create_message(seq_number, msg) :
     global hostname
-    if not options.raw :
-       msg = hostname + " : " + str(seq_number) + " : " + msg
-    return msg
+    return hostname + " : " + str(seq_number) + " : " + msg
 
 
 # Fixed time period, in seconds
@@ -150,14 +141,12 @@ def init_logger(my_logger):
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         fh = logging.FileHandler(options.log_on_file)
-        if not options.raw :
-           fh.setFormatter(formatter)
+        fh.setFormatter(formatter)
         my_logger.addHandler(fh)
     else :
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         sh = logging.StreamHandler()
-        if not options.raw :
-           sh.setFormatter(formatter)
+        sh.setFormatter(formatter)
         my_logger.addHandler(sh)
 
 
@@ -176,8 +165,6 @@ if __name__ ==  "__main__":
                      help="file for input text")
     parser.add_option("-j","--journal", dest="journal", action="store_true", default=False,
                       help="use logger to log messages to journald instead of stdout")
-    parser.add_option("--raw", dest="raw", action="store_true", default=False,
-                      help="log raw lines from a file with no timestamp or counters")
     parser.add_option("-o", "--log-on-file", dest="log_on_file",
                       help="the file path to which the log outputs")
     parser.add_option("-r", "--rate", dest="rate", type="float", default=10.0,
@@ -192,14 +179,9 @@ if __name__ ==  "__main__":
     if not options.file == "" :
         infile = open(options.file,'r')
 
-    if options.raw and options.file == "":
-        print "ERROR: --raw mode can only be used if --file is specified"
-        exit(-1)
-
     options.sleep_time = 0.0
     if options.rate > 0.0 : 
         options.sleep_time = 60.0/options.rate
-
 
     logger = logging.getLogger('SVTLogger')
     init_logger(logger)

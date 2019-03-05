@@ -1,6 +1,5 @@
 ---
 test_project_name: storage-test-mongo
-test_project_number: 2
 delete_test_project_before_test: true
 tmp_folder: /tmp/mongodb-test
 MEMORY_LIMIT: 4096Mi
@@ -17,4 +16,3 @@ ycsb_threads: 16
 workload: workloada,workloadb,workloadc,workloadd,workloade,workloadf,workload_template
 recordcount: 1000       
 operationcount: 1000
-distribution: uniform

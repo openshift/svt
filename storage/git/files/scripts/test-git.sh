@@ -51,7 +51,7 @@ do
   rm_start_time=$(date +%s)
   oc exec -n ${NAMESPACE} "${GIT_POD}" -- rm -rf "${WORK_GIT_DIR}/untar"
   rm_time=$(($(date +%s) - ${rm_start_time}))
-  echo "${NAMESPACE} iteration: ${i_index}: rm is done in ${rm_time} secs" | tee -a "${OUTPUT_RESULT_FILE}"
+  echo "${NAMESPACE} iteration: ${i_index}: rm is done in ${rm_start_time} secs" | tee -a "${OUTPUT_RESULT_FILE}"
   MY_TIME=$(($(date +%s) - ${start_time}))
   echo "${NAMESPACE} iteration: ${i_index}: finished in ${MY_TIME} secs" | tee -a "${OUTPUT_RESULT_FILE}"
 done

@@ -39,17 +39,70 @@
     tags:
       - setup
 
-  ### could use our cluster-loader here, but ... :) we need to
-  ### dockerize cluster loader;
-  ### cl has a functionality that check all created objects is in the desired state
-  - name: create oc objects
-    shell: "{{ tmp_folder }}/files/scripts/create-oc-objects.sh {{ test_project_name }} {{ test_project_number }} {{ tmp_folder }} {{ delete_test_project_before_test }} {{ MEMORY_LIMIT }} {{ MONGODB_USER }} {{ MONGODB_PASSWORD }} {{ MONGODB_DATABASE }} {{ VOLUME_CAPACITY }} {{ MONGODB_VERSION }} {{ STORAGE_CLASS_NAME }}"
+  - block:
+      - name: delete project
+        shell: oc delete project {{ test_project_name }}
+        ignore_errors: True
+      - name: wait until the project is gone
+        shell: oc get project {{ test_project_name }}
+        register: get_project_result
+        until: get_project_result.stderr.find(" not found") != -1
+        retries: 30 
+        delay: 10
+        ignore_errors: True
+      - name: fail the test if the project is still there after 300s
+        fail:
+          msg: "the pod is NOT deleted after 300s"
+        when: get_project_result.rc == 0
+    when: delete_test_project_before_test|bool == true
     tags:
       - setup
 
-  ### TODO check out how git test handles
-  ### 1. registration of the jump node
-  ### 2. labelling of remote nodes
+  - name: create test project
+    command:  oc new-project {{ test_project_name }} --skip-config-write=true
+    tags:
+      - setup
+
+  - name: create mongodb
+    shell: oc process -f {{ tmp_folder }}/files/oc/mongodb-persistent-template.yaml -p MEMORY_LIMIT={{ MEMORY_LIMIT }} -p MONGODB_USER={{ MONGODB_USER }} -p MONGODB_PASSWORD={{ MONGODB_PASSWORD }} -p MONGODB_DATABASE={{ MONGODB_DATABASE }} -p VOLUME_CAPACITY={{ VOLUME_CAPACITY }} -p MONGODB_VERSION={{ MONGODB_VERSION }} -p STORAGE_CLASS_NAME={{ STORAGE_CLASS_NAME }} | oc create --namespace={{ test_project_name }} -f -
+    tags:
+      - setup
+
+  - block:
+      - name: wait until the mongodb pod is running
+        shell: oc get pod -n "{{ test_project_name }}" | grep -v deploy | grep mongodb | grep Running
+        register: pod_ready_result
+        until: pod_ready_result.rc == 0
+        retries: 60
+        delay: 10
+        ignore_errors: True
+      - name: fail the test if the pod is NOT running after 600s
+        fail:
+          msg: "the pod is NOT running after 600s"
+        when: pod_ready_result|failed
+    tags:
+      - setup
+
+  - name: create ycsb
+    shell: oc create  --namespace={{ test_project_name }} -f {{ tmp_folder }}/files/oc/dc_ycsb.yaml
+    tags:
+      - setup
+
+  - block:
+      - name: wait until the ycsb pod is running
+        shell: oc get pod -n "{{ test_project_name }}" | grep -v deploy | grep ycsb | grep Running
+        register: pod_ready_result
+        until: pod_ready_result.rc == 0
+        retries: 60
+        delay: 10
+        ignore_errors: True
+      - name: fail the test if the pod is NOT running after 600s
+        fail:
+          msg: "the pod is NOT running after 600s"
+        when: pod_ready_result|failed
+    tags:
+      - setup
+
   - name: register pbench
     shell: |
       pbench-kill-tools
@@ -68,13 +121,8 @@
     tags:
       - run
 
-  - name: run-load the benchmarks
-    command: pbench-user-benchmark --sysinfo=none --config="load_mongodb_ycsb_projects_{{ test_project_number }}_{{ STORAGE_CLASS_NAME }}_{{ workload }}_{{ MEMORY_LIMIT }}_recordcount_{{ recordcount }}_operationcount_{{ operationcount }}_{{ distribution }}_threads_{{ ycsb_threads }}" -- "{{ tmp_folder }}/files/scripts/test-mongo-m-load.sh" "{{ test_project_name }}" "{{ test_project_number }}" "{{ iteration }}" "{{ ycsb_threads }}" "{{ workload }}" "{{ recordcount }}" "{{ operationcount }}"  "{{ distribution }}" 
-    tags:
-      - run
-
-  - name: run the benchmark 
-    command: pbench-user-benchmark --sysinfo=none --config="run_mongodb_ycsb_projects_{{ test_project_number }}_{{ STORAGE_CLASS_NAME }}_{{ workload }}_{{ MEMORY_LIMIT }}_recordcount_{{ recordcount }}_operationcount_{{ operationcount }}_{{ distribution }}_threads_{{ ycsb_threads }}" -- "{{ tmp_folder }}/files/scripts/test-mongo-m-run.sh" "{{ test_project_name }}" "{{ test_project_number }}" "{{ iteration }}" "{{ ycsb_threads }}" "{{ workload }}" "{{ recordcount }}" "{{ operationcount }}"  "{{ distribution }}"
+  - name: run the benchmarks
+    command: pbench-user-benchmark --sysinfo=none --config="mongodb_storage_test_{{ STORAGE_CLASS_NAME }}_{{ workload }}_{{ MEMORY_LIMIT }}_recordcount_{{ recordcount }}_operationcount_{{ operationcount }}" -- "{{ tmp_folder }}/files/scripts/test-mongo.sh" "{{ test_project_name }}" "{{ iteration }}" "{{ ycsb_threads }}" "{{ workload }}" "{{ recordcount }}" "{{ operationcount }}" 
     tags:
       - run
 

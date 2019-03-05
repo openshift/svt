@@ -4,8 +4,8 @@ MAINTAINER Naga Ravi Chaitanya Elluri <nelluri@redhat.com>
 
 # Setup pbench, sshd install dependencies
 RUN rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm && \
-    curl -s https://copr.fedorainfracloud.org/coprs/ndokos/pbench/repo/epel-7/ndokos-pbench-epel-7.repo > /etc/yum.repos.d/copr-pbench.repo && \
-    yum --enablerepo=ndokos-pbench install -y perl-JSON-XS configtools openssh-clients pbench-agent iproute sysvinit-tools \
+    curl -s https://copr.fedorainfracloud.org/coprs/ndokos/pbench-interim/repo/epel-7/ndokos-pbench-interim-epel-7.repo > /etc/yum.repos.d/copr-pbench.repo && \
+    yum --enablerepo=ndokos-pbench-interim install -y configtools openssh-clients pbench-agent iproute sysvinit-tools \
     openssh-server git openssh-server openssh-clients initscripts ansible python-pip which && \
     source /etc/profile.d/pbench-agent.sh && \
     curl -L https://github.com/openshift/origin/releases/download/v1.2.1/openshift-origin-client-tools-v1.2.1-5e723f6-linux-64bit.tar.gz | tar -zx && \
@@ -23,6 +23,5 @@ EXPOSE 2022
 COPY mount.sh /root/mount.sh
 COPY pbench.service /etc/systemd/system/pbench.service
 RUN systemctl enable pbench.service
-RUN mkdir -p /run/systemd/system
 
 ENTRYPOINT ["/usr/sbin/init"]

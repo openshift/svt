@@ -2,6 +2,7 @@
 
 # Script to to run pgbench load test against postgresql pod in kubernetes/Openshift
   
+
 opts=$(getopt -q -o n:t:e:v:m:i:r: --longoptions "namespace:,transactions:,template:,volsize:,memsize:,iterations:,mode:,resultdir:,clients:,scaling:,threads:,storageclass:" -n "getopt.sh" -- "$@");
 
 if [ $? -ne 0 ]; then
@@ -60,7 +61,7 @@ while true; do
         -m|--memsize)
             shift;
             if [ -n "$1" ]; then 
-                memsize="$1"Mi
+                memsize="$1"
                 shift;
             fi
         ;;
@@ -82,7 +83,7 @@ while true; do
             shift; 
             if [ -n "$1" ]; then 
                 resultdir="$1"
-                mkdir -p $resultdir 
+                mkdir $resultdir 
                 shift; 
             fi 
         ;; 
@@ -124,10 +125,9 @@ while true; do
     esac 
 done 
 
-echo $threads
 function create_pod {
         oc new-project $namespace 
-        oc new-app --template=$template -p VOLUME_CAPACITY=${volsize}Gi -p MEMORY_LIMIT=${memsize} -p STORAGE_CLASS=${storageclass}
+        oc new-app --template=$template -p VOLUME_CAPACITY=${volsize}Gi -p MEMORY_LIMIT=${memsize}Gi -p STORAGE_CLASS=${storageclass}
         while [ "$(oc get pods | grep -v deploy | awk '{print $3}' | grep -v STATUS)" != "Running" ] ; do 
 	        sleep 5
         done 
@@ -136,63 +136,29 @@ function create_pod {
 
 function run_test { 
         POD=$(oc get pods | grep postgresql | grep -v deploy | awk '{print $1}')
+
         printf "Running test preparation\n"
         oc exec -i $POD -- bash -c "pgbench -i -s $scaling sampledb"
 
     # run x itterations of test 
-	for thread in $(echo ${threads} | sed -e s/,/" "/g); do
-		for m in $(seq 1 $iterations); do
-            		if [ -n "$resultdir" ]; then
-                		oc exec -i $POD -- bash -c "pgbench -c $clients -j $threads -t $transactions sampledb" 2>&1 | tee -a $resultdir/threads_${thread}_pgbench_run.txt 
-            		elif [ ! -z "$benchmark_run_dir" ]; then 
-                		oc exec -i $POD -- bash -c "pgbench -c $clients -j $threads -t $transactions sampledb" 2>&1 | tee -a $benchmark_run_dir/threads_${thread}_pgbench_run.txt
-            		fi 
-		done
-	done 
+        for m in $(seq 1 $iterations); do
+            if [ -n "$resultdir" ]; then
+                oc exec -i $POD -- bash -c "pgbench -c $clients -j $threads -t $transactions sampledb" >> $resultdir/pgbench_run_$m.txt 
+	            grep "excluding connections establishing" $resultdir/pgbench_run_$m.txt | cut -d'=' -f2 |cut -d' ' -f2  >> $resultdir/excluding_connection_establishing.txt 
+	            grep "including connections establishing" $resultdir/pgbench_run_$m.txt | cut -d'=' -f2 |cut -d' ' -f2 >> $resultdir/including_connections_establishing.txt 
+                # if pbench-user-benchmark is used, then $benchmark_run_dir variable will be present and results will 
+                # be sent to it 
+            elif [ ! -z "$benchmark_run_dir" ]; then 
+                oc exec -i $POD -- bash -c "pgbench -c $clients -j $threads -t $transactions sampledb" >> $benchmark_run_dir/pgbench_run_$m.txt
+	            grep "excluding connections establishing" $benchmark_run_dir/pgbench_run_$m.txt | cut -d'=' -f2 |cut -d' ' -f2  >> $benchmark_run_dir/excluding_connection_establishing.txt 
+	            grep "including connections establishing" $benchmark_run_dir/pgbench_run_$m.txt | cut -d'=' -f2 |cut -d' ' -f2 >> $benchmark_run_dir/including_connections_establishing.txt 
+            fi 
 
-	if [ -n "$resultdir" ]; then
-		for thread in $(echo ${threads} | sed -e s/,/" "/g); do
-			grep "including" $resultdir/threads_${thread}_pgbench_run.txt | cut -d'=' -f2 |cut -d' ' -f2 >> $resultdir/threads_${thread}_including_connections_establishing.txt
-		done 
-	elif [ ! -z "$benchmark_run_dir" ]; then
-		for thread in $(echo ${threads} | sed -e s/,/" "/g); do
-			grep "including" $benchmark_run_dir/threads_${thread}_pgbench_run.txt | cut -d'=' -f2 |cut -d' ' -f2 >> $benchmark_run_dir/threads_${thread}_including_connections_establishing.txt
-		done 
-	fi 
+        done 
 } 
 
-### draw results 
-
-function draw_result {
-
-	if [ -n "$resultdir" ] ; then 
-		for thread in $(echo ${threads} | sed -e s/,/" "/g); do
-			echo "Thread-${thread}" > $resultdir/results_thread_${thread}.csv 
-			cat  $resultdir/threads_${thread}_including_connections_establishing.txt >>  $resultdir/results_thread_${thread}.csv
-		done 
-
-		paste -d',' ${resultdir}/results_thread_*  >> ${resultdir}/results_storageclass_${storageclass}_clients_${clients}_transactions_${transactions}_scaling_${scaling}.csv
-		curl -o ${resultdir}/drawresults.py https://raw.githubusercontent.com/ekuric/openshift/master/postgresql/drawresults.py
-
-		python ${resultdir}/drawresults.py -r ${resultdir}/results_storageclass_${storageclass}_clients_${clients}_transactions_${transactions}_scaling_${scaling}.csv -i ff -o ${resultdir}/pgbench_results_storageclass_${storageclass}_clients_${clients}_transactions_${transactions}_scaling_${scaling} -t "Clients:${clients} - Transactions:${transactions} - Scaling:${scaling}" -p bars -x "Test iteration" -y "Transactions/Second (tps/sec)" --series=${iterations}
-
-	elif [ ! -z "$benchmark_run_dir" ] ; then 
-		for thread in $(echo ${threads} | sed -e s/,/" "/g); do
-			echo "Thread-${thread}" > $benchmark_run_dir/results_thread_${thread}.csv
-			cat $benchmark_run_dir/threads_${thread}_including_connections_establishing.txt >>  $benchmark_run_dir/results_thread_${thread}.csv
-		done 
-
-		paste -d',' $benchmark_run_dir/results_thread_*  >> $benchmark_run_dir/results_storageclass_${storageclass}_clients_${clients}_transactions_${transactions}_scaling_${scaling}.csv
-                #curl -o $benchmark_run_dir/drawresults.py https://raw.githubusercontent.com/ekuric/openshift/master/postgresql/drawresults.py
-
-		#python $benchmark_run_dir/drawresults.py -r $benchmark_run_dir/results_storageclass_${storageclass}_clients_${clients}_transactions_${transactions}_scaling_${scaling}.csv -i ff -o $benchmark_run_dir/pgbench_results_storageclass_${storageclass}_clients_${clients}_transactions_${transactions}_scaling_${scaling} -t "Clients:${clients} - Transactions:${transactions} - Scaling:${scaling}" -p bars -x "Test iteration" -y "Transactions/Second (tps/sec)" --series=${iterations}
-	fi 
-
-}
-
 function volume_setup {
-    # this function will be omitted once storage class params are moved to storageclass 
-
+    
     CNSPOJECT=$(oc get pods --all-namespaces  | grep glusterfs-storage | awk '{print $1}'  | head -1)
     CNSPOD=$(oc get pods --all-namespaces  | grep glusterfs-storage | awk '{print $2}'  | head -1)
     PV=$(oc get pvc | grep Bound | awk '{print $3}')
@@ -207,6 +173,8 @@ function volume_setup {
     oc exec -n $CNSPOJECT $CNSPOD -- gluster volume set $GLUSTERVOLUME performance.read-ahead off 
     oc exec -n $CNSPOJECT $CNSPOD -- gluster volume set $GLUSTERVOLUME performance.io-cache off 
     oc exec -n $CNSPOJECT $CNSPOD -- gluster volume set $GLUSTERVOLUME performance.readdir-ahead off
+   
+    # add more options here - make it parameters 
 }
 
 function delete_project {
@@ -214,7 +182,7 @@ function delete_project {
     oc delete pods -n $namespace --all 
     oc delete pvc -n $namespace --all 
     oc delete project $namespace
-    sleep 30
+    sleep 100 
 }
 
 # necessary to polish this ... 
@@ -222,19 +190,16 @@ case $mode in
     cnsblock)
         create_pod
         run_test 	
-    	draw_result
         delete_project
     ;;
     cnsfile)
         create_pod
         volume_setup
         run_test
-        draw_result 
         delete_project
     ;;
     otherstorage)
         create_pod
         run_test
-        draw_result 
         delete_project
 esac 

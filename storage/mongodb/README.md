@@ -46,7 +46,6 @@ If executed this way, it will pick up what is specified in **external_vars.yaml*
 ```
 ---
 test_project_name: storage-test-mongo
-test_project_number: 2
 delete_test_project_before_test: true
 tmp_folder: /tmp/mongodb-test
 MEMORY_LIMIT: 4096Mi
@@ -63,31 +62,28 @@ ycsb_threads: 16
 workload: workloada,workloadb,workloadc,workloadd,workloade,workloadf,workload_template
 recordcount: 1000       
 operationcount: 1000
-distribution: uniform
 ``` 
 If necessary adapt **external_vars.yaml** to correspond specific test needs 
 
-Also, there is wrapper script **runmongo.sh** which enable us to specify different values of RAM for MongoDB and run all these combination in one run 
+Also, there is small wrapper script **runmongo.sh** which enable us to specify different values of RAM for MongoDB and run all these combination in one run 
 
 Example of usage is 
 ```
-$ ./runmongo.sh memory_limit ycsb_threads jump_host workload iterations recordcount operationcount storageclass volumecapacity distribution number_of_projects 
+$ ./runmongo.sh memory_limit ycsb_threads jump_host workload iterations recordcount operationcount storageclass volumecapacity
 ```
 
 For example if we execute below 
 
 ```
-$ ./runmongo.sh 1024 10,20 jump_host_hostname workloada,workloadb 10 1000 1000 gluster-storage 10 uniform 10 
+$ ./runmongo.sh 1024 10,20 jump_host_hostname workloada,workloadb 10 1000 1000 gluster-storage 10
 ``` 
-This will allocate **1024Mi** RAM for MongoDB pod, run YCSB with 10,20 threads, execute **workloada** and **workloadb**, run 10 iterations with 
-**recordcount=1000** , **operationcount=1000**
-Storage used for Mongodb pod will be carved from storageclass with name **gluster-storage** and size of PVC will be  **10Gi** 
-YCSB **uniform** distribution will be used and 10 test projects will be created 
+This will allocate **1024Mi** RAM for MongoDB, run YCSB with 10,20 threads, execute **workloada** and **workloadb**, run 10 iterations with 
+**recordcount=1000** , **operationcount=1000** using storageclass with name **gluster-storage** to allocated storage for MongoDB pod and size of PVC volume will be **10Gi** 
 
 It is also possible to execute test with various values for memory for MongoDB pod all in one run, eg.
 
 ```
-$ ./runmongo.sh 512,1024,2048,4096 10,20,30,40 jump_host_hostname workloada,workloadb,workloadc,workloade 10 1000 1000 gluster-storage 10 uniform 10 
+$ ./runmongo.sh 512,1024,2048,4096 10,20,30,40 jump_host_hostname workloada,workloadb,workloadc,workloade 10 1000 1000 gluster-storage 10Gi
 ``` 
 
 Last command will execute YCSB test against MongoDB pod for various combination
