@@ -59,7 +59,7 @@ function access_applications
   do
     proj=${projects[$var]}
     text=${page_text[$var]}
-    content=$(curl -k http://$(oc get routes -n $proj --no-headers | awk '{print$2}'))
+    content=$(curl -k http://$(oc get routes -n $proj --no-headers | awk '{print $2}'))
     echo $content | grep "$text"
     if [[ $? -ne 0 ]]
     then
@@ -89,9 +89,9 @@ oc label namespace cakephp --overwrite purpose=rel
 oc new-app --template=cakephp-mysql-example    
 oc new-project eap
 oc label namespace eap --overwrite purpose=rel
-oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/secrets/eap-app-secret.json
+oc create -f https://raw.githubusercontent.com/jboss-openshift/application-templates/master/secrets/eap7-app-secret.json
 oc create -f /root/svt/reliability/eap-secret.json
-oc new-app --template=eap64-mysql-s2i
+oc new-app --template=eap71-mysql-s2i
 oc new-project dancer
 oc label namespace dancer --overwrite purpose=rel
 oc new-app --template=dancer-mysql-example
