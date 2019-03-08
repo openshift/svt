@@ -1,6 +1,7 @@
 projects:
   - num: 3
     basename: c
+    nodeselector: "node-role.kubernetes.io/worker="
     templates:
       -
         num: 3
@@ -11,8 +12,8 @@ projects:
       -
         num: 1
         file: ./content/image-stream-template.json
-      - 
-        num: 2   
+      -
+        num: 2
         file: ./content/deployment-config-1rep-pause-template.json
         parameters:
           -

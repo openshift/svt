@@ -5,6 +5,14 @@ from datetime import datetime
 from clusterloaderstorage import *
 from multiprocessing import Process
 from flask import Flask, request
+import logging
+
+formatter = logging.Formatter(fmt='%(asctime)s :: %(process)d :: %(levelname)-8s :: %(message)s', datefmt='%Y-%m-%d::%H:%M:%S')
+screen_handler = logging.StreamHandler(stream=sys.stdout)
+screen_handler.setFormatter(formatter)
+logger = logging.getLogger("clusterloader")
+logger.setLevel(logging.DEBUG)
+logger.addHandler(screen_handler)
 
 def calc_time(timestr):
     tlist = timestr.split()
@@ -17,20 +25,40 @@ def calc_time(timestr):
     elif tlist[1] == "hr":
         return int(tlist[0]) * 3600
     else:
-        print "Invalid delay in rate_limit\nExitting ........"
+        logger.error("Invalid delay in rate_limit Exitting ........")
         sys.exit()
 
 def oc_command(args, globalvars):
+    """Run the OC/kubectl Command and return tuple with stdout, stderr, and return code"""
     tmpfile=tempfile.NamedTemporaryFile()
     # see https://github.com/openshift/origin/issues/7063 for details why this is done.
     shutil.copyfile(globalvars["kubeconfig"], tmpfile.name)
-    ret = subprocess.check_output("KUBECONFIG="+tmpfile.name+" "+args, shell=True)
-    if globalvars["debugoption"]:
-        print args
-    if args.find("oc process") == -1:
-        print ret
+    cmd = "KUBECONFIG=" + tmpfile.name + " " + args
+    process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = process.communicate()
+    if process.returncode != 0:
+        logger.error("OC_Command: {} :: Return Code: {}".format(cmd, process.returncode))
+    else:
+        logger.info("OC_Command: {} :: Return Code: {}".format(cmd, process.returncode))
+    logger.debug("stdout: %s", str(stdout).strip())
+    logger.debug("stderr: %s", str(stderr).strip())
     tmpfile.close()
-    return ret
+    return stdout, stderr, process.returncode
+
+def oc_command_with_retry(args, globalvars, max_retries=10, backoff_period=10):
+    """Run the oc_command function but check returncode for 0, retry otherwise"""
+    output = oc_command(args, globalvars)
+    retry_count = 0
+    while (output[2] != 0):
+        if retry_count >= max_retries:
+            logger.error("Unable to complete with {} retries".format(retry_count))
+            break
+        retry_count += 1
+        retry_time = retry_count * backoff_period
+        logger.warn("{} Retry of OC command in {}s".format(retry_count, retry_time))
+        time.sleep(retry_time)
+        output = oc_command(args, globalvars)
+    return output
 
 def login(user,passwd,master):
     return subprocess.check_output("oc login --insecure-skip-tls-verify=true -u " + user + " -p " + passwd + " " + master,shell=True)
@@ -41,13 +69,13 @@ def check_oc_version(globalvars):
 
     if globalvars["kubeopt"]:
         version_string = oc_command("kubectl version", globalvars)
-        result = re.search("Client Version: version.Info\{Major:\"(\d+)\", Minor:\"(\d+)\".*", version_string)
+        result = re.search("Client Version: version.Info\{Major:\"(\d+)\", Minor:\"(\d+)\".*", version_string[0])
         if result:
             major_version = result.group(1)
             minor_version = result.group(2)
     else:
         version_string = oc_command("oc version", globalvars)
-        result = re.search("oc v(\d+)\.(\d+)\..*", version_string)
+        result = re.search("oc v(\d+)\.(\d+)\..*", version_string[0])
         if result:
             major_version = result.group(1)
             minor_version = result.group(2)
@@ -69,8 +97,7 @@ def get_route():
     return localhost, router_ip, routes_list
 
 def create_template(templatefile, num, parameters, globalvars):
-    if globalvars["debugoption"]:
-        print "create_template function called"
+    logger.debug("create_template function called")
 
     parameter_flag = "-p"
 
@@ -131,15 +158,15 @@ def create_template(templatefile, num, parameters, globalvars):
                     cmdstring += " " + parameter_flag + " %s='%s'" % (key, value)
         cmdstring += " " + parameter_flag + " IDENTIFIER=%i" % i
 
-        processedstr = oc_command(cmdstring, globalvars)
-        templatejson = json.loads(processedstr)
+        processedstr = oc_command_with_retry(cmdstring, globalvars)
+        templatejson = json.loads(processedstr[0])
         json.dump(templatejson, tmpfile)
         tmpfile.flush()
         if globalvars["kubeopt"]:
             check = oc_command("kubectl create -f "+tmpfile.name + \
                 " --namespace %s" % globalvars["namespace"], globalvars)
         else:
-            check = oc_command("oc create -f "+ tmpfile.name + \
+            check = oc_command_with_retry("oc create -f "+ tmpfile.name + \
                 " --namespace %s" % globalvars["namespace"], globalvars)
         if "tuningset" in globalvars:
             if "templates" in globalvars["tuningset"]:
@@ -161,18 +188,20 @@ def create_template(templatefile, num, parameters, globalvars):
 
 def create_wlg_targets(cm_targets, globalvars):
     namespace = globalvars["namespace"]
-    try:
-        oc_command("oc delete configmap %s -n %s" % (cm_targets, namespace), globalvars)
-    except subprocess.CalledProcessError:
-        pass
+    output = oc_command("oc delete configmap %s -n %s" % (cm_targets, namespace), globalvars)
+    if output[2] > 0:
+        logger.debug("Command failed but pass according to old code")
+    # try:
+    #     oc_command("oc delete configmap %s -n %s" % (cm_targets, namespace), globalvars)
+    # except subprocess.CalledProcessError:
+    #     pass
     ret = oc_command("oc get routes --all-namespaces --no-headers | awk '{print $3}' | oc create configmap %s --from-file=wlg-targets=/dev/stdin -n %s" %
           (cm_targets, namespace), globalvars)
-    return ret
+    return ret[0]
 
 
 def create_service(servconfig, num, globalvars):
-    if globalvars["debugoption"]:
-        print "create_service function called"
+    logger.debug("create_service function called")
 
     data = {}
     timings = {}
@@ -198,8 +227,7 @@ def create_service(servconfig, num, globalvars):
 
 
 def create_pods(podcfg, num, storagetype, globalvars):
-    if globalvars["debugoption"]:
-        print "create_pods function called"
+    logger.debug("create_pods function called")
 
     namespace = podcfg["metadata"]["namespace"]
     data = {}
@@ -288,8 +316,7 @@ def create_pods(podcfg, num, storagetype, globalvars):
 
 
 def pod_data(globalvars):
-    if globalvars["debugoption"]:
-        print "pod_data function called"
+    logger.debug("pod_data function called")
 
     pend_pods = globalvars["pend_pods"]
     namespace = globalvars["namespace"]
@@ -298,7 +325,7 @@ def pod_data(globalvars):
             getpods = oc_command("kubectl get pods --namespace " + namespace, globalvars)
         else:
             getpods = oc_command("oc get pods -n " + namespace, globalvars)
-        all_status = getpods.split("\n")
+        all_status = getpods[0].split("\n")
 
         size = len(all_status)
         all_status = all_status[1:size - 1]
@@ -311,8 +338,7 @@ def pod_data(globalvars):
 
 
 def create_rc(rc_config, num, globalvars):
-    if globalvars["debugoption"]:
-        print "create_rc function called"
+    logger.debug("create_rc function called")
 
     i = 0
     data = rc_config
@@ -338,8 +364,7 @@ def create_rc(rc_config, num, globalvars):
 
 
 def create_user(usercfg, globalvars):
-    if globalvars["debugoption"]:
-        print "create_user function called"
+    logger.debug("create_user function called")
 
     namespace = globalvars["namespace"]
     basename = usercfg["basename"]
@@ -360,8 +385,7 @@ def create_user(usercfg, globalvars):
                         password, shell=True)
         oc_command("oc adm policy add-role-to-user " + role + " " + name + \
                         " -n " + namespace, globalvars)
-        print "Created User: " + name + " :: " + "Project: " + namespace + \
-              " :: " + "role: " + role
+        logger.info("Created User: " + name + " :: " + "Project: " + namespace + " :: " + "role: " + role)
         i = i + 1
 
 
@@ -369,7 +393,7 @@ def project_exists(projname, globalvars) :
     exists = False
     try :
         cmd = "kubectl" if globalvars["kubeopt"] else "oc"
-        output = oc_command(cmd + " get project -o name " + projname, globalvars).rstrip()
+        output = oc_command(cmd + " get project -o name " + projname, globalvars)[0].rstrip()
         if output.endswith(projname) :
             exists = True
     except subprocess.CalledProcessError : # this is ok, means the project does not already exist
@@ -386,7 +410,7 @@ def delete_project(projname, globalvars) :
     retries = 0
     while project_exists(projname,globalvars) and (retries < 10) :
         retries += 1
-        print "Project " + projname + " still exists, waiting 10 seconds"
+        logger.info("Project " + projname + " still exists, waiting 10 seconds")
         time.sleep(10)
 
     # not deleted after retries, bail out
@@ -401,8 +425,7 @@ def single_project(testconfig, projname, globalvars):
         elif testconfig["ifexists"] == "reuse" :
             globalvars["createproj"] = False
         else:
-            print "ERROR: Project " + projname + " already exists. \
-                Use ifexists=reuse/delete in config"
+            logger.error("Project " + projname + " already exists. Use ifexists=reuse/delete in config")
             return
 
     if globalvars["createproj"]:
@@ -417,8 +440,12 @@ def single_project(testconfig, projname, globalvars):
             oc_command("kubectl create -f %s" % tmpfile.name,globalvars)
             oc_command("kubectl label --overwrite namespace " + projname +" purpose=test", globalvars)
         else:
-            oc_command("oc new-project " + projname,globalvars)
-            oc_command("oc label --overwrite namespace " + projname +" purpose=test", globalvars)
+            if 'nodeselector' in testconfig:
+                node_selector = " --node-selector=\"" + testconfig['nodeselector'] + "\""
+                oc_command_with_retry("oc adm new-project " + projname + node_selector,globalvars)
+            else:
+                oc_command_with_retry("oc new-project " + projname,globalvars)
+            oc_command_with_retry("oc label --overwrite namespace " + projname +" purpose=test", globalvars)
     else:
         pass
 
@@ -483,7 +510,7 @@ def autogen_pod_handler(globalvars):
        proc.terminate()
        proc.join()
 
-   print "Load completed"
+   logger.info("Load completed")
 
 def autogen_pod_wait(pods_running, num_expected):
     while len(pods_running) != num_expected:
@@ -495,8 +522,7 @@ def autogen_pod_wait(pods_running, num_expected):
     return pods_running
 
 def project_handler(testconfig, globalvars):
-    if globalvars["debugoption"]:
-        print "project_handler function called"
+    logger.debug("project_handler function called")
 
     total_projs = testconfig["num"]
     basename = testconfig["basename"]
@@ -517,12 +543,12 @@ def project_handler(testconfig, globalvars):
             else:
                 projname = basename
                 if "ifexists" not in testconfig:
-                    print "Parameter 'ifexists' not specified. Using 'default' value."
+                    logger.info("Parameter 'ifexists' not specified. Using 'default' value.")
                     testconfig["ifexists"] = "default"
                 if testconfig["ifexists"] != "reuse" :
                     projname = basename + str(i)
 
-                print "forking %s"%projname
+                logger.info("forking %s"%projname)
                 single_project(testconfig, projname, globalvars)
                 os._exit(0)
         for k, child in enumerate(children):
@@ -530,8 +556,7 @@ def project_handler(testconfig, globalvars):
 
 
 def quota_handler(inputquota, globalvars):
-    if globalvars["debugoption"]:
-        print "Function :: quota_handler"
+    logger.debug("Function :: quota_handler")
 
     quota = globalvars["quota"]
     quotafile = quota["file"]
@@ -553,10 +578,9 @@ def quota_handler(inputquota, globalvars):
 
 
 def template_handler(templates, globalvars):
-    if globalvars["debugoption"]:
-        print "template_handler function called"
+    logger.debug("template_handler function called")
 
-    print "templates: ", templates
+    logger.info("templates: %s", templates)
     for template in templates:
         num = int(template["num"])
         templatefile = template["file"]
@@ -577,8 +601,7 @@ def template_handler(templates, globalvars):
 
 
 def service_handler(inputservs, globalvars):
-    if globalvars["debugoption"]:
-        print "service_handler function called"
+    logger.debug("service_handler function called")
 
     namespace = globalvars["namespace"]
     globalvars["curprojenv"]["services"] = []
@@ -729,8 +752,7 @@ def gluster_image_create():
 def nfs_image_create():
 """
 def pod_handler(inputpods, globalvars):
-    if globalvars["debugoption"]:
-        print "pod_handler function called"
+    logger.debug("pod_handler function called")
 
     namespace = globalvars["namespace"]
     total_pods = int(inputpods[0]["total"])
@@ -832,8 +854,7 @@ def pod_handler(inputpods, globalvars):
 
 
 def rc_handler(inputrcs, globalvars):
-    if globalvars["debugoption"]:
-        print "rc_handler function called"
+    logger.debug("rc_handler function called")
 
     namespace = globalvars["namespace"]
     globalvars["curprojenv"]["rcs"] = []
@@ -859,8 +880,7 @@ def rc_handler(inputrcs, globalvars):
 
 
 def user_handler(inputusers, globalvars):
-    if globalvars["debugoption"]:
-        print "user_handler function called"
+    logger.info("user_handler function called")
 
     globalvars["curprojenv"]["users"] = []
 
@@ -875,7 +895,7 @@ def find_tuning(tuningsets, name):
         else:
             continue
 
-    print "Failed to find tuningset: " + name + "\nExiting....."
+    logger.error("Failed to find tuningset: " + name + " Exiting.....")
     sys.exit()
 
 
@@ -886,5 +906,5 @@ def find_quota(quotaset, name):
         else:
             continue
 
-    print "Failed to find quota : " + name + "\nExitting ......"
+    logger.error("Failed to find quota : " + name + " Exitting ......")
     sys.exit()
