@@ -179,7 +179,7 @@
       --config={{ pbench_label }}_UDP
 
   - name: Copy pbench results
-    shell: pbench-copy-results
+    shell: pbench-move-results --prefix=networking
 
   - name: Kill pbench tools
     shell: pbench-kill-tools
@@ -190,6 +190,3 @@
   - name: Delete uperf projects
     shell: oc delete project uperf-{{ item }}
     with_sequence: start=1 end={{ uperf_pod_number }}
-
-  - name: Clear pbench results
-    shell: pbench-clear-results
