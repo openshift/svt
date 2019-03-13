@@ -1,16 +1,16 @@
 apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
-  name: pbench-agent
+  name: pbench-agent-masters
   annotations:
   openshift.io/scc: privileged
   labels:
-    name: pbench-agent
+    name: pbench-agent-masters
 spec:
   template:
     metadata:
       labels:
-        name: pbench-agent
+        name: pbench-agent-masters
     spec:
       hostPID: true
       hostNetwork: true
@@ -57,4 +57,8 @@ spec:
           hostPath:
             path: /etc/pki
       nodeSelector: 
-        pbench_role: agent
+        node-role.kubernetes.io/master: ""
+      tolerations:
+        - key: "node-role.kubernetes.io/master"
+          operator: "Equal"
+          effect: "NoSchedule"

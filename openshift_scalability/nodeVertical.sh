@@ -10,12 +10,14 @@ fi
 TESTNAME=$1
 TYPE=$2
 ENVIRONMENT=$3
-LABEL="node-role.kubernetes.io/compute=true"
+LABEL="node-role.kubernetes.io/worker"
 CORE_COMPUTE_LABEL="core_app_node=true"
 TEST_LABEL="nodevertical=true"
+CONTAINERIZED_TOOLING_LABEL="pbench_role=agent"
 declare -a CORE_NODES
 NODE_COUNT=0
 pod_count=0
+LABEL_COUNT=2
 
 long_sleep() {
   local sleep_time=180
@@ -29,9 +31,10 @@ golang_clusterloader() {
   # Export kube config
   export KUBECONFIG=${KUBECONFIG-$HOME/.kube/config}
   MY_CONFIG=config/golang/nodeVertical-labeled-nodes
-	sed -i "/- num: 1000/c \ \ \ \ \ \ \ \ \- num: $total_pod_count" /root/svt/openshift_scalability/config/golang/nodeVertical-labeled-nodes.yaml
+  sed -i "/- num: 1000/c \ \ \ \ \ \ \ \ \- num: $total_pod_count" /root/svt/openshift_scalability/config/golang/nodeVertical-labeled-nodes.yaml
   # loading cluster based on yaml config file
-  /usr/libexec/atomic-openshift/extended.test --ginkgo.focus="Load cluster" --viper-config=$MY_CONFIG
+  #/usr/libexec/atomic-openshift/extended.test --ginkgo.focus="Load cluster" --viper-config=$MY_CONFIG
+  VIPERCONFIG=$MY_CONFIG openshift-tests run-test "[Feature:Performance][Serial][Slow] Load cluster should load the cluster [Suite:openshift]"
 }
 
 python_clusterloader() {
@@ -42,13 +45,6 @@ python_clusterloader() {
 # sleeping to gather some steady-state metrics, pre-test
 long_sleep
 
-# set the number of nodes to label based on environment selected
-if [[ "$ENVIRONMENT" == "alderaan" ]]; then
-	LABEL_COUNT=2
-else
-	LABEL_COUNT=4
-fi
-
 # label the core nodes when using Alderaan env
 if [[ "$ENVIRONMENT" == "alderaan" ]]; then
 	for compute in $(oc get nodes -l "$CORE_COMPUTE_LABEL" -o json | jq '.items[].metadata.name'); do
@@ -56,17 +52,18 @@ if [[ "$ENVIRONMENT" == "alderaan" ]]; then
         	CORE_NODES[${#CORE_NODES[@]}]=$compute
         	oc label node $compute "$TEST_LABEL"
 	done
+else
+	for app_node in $(oc get nodes -l "$LABEL","$CONTAINERIZED_TOOLING_LABEL" -o json | jq '.items[].metadata.name'); do
+        	app_node=$(echo $app_node | sed "s/\"//g")
+		CORE_NODES[${#CORE_NODES[@]}]=$app_node
+		oc label node $app_node "$TEST_LABEL"
+	done
 fi
 
 # pick two random app nodes and label them
 for app_node in $(oc get nodes -l "$LABEL" -o json | jq '.items[].metadata.name'); do
 	app_node=$(echo $app_node | sed "s/\"//g")
-	if [[ "$ENVIRONMENT" == "alderaan" ]]; then
-		if ! ($(echo ${CORE_NODES[@]} | grep -q -w $app_node)); then
-			NODE_COUNT=$(( NODE_COUNT+1 ))
-			oc label node $app_node "$TEST_LABEL"
-		fi
-	else
+	if ! ($(echo ${CORE_NODES[@]} | grep -q -w $app_node)); then
 		NODE_COUNT=$(( NODE_COUNT+1 ))
 		oc label node $app_node "$TEST_LABEL"
 	fi
