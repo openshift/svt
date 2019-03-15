@@ -1,20 +1,10 @@
 #!/usr/bin/env python
 
-import subprocess
-import time
-import sys
+from utils import *
 
 #############################################################
 # Test: Node Tuning Operator: core functionality is working #
 #############################################################
-
-if len(sys.argv) < 2:
-    print("Please run with path to ssh key. Ex. python node_tuning_operator.py /home/user/.ssh/libra.pem")
-    raise SystemExit
-path_to_ssh_key = sys.argv[1]
-
-# TODO - turn off colors on demand
-# Setting the output colors
 
 black = "\33[30m"
 red = "\33[31m"
@@ -24,51 +14,6 @@ on_blue = "\33[44m"
 green = "\33[32m"
 on_green = "\33[42m"
 reset = "\33[0m"
-
-
-# TODO - move print/execute steps to some new utils file of find what is in SVT already
-def print_title(title):
-    print("Running test: {}{}{}{}".format(black, on_blue, title, reset))
-
-
-def print_step(step_description):
-    print("\nStep: {}{}{}{}".format(black, on_blue, step_description, reset))
-
-
-def print_command(command_description):
-    print("Executing command: {}{}{}".format(blue, command_description, reset))
-
-
-def print_warning(warning):
-    print("{}{}{}{}".format(black, red, warning, reset))
-
-
-def passed(description):
-    print("{}{}STEP PASSED{}".format(black, on_green, reset))
-    if description is not None:
-        print("{}{}{}".format(green, description, reset))
-
-
-def fail(description):
-    print("{}{}STEP FAILED{}".format(black, on_red, reset))
-    if description is not None:
-        print("{}{}{}".format(red, description, reset))
-    cleanup()
-    raise SystemExit
-
-
-def execute_command(command_to_execute):
-    print_command(command_to_execute)
-    try:
-        value_to_return = subprocess.check_output(command_to_execute, shell=True)
-    except subprocess.CalledProcessError as exc:
-        value_to_return = exc.output
-    return value_to_return
-
-
-def execute_command_on_node(external_address, node_address, command_to_execute):
-    command_on_node = "ssh -i {} -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ProxyCommand='ssh -A -i {} -W %h:%p core@{}' core@{} {}".format(path_to_ssh_key, path_to_ssh_key, external_address, node_address, command_to_execute)
-    return execute_command(command_on_node)
 
 
 def cleanup():
@@ -82,7 +27,7 @@ def restore_default_values():
     execute_command("oc delete tuned default")
     execute_command("oc create -f ./default_values.yaml")
     print("Waiting 15 seconds, to be sure changes has applied")
-    time.sleep(15)
+    countdown(15)
 
 
 # Test execution:
@@ -94,10 +39,6 @@ print_step("Gathering information about nodes")
 nodes = execute_command("oc get nodes --no-headers -o=custom-columns=NAME:.metadata.name").split("\n")
 del nodes[-1]
 passed("List of nodes:\n" + str(nodes))
-# Getting DNS server
-print_step("Getting DNS address")
-external_dns = execute_command("oc get nodes -o jsonpath='{.items[*].status.addresses[?(@.type==\"ExternalDNS\")].address}' | cut -d ' ' -f 1").rstrip()
-passed("External DNS: " + external_dns)
 
 
 # Verification if openshift-cluster-node-tuning-operator is running
@@ -106,7 +47,7 @@ execute_command("oc project openshift-cluster-node-tuning-operator")
 number_of_deployments = execute_command("oc get deployment | grep -c cluster-node-tuning-operator")
 print("Number of deployments: " + number_of_deployments)
 if number_of_deployments == 0:
-    fail("It looks like the openshift-cluster-node-tuning-operator is not running!")
+    fail("It looks like the openshift-cluster-node-tuning-operator is not running!", cleanup)
 
 
 # Verification if all nodes are tuned
@@ -115,7 +56,7 @@ number_of_working_nodes = execute_command("oc get nodes | grep -c Ready")
 print("Number of tuned clusters: {}".format(number_of_tuned_clusters))
 print("Number of working nodes: {}".format(number_of_working_nodes))
 if number_of_tuned_clusters != number_of_working_nodes:
-    fail("Not all nodes are tuned!")
+    fail("Not all nodes are tuned!", cleanup)
 passed(None)
 
 
@@ -150,7 +91,7 @@ tuned_pod = execute_command("oc get pods -o wide | grep tuned | grep {} | cut -d
 tuning_applied_for_label_before = int(execute_command("oc logs {} | grep -c \"\'{}\' applied\"".format(tuned_pod, profile)))
 execute_command("oc label pod web -n my-logging-project  tuned.openshift.io/elasticsearch=")
 print("Waiting 120 seconds, to be sure changes has applied")
-time.sleep(120)
+countdown(120)
 tuning_applied_for_label_after = int(execute_command("oc logs {} | grep -c \"\'{}\' applied\"".format(tuned_pod, profile)))
 
 print("\nResults:")
@@ -159,7 +100,7 @@ print("{}\t{}\t{}".format(tuned_pod, tuning_applied_for_label_before, tuning_app
 if tuning_applied_for_label_after > tuning_applied_for_label_before:
     passed(None)
 else:
-    fail("Pod {} should be tuned for {} profile.".format(tuned_pod, profile))
+    fail("Pod {} should be tuned for {} profile.".format(tuned_pod, profile), cleanup)
 
 
 # Verification that increasing net.netfilter.nf_conntrack_max will affect every node
@@ -176,20 +117,20 @@ execute_command("oc get tuned default -o yaml > default_values_netfilter.yaml")
 execute_command("sed -e \"s/ net.netfilter.nf_conntrack_max={}/ net.netfilter.nf_conntrack_max={}/\" default_values_netfilter.yaml > new_conntract_increase.yaml".format(conntract_max_before, conntract_max_before + 1))
 execute_command("oc apply -f new_conntract_increase.yaml")
 print("Waiting 15 seconds, to be sure changes has applied")
-time.sleep(15)
+countdown(15)
 conntract_max_after = int(execute_command("oc get tuned default -o yaml | grep \" net.netfilter.nf_conntrack_max\" | cut -d '=' -f 2"))
 
 for node in nodes:
     repeats = 0
     while True:
-        conntract_max_on_node = int(execute_command_on_node(external_dns, node, "sysctl net.netfilter.nf_conntrack_max").rstrip().split("=")[1])
+        conntract_max_on_node = int(execute_command_on_node(node, "sysctl net.netfilter.nf_conntrack_max").rstrip().split("=")[1])
         if conntract_max_after == conntract_max_on_node:
             print("Match on node: {} with value: {}".format(node, conntract_max_on_node))
             break
         repeats += 1
-        time.sleep(10)
+        countdown(10)
         if repeats > 12:
-            fail("On node {} net.netfilter.nf_conntrack_max is {} instead {}".format(node, conntract_max_on_node, conntract_max_after))
+            fail("On node {} net.netfilter.nf_conntrack_max is {} instead {}".format(node, conntract_max_on_node, conntract_max_after), cleanup)
 
 print("Checking logs of tuned pods on each node after test")
 tuning_applied_after = []
@@ -203,7 +144,7 @@ for i in range(len(tuned_pods)):
 
 for i in range(len(tuning_applied_before)):
     if tuning_applied_after[i] == tuning_applied_before[i]:
-        fail("All pods should be tuned.")
+        fail("All pods should be tuned.", cleanup)
 passed(None)
 
 
@@ -220,20 +161,20 @@ execute_command("oc get tuned default -o yaml > default_values_netfilter.yaml")
 execute_command("sed -e \"s/ net.netfilter.nf_conntrack_max={}/ net.netfilter.nf_conntrack_max={}/\" default_values_netfilter.yaml > new_conntract_decrease.yaml".format(conntract_max_after, conntract_max_before))
 execute_command("oc apply -f new_conntract_decrease.yaml")
 print("Waiting 15 seconds, to be sure changes has applied")
-time.sleep(15)
+countdown(15)
 conntract_max_after = int(execute_command("oc get tuned default -o yaml | grep \" net.netfilter.nf_conntrack_max\" | cut -d '=' -f 2"))
 
 for node in nodes:
     repeats = 0
     while True:
-        conntract_max_on_node = int(execute_command_on_node(external_dns, node, "sysctl net.netfilter.nf_conntrack_max").rstrip().split("=")[1])
+        conntract_max_on_node = int(execute_command_on_node(node, "sysctl net.netfilter.nf_conntrack_max").rstrip().split("=")[1])
         if conntract_max_after == conntract_max_on_node:
             print("Match on node: {} with value: {}".format(node, conntract_max_on_node))
             break
         repeats += 1
-        time.sleep(10)
+        countdown(10)
         if repeats > 12:
-            fail("On node {} net.netfilter.nf_conntrack_max is {} instead {}".format(node, conntract_max_on_node, conntract_max_after))
+            fail("On node {} net.netfilter.nf_conntrack_max is {} instead {}".format(node, conntract_max_on_node, conntract_max_after), cleanup)
 
 print("Checking logs of tuned pods on each node after test")
 tuning_applied_after = []
@@ -247,7 +188,7 @@ for i in range(len(tuned_pods)):
 
 for i in range(len(tuning_applied_before)):
     if tuning_applied_after[i] == tuning_applied_before[i]:
-        fail("All pods should be tuned.")
+        fail("All pods should be tuned.", cleanup)
 passed(None)
 
 
@@ -258,26 +199,26 @@ tuning_applied_before = []
 for pod in tuned_pods:
     tuning_applied_before.append(int(execute_command("oc logs {} | grep -c applied".format(pod))))
 
-kernel_pid_max_before = int(execute_command_on_node(external_dns, nodes[0], "sysctl kernel.pid_max").rstrip().split("=")[1])
+kernel_pid_max_before = int(execute_command_on_node(nodes[0], "sysctl kernel.pid_max").rstrip().split("=")[1])
 default_kernel_pid = int(execute_command("oc get tuned default -o yaml | grep \" kernel.pid_max\" | cut -d '>' -f 2").rstrip())
 execute_command("oc get tuned default -o yaml > default_values_pid.yaml")
 execute_command("sed -e \"s/ kernel.pid_max=>{}/ kernel.pid_max=>{}/\" default_values_pid.yaml > new_kernel_pid_increase.yaml".format(default_kernel_pid, kernel_pid_max_before + 1))
 execute_command("oc apply -f new_kernel_pid_increase.yaml")
 print("Waiting 15 seconds, to be sure changes has applied")
-time.sleep(15)
+countdown(15)
 kernel_pid_max_after = int(execute_command("oc get tuned default -o yaml | grep \" kernel.pid_max\" | cut -d '>' -f 2").rstrip())
 
 for node in nodes:
     repeats = 0
     while True:
-        kernel_pid_max_on_node = int(execute_command_on_node(external_dns, node, "sysctl kernel.pid_max").rstrip().split("=")[1])
+        kernel_pid_max_on_node = int(execute_command_on_node(node, "sysctl kernel.pid_max").rstrip().split("=")[1])
         if kernel_pid_max_after == kernel_pid_max_on_node:
             print("Match on node: {} with value: {}".format(node, kernel_pid_max_on_node))
             break
         repeats += 1
-        time.sleep(10)
+        countdown(10)
         if repeats == 12:
-            fail("On node {} kernel.pid_max is {} instead {}".format(node, kernel_pid_max_on_node, kernel_pid_max_after))
+            fail("On node {} kernel.pid_max is {} instead {}".format(node, kernel_pid_max_on_node, kernel_pid_max_after), cleanup)
 
 print("Checking logs of tuned pods on each node after test")
 tuning_applied_after = []
@@ -291,7 +232,7 @@ for i in range(len(tuned_pods)):
 
 for i in range(len(tuning_applied_before)):
     if tuning_applied_after[i] == tuning_applied_before[i]:
-        fail("All pods should be tuned.")
+        fail("All pods should be tuned.", cleanup)
 passed(None)
 
 
@@ -302,28 +243,28 @@ tuning_applied_before = []
 for pod in tuned_pods:
     tuning_applied_before.append(int(execute_command("oc logs {} | grep -c applied".format(pod))))
 
-kernel_pid_max_before = int(execute_command_on_node(external_dns, nodes[0], "sysctl kernel.pid_max").rstrip().split("=")[1])
+kernel_pid_max_before = int(execute_command_on_node(nodes[0], "sysctl kernel.pid_max").rstrip().split("=")[1])
 execute_command("oc get tuned default -o yaml > default_values_pid.yaml")
 execute_command("sed -e \"s/ kernel.pid_max=>{}/ kernel.pid_max=>{}/\" default_values_pid.yaml > new_kernel_pid_decrease.yaml".format(kernel_pid_max_before, default_kernel_pid))
 execute_command("oc apply -f new_kernel_pid_decrease.yaml")
 print("Waiting 15 seconds, to be sure changes has applied")
-time.sleep(15)
+countdown(15)
 kernel_pid_max_after = int(execute_command("oc get tuned default -o yaml | grep \" kernel.pid_max\" | cut -d '>' -f 2").rstrip())
 
 repeats = 0
 while True:
     print("Attempt #{}/12".format(repeats + 1))
     for node in nodes:
-        kernel_pid_max_on_node = int(execute_command_on_node(external_dns, node, "sysctl kernel.pid_max").rstrip().split("=")[1])
+        kernel_pid_max_on_node = int(execute_command_on_node(node, "sysctl kernel.pid_max").rstrip().split("=")[1])
         if kernel_pid_max_before != kernel_pid_max_on_node:
-            fail("On node {} kernel.pid_max is {} instead {}".format(node, kernel_pid_max_on_node, kernel_pid_max_after))
+            fail("On node {} kernel.pid_max is {} instead {}".format(node, kernel_pid_max_on_node, kernel_pid_max_after), cleanup)
         else:
             print("Match on node: {} with value: {}".format(node, kernel_pid_max_on_node))
     repeats += 1
     if repeats == 12:
         break
     print("Wait 10 seconds before next attempt")
-    time.sleep(10)
+    countdown(10)
 
 print("Checking logs of tuned pods on each node after test")
 tuning_applied_after = []
@@ -337,7 +278,7 @@ for i in range(len(tuned_pods)):
 
 for i in range(len(tuning_applied_before)):
     if tuning_applied_after[i] == tuning_applied_before[i]:
-        fail("All pods should be tuned.")
+        fail("All pods should be tuned.", cleanup)
 passed(None)
 
 
@@ -352,7 +293,7 @@ execute_command("oc get tuned default -o yaml > default_values_priority.yaml")
 execute_command("sed -e \"s/ priority: 40/ priority: 15/\" default_values_priority.yaml > new_priority.yaml")
 execute_command("oc apply -f new_priority.yaml")
 print("Waiting 120 seconds, to be sure changes has applied")
-time.sleep(120)
+countdown(120)
 tuning_applied_for_label_after = int(execute_command("oc logs {} | grep -c  applied".format(tuned_pod)))
 
 print("\nResults:")
@@ -361,7 +302,7 @@ print("{}\t{}\t{}".format(tuned_pod, tuning_applied_for_label_before, tuning_app
 if tuning_applied_for_label_after > tuning_applied_for_label_before:
     passed(None)
 else:
-    fail("Pod {} should be tuned.".format(tuned_pod))
+    fail("Pod {} should be tuned.".format(tuned_pod), cleanup)
 
 
 # Cleaning after tests when each step pass.
