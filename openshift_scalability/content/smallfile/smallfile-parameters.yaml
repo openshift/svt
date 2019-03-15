@@ -1,0 +1,22 @@
+projects:
+  - num: 1
+    basename: smallfile
+    tuning: default
+    ifexists: reuse
+    templates:
+      - num: 1
+        file: ./content/fio/smallfile-template.json
+        parameters:
+          - STORAGE_CLASS: "<storageclass name>"
+          - STORAGE_SIZE: "<PVC size>" # this is size of PVC mounted inside pod
+          - MOUNT_PATH: "/mnt/cephfs"
+          - DOCKER_IMAGE: "<Image with smallfile support>"
+          - ACCESS_MODES: "ReadWriteMany"
+tuningsets:
+  - name: default
+    templates:
+      stepping:
+        stepsize: 1
+        pause: 0 min
+      rate_limit:
+        delay: 0 ms
