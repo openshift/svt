@@ -1,0 +1,32 @@
+# Example from: https://github.com/kubernetes/kubernetes/issues/74412#issue-413387234
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: job-%JOB_ID%
+data:
+# Just some sample data
+  game.properties: |
+    enemies=aliens
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: job-%JOB_ID%
+spec:
+  template:
+    spec:
+      containers:
+      - name: busybox
+        image: busybox
+        command: [ "/bin/echo" ]
+        args: [ "Hello, World!" ]
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/config
+      volumes:
+        - name: config-volume
+          configMap:
+            name: job-%JOB_ID%
+      restartPolicy: Never
+  backoffLimit: 4
