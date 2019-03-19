@@ -75,22 +75,40 @@ function wait_until_the_pod_is_ready {
   done
 }
 
+# let's first delete projects and then create new ones
+# - This is due PLEG... :)
+
+for i in $(seq 1 ${ITERATION}); do 
+	echo "we have to delete projects first...."
+	NAMESPACE="${NAMESPACE_BASENAME}-${i}"
+	if [[ "${DELETE_EXISTING_PROJECTS}" == "true" ]]; then 
+		MY_TIME=-1
+		wait_until_the_project_is_gone ${NAMESPACE} 1200 10
+		if (( ${MY_TIME} == -1 )); then
+			echo "project ${NAMESPACE} is still there, time is up"
+			exit 1
+		else
+			echo "it took ${MY_TIME} seconds to delete the project ${NAMESPACE}"
+		fi
+	fi 
+done 
+
 for i in $(seq 1 ${ITERATION});
 do
   echo "${i}..."
   NAMESPACE="${NAMESPACE_BASENAME}-${i}"
-  if [[ "${DELETE_EXISTING_PROJECTS}" == "true" ]];
-  then
-    MY_TIME=-1
-    wait_until_the_project_is_gone ${NAMESPACE} 600 10
-    if (( ${MY_TIME} == -1 )); then
-      echo "project ${NAMESPACE} is still there, time is up"
-      exit 1
-    else
-      echo "it took ${MY_TIME} seconds to delete the project ${NAMESPACE}"
-    fi
-  fi
-  # oc adm allows --node-selector - this is temporary change  
+#  if [[ "${DELETE_EXISTING_PROJECTS}" == "true" ]];
+#  then
+#    MY_TIME=-1
+#    wait_until_the_project_is_gone ${NAMESPACE} 1200 10
+#    if (( ${MY_TIME} == -1 )); then
+#      echo "project ${NAMESPACE} is still there, time is up"
+#      exit 1
+#    else
+#      echo "it took ${MY_TIME} seconds to delete the project ${NAMESPACE}"
+#    fi
+#  fi
+#  oc adm allows --node-selector - this is temporary change  
   oc adm new-project ${NAMESPACE} #--node-selector="type=hdd-test"
   oc process -f ${TMP_FOLDER}/files/oc/mongodb-persistent-template.yaml \
       -p MEMORY_LIMIT=${MEMORY_LIMIT} -p MONGODB_USER=${MONGODB_USER} \
@@ -98,16 +116,18 @@ do
       -p VOLUME_CAPACITY=${VOLUME_CAPACITY} -p MONGODB_VERSION=${MONGODB_VERSION} \
       -p STORAGE_CLASS_NAME=${STORAGE_CLASS_NAME} | oc create --namespace=${NAMESPACE} -f -
   MY_TIME=-1
-  wait_until_the_pod_is_ready ${NAMESPACE} mongodb 300 10
+  wait_until_the_pod_is_ready ${NAMESPACE} mongodb 1800 10
   if (( ${MY_TIME} == -1 )); then
     echo "mongodb pod is not ready, time is up"
     exit 1
   else
     echo "it took ${MY_TIME} seconds to get mongodb pod ready"
   fi
-  oc create  --namespace=${NAMESPACE} -f ${TMP_FOLDER}/files/oc/dc_ycsb.yaml
+  sleep 10
+  oc create  --namespace=${NAMESPACE} -f ${TMP_FOLDER}/files/oc/ycsb_pod.yaml
+  #dc_ycsb.yaml
   MY_TIME=-1
-  wait_until_the_pod_is_ready ${NAMESPACE} ycsb 300 10
+  wait_until_the_pod_is_ready ${NAMESPACE} ycsb 1200 10
   if (( ${MY_TIME} == -1 )); then
     echo "ycsb pod is not ready, time is up"
     exit 1
