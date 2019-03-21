@@ -63,8 +63,19 @@ elif [[ $JOB == "http" ]]; then
 	git clone https://github.com/jmencak/http-ci-tests.git /root/http-ci-tests
 	cd /root/http-ci-tests
 	source /opt/pbench-agent/profile; . ./http-test.sh all
-elif [[ $JOB == "mongo" ]]; then
-	source /opt/pbench-agent/profile; 
+elif [[ $JOB == "scaleup" ]]; then
+        echo "Running ocp scaleup"
+        git clone https://github.com/redhat-performance/scale-ci-ansible.git /root/scale-ci-ansible
+        cd /root/scale-ci-ansible
+	cat <<-EOF >> scaleup.inv
+	[orchestration]
+	localhost ansible_connection=local
+	EOF
+        source /opt/pbench-agent/profile; pbench-user-benchmark -- ansible-playbook -vvv -i /root/scale-ci-ansible/scaleup.inv rhcos-scale.yml; pbench-move-results --prefix=scaleup
+elif [[ $JOB == "conformance" ]]; then
+        echo "Running ocp conformance"
+        source /opt/pbench-agent/profile; export KUBECONFIG=/root/.kube/config; pbench-user-benchmark -- /usr/bin/openshift-tests run openshift/conformance/parallel || exit 0
+        pbench-move-results --prefix conformance
 elif [[ $JOB == "test" ]]; then
 	echo "sleeping forever"
 	source /opt/pbench-agent/profile; sleep infinity
