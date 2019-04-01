@@ -141,14 +141,16 @@ def do_post_actions(namespace, build_name, build_time):
             push_end = end_regex.search(result).group(1)
             logger.debug("push_start: " + push_start)
             logger.debug("push_end: " + push_end)
+            ### TODO: this function `strptime` might have threading issues with python2
+            ### Have seen this error in the test log: 'module' object has no attribute '_strptime'
+            ### https://mail.python.org/pipermail/python-list/2015-October/697640.html
             push_time_delta = datetime.datetime.strptime(
                 push_end, push_date_fmt) - datetime.datetime.strptime(
                 push_start, push_date_fmt)
             push_time = push_time_delta.total_seconds()
-        except Exception as e:
+        except Exception:
             push_time = 0
-            logger.error(command + ': ' + result)
-            logger.error(e)
+            logger.exception("cannot get push time strings from " + result)
 
         stats_idx = idx[0:idx.rindex('-')]
         if (build_time == 0) or (push_time == 0):
@@ -233,14 +235,17 @@ def run_builds(executor, executor1, all_builds):
 
 def get_build_configs():
     all_builds = []
-
-    build_configs = json.loads(run("oc get --all-namespaces=true -o json bc"))
-    if build_configs:
-        for build in build_configs["items"]:
-            all_builds.append({"namespace": build["metadata"]["namespace"],
-                               "name": build["metadata"]["name"]})
-    return all_builds
-
+    try:
+        output = run("oc get --all-namespaces=true -o json bc")
+        build_configs = json.loads(output)
+        if build_configs:
+            for build in build_configs["items"]:
+                all_builds.append({"namespace": build["metadata"]["namespace"],
+                                "name": build["metadata"]["name"]})
+        return all_builds
+    except Exception:
+        logger.exception("cannot get BCs from the output: " + output)
+        sys.exit(1)
 
 def start():
     global global_config
