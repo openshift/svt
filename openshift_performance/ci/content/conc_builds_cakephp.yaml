@@ -1,5 +1,5 @@
 projects:
-  - num: 50
+  - num: 75
     basename: svt-cakephp-
     ifexists: default
     tuning: default
