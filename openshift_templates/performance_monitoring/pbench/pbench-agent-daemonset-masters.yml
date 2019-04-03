@@ -37,6 +37,8 @@ spec:
             mountPath: /etc/origin/master
           - name: certs
             mountPath: /etc/pki
+          - name: root
+            mountPath: /
         ports:
           - containerPort: 2022
           - containerPort: 9090
@@ -56,6 +58,9 @@ spec:
         - name: certs
           hostPath:
             path: /etc/pki
+        - name: root
+          hostPath:
+            path: /
       nodeSelector: 
         node-role.kubernetes.io/master: ""
       tolerations:
