@@ -70,7 +70,9 @@
 
   - block:
       - name: run the benchmarks without post
-        command:  pbench-user-benchmark --config="git_storage_test_{{ test_project_number }}_{{ STORAGE_CLASS_NAME }}_{{ iteration }}" -- "{{ tmp_folder }}/files/scripts/test-git-m.sh" "{{ test_project_name }}" "{{ test_project_number }}" "{{ iteration }}" "{{ tmp_folder }}"
+        ### use the following command if you have pbench-agent configured
+        #command:  pbench-user-benchmark --config="git_storage_test_{{ test_project_number }}_{{ STORAGE_CLASS_NAME }}_{{ iteration }}" -- "{{ tmp_folder }}/files/scripts/test-git-m.sh" "{{ test_project_name }}" "{{ test_project_number }}" "{{ iteration }}" "{{ tmp_folder }}"
+        shell:  "{{ tmp_folder }}/files/scripts/test-git-m.sh {{ test_project_name }} {{ test_project_number }} {{ iteration }} {{ tmp_folder }} 2>&1 | tee -a /tmp/test.log"
         async: "{{ benchmark_timeout * 60 }}"
         poll: 0
         register: pbench_sleeper
