@@ -39,8 +39,8 @@ spec:
             mountPath: /var/lib/pbench-agent
           - name: tools
             mountPath: /var/lib/pbench-agent/tools-default
-          - name: root
-            mountPath: /
+          - name: ocp-volumes
+            mountPath: /var/lib/kubelet/pods
         ports:
           - containerPort: 9090
           - containerPort: 2022
@@ -63,9 +63,9 @@ spec:
         - name: tools
           hostPath: 
             path: /var/lib/pbench-agent/tools-default
-        - name: root
+        - name: ocp-volumes
           hostPath:
-            path: /
+            path: /var/lib/kubelet/pods
       serviceAccountName: useroot 
       nodeSelector:
         role: controller
