@@ -3,7 +3,7 @@ import re
 import subprocess
 import json
 import time
-import datetime
+from datetime import datetime
 import random
 import sys
 from optparse import OptionParser
@@ -141,11 +141,8 @@ def do_post_actions(namespace, build_name, build_time):
             push_end = end_regex.search(result).group(1)
             logger.debug("push_start: " + push_start)
             logger.debug("push_end: " + push_end)
-            ### TODO: this function `strptime` might have threading issues with python2
-            ### Have seen this error in the test log: 'module' object has no attribute '_strptime'
-            ### https://mail.python.org/pipermail/python-list/2015-October/697640.html
-            push_time_delta = datetime.datetime.strptime(
-                push_end, push_date_fmt) - datetime.datetime.strptime(
+            push_time_delta = datetime.strptime(
+                push_end, push_date_fmt) - datetime.strptime(
                 push_start, push_date_fmt)
             push_time = push_time_delta.total_seconds()
         except Exception:
@@ -321,9 +318,11 @@ def start():
                                    "push_time_variance": 0,
                                    "failed": 0, "invalid": 0}
 
+    #https://stackoverflow.com/questions/2427240/thread-safe-equivalent-to-pythons-time-strptime
+    datetime.strptime('', '')
     for i in range(0, global_config["num_iterations"]):
 
-        logger.info(str(datetime.datetime.now()).split('.')[0] +
+        logger.info(str(datetime.now()).split('.')[0] +
                     ": iteration: " + str(i + 1))
 
         with ThreadPoolExecutor(max_workers=global_config["worker"]) \
