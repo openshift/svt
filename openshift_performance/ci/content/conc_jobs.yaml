@@ -19,6 +19,10 @@ spec:
       containers:
       - name: busybox
         image: busybox
+        resources:
+          requests:
+            memory: "50Mi"
+            cpu: "10m"
         command: [ "/bin/echo" ]
         args: [ "Hello, World!" ]
         volumeMounts:
