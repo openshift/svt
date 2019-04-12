@@ -33,7 +33,6 @@ golang_clusterloader() {
   MY_CONFIG=config/golang/nodeVertical-labeled-nodes
   sed -i "/- num: 1000/c \ \ \ \ \ \ \ \ \- num: $total_pod_count" /root/svt/openshift_scalability/config/golang/nodeVertical-labeled-nodes.yaml
   # loading cluster based on yaml config file
-  #/usr/libexec/atomic-openshift/extended.test --ginkgo.focus="Load cluster" --viper-config=$MY_CONFIG
   VIPERCONFIG=$MY_CONFIG openshift-tests run-test "[Feature:Performance][Serial][Slow] Load cluster should load the cluster [Suite:openshift]"
 }
 
