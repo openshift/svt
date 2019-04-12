@@ -9,10 +9,9 @@ wait_time=25
 # Cleanup
 function cleanup() {
 	oc delete -f $svt_repo_location/svt/openshift_templates/performance_monitoring/scale-ci-controller/controller-job.yml -n $controller_namespace
-	#oc delete -f $svt_repo_location/svt/openshift_templates/performance_monitoring/pbench/scale-config.yml -n $controller_namespace
 	oc delete cm tooling-config -n $controller_namespace
-	#sleep $wait_time
-	oc delete project $controller_namespace
+	sleep $wait_time
+	oc delete project --wait=true $controller_namespace
 }
 
 # Create a service account and add it to the privileged scc
@@ -23,7 +22,7 @@ function create_service_account() {
 
 # Ensure that the host has svt repo cloned
 if [[ ! -d $svt_repo_location/svt ]]; then
-	 git clone https://github.com/chaitanyaenr/svt.git
+	 git clone https://github.com/openshift/svt.git
 fi
 
 # Check if the controller job and configmap exists
@@ -46,7 +45,6 @@ fi
 oc create -f $svt_repo_location/svt/openshift_templates/performance_monitoring/scale-ci-controller/controller-ns.yml
 create_service_account
 oc create configmap tooling-config --from-env-file=$properties_path -n $controller_namespace
-#oc create -f $svt_repo_location/svt/openshift_templates/performance_monitoring/pbench/scale-config.yml -n $controller_namespace
 oc create -f $svt_repo_location/svt/openshift_templates/performance_monitoring/scale-ci-controller/controller-job.yml -n $controller_namespace
 sleep $wait_time
 controller_pod=$(oc get pods -n $controller_namespace | grep "controller" | awk '{print $1}')
