@@ -32,7 +32,7 @@ print("apiVersion: {}".format(api_version))
 print_step("Getting information about pods")
 tuned_pods = execute_command("oc get pods --no-headers -o=custom-columns=NAME:.metadata.name | grep tuned").split("\n")
 del tuned_pods[-1]  # split method is giving extra empty field after last line from response
-passed("List of tuned nodes:\n" + str(tuned_pods))
+passed("List of tuned pods:\n" + str(tuned_pods))
 
 # Creation a new profile
 print_step("Create new profile: router")

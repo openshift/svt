@@ -6,15 +6,6 @@ from utils import *
 # Test: Node Tuning Operator: core functionality is working #
 #############################################################
 
-black = "\33[30m"
-red = "\33[31m"
-on_red = "\33[41m"
-blue = "\33[34m"
-on_blue = "\33[44m"
-green = "\33[32m"
-on_green = "\33[42m"
-reset = "\33[0m"
-
 
 def cleanup():
     print("Cleaning after test")
@@ -64,7 +55,7 @@ passed(None)
 print_step("Getting information about pods")
 tuned_pods = execute_command("oc get pods --no-headers -o=custom-columns=NAME:.metadata.name | grep tuned").split("\n")
 del tuned_pods[-1]  # split method is giving extra empty field after last line from response
-passed("List of tuned nodes:\n" + str(tuned_pods))
+passed("List of tuned pods:\n" + str(tuned_pods))
 # Storing default file
 print_step("Saving default configuration file")
 execute_command("oc get tuned default -o yaml > default_values.yaml")
@@ -285,7 +276,7 @@ passed(None)
 # Verification that changing priority affect at least one node
 print_step("Verify that after changing priority pod will be tuned")
 print("Checking logs of tuned pods on each node before test")
-tuning_applied_for_label_before = int(execute_command("oc logs {} | grep -c applied".format(tuned_pod)))
+tuning_applied_for_label_before = int(execute_command("oc logs {} | grep \"'openshift-node' applied\"".format(tuned_pod)))
 
 # Saving default configuration to file
 print_step("Saving default configuration file")
@@ -294,7 +285,7 @@ execute_command("sed -e \"s/ priority: 40/ priority: 15/\" default_values_priori
 execute_command("oc apply -f new_priority.yaml")
 print("Waiting 120 seconds, to be sure changes has applied")
 countdown(120)
-tuning_applied_for_label_after = int(execute_command("oc logs {} | grep -c  applied".format(tuned_pod)))
+tuning_applied_for_label_after = int(execute_command("oc logs {} | grep \"'openshift-node' applied\"".format(tuned_pod)))
 
 print("\nResults:")
 print("Pod\t\tBefore\tAfter")
