@@ -39,7 +39,7 @@ function pod_status_check() {
         		while [ $(oc --namespace=$namespace get pods $pod -o json | jq -r ".status.phase") != "Running" ]; do
         			sleep 1
 				counter=$((counter+1))
-				if [[ $counter > $status_check_timeout ]]; then
+				if [[ $counter -ge $status_check_timeout ]]; then
 					echo "$pod is not in running state after waiting for $counter seconds, please check the pod logs and events"
 					exit 1
 				fi
@@ -83,6 +83,7 @@ function cleanup() {
 	# pbench cleanup
 	oc delete serviceaccount useroot -n pbench
 	oc delete -f openshift_templates/performance_monitoring/pbench/pbench-agent-daemonset.yml -n pbench
+	oc delete -f openshift_templates/performance_monitoring/pbench/pbench-agent-daemonset-masters.yml -n pbench
 	oc delete -f openshift_templates/performance_monitoring/pbench/pbench-namespace.yml -n pbench
 
 	# waiting for the pods to get terminated
@@ -105,13 +106,14 @@ if [[ $? == 0 ]]; then
 	echo "Deleting the pbench project"
 	cleanup
 fi
-oc create -f openshift_templates/performance_monitoring/pbench/pbench-namespace.yml
-oc project pbench
+oc create -f openshift_templates/performance_monitoring/pbench/pbench-namespace.yml -n pbench
 create_service_account
 
 # Create pbench-agent pods and patch it
 oc create -f openshift_templates/performance_monitoring/pbench/pbench-agent-daemonset.yml -n pbench
+oc create -f openshift_templates/performance_monitoring/pbench/pbench-agent-daemonset-masters.yml -n pbench
 oc patch daemonset pbench-agent --patch \ '{"spec":{"template":{"spec":{"serviceAccountName": "useroot"}}}}' -n pbench
+oc patch daemonset pbench-agent-masters --patch \ '{"spec":{"template":{"spec":{"serviceAccountName": "useroot"}}}}' -n pbench
 
 popd
 

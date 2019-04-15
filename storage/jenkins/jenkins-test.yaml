@@ -9,10 +9,17 @@
     tags:
       - setup
 
-  - name: install jq
-    yum:
-      name: jq
-      state: present
+  - name: print jq version
+    command: jq --version
+    register: jq_result
+    ignore_errors: True
+    tags:
+      - setup
+
+  - name: fail if jq is not installed
+    fail:
+      msg: "Plase install `jq` on host {{ inventory_hostname }}"
+    when: jq_result is failed
     tags:
       - setup
 
@@ -67,7 +74,8 @@
       - run
 
   - name: run the benchmarks
-    command:  pbench-user-benchmark --config="jenkins_storage_test_{{ test_project_number }}_{{ test_build_number }}_{{ STORAGE_CLASS_NAME }}_{{ MEMORY_LIMIT }}" -- "{{ tmp_folder }}/files/scripts/test-jenkins-m.sh" "{{ test_project_name }}" "{{ test_project_number }}" "{{ iteration }}" "{{ tmp_folder }}" "{{ test_build_number }}"
+    #command:  pbench-user-benchmark --config="jenkins_storage_test_{{ test_project_number }}_{{ test_build_number }}_{{ STORAGE_CLASS_NAME }}_{{ MEMORY_LIMIT }}" -- "{{ tmp_folder }}/files/scripts/test-jenkins-m.sh" "{{ test_project_name }}" "{{ test_project_number }}" "{{ iteration }}" "{{ tmp_folder }}" "{{ test_build_number }}"
+    shell:  "{{ tmp_folder }}/files/scripts/test-jenkins-m.sh {{ test_project_name }} {{ test_project_number }} {{ iteration }} {{ tmp_folder }} {{ test_build_number }} 2>&1 | tee -a /tmp/test.log"
     async: "{{ benchmark_timeout * 60 }}"
     poll: 0
     register: pbench_sleeper

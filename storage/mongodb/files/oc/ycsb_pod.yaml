@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    name: ycsb
+  name: ycsb-pod
+spec:
+  containers:
+    - image: "docker.io/hongkailiu/ycsb:002"
+      imagePullPolicy: IfNotPresent
+      name: ycsb-pod
+      resources: {}
+      securityContext:
+        capabilities: {}
+        privileged: false
+      terminationMessagePath: /dev/termination-log
+  dnsPolicy: Default
+  restartPolicy: OnFailure
+  nodeSelector: 
+  serviceAccount: ""
+status: {}

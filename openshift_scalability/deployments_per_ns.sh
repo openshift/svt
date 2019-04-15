@@ -19,7 +19,7 @@ golang_clusterloader() {
   export KUBECONFIG=${KUBECONFIG-$HOME/.kube/config}
   MY_CONFIG=config/golang/cluster-limits-deployments-per-namespace
   # loading cluster based on yaml config file
-  /usr/libexec/atomic-openshift/extended.test --ginkgo.focus="Load cluster" --viper-config=$MY_CONFIG
+  VIPERCONFIG=$MY_CONFIG openshift-tests run-test "[Feature:Performance][Serial][Slow] Load cluster should load the cluster [Suite:openshift]"
 }
 
 python_clusterloader() {

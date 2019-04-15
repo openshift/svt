@@ -30,7 +30,7 @@ golang_clusterloader() {
   # Export kube config
   export KUBECONFIG=${KUBECONFIG-$HOME/.kube/config}
   # loading cluster based on yaml config file
-  /usr/libexec/atomic-openshift/extended.test --ginkgo.focus="Load cluster" --viper-config=$CONFIG
+  VIPERCONFIG=$CONFIG openshift-tests run-test "[Feature:Performance][Serial][Slow] Load cluster should load the cluster [Suite:openshift]"
 }
 
 python_clusterloader() {
