@@ -59,7 +59,7 @@ elif [[ $JOB == "pgbench" ]]; then
 elif [[ $JOB == "http" ]]; then
 	if [[ -d "/root/http-ci-tests" ]]; then
 		rm -rf /root/http-ci-tests
-	fi	
+	fi
 	git clone https://github.com/jmencak/http-ci-tests.git /root/http-ci-tests
 	cd /root/http-ci-tests
 	source /opt/pbench-agent/profile; . ./http-test.sh all
@@ -71,7 +71,16 @@ elif [[ $JOB == "scaleup" ]]; then
 	[orchestration]
 	localhost ansible_connection=local
 	EOF
-        source /opt/pbench-agent/profile; pbench-user-benchmark -- ansible-playbook -vvv -i /root/scale-ci-ansible/scaleup.inv rhcos-scale.yml; pbench-move-results --prefix=scaleup
+        source /opt/pbench-agent/profile; pbench-user-benchmark -- ansible-playbook -vvv -i /root/scale-ci-ansible/scaleup.inv OCP-4.X/scale.yml; pbench-move-results --prefix=scaleup
+elif [[ $JOB == "upgrade" ]]; then
+        echo "Running ocp upgrade"
+        git clone https://github.com/redhat-performance/scale-ci-ansible.git /root/scale-ci-ansible
+        cd /root/scale-ci-ansible
+	cat <<-EOF >> upgrade.inv
+	[orchestration]
+	localhost ansible_connection=local
+	EOF
+        source /opt/pbench-agent/profile; pbench-user-benchmark -- ansible-playbook -vvv -i /root/scale-ci-ansible/upgrade.inv OCP-4.X/upgrade.yml; pbench-move-results --prefix=upgrade
 elif [[ $JOB == "conformance" ]]; then
         echo "Running ocp conformance"
         source /opt/pbench-agent/profile; export KUBECONFIG=/root/.kube/config; pbench-user-benchmark -- /usr/bin/openshift-tests run openshift/conformance/parallel || exit 0
