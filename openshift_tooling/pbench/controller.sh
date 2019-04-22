@@ -10,8 +10,8 @@ wait_time=25
 function cleanup() {
 	oc delete -f $svt_repo_location/svt/openshift_templates/performance_monitoring/scale-ci-controller/controller-job.yml -n $controller_namespace
 	oc delete cm tooling-config -n $controller_namespace
-	sleep $wait_time
 	oc delete project --wait=true $controller_namespace
+	sleep $wait_time
 }
 
 # Create a service account and add it to the privileged scc
@@ -38,7 +38,8 @@ fi
 oc project $controller_namespace &>/dev/null
 if [[ $? == 0 ]]; then
         echo "Looks like the $controller_namespace already exists, deleting it"
-        oc delete project $controller_namespace
+        oc delete project --wait=true $controller_namespace
+	sleep $wait_time
 fi
 
 # Create controller ns, configmap and run the job

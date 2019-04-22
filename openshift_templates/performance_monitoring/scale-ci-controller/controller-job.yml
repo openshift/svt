@@ -18,7 +18,7 @@ spec:
       containers:
       - name: controller
         image: ravielluri/image:controller
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         securityContext:
           privileged: true
         command:
