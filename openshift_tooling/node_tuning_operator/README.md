@@ -1,6 +1,8 @@
-# Node Tuning Operator - Core functionality
+# Node Tuning Operator
 
-## What is tested:
+## Test: Node Tuning Operator - Core functionality
+
+### What is tested:
 
 - Verification that after creating new resource with 'es' label pod will be tuned
 - Verification that modification (increase) of a parameter: net.netfilter.nf_conntrack_max will take effect on every node of the cluster.
@@ -9,20 +11,20 @@
 - Verification that modification (decrease) of a parameter: kernel.pid_max will NOT take effect on every node of the cluster.
 - Verification that after changing priority pod will be tuned.
 
-## Prerequisite
+### Prerequisite
 
 OpenShift v 4.0 or higher
 Python (tested with v 2.7.5)
 
-## How to run test:
+### How to run test:
 
 - Login to OCP
 ```bash
 oc login -u <user_name> -p <password>
 ```
-- Run python script with path to your ssh key
+- To test just run python script
 ```bash
-python node_tuning_operator.py /path/to/my/.ssh/libra.pem
+python node_tuning_operator.py
 ```
 
 - If test pass and you don't need configuration files used during test you can delete them:
@@ -31,7 +33,7 @@ rm default_values_netfilter.yaml default_values_pid.yaml default_values_priority
 
 ```
 
-## How to recover if something goes wrong:
+### How to recover if something goes wrong:
 Script has step to cleanup after test - even when test failed, but if something unexpected happen then please follow below steps:
 
 - Delete project:
@@ -44,4 +46,38 @@ oc delete project my-logging-project
 oc delete tuned default
 oc create -f ./default_values.yaml
 
+```
+
+## Test: Node Tuning Operator - custom tuning is working
+
+### What is tested:
+
+- Verification if after creating custom tuning new tuning exists.
+- Verification if after creating custom tuning new tuning applied to tuned-profiles.
+- Verification if after creating custom tuning new tuning applied to tuned-recommend.
+- Verification if correct nodes are tuned by new custom tuning.
+- Logs verification
+
+### Prerequisite
+
+OpenShift v 4.0 or higher
+Python (tested with v 2.7.5)
+
+### How to run test:
+
+- Login to OCP
+```bash
+oc login -u <user_name> -p <password>
+```
+- To test just run python script
+```bash
+python node_tuning_operator_custom_tuning.py
+```
+
+### How to recover if something goes wrong:
+Script has step to cleanup after test - even when test failed, but if something unexpected happen then please follow below steps:
+
+- Delete tuned:
+```bash
+oc delete tuned router
 ```
