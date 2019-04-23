@@ -21,15 +21,41 @@ def restore_default_values():
     countdown(15)
 
 
+def count_log_applied_lines(list_of_pods, node_with_app):
+    count = []
+    for pod_in_list in list_of_pods:
+        applied_profile = ""
+        if pod_in_list['node'] == node_with_app and pod_in_list['role'] == "worker":
+            applied_profile = "openshift-node-es"
+        elif pod_in_list['node'] == node_with_app and pod_in_list['role'] == "master":
+            applied_profile = "openshift-control-plane-es"
+        elif pod_in_list['node'] != node_with_app and pod_in_list['role'] == "worker":
+            applied_profile = "openshift-node"
+        elif pod_in_list['node'] != node_with_app and pod_in_list['role'] == "master":
+            applied_profile = "openshift-control-plane"
+        count.append(int(execute_command("oc logs {} | grep -c \"\'{}\' applied\"".format(pod_in_list['pod'], applied_profile))))
+    print(count)
+    return count
+
+
 # Test execution:
 print_title("Node Tuning Operator: core functionality is working")
 
 
-# Getting all nodes
-print_step("Gathering information about nodes")
+# Getting information about nodes and tuned pods.
+print_step("Gathering information about nodes and tuned pods")
 nodes = execute_command("oc get nodes --no-headers -o=custom-columns=NAME:.metadata.name").split("\n")
 del nodes[-1]
-passed("List of nodes:\n" + str(nodes))
+tuned_pods = []
+for node in nodes:
+    tuned_pods.append(
+        {
+            'node': node,
+            'role': execute_command("oc get node {} --no-headers | awk '{{print $3}}'".format(node)).rstrip(),
+            'pod': execute_command("oc get pods -o wide -n openshift-cluster-node-tuning-operator | grep tuned | grep {} | awk '{{print $1}}'".format(node)).rstrip()
+        }
+    )
+passed("List of nodes:\n" + str(tuned_pods))
 
 
 # Verification if openshift-cluster-node-tuning-operator is running
@@ -51,35 +77,25 @@ if number_of_tuned_clusters != number_of_working_nodes:
 passed(None)
 
 
-# Getting all pods
-print_step("Getting information about pods")
-tuned_pods = execute_command("oc get pods --no-headers -o=custom-columns=NAME:.metadata.name | grep tuned").split("\n")
-del tuned_pods[-1]  # split method is giving extra empty field after last line from response
-passed("List of tuned pods:\n" + str(tuned_pods))
-# Storing default file
-print_step("Saving default configuration file")
-execute_command("oc get tuned default -o yaml > default_values.yaml")
-passed(None)
-
-
 # Verification that pod can be tuned
 print_step("Verify that after creating new resource with 'es' label pod will be tuned")
 execute_command("oc new-project my-logging-project")
 execute_command("oc create -f https://raw.githubusercontent.com/hongkailiu/svt-case-doc/master/files/pod_test.yaml")
 # Getting node where pod with 'web' name is running
-node_where_pod_is_running = execute_command("oc get pod web --no-headers -o=custom-columns=NODE:.spec.nodeName").rstrip()
+node_where_app_is_running = execute_command("oc get pod web --no-headers -o=custom-columns=NODE:.spec.nodeName").rstrip()
 # Verification node roles
-node_type = execute_command("oc get node {} --no-headers | tr -s ' ' | cut -d ' ' -f 3".format(node_where_pod_is_running)).rstrip()
+node_type = execute_command("oc get node {} --no-headers | tr -s ' ' | cut -d ' ' -f 3".format(node_where_app_is_running)).rstrip()
 profile = ""
 if node_type == "worker":
     profile = "openshift-node-es"
 elif node_type == "master":
     profile = "openshift-control-plane-es"
 
-print ("Pod running on node: {} with role: {} - profile to verify: {}".format(node_where_pod_is_running, node_type, profile))
+print ("Pod running on node: {} with role: {} - profile to verify: {}".format(node_where_app_is_running, node_type, profile))
 execute_command("oc project openshift-cluster-node-tuning-operator")
-tuned_pod = execute_command("oc get pods -o wide | grep tuned | grep {} | cut -d ' ' -f 1".format(node_where_pod_is_running)).rstrip()
+tuned_pod = execute_command("oc get pods -o wide | grep tuned | grep {} | cut -d ' ' -f 1".format(node_where_app_is_running)).rstrip()
 tuning_applied_for_label_before = int(execute_command("oc logs {} | grep -c \"\'{}\' applied\"".format(tuned_pod, profile)))
+countdown(5)
 execute_command("oc label pod web -n my-logging-project  tuned.openshift.io/elasticsearch=")
 print("Waiting 120 seconds, to be sure changes has applied")
 countdown(120)
@@ -97,9 +113,7 @@ else:
 # Verification that increasing net.netfilter.nf_conntrack_max will affect every node
 print_step("Verify that modification (increase) of a parameter: net.netfilter.nf_conntrack_max will take effect on every node of the cluster.")
 print("Checking logs of tuned pods on each node before test")
-tuning_applied_before = []
-for pod in tuned_pods:
-    tuning_applied_before.append(int(execute_command("oc logs {} | grep -c applied".format(pod))))
+tuning_applied_before = count_log_applied_lines(tuned_pods, node_where_app_is_running)
 
 conntract_max_before = int(execute_command("oc get tuned default -o yaml | grep \" net.netfilter.nf_conntrack_max\" | cut -d '=' -f 2"))
 # Saving default configuration to file
@@ -111,27 +125,25 @@ print("Waiting 15 seconds, to be sure changes has applied")
 countdown(15)
 conntract_max_after = int(execute_command("oc get tuned default -o yaml | grep \" net.netfilter.nf_conntrack_max\" | cut -d '=' -f 2"))
 
-for node in nodes:
+for pod in tuned_pods:
     repeats = 0
     while True:
-        conntract_max_on_node = int(execute_command_on_node(node, "sysctl net.netfilter.nf_conntrack_max").rstrip().split("=")[1])
+        conntract_max_on_node = int(execute_command_on_node(pod['node'], "sysctl net.netfilter.nf_conntrack_max").rstrip().split("=")[1])
         if conntract_max_after == conntract_max_on_node:
-            print("Match on node: {} with value: {}".format(node, conntract_max_on_node))
+            print("Match on node: {} with value: {}".format(pod['node'], conntract_max_on_node))
             break
         repeats += 1
         countdown(10)
         if repeats > 12:
-            fail("On node {} net.netfilter.nf_conntrack_max is {} instead {}".format(node, conntract_max_on_node, conntract_max_after), cleanup)
+            fail("On node {} net.netfilter.nf_conntrack_max is {} instead {}".format(pod['node'], conntract_max_on_node, conntract_max_after), cleanup)
 
 print("Checking logs of tuned pods on each node after test")
-tuning_applied_after = []
-for pod in tuned_pods:
-    tuning_applied_after.append(int(execute_command("oc logs {} | grep -c applied".format(pod))))
+tuning_applied_after = count_log_applied_lines(tuned_pods, node_where_app_is_running)
 
 print("\nResults:")
 print("Pod\t\tBefore\tAfter")
 for i in range(len(tuned_pods)):
-    print("{}\t{}\t{}".format(tuned_pods[i], tuning_applied_before[i], tuning_applied_after[i]))
+    print("{}\t{}\t{}".format(tuned_pods[i]['pod'], tuning_applied_before[i], tuning_applied_after[i]))
 
 for i in range(len(tuning_applied_before)):
     if tuning_applied_after[i] == tuning_applied_before[i]:
@@ -142,9 +154,7 @@ passed(None)
 # Verification that decreasing net.netfilter.nf_conntrack_max will affect every node
 print_step("Verify that modification (decrease) of a parameter: net.netfilter.nf_conntrack_max will take effect on every node of the cluster.")
 print("Checking logs of tuned pods on each node before test")
-tuning_applied_before = []
-for pod in tuned_pods:
-    tuning_applied_before.append(int(execute_command("oc logs {} | grep -c applied".format(pod))))
+tuning_applied_before = count_log_applied_lines(tuned_pods, node_where_app_is_running)
 
 # Restoring previous value
 conntract_max_before = int(execute_command("cat default_values_netfilter.yaml | grep \" net.netfilter.nf_conntrack_max\" | cut -d '=' -f 2"))
@@ -155,27 +165,25 @@ print("Waiting 15 seconds, to be sure changes has applied")
 countdown(15)
 conntract_max_after = int(execute_command("oc get tuned default -o yaml | grep \" net.netfilter.nf_conntrack_max\" | cut -d '=' -f 2"))
 
-for node in nodes:
+for pod in tuned_pods:
     repeats = 0
     while True:
-        conntract_max_on_node = int(execute_command_on_node(node, "sysctl net.netfilter.nf_conntrack_max").rstrip().split("=")[1])
+        conntract_max_on_node = int(execute_command_on_node(pod['node'], "sysctl net.netfilter.nf_conntrack_max").rstrip().split("=")[1])
         if conntract_max_after == conntract_max_on_node:
-            print("Match on node: {} with value: {}".format(node, conntract_max_on_node))
+            print("Match on node: {} with value: {}".format(pod['node'], conntract_max_on_node))
             break
         repeats += 1
         countdown(10)
         if repeats > 12:
-            fail("On node {} net.netfilter.nf_conntrack_max is {} instead {}".format(node, conntract_max_on_node, conntract_max_after), cleanup)
+            fail("On node {} net.netfilter.nf_conntrack_max is {} instead {}".format(pod['node'], conntract_max_on_node, conntract_max_after), cleanup)
 
 print("Checking logs of tuned pods on each node after test")
-tuning_applied_after = []
-for pod in tuned_pods:
-    tuning_applied_after.append(int(execute_command("oc logs {} | grep -c applied".format(pod))))
+tuning_applied_after = count_log_applied_lines(tuned_pods, node_where_app_is_running)
 
 print("\nResults:")
 print("Pod\t\tBefore\tAfter")
 for i in range(len(tuned_pods)):
-    print("{}\t{}\t{}".format(tuned_pods[i], tuning_applied_before[i], tuning_applied_after[i]))
+    print("{}\t{}\t{}".format(tuned_pods[i]['pod'], tuning_applied_before[i], tuning_applied_after[i]))
 
 for i in range(len(tuning_applied_before)):
     if tuning_applied_after[i] == tuning_applied_before[i]:
@@ -186,9 +194,7 @@ passed(None)
 # Verification that increasing kernel.pid_max will affect every node
 print_step("Verify that modification (increase) of a parameter: kernel.pid_max will take effect on every node of the cluster.")
 print("Checking logs of tuned pods on each node before test")
-tuning_applied_before = []
-for pod in tuned_pods:
-    tuning_applied_before.append(int(execute_command("oc logs {} | grep -c applied".format(pod))))
+tuning_applied_before = count_log_applied_lines(tuned_pods, node_where_app_is_running)
 
 kernel_pid_max_before = int(execute_command_on_node(nodes[0], "sysctl kernel.pid_max").rstrip().split("=")[1])
 default_kernel_pid = int(execute_command("oc get tuned default -o yaml | grep \" kernel.pid_max\" | cut -d '>' -f 2").rstrip())
@@ -199,27 +205,24 @@ print("Waiting 15 seconds, to be sure changes has applied")
 countdown(15)
 kernel_pid_max_after = int(execute_command("oc get tuned default -o yaml | grep \" kernel.pid_max\" | cut -d '>' -f 2").rstrip())
 
-for node in nodes:
+for pod in tuned_pods:
     repeats = 0
     while True:
-        kernel_pid_max_on_node = int(execute_command_on_node(node, "sysctl kernel.pid_max").rstrip().split("=")[1])
+        kernel_pid_max_on_node = int(execute_command_on_node(pod['node'], "sysctl kernel.pid_max").rstrip().split("=")[1])
         if kernel_pid_max_after == kernel_pid_max_on_node:
-            print("Match on node: {} with value: {}".format(node, kernel_pid_max_on_node))
+            print("Match on node: {} with value: {}".format(pod['node'], kernel_pid_max_on_node))
             break
         repeats += 1
         countdown(10)
         if repeats == 12:
-            fail("On node {} kernel.pid_max is {} instead {}".format(node, kernel_pid_max_on_node, kernel_pid_max_after), cleanup)
+            fail("On node {} kernel.pid_max is {} instead {}".format(pod['node'], kernel_pid_max_on_node, kernel_pid_max_after), cleanup)
 
 print("Checking logs of tuned pods on each node after test")
-tuning_applied_after = []
-for pod in tuned_pods:
-    tuning_applied_after.append(int(execute_command("oc logs {} | grep -c applied".format(pod))))
-
+tuning_applied_after = count_log_applied_lines(tuned_pods, node_where_app_is_running)
 print("\nResults:")
 print("Pod\t\tBefore\tAfter")
 for i in range(len(tuned_pods)):
-    print("{}\t{}\t{}".format(tuned_pods[i], tuning_applied_before[i], tuning_applied_after[i]))
+    print("{}\t{}\t{}".format(tuned_pods[i]['pod'], tuning_applied_before[i], tuning_applied_after[i]))
 
 for i in range(len(tuning_applied_before)):
     if tuning_applied_after[i] == tuning_applied_before[i]:
@@ -230,9 +233,7 @@ passed(None)
 # Verification that decreasing kernel.pid_max will affect every node
 print_step("Verify that modification (decrease) of a parameter: kernel.pid_max will NOT take effect on every node of the cluster.")
 print("Checking logs of tuned pods on each node before test")
-tuning_applied_before = []
-for pod in tuned_pods:
-    tuning_applied_before.append(int(execute_command("oc logs {} | grep -c applied".format(pod))))
+tuning_applied_before = count_log_applied_lines(tuned_pods, node_where_app_is_running)
 
 kernel_pid_max_before = int(execute_command_on_node(nodes[0], "sysctl kernel.pid_max").rstrip().split("=")[1])
 execute_command("oc get tuned default -o yaml > default_values_pid.yaml")
@@ -245,12 +246,12 @@ kernel_pid_max_after = int(execute_command("oc get tuned default -o yaml | grep 
 repeats = 0
 while True:
     print("Attempt #{}/12".format(repeats + 1))
-    for node in nodes:
-        kernel_pid_max_on_node = int(execute_command_on_node(node, "sysctl kernel.pid_max").rstrip().split("=")[1])
+    for pod in tuned_pods:
+        kernel_pid_max_on_node = int(execute_command_on_node(pod['node'], "sysctl kernel.pid_max").rstrip().split("=")[1])
         if kernel_pid_max_before != kernel_pid_max_on_node:
-            fail("On node {} kernel.pid_max is {} instead {}".format(node, kernel_pid_max_on_node, kernel_pid_max_after), cleanup)
+            fail("On node {} kernel.pid_max is {} instead {}".format(pod['node'], kernel_pid_max_on_node, kernel_pid_max_after), cleanup)
         else:
-            print("Match on node: {} with value: {}".format(node, kernel_pid_max_on_node))
+            print("Match on node: {} with value: {}".format(pod['node'], kernel_pid_max_on_node))
     repeats += 1
     if repeats == 12:
         break
@@ -258,14 +259,12 @@ while True:
     countdown(10)
 
 print("Checking logs of tuned pods on each node after test")
-tuning_applied_after = []
-for pod in tuned_pods:
-    tuning_applied_after.append(int(execute_command("oc logs {} | grep -c applied".format(pod))))
+tuning_applied_after = count_log_applied_lines(tuned_pods, node_where_app_is_running)
 
 print("\nResults:")
 print("Pod\t\tBefore\tAfter")
 for i in range(len(tuned_pods)):
-    print("{}\t{}\t{}".format(tuned_pods[i], tuning_applied_before[i], tuning_applied_after[i]))
+    print("{}\t{}\t{}".format(tuned_pods[i]['pod'], tuning_applied_before[i], tuning_applied_after[i]))
 
 for i in range(len(tuning_applied_before)):
     if tuning_applied_after[i] == tuning_applied_before[i]:
@@ -276,7 +275,7 @@ passed(None)
 # Verification that changing priority affect at least one node
 print_step("Verify that after changing priority pod will be tuned")
 print("Checking logs of tuned pods on each node before test")
-tuning_applied_for_label_before = int(execute_command("oc logs {} | grep \"'openshift-node' applied\"".format(tuned_pod)))
+tuning_applied_for_label_before = int(execute_command("oc logs {} | grep -c \"'openshift-node' applied\"".format(tuned_pod)))
 
 # Saving default configuration to file
 print_step("Saving default configuration file")
@@ -285,7 +284,7 @@ execute_command("sed -e \"s/ priority: 40/ priority: 15/\" default_values_priori
 execute_command("oc apply -f new_priority.yaml")
 print("Waiting 120 seconds, to be sure changes has applied")
 countdown(120)
-tuning_applied_for_label_after = int(execute_command("oc logs {} | grep \"'openshift-node' applied\"".format(tuned_pod)))
+tuning_applied_for_label_after = int(execute_command("oc logs {} | grep -c \"'openshift-node' applied\"".format(tuned_pod)))
 
 print("\nResults:")
 print("Pod\t\tBefore\tAfter")
