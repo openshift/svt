@@ -140,6 +140,14 @@ for pod in tuned_pods:
         fail("On pod: {} founded log: {}".format(pod, log), cleanup)
 passed(None)
 
+# Checking if pods are correct labeled
+print_step("Check pods labels")
+for node in nodes:
+    number_of_labeled_pods = int(execute_command("oc get pod -n openshift-ingress --show-labels -o wide | grep {} | grep -c router-default".format(node)))
+    if (node in tuned_router_nodes and number_of_labeled_pods == 0) or (node not in tuned_router_nodes and number_of_labeled_pods != 0):
+        fail("On node: {} founded {} labeled pods".format(node, number_of_labeled_pods))
+passed(None)
+
 # Cleaning after test
 print_step("Cleaning after test")
 cleanup()
