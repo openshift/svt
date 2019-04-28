@@ -269,7 +269,7 @@ def main():
             result = run_tests(args, inventory_vars, sender_host, receiver_host)
             if result != 0:
                 print("There was an error running playbook for test type {}"
-                      " with {} pods".format(args.test_type, pod_number)
+                      " with {} pods".format(args.test_type, pod_number))
     else:
             inventory_vars = {'sender_host': sender_host,
                               'receiver_host': receiver_host,
@@ -279,7 +279,7 @@ def main():
             result = run_tests(args, inventory_vars, sender_host, receiver_host)
             if result != 0:
                 print("There was an error running playbook for test type {}"
-                      .format(args.test_type, pod_number)
+                      .format(args.test_type, pod_number))
 
 
 if __name__ == '__main__':
