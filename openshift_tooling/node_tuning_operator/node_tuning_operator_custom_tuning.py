@@ -50,15 +50,15 @@ spec:
       include=openshift-control-plane
 
       [sysctl]
-      net.ipv4.ip_local_port_range="1000 65535"
+      net.ipv4.ip_local_port_range="1024 65535"
       net.ipv4.tcp_tw_reuse=1
 
     name: openshift-router
 
   recommend:
   - match:
-    - label: app
-      value: "router"
+    - label: deployment-ingresscontroller
+      value: default
       type: pod
     priority: 5
     profile: openshift-router
