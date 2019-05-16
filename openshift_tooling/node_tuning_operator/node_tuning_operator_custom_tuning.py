@@ -50,15 +50,15 @@ spec:
       include=openshift-control-plane
 
       [sysctl]
-      net.ipv4.ip_local_port_range="1000 65535"
+      net.ipv4.ip_local_port_range="1024 65535"
       net.ipv4.tcp_tw_reuse=1
 
     name: openshift-router
 
   recommend:
   - match:
-    - label: app
-      value: "router"
+    - label: deployment-ingresscontroller
+      value: default
       type: pod
     priority: 5
     profile: openshift-router
@@ -90,9 +90,9 @@ else:
 # Verification if custom tuning applied to tuned-recommend
 print_step("Verify if custom tuning applied to tuned-recommend")
 tuned_recommend_expected = """    [openshift-router,0]
-    /var/lib/tuned/ocp-pod-labels.cfg=.*\\bapp=router\\n
+    /var/lib/tuned/ocp-pod-labels.cfg=.*\\bdeployment-ingresscontroller=default\\n
     name: router"""
-tuned_recommend_actual = execute_command("oc get cm/tuned-recommend -o yaml | grep router").rstrip()
+tuned_recommend_actual = execute_command("oc get cm/tuned-recommend -o yaml | grep -e router -e deployment-ingresscontroller").rstrip()
 if tuned_recommend_actual == tuned_recommend_expected:
     passed(None)
 else:
@@ -109,7 +109,7 @@ for node in nodes:
     ip_local_port_range = execute_command_on_node(node, "sysctl net.ipv4.ip_local_port_range | cut -d ' ' -f 3 | sed 's/\t/ /g'").rstrip()
     print("Node:                         {}".format(node))
     print("net.ipv4.ip_local_port_range: {}".format(ip_local_port_range))
-    if (node in tuned_router_nodes and ip_local_port_range != "1000 65535") or (node not in tuned_router_nodes and ip_local_port_range == "1000 65535"):
+    if (node in tuned_router_nodes and ip_local_port_range != "1024 65535") or (node not in tuned_router_nodes and ip_local_port_range == "1024 65535"):
         fail("On node {} net.ipv4.ip_local_port_range is {}".format(node, ip_local_port_range), cleanup)
 passed(None)
 
