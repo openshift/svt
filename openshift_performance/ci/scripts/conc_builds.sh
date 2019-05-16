@@ -47,7 +47,7 @@ function run_builds()
   for i in "${build_array[@]}"
   do
     echo "running $i $1 concurrent builds"
-    python ../../ose3_perf/scripts/build_test.py -z -n 2 -r $i -f ../content/running-builds.json >> conc_builds_$1.out
+    python ../../ose3_perf/scripts/build_test.py -z -n 2 -r $i -f ../content/running-builds.json &>> conc_builds_$1.out
     sleep 30
   done
 }
