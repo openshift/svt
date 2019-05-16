@@ -55,7 +55,7 @@ def execute_command(command_to_execute):
 
 
 def execute_command_on_node(node_address, command_to_execute):
-    command_on_node = "oc debug node/{} -- {}".format(node_address, command_to_execute)
+    command_on_node = "oc debug node/{} -- chroot /host {}".format(node_address, command_to_execute)
     return execute_command(command_on_node)
 
 
