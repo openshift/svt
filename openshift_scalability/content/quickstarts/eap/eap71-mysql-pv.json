@@ -1,0 +1,934 @@
+{
+    "apiVersion": "template.openshift.io/v1",
+    "kind": "Template",
+    "labels": {
+        "template": "eap71-mysql-s2i",
+        "xpaas": "1.4.16"
+    },
+    "message": "A new EAP 7 and MySQL based application with SSL support has been created in your project. The username/password for accessing the MySQL database \"${DB_DATABASE}\" is ${DB_USERNAME}/${DB_PASSWORD}. Please be sure to create the following secrets: \"${HTTPS_SECRET}\" containing the ${HTTPS_KEYSTORE} file used for serving secure content; \"${JGROUPS_ENCRYPT_SECRET}\" containing the ${JGROUPS_ENCRYPT_KEYSTORE} file used for securing JGroups communications.",
+    "metadata": {
+        "annotations": {
+            "description": "An example EAP 7 application with a MySQL database. For more information about using this template, see https://github.com/jboss-openshift/application-templates.",
+            "iconClass": "icon-eap",
+            "openshift.io/display-name": "JBoss EAP 7.1 + MySQL (Ephemeral with https)",
+            "openshift.io/provider-display-name": "Red Hat, Inc.",
+            "samples.operator.openshift.io/version": "4.0.0-alpha1-69362431c",
+            "tags": "eap,javaee,java,jboss,hidden",
+            "template.openshift.io/documentation-url": "https://access.redhat.com/documentation/en/red-hat-jboss-enterprise-application-platform/",
+            "template.openshift.io/long-description": "This template defines resources needed to develop Red Hat Enterprise Application Server 7.1 based application, including a build configuration, application deployment configuration, database deployment configuration for MySQL using ephemeral (temporary) storage and secure communication using https.",
+            "template.openshift.io/support-url": "https://access.redhat.com",
+            "version": "1.4.16"
+        },
+        "creationTimestamp": "2019-02-20T11:29:52Z",
+        "labels": {
+            "samples.operator.openshift.io/managed": "true"
+        },
+        "name": "eap71-mysql-s2i",
+        "namespace": "openshift",
+        "resourceVersion": "13291",
+        "selfLink": "/apis/template.openshift.io/v1/namespaces/openshift/templates/eap71-mysql-s2i",
+        "uid": "d6df4601-3502-11e9-9faf-0a580a82000b"
+    },
+    "objects": [
+        {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "annotations": {
+                    "description": "The web server's http port.",
+                    "service.alpha.openshift.io/dependencies": "[{\"name\": \"${APPLICATION_NAME}-mysql\", \"kind\": \"Service\"}]"
+                },
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "name": "${APPLICATION_NAME}"
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "port": 8080,
+                        "targetPort": 8080
+                    }
+                ],
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}"
+                }
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "annotations": {
+                    "description": "The web server's https port.",
+                    "service.alpha.openshift.io/dependencies": "[{\"name\": \"${APPLICATION_NAME}-mysql\", \"kind\": \"Service\"}]"
+                },
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "name": "secure-${APPLICATION_NAME}"
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "port": 8443,
+                        "targetPort": 8443
+                    }
+                ],
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}"
+                }
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "annotations": {
+                    "description": "The database server's port."
+                },
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "name": "${APPLICATION_NAME}-mysql"
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "port": 3306,
+                        "targetPort": 3306
+                    }
+                ],
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}-mysql"
+                }
+            }
+        },
+        {
+            "kind": "ServiceAccount",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "eap-service-account"
+            },
+            "secrets": [
+                {
+                    "name": "eap7-app-secret"
+                }
+            ]
+        },
+        {
+            "kind": "Secret",
+            "apiVersion": "v1",
+            "metadata": {
+                "annotations": {
+                    "description": "Default HTTPS keystore (keystore.jks) with name 'jboss' and password 'mykeystorepass' and JGoups keystore (jgroups.jceks) with name 'secret-key' and password 'password'"
+                },
+                "name": "eap7-app-secret"
+            },
+            "data": {
+                "keystore.jks": "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",
+                "jgroups.jceks": "zs7OzgAAAAIAAAABAAAAAwAKc2VjcmV0LWtleQAAAVDQhuHmrO0ABXNyADNjb20uc3VuLmNyeXB0by5wcm92aWRlci5TZWFsZWRPYmplY3RGb3JLZXlQcm90ZWN0b3LNV8pZ5zC7UwIAAHhyABlqYXZheC5jcnlwdG8uU2VhbGVkT2JqZWN0PjY9psO3VHACAARbAA1lbmNvZGVkUGFyYW1zdAACW0JbABBlbmNyeXB0ZWRDb250ZW50cQB+AAJMAAlwYXJhbXNBbGd0ABJMamF2YS9sYW5nL1N0cmluZztMAAdzZWFsQWxncQB+AAN4cHVyAAJbQqzzF/gGCFTgAgAAeHAAAAAPMA0ECHcwLGK6EDyLAgEUdXEAfgAFAAAAmCu9wRKf1aYYUOEWe406ncPtIdm3147G7MJyWUu2kJVY15a2QxeZi9w5J3AF6T64CvylUuQjpcC4DWXwVn9BefntkBR8CzTiH7VxEqVOQ/OkFS29Inoq8t7/NBaTgTdmMkb4ETV1gIsy/+W6kk7QTqxItCkdKKGFE90Be/7yL3tG16TCy/ABKl7CO6PHa44CqK2PUE1oaJ+WdAAWUEJFV2l0aE1ENUFuZFRyaXBsZURFU3QAFlBCRVdpdGhNRDVBbmRUcmlwbGVERVMN658veJP01V2j9y8bQCYIzViutw=="
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "annotations": {
+                    "description": "The JGroups ping port for clustering.",
+                    "service.alpha.kubernetes.io/tolerate-unready-endpoints": "true"
+                },
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "name": "${APPLICATION_NAME}-ping"
+            },
+            "spec": {
+                "clusterIP": "None",
+                "ports": [
+                    {
+                        "name": "ping",
+                        "port": 8888
+                    }
+                ],
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}"
+                }
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "id": "${APPLICATION_NAME}-http",
+            "kind": "Route",
+            "metadata": {
+                "annotations": {
+                    "description": "Route for application's http service."
+                },
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "name": "${APPLICATION_NAME}"
+            },
+            "spec": {
+                "host": "${HOSTNAME_HTTP}",
+                "to": {
+                    "name": "${APPLICATION_NAME}"
+                }
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "id": "${APPLICATION_NAME}-https",
+            "kind": "Route",
+            "metadata": {
+                "annotations": {
+                    "description": "Route for application's https service."
+                },
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "name": "secure-${APPLICATION_NAME}"
+            },
+            "spec": {
+                "host": "${HOSTNAME_HTTPS}",
+                "tls": {
+                    "termination": "passthrough"
+                },
+                "to": {
+                    "name": "secure-${APPLICATION_NAME}"
+                }
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "ImageStream",
+            "metadata": {
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "name": "${APPLICATION_NAME}"
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "BuildConfig",
+            "metadata": {
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "name": "${APPLICATION_NAME}"
+            },
+            "spec": {
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "${APPLICATION_NAME}:latest"
+                    }
+                },
+                "source": {
+                    "contextDir": "${CONTEXT_DIR}",
+                    "git": {
+                        "ref": "${SOURCE_REPOSITORY_REF}",
+                        "uri": "${SOURCE_REPOSITORY_URL}"
+                    },
+                    "type": "Git"
+                },
+                "strategy": {
+                    "sourceStrategy": {
+                        "env": [
+                            {
+                                "name": "MAVEN_MIRROR_URL",
+                                "value": "${MAVEN_MIRROR_URL}"
+                            },
+                            {
+                                "name": "MAVEN_ARGS_APPEND",
+                                "value": "${MAVEN_ARGS_APPEND}"
+                            },
+                            {
+                                "name": "ARTIFACT_DIR",
+                                "value": "${ARTIFACT_DIR}"
+                            }
+                        ],
+                        "forcePull": true,
+                        "from": {
+                            "kind": "ImageStreamTag",
+                            "name": "jboss-eap71-openshift:1.3",
+                            "namespace": "${IMAGE_STREAM_NAMESPACE}"
+                        }
+                    },
+                    "type": "Source"
+                },
+                "triggers": [
+                    {
+                        "github": {
+                            "secret": "${GITHUB_WEBHOOK_SECRET}"
+                        },
+                        "type": "GitHub"
+                    },
+                    {
+                        "generic": {
+                            "secret": "${GENERIC_WEBHOOK_SECRET}"
+                        },
+                        "type": "Generic"
+                    },
+                    {
+                        "imageChange": {},
+                        "type": "ImageChange"
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "DeploymentConfig",
+            "metadata": {
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "name": "${APPLICATION_NAME}"
+            },
+            "spec": {
+                "replicas": 1,
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}"
+                },
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "application": "${APPLICATION_NAME}",
+                            "deploymentConfig": "${APPLICATION_NAME}"
+                        },
+                        "name": "${APPLICATION_NAME}"
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "env": [
+                                    {
+                                        "name": "DB_SERVICE_PREFIX_MAPPING",
+                                        "value": "${APPLICATION_NAME}-mysql=DB"
+                                    },
+                                    {
+                                        "name": "DB_JNDI",
+                                        "value": "${DB_JNDI}"
+                                    },
+                                    {
+                                        "name": "DB_USERNAME",
+                                        "value": "${DB_USERNAME}"
+                                    },
+                                    {
+                                        "name": "DB_PASSWORD",
+                                        "value": "${DB_PASSWORD}"
+                                    },
+                                    {
+                                        "name": "DB_DATABASE",
+                                        "value": "${DB_DATABASE}"
+                                    },
+                                    {
+                                        "name": "TX_DATABASE_PREFIX_MAPPING",
+                                        "value": "${APPLICATION_NAME}-mysql=DB"
+                                    },
+                                    {
+                                        "name": "DB_MIN_POOL_SIZE",
+                                        "value": "${DB_MIN_POOL_SIZE}"
+                                    },
+                                    {
+                                        "name": "DB_MAX_POOL_SIZE",
+                                        "value": "${DB_MAX_POOL_SIZE}"
+                                    },
+                                    {
+                                        "name": "DB_TX_ISOLATION",
+                                        "value": "${DB_TX_ISOLATION}"
+                                    },
+                                    {
+                                        "name": "JGROUPS_PING_PROTOCOL",
+                                        "value": "openshift.DNS_PING"
+                                    },
+                                    {
+                                        "name": "OPENSHIFT_DNS_PING_SERVICE_NAME",
+                                        "value": "${APPLICATION_NAME}-ping"
+                                    },
+                                    {
+                                        "name": "OPENSHIFT_DNS_PING_SERVICE_PORT",
+                                        "value": "8888"
+                                    },
+                                    {
+                                        "name": "HTTPS_KEYSTORE_DIR",
+                                        "value": "/etc/eap-secret-volume"
+                                    },
+                                    {
+                                        "name": "HTTPS_KEYSTORE",
+                                        "value": "${HTTPS_KEYSTORE}"
+                                    },
+                                    {
+                                        "name": "HTTPS_KEYSTORE_TYPE",
+                                        "value": "${HTTPS_KEYSTORE_TYPE}"
+                                    },
+                                    {
+                                        "name": "HTTPS_NAME",
+                                        "value": "${HTTPS_NAME}"
+                                    },
+                                    {
+                                        "name": "HTTPS_PASSWORD",
+                                        "value": "${HTTPS_PASSWORD}"
+                                    },
+                                    {
+                                        "name": "MQ_CLUSTER_PASSWORD",
+                                        "value": "${MQ_CLUSTER_PASSWORD}"
+                                    },
+                                    {
+                                        "name": "MQ_QUEUES",
+                                        "value": "${MQ_QUEUES}"
+                                    },
+                                    {
+                                        "name": "MQ_TOPICS",
+                                        "value": "${MQ_TOPICS}"
+                                    },
+                                    {
+                                        "name": "JGROUPS_ENCRYPT_SECRET",
+                                        "value": "${JGROUPS_ENCRYPT_SECRET}"
+                                    },
+                                    {
+                                        "name": "JGROUPS_ENCRYPT_KEYSTORE_DIR",
+                                        "value": "/etc/jgroups-encrypt-secret-volume"
+                                    },
+                                    {
+                                        "name": "JGROUPS_ENCRYPT_KEYSTORE",
+                                        "value": "${JGROUPS_ENCRYPT_KEYSTORE}"
+                                    },
+                                    {
+                                        "name": "JGROUPS_ENCRYPT_NAME",
+                                        "value": "${JGROUPS_ENCRYPT_NAME}"
+                                    },
+                                    {
+                                        "name": "JGROUPS_ENCRYPT_PASSWORD",
+                                        "value": "${JGROUPS_ENCRYPT_PASSWORD}"
+                                    },
+                                    {
+                                        "name": "JGROUPS_CLUSTER_PASSWORD",
+                                        "value": "${JGROUPS_CLUSTER_PASSWORD}"
+                                    },
+                                    {
+                                        "name": "AUTO_DEPLOY_EXPLODED",
+                                        "value": "${AUTO_DEPLOY_EXPLODED}"
+                                    },
+                                    {
+                                        "name": "DEFAULT_JOB_REPOSITORY",
+                                        "value": "${APPLICATION_NAME}-mysql"
+                                    },
+                                    {
+                                        "name": "TIMER_SERVICE_DATA_STORE",
+                                        "value": "${APPLICATION_NAME}-mysql"
+                                    }
+                                ],
+                                "image": "${APPLICATION_NAME}",
+                                "imagePullPolicy": "Always",
+                                "livenessProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "/bin/bash",
+                                            "-c",
+                                            "/opt/eap/bin/livenessProbe.sh"
+                                        ]
+                                    },
+                                    "initialDelaySeconds": 60
+                                },
+                                "name": "${APPLICATION_NAME}",
+                                "ports": [
+                                    {
+                                        "containerPort": 8778,
+                                        "name": "jolokia",
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "containerPort": 8080,
+                                        "name": "http",
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "containerPort": 8443,
+                                        "name": "https",
+                                        "protocol": "TCP"
+                                    },
+                                    {
+                                        "containerPort": 8888,
+                                        "name": "ping",
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "/bin/bash",
+                                            "-c",
+                                            "/opt/eap/bin/readinessProbe.sh"
+                                        ]
+                                    }
+                                },
+                                "resources": {
+                                    "limits": {
+                                        "memory": "${MEMORY_LIMIT}"
+                                    }
+                                },
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/etc/eap-secret-volume",
+                                        "name": "eap-keystore-volume",
+                                        "readOnly": true
+                                    },
+                                    {
+                                        "mountPath": "/etc/jgroups-encrypt-secret-volume",
+                                        "name": "eap-jgroups-keystore-volume",
+                                        "readOnly": true
+                                    }
+                                ]
+                            }
+                        ],
+                        "terminationGracePeriodSeconds": 75,
+                        "volumes": [
+                            {
+                                "name": "eap-keystore-volume",
+                                "secret": {
+                                    "secretName": "${HTTPS_SECRET}"
+                                }
+                            },
+                            {
+                                "name": "eap-jgroups-keystore-volume",
+                                "secret": {
+                                    "secretName": "${JGROUPS_ENCRYPT_SECRET}"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "triggers": [
+                    {
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "${APPLICATION_NAME}"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "name": "${APPLICATION_NAME}:latest"
+                            }
+                        },
+                        "type": "ImageChange"
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "DeploymentConfig",
+            "metadata": {
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                },
+                "name": "${APPLICATION_NAME}-mysql"
+            },
+            "spec": {
+                "replicas": 1,
+                "selector": {
+                    "deploymentConfig": "${APPLICATION_NAME}-mysql"
+                },
+                "strategy": {
+                    "type": "Recreate"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "application": "${APPLICATION_NAME}",
+                            "deploymentConfig": "${APPLICATION_NAME}-mysql"
+                        },
+                        "name": "${APPLICATION_NAME}-mysql"
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "env": [
+                                    {
+                                        "name": "MYSQL_USER",
+                                        "value": "${DB_USERNAME}"
+                                    },
+                                    {
+                                        "name": "MYSQL_PASSWORD",
+                                        "value": "${DB_PASSWORD}"
+                                    },
+                                    {
+                                        "name": "MYSQL_DATABASE",
+                                        "value": "${DB_DATABASE}"
+                                    },
+                                    {
+                                        "name": "MYSQL_LOWER_CASE_TABLE_NAMES",
+                                        "value": "${MYSQL_LOWER_CASE_TABLE_NAMES}"
+                                    },
+                                    {
+                                        "name": "MYSQL_MAX_CONNECTIONS",
+                                        "value": "${MYSQL_MAX_CONNECTIONS}"
+                                    },
+                                    {
+                                        "name": "MYSQL_FT_MIN_WORD_LEN",
+                                        "value": "${MYSQL_FT_MIN_WORD_LEN}"
+                                    },
+                                    {
+                                        "name": "MYSQL_FT_MAX_WORD_LEN",
+                                        "value": "${MYSQL_FT_MAX_WORD_LEN}"
+                                    },
+                                    {
+                                        "name": "MYSQL_AIO",
+                                        "value": "${MYSQL_AIO}"
+                                    }
+                                ],
+                                "image": "mysql",
+                                "imagePullPolicy": "Always",
+                                "livenessProbe": {
+                                    "initialDelaySeconds": 30,
+                                    "tcpSocket": {
+                                        "port": 3306
+                                    },
+                                    "timeoutSeconds": 1
+                                },
+                                "name": "${APPLICATION_NAME}-mysql",
+                                "ports": [
+                                    {
+                                        "containerPort": 3306,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "readinessProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "/bin/sh",
+                                            "-i",
+                                            "-c",
+                                            "MYSQL_PWD=\"$MYSQL_PASSWORD\" mysql -h 127.0.0.1 -u $MYSQL_USER -D $MYSQL_DATABASE -e 'SELECT 1'"
+                                        ]
+                                    },
+                                    "initialDelaySeconds": 5,
+                                    "timeoutSeconds": 1
+                                },
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/var/lib/mysql/data",
+                                        "name": "${APPLICATION_NAME}-mysql-pvol"
+                                    }
+                                ]
+                            }
+                        ],
+                        "terminationGracePeriodSeconds": 60,
+                        "volumes": [
+                            {
+                                "name": "${APPLICATION_NAME}-mysql-pvol",
+                                "persistentVolumeClaim": {
+                                    "claimName": "${APPLICATION_NAME}-mysql-claim"
+                                }
+                            }
+                        ]
+                    }
+                },
+                "triggers": [
+                    {
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "${APPLICATION_NAME}-mysql"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "name": "mysql:${MYSQL_IMAGE_STREAM_TAG}",
+                                "namespace": "${IMAGE_STREAM_NAMESPACE}"
+                            }
+                        },
+                        "type": "ImageChange"
+                    },
+                    {
+                        "type": "ConfigChange"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "PersistentVolumeClaim",
+            "metadata": {
+                "name": "${APPLICATION_NAME}-mysql-claim",
+                "annotations": {
+                    "volume.alpha.kubernetes.io/storage-class": "foo"
+                },
+                "labels": {
+                    "application": "${APPLICATION_NAME}"
+                }
+            },
+            "spec": {
+                "accessModes": [
+                    "ReadWriteOnce"
+                ],
+                "resources": {
+                    "requests": {
+                        "storage": "${VOLUME_CAPACITY}"
+                    }
+                }
+            }
+        }
+    ],
+    "parameters": [
+        {
+            "description": "The name for the application.",
+            "displayName": "Application Name",
+            "name": "APPLICATION_NAME",
+            "required": true,
+            "value": "eap-app"
+        },
+        {
+            "description": "Custom hostname for http service route.  Leave blank for default hostname, e.g.: \u003capplication-name\u003e-\u003cproject\u003e.\u003cdefault-domain-suffix\u003e",
+            "displayName": "Custom http Route Hostname",
+            "name": "HOSTNAME_HTTP"
+        },
+        {
+            "description": "Custom hostname for https service route.  Leave blank for default hostname, e.g.: secure-\u003capplication-name\u003e-\u003cproject\u003e.\u003cdefault-domain-suffix\u003e",
+            "displayName": "Custom https Route Hostname",
+            "name": "HOSTNAME_HTTPS"
+        },
+        {
+            "description": "Git source URI for application",
+            "displayName": "Git Repository URL",
+            "name": "SOURCE_REPOSITORY_URL",
+            "required": true,
+            "value": "https://github.com/jboss-openshift/openshift-quickstarts"
+        },
+        {
+            "description": "Git branch/tag reference",
+            "displayName": "Git Reference",
+            "name": "SOURCE_REPOSITORY_REF",
+            "value": "1.4"
+        },
+        {
+            "description": "Path within Git project to build; empty for root project directory.",
+            "displayName": "Context Directory",
+            "name": "CONTEXT_DIR",
+            "value": "todolist/todolist-jdbc"
+        },
+        {
+            "description": "Database JNDI name used by application to resolve the datasource, e.g. java:/jboss/datasources/mysql",
+            "displayName": "Database JNDI Name",
+            "name": "DB_JNDI",
+            "value": "java:jboss/datasources/TodoListDS"
+        },
+        {
+            "description": "Database name",
+            "displayName": "Database Name",
+            "name": "DB_DATABASE",
+            "required": true,
+            "value": "root"
+        },
+        {
+            "description": "Size of persistent storage for database volume.",
+            "displayName": "Volume Capacity",
+            "name": "VOLUME_CAPACITY",
+            "value": "1Gi",
+            "required": true
+        },
+        {
+            "description": "Queue names",
+            "displayName": "Queues",
+            "name": "MQ_QUEUES"
+        },
+        {
+            "description": "Topic names",
+            "displayName": "Topics",
+            "name": "MQ_TOPICS"
+        },
+        {
+            "description": "The name of the secret containing the keystore file",
+            "displayName": "Server Keystore Secret Name",
+            "name": "HTTPS_SECRET",
+            "required": true,
+            "value": "eap7-app-secret"
+        },
+        {
+            "description": "The name of the keystore file within the secret",
+            "displayName": "Server Keystore Filename",
+            "name": "HTTPS_KEYSTORE",
+            "value": "keystore.jks"
+        },
+        {
+            "description": "The type of the keystore file (JKS or JCEKS)",
+            "displayName": "Server Keystore Type",
+            "name": "HTTPS_KEYSTORE_TYPE"
+        },
+        {
+            "description": "The name associated with the server certificate",
+            "displayName": "Server Certificate Name",
+            "name": "HTTPS_NAME"
+        },
+        {
+            "description": "The password for the keystore and certificate",
+            "displayName": "Server Keystore Password",
+            "name": "HTTPS_PASSWORD"
+        },
+        {
+            "description": "Sets xa-pool/min-pool-size for the configured datasource.",
+            "displayName": "Datasource Minimum Pool Size",
+            "name": "DB_MIN_POOL_SIZE"
+        },
+        {
+            "description": "Sets xa-pool/max-pool-size for the configured datasource.",
+            "displayName": "Datasource Maximum Pool Size",
+            "name": "DB_MAX_POOL_SIZE"
+        },
+        {
+            "description": "Sets transaction-isolation for the configured datasource.",
+            "displayName": "Datasource Transaction Isolation",
+            "name": "DB_TX_ISOLATION"
+        },
+        {
+            "description": "Sets how the table names are stored and compared.",
+            "displayName": "MySQL Lower Case Table Names",
+            "name": "MYSQL_LOWER_CASE_TABLE_NAMES"
+        },
+        {
+            "description": "The maximum permitted number of simultaneous client connections.",
+            "displayName": "MySQL Maximum number of connections",
+            "name": "MYSQL_MAX_CONNECTIONS"
+        },
+        {
+            "description": "The minimum length of the word to be included in a FULLTEXT index.",
+            "displayName": "MySQL FullText Minimum Word Length",
+            "name": "MYSQL_FT_MIN_WORD_LEN"
+        },
+        {
+            "description": "The maximum length of the word to be included in a FULLTEXT index.",
+            "displayName": "MySQL FullText Maximum Word Length",
+            "name": "MYSQL_FT_MAX_WORD_LEN"
+        },
+        {
+            "description": "Controls the innodb_use_native_aio setting value if the native AIO is broken.",
+            "displayName": "MySQL AIO",
+            "name": "MYSQL_AIO"
+        },
+        {
+            "description": "A-MQ cluster admin password",
+            "displayName": "A-MQ cluster password",
+            "from": "[a-zA-Z0-9]{8}",
+            "generate": "expression",
+            "name": "MQ_CLUSTER_PASSWORD",
+            "required": true
+        },
+        {
+            "description": "Database user name",
+            "displayName": "Database Username",
+            "from": "user[a-zA-Z0-9]{3}",
+            "generate": "expression",
+            "name": "DB_USERNAME",
+            "required": true
+        },
+        {
+            "description": "Database user password",
+            "displayName": "Database Password",
+            "from": "[a-zA-Z0-9]{8}",
+            "generate": "expression",
+            "name": "DB_PASSWORD",
+            "required": true
+        },
+        {
+            "description": "GitHub trigger secret",
+            "displayName": "Github Webhook Secret",
+            "from": "[a-zA-Z0-9]{8}",
+            "generate": "expression",
+            "name": "GITHUB_WEBHOOK_SECRET",
+            "required": true
+        },
+        {
+            "description": "Generic build trigger secret",
+            "displayName": "Generic Webhook Secret",
+            "from": "[a-zA-Z0-9]{8}",
+            "generate": "expression",
+            "name": "GENERIC_WEBHOOK_SECRET",
+            "required": true
+        },
+        {
+            "description": "Namespace in which the ImageStreams for Red Hat Middleware images are installed. These ImageStreams are normally installed in the openshift namespace. You should only need to modify this if you've installed the ImageStreams in a different namespace/project.",
+            "displayName": "ImageStream Namespace",
+            "name": "IMAGE_STREAM_NAMESPACE",
+            "required": true,
+            "value": "openshift"
+        },
+        {
+            "description": "The name of the secret containing the keystore file",
+            "displayName": "JGroups Secret Name",
+            "name": "JGROUPS_ENCRYPT_SECRET",
+            "value": "eap7-app-secret"
+        },
+        {
+            "description": "The name of the keystore file within the secret",
+            "displayName": "JGroups Keystore Filename",
+            "name": "JGROUPS_ENCRYPT_KEYSTORE",
+            "value": "jgroups.jceks"
+        },
+        {
+            "description": "The name associated with the server certificate",
+            "displayName": "JGroups Certificate Name",
+            "name": "JGROUPS_ENCRYPT_NAME"
+        },
+        {
+            "description": "The password for the keystore and certificate",
+            "displayName": "JGroups Keystore Password",
+            "name": "JGROUPS_ENCRYPT_PASSWORD"
+        },
+        {
+            "description": "JGroups cluster password",
+            "displayName": "JGroups Cluster Password",
+            "from": "[a-zA-Z0-9]{8}",
+            "generate": "expression",
+            "name": "JGROUPS_CLUSTER_PASSWORD",
+            "required": true
+        },
+        {
+            "description": "Controls whether exploded deployment content should be automatically deployed",
+            "displayName": "Deploy Exploded Archives",
+            "name": "AUTO_DEPLOY_EXPLODED",
+            "value": "false"
+        },
+        {
+            "description": "Maven mirror to use for S2I builds",
+            "displayName": "Maven mirror URL",
+            "name": "MAVEN_MIRROR_URL"
+        },
+        {
+            "description": "Maven additional arguments to use for S2I builds",
+            "displayName": "Maven Additional Arguments",
+            "name": "MAVEN_ARGS_APPEND"
+        },
+        {
+            "description": "List of directories from which archives will be copied into the deployment folder. If unspecified, all archives in /target will be copied.",
+            "name": "ARTIFACT_DIR"
+        },
+        {
+            "description": "The tag to use for the \"mysql\" image stream.  Typically, this aligns with the major.minor version of MySQL.",
+            "displayName": "MySQL Image Stream Tag",
+            "name": "MYSQL_IMAGE_STREAM_TAG",
+            "required": true,
+            "value": "5.7"
+        },
+        {
+            "description": "Container memory limit",
+            "name": "MEMORY_LIMIT",
+            "value": "1Gi"
+        },
+        {
+         "name": "IDENTIFIER",
+         "description": "Number to append to the name of resources",
+         "value": "1"
+        }
+    ]
+}
