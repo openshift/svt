@@ -1,0 +1,22 @@
+projects:
+  - num: 1
+    basename: fiotest
+    tuning: default
+    templates:
+      - num: 25
+        file: ./content/fio/fio-template1.json
+        parameters:
+          - STORAGE_CLASS: "gp2"
+          - STORAGE_SIZE: "1Gi"
+          - MOUNT_PATH: "/mnt/pvcmount"
+          - DOCKER_IMAGE: "gcr.io/google_containers/pause-amd64:3.0"
+          # other parameters
+
+tuningsets:
+  - name: default
+    templates:
+      stepping:
+        stepsize: 5
+        pause: 0 min
+      rate_limit:
+        delay: 0 ms
