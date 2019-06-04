@@ -1,111 +1,165 @@
 {
-    "kind": "Template",
-    "apiVersion": "v1",
-    "metadata": {
-	"name": "django-psql-example",
-	"annotations": {
-	    "description": "An example Django application with a PostgreSQL database",
-	    "source": "https://github.com/openshift/online/blob/master/templates/examples/django-postgresql.json",
-	    "tags": "quickstart,python,django,postgresql",
-	    "iconClass": "icon-python"
-	}
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "django-psql-example",
+    "annotations": {
+      "openshift.io/display-name": "Django + PostgreSQL (Ephemeral)",
+      "description": "An example Django application with a PostgreSQL database. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/django-ex/blob/master/README.md.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.",
+      "tags": "quickstart,python,django",
+      "iconClass": "icon-python",
+      "openshift.io/long-description": "This template defines resources needed to develop a Django based application, including a build configuration, application deployment configuration, and database deployment configuration.  The database is stored in non-persistent storage, so this configuration should be used for experimental purposes only.",
+      "openshift.io/provider-display-name": "Red Hat, Inc.",
+      "openshift.io/documentation-url": "https://github.com/sclorg/django-ex",
+      "openshift.io/support-url": "https://access.redhat.com",
+      "template.openshift.io/bindable": "false"
+    }
+  },
+  "message": "The following service(s) have been created in your project: ${NAME}, ${DATABASE_SERVICE_NAME}.\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/sclorg/django-ex/blob/master/README.md.",
+  "labels": {
+      "template": "django-psql-example",
+      "app": "django-psql-example"
+  },
+  "objects": [
+    {
+      "kind": "ImageStream",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}",
+        "annotations": {
+          "description": "Keeps track of changes in the application image"
+        }
+      }
     },
-    "labels": {
-	"template": "django-psql-example"
+    {
+      "kind": "BuildConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "${NAME}",
+        "annotations": {
+          "description": "Defines how to build the application",
+          "template.alpha.openshift.io/wait-for-ready": "true"
+        }
+      },
+      "spec": {
+        "source": {
+          "type": "Git",
+          "git": {
+            "uri": "${SOURCE_REPOSITORY_URL}",
+            "ref": "${SOURCE_REPOSITORY_REF}"
+          },
+          "contextDir": "${CONTEXT_DIR}"
+        },
+        "strategy": {
+          "type": "Source",
+          "sourceStrategy": {
+            "from": {
+              "kind": "ImageStreamTag",
+              "namespace": "${NAMESPACE}",
+              "name": "python:${PYTHON_VERSION}"
+            },
+            "env": [
+              {
+                  "name": "PIP_INDEX_URL",
+                  "value": "${PIP_INDEX_URL}"
+              }
+            ]
+          }
+        },
+        "output": {
+          "to": {
+            "kind": "ImageStreamTag",
+            "name": "${NAME}:latest"
+          }
+        },
+        "triggers": [
+          {
+            "type": "ImageChange"
+          },
+          {
+            "type": "ConfigChange"
+          },
+          {
+            "type": "GitHub",
+            "github": {
+              "secret": "${GITHUB_WEBHOOK_SECRET}"
+            }
+          }
+        ],
+        "postCommit": {
+           "script": "./manage.py test"
+        }
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "NAME",
+      "displayName": "Name",
+      "description": "The name assigned to all of the frontend objects defined in this template.",
+      "required": true,
+      "value": "django-psql-example"
     },
-    "objects": [
-	{
-	    "kind": "ImageStream",
-	    "apiVersion": "v1",
-	    "metadata": {
-		"name": "django-psql-example",
-		"annotations": {
-		    "description": "Keeps track of changes in the application image"
-		}
-	    }
-	},
-	{
-	    "kind": "BuildConfig",
-	    "apiVersion": "v1",
-	    "metadata": {
-		"name": "django-psql-example",
-		"annotations": {
-		    "description": "Defines how to build the application"
-		}
-	    },
-	    "spec": {
-		"source": {
-		    "type": "Git",
-		    "git": {
-			"uri": "${SOURCE_REPOSITORY_URL}",
-			"ref": "${SOURCE_REPOSITORY_REF}"
-		    },
-		    "contextDir": "${CONTEXT_DIR}"
-		},
-		"strategy": {
-		    "type": "Source",
-		    "sourceStrategy": {
-			"from": {
-			    "kind": "ImageStreamTag",
-			    "namespace": "openshift",
-			    "name": "python:3.4"
-			}
-		    }
-		},
-		"output": {
-		    "to": {
-			"kind": "ImageStreamTag",
-			"name": "django-psql-example:latest"
-		    }
-		},
-		"triggers": [
-		    {
-			"type": "ImageChange"
-		    },
-		    {
-			"type": "ConfigChange"
-		    },
-		    {
-			"type": "GitHub",
-			"github": {
-			    "secret": "${GITHUB_WEBHOOK_SECRET}"
-			}
-		    }
-		],
-		"postCommit": {
-		    "script": "./manage.py test"
-		}
-	    }
-	}
-    ],
-    "parameters": [
-	{
-	    "name": "SOURCE_REPOSITORY_URL",
-	    "displayName": "Git Repository URL",
-	    "description": "The URL of the repository with your application source code.",
-	    "value": "https://github.com/openshift/django-ex.git"
-	},
-	{
-	    "name": "SOURCE_REPOSITORY_REF",
-	    "displayName": "Git Reference",
-	    "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch."
-	},
-	{
-	    "name": "CONTEXT_DIR",
-	    "displayName": "Context Directory",
-	    "description": "Set this to the relative path to your project if it is not in the root of your repository."
-	},
-	{
-	    "name": "GITHUB_WEBHOOK_SECRET",
-	    "displayName": "GitHub Webhook Secret",
-	    "description": "A secret string used to configure the GitHub webhook.",
-	    "generate": "expression",
-	    "from": "[a-zA-Z0-9]{40}"
-	},
+    {
+      "name": "NAMESPACE",
+      "displayName": "Namespace",
+      "required": true,
+      "description": "The OpenShift Namespace where the ImageStream resides.",
+      "value": "openshift"
+    },
+    {
+      "name": "PYTHON_VERSION",
+      "displayName": "Version of Python Image",
+      "description": "Version of Python image to be used (3.6 or latest).",
+      "value": "3.6",
+      "required": true
+    },
+    {
+      "name": "SOURCE_REPOSITORY_URL",
+      "displayName": "Git Repository URL",
+      "required": true,
+      "description": "The URL of the repository with your application source code.",
+      "value": "https://github.com/sclorg/django-ex.git"
+    },
+    {
+      "name": "SOURCE_REPOSITORY_REF",
+      "displayName": "Git Reference",
+      "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch."
+    },
+    {
+      "name": "CONTEXT_DIR",
+      "displayName": "Context Directory",
+      "description": "Set this to the relative path to your project if it is not in the root of your repository."
+    },
+    {
+      "name": "APPLICATION_DOMAIN",
+      "displayName": "Application Hostname",
+      "description": "The exposed hostname that will route to the Django service, if left blank a value will be defaulted.",
+      "value": ""
+    },
+    {
+      "name": "GITHUB_WEBHOOK_SECRET",
+      "displayName": "GitHub Webhook Secret",
+      "description": "Github trigger secret.  A difficult to guess string encoded as part of the webhook URL.  Not encrypted.",
+      "generate": "expression",
+      "from": "[a-zA-Z0-9]{40}"
+    },
+    {
+      "name": "DATABASE_SERVICE_NAME",
+      "displayName": "Database Service Name",
+      "required": true,
+      "value": "postgresql"
+    },
+    {
+      "name": "PIP_INDEX_URL",
+      "displayName": "Custom PyPi Index URL",
+      "description": "The custom PyPi index URL",
+      "value": ""
+    },
     {
       "name": "IDENTIFIER",
       "description": "Number to append to the name of resources",
       "value": "1"
     }
-    ]
+  ]
 }
