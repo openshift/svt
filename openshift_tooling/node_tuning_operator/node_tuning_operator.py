@@ -77,6 +77,14 @@ if number_of_tuned_clusters != number_of_working_nodes:
 passed(None)
 
 
+# Verification number of secrets
+print_step("Verification of number of secrets")
+number_of_secrets = int(execute_command("oc get secrets -n openshift-cluster-node-tuning-operator | wc -l"))
+if number_of_secrets > number_of_working_nodes * 3:
+    fail("Number of secrets is too big: {}".format(number_of_secrets, cleanup))
+passed(None)
+
+
 # Verification that pod can be tuned
 print_step("Verify that after creating new resource with 'es' label pod will be tuned")
 execute_command("oc new-project my-logging-project")
