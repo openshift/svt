@@ -8,10 +8,6 @@ enable_pbench=$4
 pbench_copy_results=$5
 pbench_user_benchmark=$6
 
-cd /root/svt/openshift_scalability # go to svt working dir
-
-# replace with init script
-oc login -u system:admin
 if [ "${enable_pbench}" == "true" ]; then
     pbench-register-tool-set
 fi
@@ -19,7 +15,7 @@ fi
 function sanity_stepping() {
   stepping=$1
   pbench_user_benchmark=$(echo ${pbench_user_benchmark} |sed "s| --|_STEPPING${stepping} --|")
-  ./prometheus-loader.sh 20 20 ${period} ${duration} ${enable_pbench} ${pbench_copy_results} ${pbench_user_benchmark} ${stepping}
+  ./prometheus-loader.sh 0 0 ${period} ${duration} ${enable_pbench} ${pbench_copy_results} ${pbench_user_benchmark} ${stepping}
 }
 
 # last 15min

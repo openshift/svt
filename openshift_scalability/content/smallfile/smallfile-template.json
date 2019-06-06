@@ -1,0 +1,131 @@
+{
+    "apiVersion": "v1",
+    "kind": "Template",
+    "metadata": {
+        "name": "smallfile-test",
+        "labels": {
+            "name": "smallfile-test"
+        },
+        "annotations": {
+            "descriptions": "smallfile test running inside pods",
+            "tags": "smallfile, smallfile-test"
+        }
+    },
+    "objects": [
+        {
+            "kind": "Pod",
+            "apiVersion": "v1",
+            "metadata": {
+                "generateName": "smallfile-pod-",
+                "labels": {
+                    "name": "smallfile-pod-${IDENTIFIER}"
+                }
+            },
+            "spec": {
+                "containers": [
+                    {
+                        "image": "${DOCKER_IMAGE}",
+                        "imagePullPolicy": "IfNotPresent",
+                        "name": "smallfile-pod",
+			"env": [
+				{
+					"name": "topdir",
+					"value": "/mnt/cephfs"
+				},
+				{
+					"name": "smf_launch_id",
+					"value": "${smf_launch_id}"
+				}
+			],
+			
+                        "volumeMounts": [
+                            {
+                                "name": "${VOL_MOUNT_NAME}",
+                                "mountPath": "${MOUNT_PATH}"
+                            }
+                        ],
+                        "securityContext": {
+                            "capabilities": {},
+                            "privileged": true,
+                            "seLinuxOptions": {
+                                "level": "s0:c9,c4"
+                            }
+                        },
+                        "terminationMessagePath": "/dev/termination-log"
+                    }
+                ],
+                "restartPolicy": "Never",
+                "volumes":[
+                    {
+                        "name": "${VOL_MOUNT_NAME}",
+                        "persistentVolumeClaim": {
+                            "claimName": "${PVC_NAME}"
+                        }
+                    }
+                ]
+            }
+        }
+    ],
+    "parameters": [
+        {
+            "name": "VOL_MOUNT_NAME",
+            "description" : "Name of volume mount",
+            "required": true,
+            "value": "persistentvolume"
+        },
+        {
+            "name": "PVC_NAME",
+            "description": "PVC name",
+            "required": true,
+	    "value": "pvcname"
+        },
+        {
+            "name": "DOCKER_IMAGE",
+            "description": "Docker image name - it has to have sshd service enabled and started. Pbench smallfile needs sshd service and smallfile ports",
+            "required": true,
+            "value": "dockerimage"
+        },
+        {
+            "name": "SMALLFILE_SERVICE_NAME",
+            "description": "SMALLFILE service name",
+            "required": true,
+            "value": "smallfile"
+        },
+        {
+            "name" : "STORAGE_CLASS",
+            "description": "Storagecclass to use - here we expect storageclass name",
+            "required": true,
+            "value": "storageclassname"
+        },
+        {
+            "name": "STORAGE_SIZE",
+            "description": "The PVC size - default is 1Gi",
+            "required": true,
+            "value": "1Gi"
+        },
+        {
+            "name": "ACCESS_MODES",
+            "description": "PVC access mode - this will have different values for different storage backends",
+            "required": true,
+            "value": "ReadWriteMany"
+        },
+        {
+            "name": "IDENTIFIER",
+            "description": "Number to append to the name of resources",
+            "value": "1"
+        },
+	{
+	   "name": "smf_launch_id",
+            "description": "SMF_LAUNCH_ID identifier",
+            "required": true,
+            "from": "smf[a-z0-9]{5}",
+            "generate": "expression"
+	},
+        {
+          "name": "MOUNT_PATH",
+          "description": "The location where inside pod PVC will be mounted",
+          "required": true,
+          "value":"/mnt/pvcmount"
+        }
+    ]
+}

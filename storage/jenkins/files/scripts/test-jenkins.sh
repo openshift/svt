@@ -15,7 +15,7 @@ echo "TMP_FOLDER: ${TMP_FOLDER}"
 echo "output_dir: ${output_dir}"
 echo "TEST_BUILD_NUMBER: ${TEST_BUILD_NUMBER}"
 
-readonly JJB_POD=$(oc get pod -n ${NAMESPACE} | grep jjb | awk '{print $1}')
+readonly JJB_POD=$(oc get pod -n ${NAMESPACE} | grep -v deploy | grep jjb | awk '{print $1}')
 readonly JENKINS_URL=$(oc get route -n ${NAMESPACE} --no-headers | awk '{print $2}')
 
 oc exec -n ${NAMESPACE} "${JJB_POD}" -- rm -f /data/*

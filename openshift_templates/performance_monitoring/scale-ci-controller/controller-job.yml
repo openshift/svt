@@ -1,0 +1,77 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: controller
+  annotations:
+  openshift.io/scc: privileged
+  labels:
+    name: controller
+spec:
+  parallelism: 1
+  completions: 1
+  backoffLimit: 0  
+  template:         
+    metadata:
+      name: controller
+    spec:
+      hostNetwork: true
+      containers:
+      - name: controller
+        image: ravielluri/image:controller
+        imagePullPolicy: Always
+        securityContext:
+          privileged: true
+        command:
+          - /root/run.sh 
+        envFrom:
+        - configMapRef:
+            name: tooling-config
+        volumeMounts:
+          - name: kube-config
+            mountPath: /root/.kube
+          - name: proc-mount
+            mountPath: /proc_host
+          - name: ssh-keys
+            mountPath: /root/.ssh/id_rsa
+          - name: ssh-authorized
+            mountPath: /root/.ssh/authorized_keys
+          - name: results
+            mountPath: /var/lib/pbench-agent
+          - name: tools
+            mountPath: /var/lib/pbench-agent/tools-default
+          - name: ocp-volumes
+            mountPath: /var/lib/kubelet/pods
+        ports:
+          - containerPort: 9090
+          - containerPort: 2022
+      volumes:
+        - name: kube-config
+          hostPath:
+            path: /root/.kube
+        - name: proc-mount
+          hostPath:
+            path: /proc
+        - name: ssh-keys
+          hostPath:
+            path: /root/.ssh/id_rsa
+        - name: ssh-authorized
+          hostPath:
+            path: /root/.ssh/authorized_keys
+        - name: results
+          hostPath:
+            path: /var/lib/pbench-agent
+        - name: tools
+          hostPath: 
+            path: /var/lib/pbench-agent/tools-default
+        - name: ocp-volumes
+          hostPath:
+            path: /var/lib/kubelet/pods
+      serviceAccountName: useroot 
+      nodeSelector:
+        role: controller
+      restartPolicy: Never
+      tolerations:
+        - key: "role"
+          value: "controller"
+          operator: "Equal"
+          effect: "NoSchedule"

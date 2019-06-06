@@ -33,7 +33,7 @@ prometheus_pod=$(oc get pods -n $prometheus_namespace | grep -w "Running" | awk 
 echo "copying prometheus DB from $prometheus_pod"
 oc cp $prometheus_namespace/$prometheus_pod:/prometheus/wal -c prometheus wal/
 echo "creating a tarball of the captured DB at $output_dir"
-XZ_OPT=--threads=0 tar cJf $output_dir/prometheus.tar.gz wal
+XZ_OPT=--threads=0 tar cJf $output_dir/prometheus.tar.xz wal
 if [[ $? == 0 ]]; then
 	rm -rf wal
 fi

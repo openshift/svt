@@ -72,7 +72,7 @@ do
   NAMESPACE="${NAMESPACE_BASENAME}-${i}"
   if [[ "${DELETE_EXISTING_PROJECTS}" == "true" ]];
   then
-    oc delete project ${NAMESPACE}
+    oc delete project ${NAMESPACE} --wait=false
   fi
   sleep 10
 done

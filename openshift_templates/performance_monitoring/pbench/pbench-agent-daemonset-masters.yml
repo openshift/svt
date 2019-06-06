@@ -1,0 +1,69 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: pbench-agent-masters
+  annotations:
+  openshift.io/scc: privileged
+  labels:
+    name: pbench-agent-masters
+spec:
+  template:
+    metadata:
+      labels:
+        name: pbench-agent-masters
+    spec:
+      hostPID: true
+      hostNetwork: true
+      containers:
+      - image: docker.io/ravielluri/image:agent
+        name: pbench-agent
+        imagePullPolicy: Always 
+        securityContext:
+          privileged: true
+        env:
+        - name: SYSTEMD_IGNORE_CHROOT
+          value: "1"
+        command:
+        - /usr/lib/systemd/systemd
+        - --system
+        volumeMounts:
+          - name: kube-config
+            mountPath: /root/.kube
+          - name: proc-mount
+            mountPath: /proc_host
+          - name: ssh-keys
+            mountPath: /root/.ssh
+          - name: admin-keys
+            mountPath: /etc/origin/master
+          - name: certs
+            mountPath: /etc/pki
+          - name: ocp-volumes
+            mountPath: /var/lib/kubelet/pods
+        ports:
+          - containerPort: 2022
+          - containerPort: 9090
+      volumes:
+        - name: kube-config
+          hostPath:
+            path: /root/.kube
+        - name: proc-mount
+          hostPath:
+            path: /proc
+        - name: ssh-keys
+          hostPath:
+            path: /root/.ssh
+        - name: admin-keys
+          hostPath: 
+            path: /etc/origin/master
+        - name: certs
+          hostPath:
+            path: /etc/pki
+        - name: ocp-volumes
+          hostPath:
+            path: /var/lib/kubelet/pods
+      nodeSelector: 
+        node-role.kubernetes.io/master: ""
+      tolerations:
+        - key: "node-role.kubernetes.io/master"
+          operator: "Equal"
+          effect: "NoSchedule"

@@ -17,7 +17,7 @@ spec:
       containers:
       - image: docker.io/ravielluri/image:agent
         name: pbench-agent
-        imagePullPolicy: IfNotPresent 
+        imagePullPolicy: Always
         securityContext:
           privileged: true
         env:
@@ -37,8 +37,11 @@ spec:
             mountPath: /etc/origin/master
           - name: certs
             mountPath: /etc/pki
+          - name: ocp-volumes
+            mountPath: /var/lib/kubelet/pods
         ports:
           - containerPort: 2022
+          - containerPort: 9090
       volumes:
         - name: kube-config
           hostPath:
@@ -55,5 +58,7 @@ spec:
         - name: certs
           hostPath:
             path: /etc/pki
+        - name: ocp-volumes
+          mountPath: /var/lib/kubelet/pods
       nodeSelector: 
         pbench_role: agent

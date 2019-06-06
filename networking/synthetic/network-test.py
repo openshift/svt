@@ -71,9 +71,9 @@ class NetworkTest(object):
                                 loader=self.loader,
                                 options=options,
                                 passwords=passwords)
-        results = pbex.run()
+        result = pbex.run()
+        return result
 
-        print json.dumps(results, sort_keys=True, indent=4, separators=(',', ': '))
 
 
 def parse_args():
@@ -235,7 +235,8 @@ def run_tests(args, inventory_vars, sender_host, receiver_host):
     nettest.add_receiver(receiver_host)
     nettest.add_master(master_host)
     nettest.set_inventory_vars(inventory_vars)
-    nettest.run()
+    result = nettest.run()
+    return result
 
 
 def main():
@@ -265,14 +266,20 @@ def main():
                               'register_pbench': not args.skip_register_pbench,
                               'pbench_label': pbench_label,
                               'pbench_remotes': pbench_remotes}
-            run_tests(args, inventory_vars, sender_host, receiver_host)
+            result = run_tests(args, inventory_vars, sender_host, receiver_host)
+            if result != 0:
+                print("There was an error running playbook for test type {}"
+                      " with {} pods".format(args.test_type, pod_number))
     else:
             inventory_vars = {'sender_host': sender_host,
                               'receiver_host': receiver_host,
                               'register_pbench': not args.skip_register_pbench,
                               'pbench_label': pbench_base_label,
                               'pbench_remotes': pbench_remotes}
-            run_tests(args, inventory_vars, sender_host, receiver_host)
+            result = run_tests(args, inventory_vars, sender_host, receiver_host)
+            if result != 0:
+                print("There was an error running playbook for test type {}"
+                      .format(args.test_type, pod_number))
 
 
 if __name__ == '__main__':

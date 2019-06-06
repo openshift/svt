@@ -45,11 +45,12 @@ projects:
          - MEMORY_LIMIT: "0"
 
   - num: 1
-    basename: eap64-mysql
+    basename: eap71-mysql
     tuning: default
     templates:
       - num: 1
-        file: ./content/quickstarts/eap/eap64-mysql.json
+        file: ./content/quickstarts/eap/eap71-mysql.json
+
         parameters: 
          - MEMORY_LIMIT: "0"
 
@@ -58,7 +59,7 @@ projects:
     tuning: default
     templates:
       - num: 1
-        file: ./content/quickstarts/tomcat/tomcat8-mongodb.json
+        file: ./content/quickstarts/tomcat/jws31-tomcat8-mongodb.json
         parameters: 
          - MEMORY_LIMIT: "0"
 

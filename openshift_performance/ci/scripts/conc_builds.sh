@@ -6,15 +6,17 @@
 ## build tests.
 ################################################
 master=$1
-build_array=(1 5 10 20 30 40 50)
-app_array=("cakephp" "eap" "django" "nodejs")
+#build_array=(1 5 10 20 30 40 50)
+build_array=(1 8 15 30 45 60 75)
+#app_array=("cakephp" "eap" "django" "nodejs")
+app_array=("django")
 # this number should be equal to the number of the created projects
-readonly PROJECT_NUM=50
+readonly PROJECT_NUM=75
 
 function delete_projects()
 {
   echo "deleting projects"
-  oc delete project -l purpose=test
+  oc delete project -l purpose=test --wait=false
 }
 
 function create_projects()
@@ -45,7 +47,7 @@ function run_builds()
   for i in "${build_array[@]}"
   do
     echo "running $i $1 concurrent builds"
-    python ../../ose3_perf/scripts/build_test.py -z -n 2 -r $i -f ../content/running-builds.json >> conc_builds_$1.out
+    python ../../ose3_perf/scripts/build_test.py -z -n 2 -r $i -f ../content/running-builds.json &>> conc_builds_$1.out
     sleep 30
   done
 }
@@ -86,14 +88,14 @@ function clean_docker_images()
 rm -rf *.out
 
 #setup user for build tests
-oc login -u system:admin
-htpasswd -b /etc/origin/htpasswd redhat redhat
-oadm policy add-cluster-role-to-user admin redhat
-oadm policy add-cluster-role-to-user system:image-pruner redhat
+#oc login -u system:admin
+#htpasswd -b /etc/origin/htpasswd redhat redhat
+#oadm policy add-cluster-role-to-user admin redhat
+#oadm policy add-cluster-role-to-user system:image-pruner redhat
 
 for app in "${app_array[@]}"
 do
-  oc login -u system:admin
+  #oc login -u system:admin
   echo "Starting $app builds" >> conc_builds_$app.out
   create_projects "../content/conc_builds_$app.yaml"
   wait_for_build_completion
