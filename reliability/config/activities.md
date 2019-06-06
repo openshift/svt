@@ -1,0 +1,25 @@
+- users
+    - create
+    - delete
+    - login
+- project
+    - create
+    - delete
+    - check
+    - modify (create secret)
+- app
+    - build
+    - scale up
+    - scale down
+    - create (not used)
+    - visit
+- ds and ss
+    - create
+    - delete
+    - scale up
+    - scale down
+- monitor
+    - openshift
+    - masters
+    - nodes
+    - etcds
