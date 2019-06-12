@@ -93,6 +93,7 @@ do
     fi
   fi
   oc new-project ${NAMESPACE} --skip-config-write=true
+  oc label namespace ${NAMESPACE} purpose=test
   oc process -f "${TMP_FOLDER}/files/oc/template_git.yaml" \
       -p PVC_SIZE=${VOLUME_CAPACITY} \
       -p STORAGE_CLASS_NAME=${STORAGE_CLASS_NAME} \

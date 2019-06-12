@@ -1,17 +1,27 @@
+#!/usr/bin/env bash
 
-#!/bin/bash
+test_project_name=$(cat external_vars.yaml | grep test_project_name | cut -d ' ' -f 2)
+test_project_number=$(cat external_vars.yaml | grep test_project_number | cut -d ' ' -f 2)
+working_folder=$(pwd)
+delete_test_project_before_test=$(cat external_vars.yaml | grep delete_test_project_before_test | cut -d ' ' -f 2)
+volume_capacity=$(cat external_vars.yaml | grep VOLUME_CAPACITY | cut -d ' ' -f 2)
+storage_class_name=$(cat external_vars.yaml | grep STORAGE_CLASS_NAME | cut -d ' ' -f 2)
+iteration=$(cat external_vars.yaml | grep iteration | cut -d ' ' -f 2)
+test_log_file="/tmp/storage_git_test.log"
 
-JUMP_HOST="${1}"
-ITERATIONS="${2}"
-test_project_name="${3}"
-test_project_number="${4}"
-STORAGE_CLASS_NAMES="${5}"
-pbench_registration="${6}"
-pbench_copy_result="${7}"
-benchmark_timeout="${8}"
+echo "Test project name:               $test_project_name"
+echo "Test project number:             $test_project_number"
+echo "Working folder:                  $working_folder"
+echo "Delete test project before test: $delete_test_project_before_test"
+echo "Volume capacity:                 $volume_capacity"
+echo "Storage class name:              $storage_class_name"
+echo "Iteration:                       $iteration"
 
-for sc in $(echo ${STORAGE_CLASS_NAMES} | sed -e s/,/" "/g); do
-  echo "===search-me: sc: ${sc}"
-  ansible-playbook -i "${JUMP_HOST}," git-test.yaml \
-  --extra-vars "test_project_name=${test_project_name} STORAGE_CLASS_NAME=${sc} iteration=${ITERATIONS} test_project_number=${test_project_number} pbench_registration=${pbench_registration} pbench_copy_result=${pbench_copy_result} benchmark_timeout=${benchmark_timeout} jump_node=true"
-done
+
+bash files/scripts/create-oc-objects.sh $test_project_name $test_project_number $working_folder $delete_test_project_before_test $volume_capacity $storage_class_name
+echo "Sleep for 60 seconds..."
+sleep 60
+
+bash files/scripts/test-git-m.sh $test_project_name $test_project_number $iteration $working_folder 2>&1 | tee -a $test_log_file
+
+echo -e "\nTest log file: $test_log_file"

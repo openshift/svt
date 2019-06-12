@@ -1,22 +1,22 @@
 # git-workload test
 
-Tested with:
+## Before test:
+* Setup pbench to collect data.
+* Edit external_vars.yaml file to setup variables used in test:
+  * Test project name 
+  * Number of test projects
+  * Do you want to delete test project before test (cleaning after previous run)
+  * Volume capacity
+  * Name of storage class
+  * Test iteration
+  
+## Run test:
 
 ```
-$ ansible --version
-ansible 2.7.8
+$ bash run_git.sh
 ```
 
-Run the test playbook:
-
-```
-$ ansible-playbook -i "<target_host>," storage/git/git-test.yaml" 
-
-### if use private key to ssh the target host
-$ ansible-playbook -i "<target_host>," storage/git/git-test.yaml --extra-vars "ansible_user=<fedora> ansible_ssh_private_key_file=<private_key>" 
-```
-
-Check results:
+## Check results:
 
 * check how many pods a worker node supports and the system load (CPU, Memory, Network) on worker nodes provided by `pbench` or `grafana`.
 * check the stats (overall time and the time for each of the step).
