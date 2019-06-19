@@ -10,15 +10,9 @@ readonly RECORDCOUNT=${5}
 readonly OPERATIONCOUNT=${6}
 readonly DISTRIBUTION=${7}
 
-
-
-output_dir=$(dirname $0)
+output_dir=${8}
 
 readonly MONGODB_IP=$(oc get svc -n ${NAMESPACE} | grep -v glusterfs | grep mongodb | awk '{print $3}')
-
-if [[ ! -z "${benchmark_results_dir}" ]]; then
-  output_dir="${benchmark_results_dir}"
-fi
 
 echo "NAMESPACE: ${NAMESPACE}"
 echo "ITERATION: ${ITERATION}"
@@ -26,7 +20,8 @@ echo "THREADS: ${THREADS}"
 echo "WORKLOADS: ${WORKLOAD}"
 echo "RECORDCOUNT: ${RECORDCOUNT}"
 echo "OPERATIONCOUNT: ${OPERATIONCOUNT}"
-echo "DISTRIBUTION: ${DISTRIBUTION}" 
+echo "DISTRIBUTION: ${DISTRIBUTION}"
+echo "MONGODB_IP: ${MONGODB_IP}"
 
 mkdir -p ${output_dir}/load_data
 mkdir -p ${output_dir}/mongodb_data_size
@@ -44,7 +39,7 @@ for i in $(seq 1 ${ITERATION}); do
 			# -p mongodb.writeConcern=strict - tested 
 
 			# test finished ... get logs for mongodb pod 
-			oc -n ${NAMESPACE} logs $(oc get pod -n ${NAMESPACE} | grep mongodb | awk '{print $1}') > ${output_dir}/mongodb_pods_logs/mongodb_logs_${NAMESPACE}.csv 
+			oc -n ${NAMESPACE} logs $(oc get pod -n ${NAMESPACE} | grep -v deploy | grep mongodb | awk '{print $1}') > ${output_dir}/mongodb_pods_logs/mongodb_logs_${NAMESPACE}.csv
 		done 
    	done 
 done

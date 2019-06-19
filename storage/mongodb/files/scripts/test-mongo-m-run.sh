@@ -12,11 +12,7 @@ readonly OPERATION_COUNT=${7}
 readonly DISTRIBUTION=${8}
 
 scripts_dir=$(dirname $0)
-output_dir=${scripts_dir}
-
-if [[ ! -z "${benchmark_results_dir}" ]]; then
-  output_dir="${benchmark_results_dir}"
-fi
+output_dir=${9}
 
 echo "NAMESPACE_BASENAME: ${NAMESPACE_BASENAME}"
 echo "NAMESPACE_NUMBER: ${NAMESPACE_NUMBER}"
