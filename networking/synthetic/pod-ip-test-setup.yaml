@@ -154,3 +154,11 @@
   - name: Delete uperf projects
     shell: oc delete project uperf-{{ item }}
     with_sequence: start=1 end={{ uperf_pod_number }}
+
+  - name: Remove label sender nodes
+    shell: oc label node {{ item }} region-
+    with_items: "{{ groups['sender'] }}"
+
+  - name: Remove label receiver nodes
+    shell: oc label node {{ item }} region-
+    with_items: "{{ groups['receiver'] }}"
