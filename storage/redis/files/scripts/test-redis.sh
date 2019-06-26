@@ -6,21 +6,19 @@ readonly NAMESPACE=${1}
 readonly ITERATION=${2}
 readonly THREADS=${3}
 readonly WORKLOAD=${4}
-
-output_dir=$5
+readonly output_dir=${5}
 
 readonly REDIS_IP=$(oc get svc -n ${NAMESPACE} | grep -v glusterfs | grep redis | awk '{print $3}')
-readonly REDIS_POD=$(oc get pod -n ${NAMESPACE} | grep redis | awk '{print $1}')
-readonly YCSB_POD=$(oc get pod -n ${NAMESPACE} | grep ycsb | awk '{print $1}')
-
-if [[ ! -z "${benchmark_results_dir}" ]]; then
-  output_dir="${benchmark_results_dir}"
-fi
+readonly REDIS_POD=$(oc get pod -n ${NAMESPACE} | grep -v Completed | grep redis | awk '{print $1}')
+readonly YCSB_POD=$(oc get pod -n ${NAMESPACE} | grep -v Completed | grep ycsb | awk '{print $1}')
 
 echo "NAMESPACE: ${NAMESPACE}"
 echo "ITERATION: ${ITERATION}"
-echo "THREADS: ${THREADS}"
+echo "THREADS:   ${THREADS}"
 echo "WORKLOADS: ${WORKLOAD}"
+echo "REDIS_IP   ${REDIS_IP}"
+echo "REDIS_POD  ${REDIS_POD}"
+echo "YCSB_POD   ${YCSB_POD}"
 
 
 for i in $(seq 1 ${ITERATION}); do

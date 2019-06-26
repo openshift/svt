@@ -1,19 +1,34 @@
 #!/bin/bash 
 
-JUMP_HOST="${1}"
-ITERATIONS="${2}"
-test_project_name="${3}"
-test_project_number="${4}"
-STORAGE_CLASS_NAMES="${5}"
-pbench_copy_result="${6}"
-benchmark_timeout="${7}"
-MEMORY_LIMIT="${8}"
-ycsb_threads="${9}"
-workload="${10}"
-VOLUME_CAPACITY="${11}"
+iteration=$(cat external_vars.yaml | grep -v '#' | grep iteration | cut -d ' ' -f 2)
+test_project_name=$(cat external_vars.yaml | grep -v '#' | grep test_project_name | cut -d ' ' -f 2)
+test_project_number=$(cat external_vars.yaml | grep -v '#' | grep test_project_number | cut -d ' ' -f 2)
+delete_test_project_before_test=$(cat external_vars.yaml | grep -v '#' | grep delete_test_project_before_test | cut -d ' ' -f 2)
+storage_class=$(cat external_vars.yaml | grep -v '#' | grep STORAGE_CLASS_NAME | cut -d ' ' -f 2)
+redis_password=$(cat external_vars.yaml | grep -v '#' | grep REDIS_PASSWORD | cut -d ' ' -f 2)
+redis_version=$(cat external_vars.yaml | grep -v '#' | grep REDIS_VERSION | cut -d ' ' -f 2)
+memory_limity=$(cat external_vars.yaml | grep -v '#' | grep MEMORY_LIMIT | cut -d ' ' -f 2)
+ycsb_threads=$(cat external_vars.yaml | grep -v '#' | grep ycsb_threads | cut -d ' ' -f 2)
+workload=$(cat external_vars.yaml | grep -v '#' | grep workload | cut -d ' ' -f 2)
+volume_capacity=$(cat external_vars.yaml | grep -v '#' | grep VOLUME_CAPACITY | cut -d ' ' -f 2)
+working_directory=$(pwd)
 
+echo "Iterations:          $iteration"
+echo "Test Project Name:   $test_project_name"
+echo "Test Project Number: $test_project_number"
+echo "Storage Class Name:  $storage_class"
+echo "Redis password:      $redis_password"
+echo "Redis version:       $redis_version"
+echo "Memory Limit:        $memory_limity"
+echo "yscb threads:        $ycsb_threads"
+echo "Workload:            $workload"
+echo "Volume Capacity:     $volume_capacity"
+echo "Working directory    $working_directory"
 
-for sc in $(echo ${STORAGE_CLASS_NAMES} | sed -e s/,/" "/g); do
-  echo "===search-me: sc: ${sc}"
-  ansible-playbook -i "${JUMP_HOST}," redis-test.yaml --extra-vars "test_project_name=${test_project_name} test_project_number=${test_project_number} MEMORY_LIMIT=${MEMORY_LIMIT} ycsb_threads=${ycsb_threads} workload=${workload} iteration=${ITERATIONS} STORAGE_CLASS_NAME=${sc} VOLUME_CAPACITY=${VOLUME_CAPACITY} pbench_copy_result=${pbench_copy_result} benchmark_timeout=${benchmark_timeout}"
-done 
+chmod +x files/scripts/*.sh
+# Creating OCP objects
+bash files/scripts/create-oc-objects.sh $test_project_name $test_project_number $working_directory $delete_test_project_before_test $memory_limity $redis_password $volume_capacity $redis_version $storage_class
+echo "Sleep 60 sec..."
+sleep 60
+
+bash files/scripts/test-redis-m.sh $test_project_name $test_project_number $iteration $ycsb_threads $workload $working_directory
