@@ -36,6 +36,9 @@
                         }
                     },
                     "spec": {
+                        "nodeSelector": {
+                           "placement": "${PLACEMENT}"
+                        },
                         "containers": [
                             {
                                 "env": [

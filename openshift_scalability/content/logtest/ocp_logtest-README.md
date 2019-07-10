@@ -1,7 +1,7 @@
 ## ocp_logtest README
 
 ### Purpose 
-The **ocp_logtest.py** script is a flexible tool for creating pod logs in OpenShift.  It can log random or fixed test for any given line/word sizes and at any given rate.  It can run forever, for a set number of messages or for a set period of time.
+The **ocp_logtest.py** script is a flexible tool for creating pod logs in OpenShift.  It can log random or fixed text for any given line/word sizes and at any given rate.  It can run forever, for a set number of messages or for a set period of time.
 
 Also included are a docker configuration to run the tool in a container along with OpenShift templates to create a pod running the container and create a replication controller to control the lifecycle of the pods.
 
