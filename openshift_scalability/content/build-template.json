@@ -1,6 +1,6 @@
 {
-  "Kind": "Template",
-  "apiVersion": "v1",
+  "kind": "Template",
+  "apiVersion": "template.openshift.io/v1",
   "metadata": {
     "name": "buildTemplate",
     "creationTimestamp": null,
@@ -11,59 +11,55 @@
   },
   "objects": [
     {
-        "apiVersion": "v1",
-        "kind": "Build",
-        "metadata": {
-            "annotations": {
-                "openshift.io/build.number": "1",
-                "openshift.io/build.pod-name": "buildconfig${IDENTIFIER}-1-build"
-            },
-            "labels": {
-                "buildconfig": "buildconfig${IDENTIFIER}",
-                "openshift.io/build-config.name": "buildconfig${IDENTIFIER}",
-                "template": "buildConfigTemplate"
-            },
-            "name": "build${IDENTIFIER}-1",
-            "namespace": "default",
-            "resourceVersion": "2361",
-            "selfLink": "/oapi/v1/namespaces/default/builds/build${IDENTIFIER}-1",
-            "uid": "31c35a87-c93f-11e5-8bc3-0e16b72da8bb"
+      "apiVersion": "v1",
+      "kind": "Build",
+      "metadata": {
+        "annotations": {
+          "openshift.io/build.number": "1",
+          "openshift.io/build.pod-name": "buildconfig${IDENTIFIER}-1-build"
         },
-        "spec": {
-            "output": {
-                "to": {
-                    "kind": "ImageStreamTag",
-                    "name": "imagestream${IDENTIFIER}:latest"
-                }
-            },
-            "resources": {},
-            "serviceAccount": "builder",
-            "source": {
-                "dockerfile": "FROM openshift/hello-openshift\nUSER example",
-                "git": {
-                    "uri": "git://github.com/tiwillia/hello-openshift-example.git"
-                },
-                "secrets": null,
-                "type": "Git"
-            },
-            "strategy": {
-                "sourceStrategy": {
-                    "from": {
-                        "kind": "DockerImage",
-                        "name": "openshift/hello-openshift@sha256:b4385c1776fec7175b35cf5e55b21902e5ba27d8d4d4b71bfb2f7cf9d0eb7a14"
-                    }
-                },
-                "type": "Source"
+        "labels": {
+          "buildconfig": "buildconfig${IDENTIFIER}",
+          "openshift.io/build-config.name": "buildconfig${IDENTIFIER}",
+          "template": "buildConfigTemplate"
+        },
+        "name": "build${IDENTIFIER}-1"
+      },
+      "spec": {
+        "output": {
+          "to": {
+            "kind": "ImageStreamTag",
+            "name": "imagestream${IDENTIFIER}:latest"
+          }
+        },
+        "resources": {},
+        "serviceAccount": "builder",
+        "source": {
+          "dockerfile": "FROM openshift/hello-openshift\nUSER example",
+          "git": {
+            "uri": "git://github.com/tiwillia/hello-openshift-example.git"
+          },
+          "secrets": null,
+          "type": "Git"
+        },
+        "strategy": {
+          "sourceStrategy": {
+            "from": {
+              "kind": "DockerImage",
+              "name": "openshift/hello-openshift@sha256:b4385c1776fec7175b35cf5e55b21902e5ba27d8d4d4b71bfb2f7cf9d0eb7a14"
             }
-        },
-        "status": {
-            "config": {
-                "kind": "BuildConfig",
-                "name": "buildconfig${IDENTIFIER}"
-            },
-            "outputDockerImageReference": "openshift/hello-openshift:latest",
-            "phase": "Failed"
+          },
+          "type": "Source"
         }
+      },
+      "status": {
+        "config": {
+          "kind": "BuildConfig",
+          "name": "buildconfig${IDENTIFIER}"
+        },
+        "outputDockerImageReference": "openshift/hello-openshift:latest",
+        "phase": "Failed"
+      }
     }
   ],
   "parameters": [
@@ -77,6 +73,4 @@
   "labels": {
     "template": "buildTemplate"
   }
-
 }
-

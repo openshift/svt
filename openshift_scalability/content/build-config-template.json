@@ -1,6 +1,6 @@
 {
-  "Kind": "Template",
-  "apiVersion": "v1",
+  "kind": "Template",
+  "apiVersion": "template.openshift.io/v1",
   "metadata": {
     "name": "buildConfigTemplate",
     "creationTimestamp": null,
@@ -17,7 +17,7 @@
         "name": "buildconfig${IDENTIFIER}"
       },
       "spec": {
-        "triggers": [ 
+        "triggers": [
           {
             "type": "GitHub",
             "github": {
@@ -28,14 +28,14 @@
             "type": "ImageChange"
           }
         ],
-        "source": { 
+        "source": {
           "type": "Git",
           "git": {
             "uri": "git://github.com/tiwillia/hello-openshift-example.git"
           },
           "dockerfile": "FROM openshift/hello-openshift\nUSER example"
         },
-        "strategy": { 
+        "strategy": {
           "type": "Source",
           "sourceStrategy": {
             "from": {
@@ -44,7 +44,7 @@
             }
           }
         },
-        "output": { 
+        "output": {
           "to": {
             "kind": "ImageStreamTag",
             "name": "imagestream${IDENTIFIER}:latest"
@@ -64,6 +64,4 @@
   "labels": {
     "template": "buildConfigTemplate"
   }
-
 }
-

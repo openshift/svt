@@ -1,6 +1,6 @@
 {
-  "Kind": "Template",
-  "apiVersion": "v1",
+  "kind": "Template",
+  "apiVersion": "template.openshift.io/v1",
   "metadata": {
     "name": "deploymentConfigTemplate",
     "creationTimestamp": null,
@@ -10,7 +10,7 @@
     }
   },
   "objects": [
-      {
+    {
       "kind": "DeploymentConfig",
       "apiVersion": "v1",
       "metadata": {
@@ -130,6 +130,4 @@
   "labels": {
     "template": "deploymentConfigTemplate"
   }
-
 }
-
