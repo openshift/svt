@@ -1,0 +1,56 @@
+reliability:
+  timeSubstitutions:
+    minute: 20s
+    hour: 1m
+    day: 2m
+    week: 3m
+    month: 4m
+  limits:
+    maxProjects: 20
+    sleepTime: 10
+
+  appTemplates:
+    - template: cakephp-mysql-example
+    - template: nodejs-mongodb-example
+    - template: django-psql-example
+    - template: rails-postgresql-example
+    - template: dancer-mysql-example
+  users:
+    - id: redhat
+      pw: redhat
+    - id: test
+      pw: test
+  tasks:
+    minute:
+      - action: check
+        resource: pods
+      - action: check
+        resource: projects
+      - action: create
+        resource: projects
+        quantity: 1
+    hour:
+      - action: check
+        resource: projects
+      - action: visit
+        resource: apps
+      - action: create
+        resource: projects
+        quantity: 3
+      - action: scaleUp
+        resource: apps
+        applyPercent: 50
+      - action: scaleDown
+        resource: apps
+        applyPercent: 100
+      - action: build
+        resource: apps
+        applyPercent: 50
+    week:
+      - action: delete
+        resource: projects
+        applyPercent: 30
+      - action: login
+        resource: session
+        user: kubeadmin
+        password: Pn38G-UyeHS-3uKvF-6zJyU
