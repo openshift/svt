@@ -21,6 +21,7 @@ import argparse
 import json
 import math
 import os
+import sys
 
 import requests
 import urllib3
@@ -44,9 +45,9 @@ class ElsHelper:
         r = requests.get(url, headers=self.headers, verify=False)
         r.raise_for_status()
         if 'json' in r.headers['content-type']:
-            return r.json()
+            print(json.dumps(r.json(), indent=2))
         else:
-            return r.text
+            print(r.text)
 
     def print_health(self):
         endpoint = "/_cluster/health"
@@ -178,31 +179,23 @@ def verify_els_messages(els_json: dict, max_expected):
 
     print("Expected max number: {}".format(max_expected))
 
-    # Find number of occurrences for each message_num
-    duplicates_found = 0
-    # missing_found = 0
-    missing_nums = []
-    # print(max_expected)
-    # Currently assume all message ranges should go from 1-
-    for i in range(1, max_expected + 1):
-        # if i > max_num:
-        #     print("Missing: {} - {}".format(i, max_expected))
-        #     missing_found += (max_expected - i)
-        #     break
-        count = message_num_list.count(i)
-        if count > 1:
-            print("Duplicate: {} - Count: {}".format(i, count))
-            duplicates_found += 1
-        elif count == 0:
-            # print("Missing: {}".format(i))
-            missing_nums.append(i)
-            # missing_found += 1
-    # print(missing_nums)
-
+    # Find number of occurrences for each number from min_num to max_num
+    num_tracker = {i: 0 for i in range(1, max_expected + 1)}
+    for i in message_num_list:
+        num_tracker[i] += 1
+    missing_nums = [i for i in num_tracker if num_tracker[i] == 0]
     missing_found = len(missing_nums)
-    # Output ranges
-    ranges = compute_ranges(missing_nums)
-    for i in ranges:
+
+    # Output duplicates
+    duplicates_found = 0
+    for k, v in num_tracker.items():
+        if v > 1:
+            print("Duplicate: {} - Count: {}".format(k, v))
+            duplicates_found += 1
+
+    # Output missing number ranges
+    missing_ranges = compute_ranges(missing_nums)
+    for i in missing_ranges:
         print("Missing log line(s): {}".format(i))
 
     # Output Summary
@@ -259,6 +252,10 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    if len(sys.argv) < 2:
+        parser.print_usage()
+        exit(1)
+
     # Handle read from file use-case
     if args.file is not None:
         filename = args.file
@@ -281,8 +278,7 @@ if __name__ == '__main__':
 
         # Handle --custom
         if args.custom:
-            query_response = es.custom_query(args.custom)
-            print(json.dumps(query_response))
+            es.custom_query(args.custom)
             exit(0)
 
         # Handle --print-indices
@@ -311,6 +307,8 @@ if __name__ == '__main__':
             if args.output is None:
                 print("Must specify --output with --no-verify")
                 exit(1)
+        print("Starting to dump index...")
         dump = es.dump_index(args.index, output=args.output)
+        print("Done dumping index")
         if args.no_verify is False:
             verify_els_messages(dump, args.max)
