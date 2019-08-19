@@ -22,6 +22,7 @@ import json
 import math
 import os
 import sys
+import time
 
 import requests
 import urllib3
@@ -32,13 +33,14 @@ urllib3.disable_warnings()
 
 class ElsHelper:
 
-    def __init__(self, route, token):
+    def __init__(self, route, token, verbose=False):
         self.headers = {"Authorization": "Bearer {}".format(token)}
         if 'http' in route:
             # Assume we were passed route properly formatted already
             self.base_url = route
         else:
             self.base_url = "https://{}".format(route)
+        self.verbose = verbose
 
     def custom_query(self, custom_endpoint: str):
         url = self.base_url + custom_endpoint
@@ -111,7 +113,8 @@ class ElsHelper:
         # Subtract 1 because we already pulled the first ${result_size} results in the first request
         # Provide result or 0 if it is negative
         num_of_scrolls = max(int(math.ceil((total_hits / result_size))) - 1, 0)
-        # print("num of scrolls: {}".format(num_of_scrolls))
+        if self.verbose:
+            print("num of scrolls: {}".format(num_of_scrolls))
 
         # Get _scroll_id
         # Scroll requests hit generic _search/scroll endpoint
@@ -122,9 +125,18 @@ class ElsHelper:
 
         # Call scroll API til we have all results pushed into r1_dict
         for i in range(num_of_scrolls):
+            if self.verbose:
+                print("Current length of message list: {}".format(len(r1_ml)))
+                print("Calling scroll endpoint: {}/{}".format(i + 1, num_of_scrolls))
+                start = time.time()
             r_scroll = requests.get(scroll_url, headers=scroll_headers, data=json.dumps(data), verify=False)
+            if self.verbose:
+                end = time.time()
+                print("Time taken for scroll request: {}".format(end - start))
             r_scroll.raise_for_status()
             r_scroll_dict = r_scroll.json()
+            if self.verbose:
+                print("Extending r1_ml with new messages")
             r1_ml.extend(r_scroll_dict["hits"]["hits"])
 
         # print("Dict obj size: {}".format(sys.getsizeof(json.dumps(r1_dict))))
@@ -249,6 +261,7 @@ if __name__ == '__main__':
     parser.add_argument('--print-indices', action='store_true', help='Just print ElasticSearch indices and exit')
     parser.add_argument('--print-info', action='store_true', help='Just print ElasticSearch cluster info (version info etc.) and exit')
     parser.add_argument('--print-nodes', action='store_true')
+    parser.add_argument('--verbose', '-v', action='store_true', help='Set verbose logging.')
 
     args = parser.parse_args()
 
@@ -274,7 +287,10 @@ if __name__ == '__main__':
             exit(1)
 
         # Construct ElsHelper
-        es = ElsHelper(route, token)
+        if args.verbose:
+            es = ElsHelper(route, token, verbose=True)
+        else:
+            es = ElsHelper(route, token)
 
         # Handle --custom
         if args.custom:
@@ -308,7 +324,13 @@ if __name__ == '__main__':
                 print("Must specify --output with --no-verify")
                 exit(1)
         print("Starting to dump index...")
-        dump = es.dump_index(args.index, output=args.output)
+        if args.verbose:
+            dump_start = time.time()
+            dump = es.dump_index(args.index, output=args.output)
+            dump_end = time.time()
+            print("Total time to dump index: {}".format(dump_end - dump_start))
+        else:
+            dump = es.dump_index(args.index, output=args.output)
         print("Done dumping index")
         if args.no_verify is False:
             verify_els_messages(dump, args.max)
