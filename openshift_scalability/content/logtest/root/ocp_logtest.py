@@ -6,7 +6,7 @@ import random
 import socket
 import logging
 import logging.handlers
-
+import json_logging, sys
 
 fixed_line = ""
 hostname = socket.gethostname()
@@ -74,10 +74,10 @@ def get_word() :
 def get_new_line():
 
     current_line = ""
-    if options.text_type == "random" :
+    if options.text_type == "random" or options.text_type == "randomjson" :
         while len(current_line) < options.line_length :
             current_line = current_line + get_word() + " "
-    else:
+    elif options.text_type == "input":
         current_line = next_line_from_file_by_length(options.length)
 
     return current_line[:options.line_length]
@@ -101,6 +101,17 @@ def create_message(seq_number, msg) :
        msg = hostname + " : " + str(seq_number) + " : " + msg
     return msg
 
+def print_json_message(seq_number, msg) :
+    global hostname
+    logger.info(msg, extra = {'props' : {'seqnum' : seq_number, "hostname": hostname }})
+
+def print_message(seq_number):
+    if options.text_type == "randomjson":
+       print_json_message(seq_number,single_line())
+
+    else:
+        logger.info( create_message(seq_number, single_line()) )
+
 
 # Fixed time period, in seconds
 def generate_for_time():
@@ -109,7 +120,8 @@ def generate_for_time():
     number_generated = 0
     while now <= then :
         number_generated += 1
-        logger.info( create_message(number_generated, single_line()) )
+        #logger.info( create_message(number_generated, single_line()) )
+        print_message(number_generated)
         delay(options.sleep_time, number_generated)
         now = time.time()
 
@@ -126,7 +138,8 @@ def generate_num_lines() :
     number_generated = 0
     while (number_generated < number_to_generate) :
         number_generated += 1
-        logger.info( create_message(number_generated, single_line()) )
+        #logger.info( create_message(number_generated, single_line()) )
+        print_message(number_generated)
         delay(options.sleep_time, number_generated)
 
 def generate_messages() :
@@ -142,24 +155,29 @@ def generate_messages() :
 def init_logger(my_logger):
     my_logger.setLevel(logging.INFO)
 
+    if options.text_type == "randomjson":
+        json_logging.ENABLE_JSON_LOGGING = True
+        json_logging.init_non_web()
+
     if options.journal :
         jh = logging.handlers.SysLogHandler(address = '/dev/log')
         my_logger.addHandler(jh)
+
     elif options.log_on_file:
         print 'log_on_file: {}'.format(options.log_on_file)
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         fh = logging.FileHandler(options.log_on_file)
-        if not options.raw :
+
+        if not (options.raw or options.text_type == "randomjson") :
            fh.setFormatter(formatter)
         my_logger.addHandler(fh)
     else :
         formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        sh = logging.StreamHandler()
-        if not options.raw :
+        sh = logging.StreamHandler(sys.stdout)
+        if not (options.raw or options.text_type == "randomjson") :
            sh.setFormatter(formatter)
         my_logger.addHandler(sh)
-
 
 if __name__ ==  "__main__":
 
@@ -167,7 +185,7 @@ if __name__ ==  "__main__":
     parser.add_option("-l", "--line-length", dest="line_length", type="int", default=100,
                      help="length of each output line")
     parser.add_option("--text-type", dest="text_type",
-                     help="random or input", default="random")
+                     help="random randomjson or input", default="random")
     parser.add_option("--word-length", dest="word_length", type="int", default=9,
                      help="word length for random text")
     parser.add_option("--fixed-line", dest="fixed_line", action="store_true", default=False,
