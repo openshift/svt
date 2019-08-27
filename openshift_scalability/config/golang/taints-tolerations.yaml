@@ -3,30 +3,30 @@ ClusterLoader:
   cleanup: false
   projects:
     - num: 1
-      basename: taints-toleration-s1-
+      basename: taints-tolerationss1-
       tuning: default
       ifexists: delete
       pods:
-        - num: 240
+        - num: 130
           image: docker.io/ocpqe/hello-pod
           basename: hellopods-taints-s1
-          file: pod-hello-s1-taints-tolerations.json
+          file: /root/svt/openshift_scalability/content/pod-hello-s1-taints-tolerations.json
 
     - num: 1
-      basename: taints-toleration-s2-
+      basename: taints-tolerationss2-
       tuning: default
       ifexists: delete
       pods:
-        - num: 240
+        - num: 130
           image: docker.io/ocpqe/hello-pod
           basename: hellopods-taints-s2
-          file: pod-hello-s2-taints-tolerations.json
+          file: /root/svt/openshift_scalability/content/pod-hello-s2-taints-tolerations.json
 
   tuningsets:
     - name: default
       pods:
         stepping:
           stepsize: 50
-          pause: 60
+          pause: 120
         ratelimit:
           delay: 0
