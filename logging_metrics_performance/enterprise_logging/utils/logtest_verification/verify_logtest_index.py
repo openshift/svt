@@ -165,19 +165,28 @@ class ElsHelper:
         count_request = requests.get(self.base_url + count_endpoint, headers=self.headers, verify=False)
         count_request.raise_for_status()
         index_count = count_request.json()["count"]
-        print("index count: {}".format(index_count))
+        print("Index document count: {}".format(index_count))
 
         num_of_scrolls = max(int(math.ceil((index_count / result_size))), 1)
-        print("num scrolls: {}".format(num_of_scrolls))
+        if self.verbose:
+            print("num scrolls: {}".format(num_of_scrolls))
 
         for i in range(num_of_scrolls):
             if i == 0:
+                if self.verbose:
+                    print("Making initial request to search endpoint")
                 r = requests.get(url, headers=scroll_headers, params=params, data=json.dumps(data), verify=False)
                 scroll_id = r.json()["_scroll_id"]
                 scroll_data["scroll_id"] = scroll_id
                 yield r.json()
             else:
-                r = requests.get(scroll_url, headers=scroll_headers, data=json.dumps(scroll_data), verify=False)
+                if self.verbose:
+                    print("Requesting scroll enpoint")
+                    scroll_start = time.time()
+                    r = requests.get(scroll_url, headers=scroll_headers, data=json.dumps(scroll_data), verify=False)
+                    print("Time taken: {}".format(time.time() - scroll_start))
+                else:
+                    r = requests.get(scroll_url, headers=scroll_headers, data=json.dumps(scroll_data), verify=False)
                 yield r.json()
 
     def extract_message_list(self, r_json: dict):
@@ -192,7 +201,6 @@ def verify_els_message_stream(index_iter, max_expected):
     for i in index_iter:
         # Extract message list from JSON
         message_list = [message["_source"]["message"] for message in i["hits"]["hits"]]
-        print(len(message_list))
 
         # Extract message numbers from message list lines
         for m in message_list:
@@ -333,7 +341,7 @@ if __name__ == '__main__':
     parser.add_argument('--print-indices', action='store_true', help='Just print ElasticSearch indices and exit')
     parser.add_argument('--print-info', action='store_true', help='Just print ElasticSearch cluster info (version info etc.) and exit')
     parser.add_argument('--print-nodes', action='store_true')
-    parser.add_argument('--stream', action='store_true')
+    parser.add_argument('--stream', action='store_true', help='Process messages in 10k chunks to reduce memory footprint. Disables ability to save index to a file.')
     parser.add_argument('--verbose', '-v', action='store_true', help='Set verbose logging.')
 
     args = parser.parse_args()
