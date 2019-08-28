@@ -85,6 +85,13 @@ class ElsHelper:
         print(r.text)
         return
 
+    def get_index_doc_count(self, index):
+        count_endpoint = "/{}/_count".format(index)
+        count_request = requests.get(self.base_url + count_endpoint, headers=self.headers, verify=False)
+        count_request.raise_for_status()
+        index_count = count_request.json()["count"]
+        return index_count
+
     def dump_index(self, index, output=None):
         """
         Uses ELS scroll search to dump an entire logtest index.
