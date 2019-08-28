@@ -156,7 +156,6 @@ class ElsHelper:
 
     def index_generator(self, index):
         endpoint = "/{}/_search".format(index)
-        count_endpoint = "/{}/_count".format(index)
         url = self.base_url + endpoint
         params = {"scroll": "1m"}
         result_size = 10000
@@ -169,9 +168,7 @@ class ElsHelper:
         scroll_data = {"scroll": "1m", "scroll_id": scroll_id}
 
         # Get number of documents in the index
-        count_request = requests.get(self.base_url + count_endpoint, headers=self.headers, verify=False)
-        count_request.raise_for_status()
-        index_count = count_request.json()["count"]
+        index_count = self.get_index_doc_count(index)
         print("Index document count: {}".format(index_count))
 
         num_of_scrolls = max(int(math.ceil((index_count / result_size))), 1)
@@ -412,7 +409,12 @@ if __name__ == '__main__':
                 print("Must specify --output with --no-verify")
                 exit(1)
         if args.stream is True:
-            verify_els_message_stream(es.index_generator(args.index), args.max)
+            expected_max = args.max
+            if args.max is None:
+                print("WARNING: --max not specified, defaulting to # of docs in index: ", end="")
+                expected_max = es.get_index_doc_count(args.index)
+                print("{}".format(expected_max))
+            verify_els_message_stream(es.index_generator(args.index), expected_max)
             es.index_generator(args.index)
             exit()
         print("Starting to dump index...")
