@@ -1,7 +1,7 @@
 reliability:
   timeSubstitutions:
-    minute: 20s
-    hour: 1m
+    minute: 10s
+    hour: 30s
     day: 2m
     week: 3m
     month: 4m
@@ -10,16 +10,16 @@ reliability:
     sleepTime: 10
 
   appTemplates:
-    - template: cakephp-mysql-example
-    - template: nodejs-mongodb-example
-    - template: django-psql-example
-    - template: rails-postgresql-example
-    - template: dancer-mysql-example
+    - template: cakephp-mysql-persistent
+    - template: nodejs-mongo-persistent
+    - template: django-psql-persistent
+    - template: rails-pgsql-persistent
+    - template: dancer-mysql-persistent
+
   users:
-    - id: redhat
-      pw: redhat
-    - id: test
-      pw: test
+    - admin_user: kubeadmin
+    - admin_password: Pn38G-UyeHS-3uKvF-6zJyU
+    - user_file: /home/mifiedle/mffiedler_git/svt/reliability/config/users.spec  
   tasks:
     minute:
       - action: check
@@ -34,23 +34,28 @@ reliability:
         resource: projects
       - action: visit
         resource: apps
+        applyPercent: 100
       - action: create
         resource: projects
-        quantity: 3
+        quantity: 1
       - action: scaleUp
         resource: apps
         applyPercent: 50
       - action: scaleDown
         resource: apps
-        applyPercent: 100
+        applyPercent: 50
       - action: build
         resource: apps
-        applyPercent: 50
+        applyPercent: 33
+      - action: modify
+        resource: projects
+        applyPercent: 25
     week:
       - action: delete
         resource: projects
-        applyPercent: 30
+        applyPercent: 25
       - action: login
         resource: session
-        user: kubeadmin
-        password: Pn38G-UyeHS-3uKvF-6zJyU
+        user: testuser-47
+        password: LNrHdFaoJh9X
+

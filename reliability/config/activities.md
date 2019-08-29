@@ -1,7 +1,8 @@
 - users
-    - create
-    - delete
+    - create (assume flexy htpasswd)
+    - delete (assume flexy htpasswd)
     - login
+    - logout
 - project
     - create
     - delete
