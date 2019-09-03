@@ -233,9 +233,13 @@ def verify_els_message_stream(index_iter, max_expected):
     # Output summary
     if duplicates_found > 0:
         print("Duplicate numbers found: {}".format(duplicates_found))
+    else:
+        print("No duplicates found!")
     if missing_found > 0:
         print("Number of missing logs: {}".format(missing_found))
         print("{:.4f}% message loss rate".format(missing_found / max_expected * 100))
+    else:
+        print("No missing messages!")
 
 
 def verify_els_messages(els_json: dict, max_expected):
