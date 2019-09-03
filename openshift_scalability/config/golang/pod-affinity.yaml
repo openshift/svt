@@ -7,20 +7,20 @@ ClusterLoader:
       tuning: default
       ifexists: delete
       pods:
-        - num: 240
+        - num: 130
           image: docker.io/ocpqe/hello-pod
           basename: pod-affinity-security-in-s1
-          file: pod-pod-affinity.json
+          file: /root/svt/openshift_scalability/content/pod-pod-affinity.json
 
     - num: 1
       basename: pod-anti-affinity-s1-
       tuning: default
       ifexists: delete
       pods:
-        - num: 240
+        - num: 130
           image: docker.io/ocpqe/hello-pod
           basename: pod-anti-affinity-security-in-s1
-          file: pod-pod-anti-affinity.json
+          file: /root/svt/openshift_scalability/content/pod-pod-anti-affinity.json
 
 
   tuningsets:
