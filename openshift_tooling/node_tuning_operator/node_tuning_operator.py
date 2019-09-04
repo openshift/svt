@@ -77,6 +77,14 @@ if number_of_tuned_clusters != number_of_working_nodes:
 passed(None)
 
 
+# Getting number of secrets
+print_step("Getting number of secrets")
+number_of_secrets_at_beginning = int(execute_command("oc get secrets -n openshift-cluster-node-tuning-operator | wc -l"))
+if number_of_secrets_at_beginning == 0:
+    fail("No secrets for openshift-cluster-node-tuning-operator projects", cleanup)
+passed(None)
+
+
 # Verification that pod can be tuned
 print_step("Verify that after creating new resource with 'es' label pod will be tuned")
 execute_command("oc new-project my-logging-project")
@@ -293,6 +301,14 @@ if tuning_applied_for_label_after > tuning_applied_for_label_before:
     passed(None)
 else:
     fail("Pod {} should be tuned.".format(tuned_pod), cleanup)
+
+
+# Getting number of secrets after tests
+print_step("Getting number of secrets after test")
+number_of_secrets_at_end = int(execute_command("oc get secrets -n openshift-cluster-node-tuning-operator | wc -l"))
+if number_of_secrets_at_beginning <> number_of_secrets_at_end:
+    fail("Number of secrets before and after not matching.\nAt beginning of test: {}\nAt end of test: {}".format(number_of_secrets_at_beginning, number_of_secrets_at_end), cleanup)
+passed("Number of secrets are matching\nAt beginning of test: {}\nAt end of test: {}".format(number_of_secrets_at_beginning, number_of_secrets_at_end))
 
 
 # Cleaning after tests when each step pass.
