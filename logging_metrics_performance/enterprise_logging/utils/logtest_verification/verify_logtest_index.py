@@ -85,6 +85,13 @@ class ElsHelper:
         print(r.text)
         return
 
+    def get_index_doc_count(self, index):
+        count_endpoint = "/{}/_count".format(index)
+        count_request = requests.get(self.base_url + count_endpoint, headers=self.headers, verify=False)
+        count_request.raise_for_status()
+        index_count = count_request.json()["count"]
+        return index_count
+
     def dump_index(self, index, output=None):
         """
         Uses ELS scroll search to dump an entire logtest index.
@@ -147,11 +154,92 @@ class ElsHelper:
                 json.dump(r1_dict, f, indent=2)
         return r1_dict
 
+    def index_generator(self, index):
+        endpoint = "/{}/_search".format(index)
+        url = self.base_url + endpoint
+        params = {"scroll": "1m"}
+        result_size = 10000
+        data = {"sort": ["_doc"], "size": result_size}
+        scroll_headers = {"Content-Type": "application/json"}
+        scroll_headers.update(self.headers)
+        scroll_endpoint = "/_search/scroll"
+        scroll_url = self.base_url + scroll_endpoint
+        scroll_id = None
+        scroll_data = {"scroll": "1m", "scroll_id": scroll_id}
+
+        # Get number of documents in the index
+        index_count = self.get_index_doc_count(index)
+        print("Index document count: {}".format(index_count))
+
+        num_of_scrolls = max(int(math.ceil((index_count / result_size))), 1)
+        if self.verbose:
+            print("num scrolls: {}".format(num_of_scrolls))
+
+        for i in range(num_of_scrolls):
+            if i == 0:
+                if self.verbose:
+                    print("Making initial request to search endpoint")
+                r = requests.get(url, headers=scroll_headers, params=params, data=json.dumps(data), verify=False)
+                scroll_id = r.json()["_scroll_id"]
+                scroll_data["scroll_id"] = scroll_id
+                yield r.json()
+            else:
+                if self.verbose:
+                    print("Requesting scroll enpoint")
+                    scroll_start = time.time()
+                    r = requests.get(scroll_url, headers=scroll_headers, data=json.dumps(scroll_data), verify=False)
+                    print("Time taken: {}".format(time.time() - scroll_start))
+                else:
+                    r = requests.get(scroll_url, headers=scroll_headers, data=json.dumps(scroll_data), verify=False)
+                yield r.json()
+
     def extract_message_list(self, r_json: dict):
         message_list = []
         for i in r_json["hits"]["hits"]:
             message_list.append(i["_source"]["message"])
         return message_list
+
+
+def verify_els_message_stream(index_iter, max_expected):
+    num_tracker = {i: 0 for i in range(1, max_expected + 1)}
+    for i in index_iter:
+        # Extract message list from JSON
+        message_list = [message["_source"]["message"] for message in i["hits"]["hits"]]
+
+        # Extract message numbers from message list lines
+        for m in message_list:
+            try:
+                num = int(m.split()[9])
+                # print(type(num))
+                num_tracker[num] += 1
+            except ValueError:
+                print("ERROR: Couldn't parse number from log line. Got '{}'".format(m.split()[9]))
+                print(m)
+
+    # Output duplicates
+    duplicates_found = 0
+    for k, v in num_tracker.items():
+        if v > 1:
+            print("Duplicate: {} - Count: {}".format(k, v))
+            duplicates_found += 1
+
+    # Output missing
+    missing_nums = [i for i in num_tracker if num_tracker[i] == 0]
+    missing_found = len(missing_nums)
+    missing_ranges = compute_ranges(missing_nums)
+    for j in missing_ranges:
+        print("Missing log line(s): {}".format(j))
+
+    # Output summary
+    if duplicates_found > 0:
+        print("Duplicate numbers found: {}".format(duplicates_found))
+    else:
+        print("No duplicates found!")
+    if missing_found > 0:
+        print("Number of missing logs: {}".format(missing_found))
+        print("{:.4f}% message loss rate".format(missing_found / max_expected * 100))
+    else:
+        print("No missing messages!")
 
 
 def verify_els_messages(els_json: dict, max_expected):
@@ -261,6 +349,7 @@ if __name__ == '__main__':
     parser.add_argument('--print-indices', action='store_true', help='Just print ElasticSearch indices and exit')
     parser.add_argument('--print-info', action='store_true', help='Just print ElasticSearch cluster info (version info etc.) and exit')
     parser.add_argument('--print-nodes', action='store_true')
+    parser.add_argument('--stream', action='store_true', help='Process messages in 10k chunks to reduce memory footprint. Disables ability to save index to a file.')
     parser.add_argument('--verbose', '-v', action='store_true', help='Set verbose logging.')
 
     args = parser.parse_args()
@@ -323,6 +412,15 @@ if __name__ == '__main__':
             if args.output is None:
                 print("Must specify --output with --no-verify")
                 exit(1)
+        if args.stream is True:
+            expected_max = args.max
+            if args.max is None:
+                print("WARNING: --max not specified, defaulting to # of docs in index: ", end="")
+                expected_max = es.get_index_doc_count(args.index)
+                print("{}".format(expected_max))
+            verify_els_message_stream(es.index_generator(args.index), expected_max)
+            es.index_generator(args.index)
+            exit()
         print("Starting to dump index...")
         if args.verbose:
             dump_start = time.time()
