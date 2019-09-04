@@ -16,7 +16,7 @@ An example cluster-loader config that works with ocp_logtest.py is [ocp-logtest.
 
 1. Edit **svt/openshift_scalability/config/ocp-logtest.yaml** if you want to change the parameters for the logtest pods.  The following parameters are supported:
 
-LOGTEST_IMAGE:  logtest image built with the content/logtest Dockerfile, default is **docker.io/mffiedler/ocp-logtest:latest**
+LOGTEST_IMAGE:  logtest image built with the content/logtest Dockerfile, default is **quay.io/mffiedler/ocp-logtest:latest**
 
 INITIAL_FLAGS:  Initial flags to pass to ocp_logtest.py, default is **"--num-lines 0 --line-length 200 --word-length 9 --rate 60 --fixed-line\n"**
 

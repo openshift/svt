@@ -67,7 +67,7 @@
         {
             "name": "LOGTEST_IMAGE",
             "displayName": "logtest image",
-            "value": "docker.io/mffiedler/ocp-logtest:latest"
+            "value": "quay.io/mffiedler/ocp-logtest:latest"
         },
 	{
 	    "name": "INITIAL_FLAGS",
