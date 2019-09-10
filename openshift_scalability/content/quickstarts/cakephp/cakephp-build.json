@@ -1,104 +1,162 @@
 {
+    "apiVersion": "template.openshift.io/v1",
     "kind": "Template",
-    "apiVersion": "v1",
-    "metadata": {
-	"name": "cakephp-mysql-example",
-	"annotations": {
-	    "description": "An example CakePHP application with a MySQL database",
-	    "source": "https://github.com/openshift/online/blob/master/templates/examples/cakephp-mysql.json",
-	    "tags": "quickstart,php,cakephp,mysql",
-	    "iconClass": "icon-php"
-	}
-    },
     "labels": {
-	"template": "cakephp-mysql-example"
+        "app": "cakephp-mysql-example",
+        "template": "cakephp-mysql-example"
+    },
+    "message": "The following service(s) have been created in your project: ${NAME}, ${DATABASE_SERVICE_NAME}.\n\nFor more information about using this template, including OpenShift considerations, see https://github.com/sclorg/cakephp-ex/blob/master/README.md.",
+    "metadata": {
+        "annotations": {
+            "description": "An example CakePHP application with a MySQL database. For more information about using this template, including OpenShift considerations, see https://github.com/sclorg/cakephp-ex/blob/master/README.md.\n\nWARNING: Any data stored will be lost upon pod destruction. Only use this template for testing.",
+            "iconClass": "icon-php",
+            "openshift.io/display-name": "CakePHP + MySQL (Ephemeral)",
+            "openshift.io/documentation-url": "https://github.com/sclorg/cakephp-ex",
+            "openshift.io/long-description": "This template defines resources needed to develop a CakePHP application, including a build configuration, application deployment configuration, and database deployment configuration.  The database is stored in non-persistent storage, so this configuration should be used for experimental purposes only.",
+            "openshift.io/provider-display-name": "Red Hat, Inc.",
+            "openshift.io/support-url": "https://access.redhat.com",
+            "samples.operator.openshift.io/version": "4.2.0-0.nightly-2019-09-03-102130",
+            "tags": "quickstart,php,cakephp",
+            "template.openshift.io/bindable": "false"
+        },
+        "creationTimestamp": "2019-09-03T20:12:15Z",
+        "labels": {
+            "samples.operator.openshift.io/managed": "true"
+        },
+        "name": "cakephp-mysql-example",
+        "namespace": "openshift",
+        "resourceVersion": "8369",
+        "selfLink": "/apis/template.openshift.io/v1/namespaces/openshift/templates/cakephp-mysql-example",
+        "uid": "1f93a20b-ce87-11e9-a03e-0a580a82001d"
     },
     "objects": [
-	{
-	    "kind": "ImageStream",
-	    "apiVersion": "v1",
-	    "metadata": {
-		"name": "cakephp-mysql-example",
-		"annotations": {
-		    "description": "Keeps track of changes in the application image"
-		}
-	    }
-	},
-	{
-	    "kind": "BuildConfig",
-	    "apiVersion": "v1",
-	    "metadata": {
-		"name": "cakephp-mysql-example",
-		"annotations": {
-		    "description": "Defines how to build the application"
-		}
-	    },
-	    "spec": {
-		"source": {
-		    "type": "Git",
-		    "git": {
-			"uri": "${SOURCE_REPOSITORY_URL}",
-			"ref": "${SOURCE_REPOSITORY_REF}"
-		    },
-		    "contextDir": "${CONTEXT_DIR}"
-		},
-		"strategy": {
-		    "type": "Source",
-		    "sourceStrategy": {
-			"from": {
-			    "kind": "ImageStreamTag",
-			    "namespace": "openshift",
-			    "name": "php:7.2"
-			}
-		    }
-		},
-		"output": {
-		    "to": {
-			"kind": "ImageStreamTag",
-			"name": "cakephp-mysql-example:latest"
-		    }
-		},
-		"triggers": [
-		    {
-			"type": "ImageChange"
-		    },
-		    {
-			"type": "ConfigChange"
-		    },
-		    {
-			"type": "GitHub",
-			"github": {
-			    "secret": "${GITHUB_WEBHOOK_SECRET}"
-			}
-		    }
-		]
-	    }
-	}
+        {
+            "apiVersion": "v1",
+            "kind": "ImageStream",
+            "metadata": {
+                "annotations": {
+                    "description": "Keeps track of changes in the application image"
+                },
+                "name": "${NAME}"
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "BuildConfig",
+            "metadata": {
+                "annotations": {
+                    "description": "Defines how to build the application",
+                    "template.alpha.openshift.io/wait-for-ready": "true"
+                },
+                "name": "${NAME}"
+            },
+            "spec": {
+                "output": {
+                    "to": {
+                        "kind": "ImageStreamTag",
+                        "name": "${NAME}:latest"
+                    }
+                },
+                "postCommit": {
+                    "script": "./vendor/bin/phpunit"
+                },
+                "source": {
+                    "contextDir": "${CONTEXT_DIR}",
+                    "git": {
+                        "ref": "${SOURCE_REPOSITORY_REF}",
+                        "uri": "${SOURCE_REPOSITORY_URL}"
+                    },
+                    "type": "Git"
+                },
+                "strategy": {
+                    "sourceStrategy": {
+                        "env": [
+                            {
+                                "name": "COMPOSER_MIRROR",
+                                "value": "${COMPOSER_MIRROR}"
+                            }
+                        ],
+                        "from": {
+                            "kind": "ImageStreamTag",
+                            "name": "php:${PHP_VERSION}",
+                            "namespace": "${NAMESPACE}"
+                        }
+                    },
+                    "type": "Source"
+                },
+                "triggers": [
+                    {
+                        "type": "ImageChange"
+                    },
+                    {
+                        "type": "ConfigChange"
+                    },
+                    {
+                        "github": {
+                            "secret": "${GITHUB_WEBHOOK_SECRET}"
+                        },
+                        "type": "GitHub"
+                    }
+                ]
+            }
+        }
     ],
     "parameters": [
-	{
-	    "name": "SOURCE_REPOSITORY_URL",
-	    "displayName": "Git Repository URL",
-	    "description": "The URL of the repository with your application source code.",
-	    "value": "https://github.com/redhat-performance/cakephp-ex.git"
-	},
-	{
-	    "name": "SOURCE_REPOSITORY_REF",
-	    "displayName": "Git Reference",
-	    "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch."
-	},
-	{
-	    "name": "CONTEXT_DIR",
-	    "displayName": "Context Directory",
-	    "description": "Set this to the relative path to your project if it is not in the root of your repository."
-	},
-	{
-	    "name": "GITHUB_WEBHOOK_SECRET",
-	    "displayName": "GitHub Webhook Secret",
-	    "description": "A secret string used to configure the GitHub webhook.",
-	    "generate": "expression",
-	    "from": "[a-zA-Z0-9]{40}"
-	},
+        {
+            "description": "The name assigned to all of the frontend objects defined in this template.",
+            "displayName": "Name",
+            "name": "NAME",
+            "required": true,
+            "value": "cakephp-mysql-example"
+        },
+        {
+            "description": "The OpenShift Namespace where the ImageStream resides.",
+            "displayName": "Namespace",
+            "name": "NAMESPACE",
+            "required": true,
+            "value": "openshift"
+        },
+        {
+            "description": "Version of PHP image to be used (7.1 or latest).",
+            "displayName": "PHP Version",
+            "name": "PHP_VERSION",
+            "required": true,
+            "value": "7.1"
+        },
+        {
+            "description": "The URL of the repository with your application source code.",
+            "displayName": "Git Repository URL",
+            "name": "SOURCE_REPOSITORY_URL",
+            "required": true,
+            "value": "https://github.com/sclorg/cakephp-ex.git"
+        },
+        {
+            "description": "Set this to a branch name, tag or other ref of your repository if you are not using the default branch.",
+            "displayName": "Git Reference",
+            "name": "SOURCE_REPOSITORY_REF"
+        },
+        {
+            "description": "Set this to the relative path to your project if it is not in the root of your repository.",
+            "displayName": "Context Directory",
+            "name": "CONTEXT_DIR"
+        },
+        {
+            "description": "Github trigger secret.  A difficult to guess string encoded as part of the webhook URL.  Not encrypted.",
+            "displayName": "GitHub Webhook Secret",
+            "from": "[a-zA-Z0-9]{40}",
+            "generate": "expression",
+            "name": "GITHUB_WEBHOOK_SECRET"
+        },
+        {
+            "displayName": "Database Service Name",
+            "name": "DATABASE_SERVICE_NAME",
+            "required": true,
+            "value": "mysql"
+        },
+        { 
+            "displayName": "Custom Composer Mirror URL",
+            "name": "COMPOSER_MIRROR"
+        },
     {
       "name": "IDENTIFIER",
       "description": "Number to append to the name of resources",
