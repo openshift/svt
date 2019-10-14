@@ -42,7 +42,23 @@ chmod +x files/scripts/*.sh
 bash files/scripts/create-oc-objects.sh $test_project_name $test_project_number $working_directory $delete_test_project_before_test $memory_limity $mongodb_user $mongodb_password $mongodb_database $volume_capacity $mongodb_version $storage_class
 echo "Sleep 60 sec..."
 sleep 60
+
+start_load=`date +%s`
+
 bash files/scripts/test-mongo-m-load.sh $test_project_name $test_project_number $iterations $ycsb_threads $workload $recordcount $operationcount $distribution $working_directory
-echo "Sleep 60 sec..."
-sleep 60
+
+end_load=`date +%s`
+total_load=`echo $end_load - $start_load | bc`
+
+echo "Sleep 10 sec..."
+sleep 10
+
+start_run=`date +%s`
+
 bash files/scripts/test-mongo-m-run.sh $test_project_name $test_project_number $iterations $ycsb_threads $workload $recordcount $operationcount $distribution $working_directory
+
+end_run=`date +%s`
+total_run=`echo $end_run - $start_run | bc`
+
+echo "Total load : $total_load"
+echo "Total  run : $total_run"
