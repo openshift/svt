@@ -2,6 +2,7 @@ from ReliabilityConfig import ReliabilityConfig
 from .Projects import all_projects
 from .Apps import all_apps
 from .Pods import all_pods
+from .Users import all_users
 from .Task import Task
 from .utils.oc import oc
 import logging
