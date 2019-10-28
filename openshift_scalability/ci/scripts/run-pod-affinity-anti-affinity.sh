@@ -3,7 +3,7 @@
 
 date
 uname -a
-openshift version
+oc get clusterversion
 oc version
 oc get node --show-labels
 oc describe node | grep Runtime
