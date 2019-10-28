@@ -3,7 +3,7 @@
 
 date
 uname -a
-## openshift version
+oc version
 oc get clusterversion
 oc get clusterversion -o json
 

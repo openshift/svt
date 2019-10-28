@@ -17,7 +17,8 @@ def count_pods(namespace,dc) :
     running = 0
     active = 0
     for pod in pod_list:
-        if not pod == "" and not pod=="No resources found.":
+    ##    if not pod == "" and not pod=="No resources found.":
+        if not pod == "" and "No resources found" not in pod:
             active +=1
             if pod.find("Running") > -1 and pod.find("1/1") > -1:
                 running += 1
