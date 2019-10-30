@@ -1,0 +1,25 @@
+apiVersion: tuned.openshift.io/v1
+kind: Tuned
+metadata:
+  name: router
+  namespace: openshift-cluster-node-tuning-operator
+spec:
+  profile:
+  - data: |
+      [main]
+      summary=A custom OpenShift profile for the router
+      include=openshift-control-plane
+
+      [sysctl]
+      net.ipv4.ip_local_port_range="1024 65535"
+      net.ipv4.tcp_tw_reuse=1
+
+    name: openshift-router
+
+  recommend:
+  - match:
+    - label: deployment-ingresscontroller
+      value: default
+      type: pod
+    priority: 5
+    profile: openshift-router
