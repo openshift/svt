@@ -2,7 +2,6 @@ from sys import stdout
 from time import sleep
 import subprocess
 
-# TODO - turn off colors on demand
 # Setting the output colors
 
 black = "\33[30m"
@@ -42,7 +41,6 @@ def fail(description, cleaning_method):
     if description is not None:
         print("{}{}{}".format(red, description, reset))
     cleaning_method()
-    raise SystemExit
 
 
 def execute_command(command_to_execute):

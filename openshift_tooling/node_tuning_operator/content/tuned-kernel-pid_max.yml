@@ -1,0 +1,23 @@
+apiVersion: tuned.openshift.io/v1
+kind: Tuned
+metadata:
+  name: max-pid-test
+  namespace: openshift-cluster-node-tuning-operator
+spec:
+  profile:
+  - data: |
+      [main]
+      summary=Test change sysctl kernel.pid_max
+      include=openshift-control-plane
+
+      [sysctl]
+      kernel.pid_max=>131074
+
+    name: pidmax
+
+  recommend:
+  - match:
+    - label: tuned.openshift.io/elasticsearch
+      type: pod
+    priority: 5
+    profile: pidmax
