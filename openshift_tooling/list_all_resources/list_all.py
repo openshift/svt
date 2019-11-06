@@ -1,7 +1,10 @@
 from optparse import OptionParser
 from subprocess import check_output, STDOUT
+import re
 from time import time
 
+
+ns_match = re.compile("(\S+?)\s+(.*)")
 def run(cmd, config=""):
 
     if config:
@@ -45,12 +48,24 @@ def get_all_items(all_types, namespace):
     for this_type in all_types:
         result = []
         start_time = time()
-        result = get_all(this_type, namespace)
+        # temporary black list
+        if this_type != "packagemanifests.packages.operators.coreos.com":
+            result = get_all(this_type, namespace)
         elapsed_time = time() - start_time
+        type_items[this_type] = []
         if options.verbose:
             print(this_type + ": " + str(elapsed_time))
         if len(result) > 0:
-            type_items[this_type] = result
+            for this_result in result:
+                this_item={}
+                if namespace == "all-namespaces":
+                    m = ns_match.match(this_result)
+                    this_item["namespace"] = m.group(1)
+                    this_item["value"] = m.group(2)
+                else:
+                    this_item["namespace"] = namespace
+                    this_item["value"] = this_result
+                type_items[this_type].append(this_item)
     return(type_items)
 
 # def adjust_for_scope
@@ -58,10 +73,26 @@ def get_all_items(all_types, namespace):
 def print_items(all_items):
     all_types = list(all_items.keys())
     for this_type in all_types:
-        print("\n\n===============")
-        print("TYPE: " + this_type)
-        for this_item in all_items[this_type]:
-            print("\t" + this_item)
+        if options.output == "list":    
+            print("\n\n===============")
+            print("TYPE: " + this_type)
+            for this_item in all_items[this_type]:
+                print("\t" + this_item["namespace"] + ": " + this_item["value"])
+        elif options.output == "ns-count":
+            ns_count = {}
+            for this_item in all_items[this_type]:
+                ns = this_item["namespace"]
+                if ns in ns_count:
+                    ns_count[ns] += 1
+                else:
+                    ns_count[ns] = 1
+            print("\n\n===============")
+            print("TYPE: " + this_type)
+            for this_ns in ns_count:
+                print("\t" + this_ns + ": " + str(ns_count[this_ns]) )
+        else:
+            count = len(all_items[this_type])
+            print(this_type + ": " + str(count))
 
 
 
@@ -77,6 +108,8 @@ if __name__ == "__main__":
     parser.add_option("-s", "--scope", dest="scope", default="all",
                         help="namespaced, cluster or all (default)")
     parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False)
+    parser.add_option("-o", "--output", dest="output", default="list", help="output type: list or count or ns_count")
+
 
     (options, args) = parser.parse_args()
 
