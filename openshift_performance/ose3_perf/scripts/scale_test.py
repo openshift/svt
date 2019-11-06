@@ -17,8 +17,7 @@ def count_pods(namespace,dc) :
     running = 0
     active = 0
     for pod in pod_list:
-    ##    if not pod == "" and not pod=="No resources found.":
-        if not pod == "" and "No resources found" not in pod:
+        if not pod == "" and not pod.startswith("No resources found"):
             active +=1
             if pod.find("Running") > -1 and pod.find("1/1") > -1:
                 running += 1
@@ -69,6 +68,8 @@ if __name__ ==  "__main__":
                      help="OpenShift user for login")
     parser.add_option("-p", "--password", dest="osepass",
                      help="OpenShift password for login")
+    parser.add_option("--no-login", dest="nologin", action="store_true",
+                     help="No oc login is required, KUBECONFIG is set or in place")
     parser.add_option("-d", "--dc", dest="dc",
                       help="Deployment Config")
     parser.add_option("-n", "--namespace", dest="namespace",
@@ -93,6 +94,7 @@ if __name__ ==  "__main__":
     globalconfig["master"] = options.master
     globalconfig["oseuser"] = options.oseuser
     globalconfig["password"] = options.osepass
+    globalconfig["nologin"] = options.nologin
     globalconfig["dc"] = options.dc
     globalconfig["replicas"] = int(options.replicas)
     globalconfig["namespace"] = options.namespace
@@ -102,7 +104,8 @@ if __name__ ==  "__main__":
     globalconfig["zero"] = options.zero
     globalconfig["zero_final"] = options.zero_final
 
-    login(globalconfig["master"],globalconfig["oseuser"],globalconfig["password"])
+    if not globalconfig["nologin"] :
+       login(globalconfig["master"],globalconfig["oseuser"],globalconfig["password"])
 
     total_replicas = globalconfig["replicas"]
     cumulative_replicas = 0
