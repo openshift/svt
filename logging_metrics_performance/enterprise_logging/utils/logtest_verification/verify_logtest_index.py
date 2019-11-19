@@ -42,9 +42,12 @@ class ElsHelper:
             self.base_url = "https://{}".format(route)
         self.verbose = verbose
 
-    def custom_query(self, custom_endpoint: str):
+    def custom_query(self, custom_endpoint: str, put=False, data=None):
         url = self.base_url + custom_endpoint
-        r = requests.get(url, headers=self.headers, verify=False)
+        if put is True:
+            r = requests.put(url, headers=self.headers, verify=False, json=data)
+        else:
+            r = requests.get(url, headers=self.headers, verify=False)
         r.raise_for_status()
         if 'json' in r.headers['content-type']:
             print(json.dumps(r.json(), indent=2))
@@ -338,6 +341,8 @@ def compute_ranges(num_list):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--custom', help="Print output from given custom endpoint")
+    parser.add_argument('--put', action='store_true', help='Use HTTP PUT method when sending --custom request')
+    parser.add_argument('--data', help='Pass JSON data when using --custom and --put. Accepts string or json file. Useful for updating settings')
     parser.add_argument('--file', '-f', help='JSON file containing ELS search query results')
     parser.add_argument('--route', '-r', help='Route to ElasticSearch endpoint')
     parser.add_argument('--token', '-t', help='OAuth token to use if pulling data directly from the ElasticSearch endpoint')
@@ -383,7 +388,15 @@ if __name__ == '__main__':
 
         # Handle --custom
         if args.custom:
-            es.custom_query(args.custom)
+            if args.data is not None:
+                if os.path.isfile(args.data):
+                    with open(args.data, 'r') as f:
+                        data_arg = json.load(f)
+                else:
+                    data_arg = json.loads(args.data)
+            else:
+                data_arg = None
+            es.custom_query(args.custom, put=args.put, data=data_arg)
             exit(0)
 
         # Handle --print-indices
