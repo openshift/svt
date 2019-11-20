@@ -444,7 +444,7 @@ def single_project(testconfig, projname, globalvars):
                 node_selector = " --node-selector=\"" + testconfig['nodeselector'] + "\""
                 oc_command_with_retry("oc adm new-project " + projname + node_selector,globalvars)
             else:
-                oc_command_with_retry("oc new-project " + projname,globalvars)
+                oc_command_with_retry("oc new-project --skip-config-write=true " + projname,globalvars)
             oc_command_with_retry("oc label --overwrite namespace " + projname +" purpose=test", globalvars)
     else:
         pass
