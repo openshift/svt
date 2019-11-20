@@ -51,8 +51,7 @@ def test():
     # Verification if custom tuning applied to tuned-profiles
     print_step("Verify if custom tuning applied to tuned-profiles")
     tuned_profiles_expected = """    openshift-router: |
-          summary=A custom OpenShift profile for the router
-        name: router"""
+          summary=A custom OpenShift profile for the router"""
     tuned_profiles_actual = execute_command("oc get cm/tuned-profiles -o yaml | grep router").rstrip()
     if tuned_profiles_actual.replace(" ", "") == tuned_profiles_expected.replace(" ", ""):
         passed(None)
@@ -63,8 +62,7 @@ def test():
     # Verification if custom tuning applied to tuned-recommend
     print_step("Verify if custom tuning applied to tuned-recommend")
     tuned_recommend_expected = """    [openshift-router,0]
-        /var/lib/tuned/ocp-pod-labels.cfg=.*\\bdeployment-ingresscontroller=default\\n
-        name: router"""
+        /var/lib/tuned/ocp-pod-labels.cfg=.*\\bdeployment-ingresscontroller=default\\n"""
     tuned_recommend_actual = execute_command("oc get cm/tuned-recommend -o yaml | grep -e router -e deployment-ingresscontroller").rstrip()
     if tuned_recommend_actual.replace(" ", "") == tuned_recommend_expected.replace(" ", ""):
         passed(None)
