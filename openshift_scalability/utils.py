@@ -11,7 +11,7 @@ formatter = logging.Formatter(fmt='%(asctime)s :: %(process)d :: %(levelname)-8s
 screen_handler = logging.StreamHandler(stream=sys.stdout)
 screen_handler.setFormatter(formatter)
 logger = logging.getLogger("clusterloader")
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.addHandler(screen_handler)
 
 def calc_time(timestr):
