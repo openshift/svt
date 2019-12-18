@@ -49,7 +49,7 @@
          -p "{{ login_passwd }}" 
          -n cakephp-mysql0 
          -d cakephp-mysql-example 
-         -r 20
+         -r 100
          -s 20 
          -w 10 
          -z

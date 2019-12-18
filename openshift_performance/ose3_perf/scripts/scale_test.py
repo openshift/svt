@@ -32,7 +32,7 @@ def scale_down(namespace,dc):
     if active > 0 :
         run("oc scale --replicas=0 -n " + namespace + " dc/" + dc)
         retries = 0
-        while active > 0 and retries < 100:
+        while active > 0 and retries < 150:
             time.sleep(3)
             running,active = count_pods(namespace, dc)
             if active > 0:
