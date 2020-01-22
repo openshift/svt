@@ -1,8 +1,23 @@
 #!/bin/bash
 
+##############################################################################
+# Author: skordas@redhat.com
 # Related Polarion Test Case: OCP-22421
+# Description:
+# Ensure you can successfully run cluster-loader.py with pyconfigMasterVertScale.yaml
+# when one out of three master nodes services are stopped.
+#
+# This will create 5 projects each with builds:
+# buildconfigs, imagestreams, deployment configs, secrets,  routes,
+# replicationcontrollers, etc.  from pause-pod based templates.
+#
+# Test details can be found in the GitHub SVT openshift_scalability repo:
+# https://github.com/openshift/svt/blob/master/openshift_scalability/README.md
+# https://github.com/openshift/svt/blob/master/openshift_scalability/config/pyconfigMasterVirtScalePause.yaml
+#
 # Run test: bash master-failover-one-master-stop.sh
 # Run test and remove test projects after run: bash master-failover-one-master-stop.sh true
+##############################################################################
 
 if [[ $(oc get nodes | grep -c master) -ne 3 ]]; then
   echo "To run this script you need to provide cluster with 3 master nodes"

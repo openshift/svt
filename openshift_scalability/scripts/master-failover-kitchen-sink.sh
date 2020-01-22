@@ -1,8 +1,21 @@
 #!/bin/bash
 
+##############################################################################
+# Author: skordas@redhat.com
 # Related Polarion Test Case: OCP-22443
+# Description:
+# Ensure that you can run the SVT Kitchen Sink Test: cluster-loader.py with master-vert.yaml on restarted Master-1:
+#
+# This will create 7projects to build and deploy 7 quickstart apps from their respective json templates:
+# cakephp-mysq, dancer-mysql, django-postgresql, nodejs-mongodb, rails-postgresql, eap64-mysql, tomcat8-mongodb
+#
+# Test details can be found in the GitHub SVT openshift_scalability repo:
+# https://github.com/openshift/svt/blob/master/openshift_scalability/README.md
+# https://github.com/openshift/svt/blob/master/openshift_scalability/config/master-vert.yaml
+#
 # Run test: bash master-failover-kitchen-sink.sh
 # Run test and remove test projects after run: bash master-failover-kitchen-sink.sh true
+##############################################################################
 
 if [[ $(oc get nodes | grep -c master) -ne 3 ]]; then
   echo "To run this script you need to provide cluster with 3 master nodes"
