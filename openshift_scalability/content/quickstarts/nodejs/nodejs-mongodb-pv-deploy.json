@@ -218,7 +218,7 @@
 			    "from": {
 				"kind": "ImageStreamTag",
 				"namespace": "openshift",
-				"name": "mongodb:2.6"
+				"name": "mongodb:3.6"
 			    }
 			}
 		    },
