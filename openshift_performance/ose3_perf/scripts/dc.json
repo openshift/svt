@@ -1,0 +1,108 @@
+{
+    "kind": "List",
+    "apiVersion": "v1",
+    "metadata": {},
+    "items": [
+        {
+            "apiVersion": "apps.openshift.io/v1",
+            "kind": "DeploymentConfig",
+            "metadata": {
+                "labels": {
+                    "template": "deploymentConfigTemplate"
+                },
+                "name": "deploymentconfig1"
+            },
+            "spec": {
+                "replicas": 1,
+                "selector": {
+                    "name": "replicationcontroller1"
+                },
+                "strategy": {
+                    "type": "Rolling"
+                },
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "name": "replicationcontroller1"
+                        }
+                    },
+                    "spec": {
+                        "containers": [
+                            {
+                                "capabilities": {},
+                                "env": [
+                                    {
+                                        "name": "ENVVAR1_1",
+                                        "value": "EEqwbdWlRJs0MU2XtekCeSPMU5qxt7wmMvGIW60yuK6lnK8TBMdK0xo8HxDQCghGoWJKnV3fYx8jlkcxQEJeUMV1xIQWVyRNt6caD6gknyOGfyC5Vpp4ytftuj8eVWJJek4PXqYGbOQGmp6xJm5gyEDFvLdpLIlTCTpfAGAFrbMqjdNxyReTTDj3p6YHSlvsYssi0XE2uQ0fTNa0V7E8AOjAh21GOFnUVsyXnSEhHrvlpfkBr3TEjLlsKxQYtm8"
+                                    },
+                                    {
+                                        "name": "ENVVAR2_1",
+                                        "value": "EEqwbdWlRJs0MU2XtekCeSPMU5qxt7wmMvGIW60yuK6lnK8TBMdK0xo8HxDQCghGoWJKnV3fYx8jlkcxQEJeUMV1xIQWVyRNt6caD6gknyOGfyC5Vpp4ytftuj8eVWJJek4PXqYGbOQGmp6xJm5gyEDFvLdpLIlTCTpfAGAFrbMqjdNxyReTTDj3p6YHSlvsYssi0XE2uQ0fTNa0V7E8AOjAh21GOFnUVsyXnSEhHrvlpfkBr3TEjLlsKxQYtm8"
+                                    },
+                                    {
+                                        "name": "ENVVAR3_1",
+                                        "value": "EEqwbdWlRJs0MU2XtekCeSPMU5qxt7wmMvGIW60yuK6lnK8TBMdK0xo8HxDQCghGoWJKnV3fYx8jlkcxQEJeUMV1xIQWVyRNt6caD6gknyOGfyC5Vpp4ytftuj8eVWJJek4PXqYGbOQGmp6xJm5gyEDFvLdpLIlTCTpfAGAFrbMqjdNxyReTTDj3p6YHSlvsYssi0XE2uQ0fTNa0V7E8AOjAh21GOFnUVsyXnSEhHrvlpfkBr3TEjLlsKxQYtm8"
+                                    },
+                                    {
+                                        "name": "ENVVAR4_1",
+                                        "value": "EEqwbdWlRJs0MU2XtekCeSPMU5qxt7wmMvGIW60yuK6lnK8TBMdK0xo8HxDQCghGoWJKnV3fYx8jlkcxQEJeUMV1xIQWVyRNt6caD6gknyOGfyC5Vpp4ytftuj8eVWJJek4PXqYGbOQGmp6xJm5gyEDFvLdpLIlTCTpfAGAFrbMqjdNxyReTTDj3p6YHSlvsYssi0XE2uQ0fTNa0V7E8AOjAh21GOFnUVsyXnSEhHrvlpfkBr3TEjLlsKxQYtm8"
+                                    }
+                                ],
+                                "image": "openshift/hello-openshift",
+                                "imagePullPolicy": "IfNotPresent",
+                                "name": "helloworld1",
+                                "ports": [
+                                    {
+                                        "containerPort": 8080,
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "resources": {},
+                                "securityContext": {
+                                    "capabilities": {},
+                                    "privileged": false
+                                }
+                            }
+                        ],
+                        "restartPolicy": "Always",
+                        "serviceAccount": ""
+                    }
+                },
+                "triggers": [
+                    {
+                        "type": "ConfigChange"
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "labels": {
+                    "template": "deploymentConfigTemplate"
+                },
+                "name": "service1"
+            },
+            "spec": {
+                "portalIP": "",
+                "ports": [
+                    {
+                        "name": "serviceport1",
+                        "port": 80,
+                        "protocol": "TCP",
+                        "targetPort": 8080
+                    }
+                ],
+                "selector": {
+                    "name": "replicationcontroller1"
+                },
+                "sessionAffinity": "None",
+                "type": "ClusterIP"
+            },
+            "status": {
+                "loadBalancer": {}
+            }
+        }
+    ]
+}
