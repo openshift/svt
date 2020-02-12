@@ -1,4 +1,8 @@
 #!/bin/bash
+# Pre-requisite: m5.2xlarge 4.x cluster with 10 worker nodes and oc client installed.
+# For accurate performance results all the nodes have to be in the same AWS availability zone
+# Author : rpattath@redhat.com
+
 echo 'Create 200 projects and create 1 dc in each project'
 time for i in {0..199}; do oc new-project --skip-config-write test$i; oc create -n test$i -f dc.json; done > /tmp/octime
 echo 'for each of 200 projects, get the dcs, sa and secrets'
