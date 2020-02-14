@@ -2,24 +2,16 @@
 
 ##############################################################################
 # Author: skordas@redhat.com
-# Related Polarion Test Case: OCP-22421
+# Related Polarion Test Case: OCP-22212
 # Description:
-# Ensure you can successfully run cluster-loader.py with pyconfigMasterVertScale.yaml
-# when one out of three master node services are stopped.
-#
-# This will create 5 projects each with builds:
-# buildconfigs, imagestreams, deployment configs, secrets,  routes,
-# replicationcontrollers, etc.  from pause-pod based templates.
+# Ensure that OpenShift Cluster basic functionality remains available
+# when two out of three master node services are stopped.
 #
 # Test details can be found in the GitHub SVT openshift_scalability repo:
 # https://github.com/openshift/svt/blob/master/openshift_scalability/README.md
-# https://github.com/openshift/svt/blob/master/openshift_scalability/config/pyconfigMasterVirtScalePause.yaml
 #
-# Run test: bash master-failover-one-master-stop.sh
-# Run test and remove test projects after run: bash master-failover-one-master-stop.sh true
+# Run test: bash master-failover-two-masters-stop-pods.sh
 #
-# Changes:
-#   skordas: update enable api and controller functions to check if there is 4/4 running
 ##############################################################################
 
 if [[ $(oc get nodes | grep -c master) -ne 3 ]]; then
@@ -27,9 +19,8 @@ if [[ $(oc get nodes | grep -c master) -ne 3 ]]; then
   exit 1
 fi
 
-project_name="clusterproject"
-wait_time=5
-number_of_retries=10
+wait_time=10
+number_of_retries=20
 
 nodes=()
 for node in $(oc get nodes | grep master | awk '{print $1}'); do
@@ -124,52 +115,32 @@ function enable_kube_controller_manager_on_node {
   done
 }
 
-function project_verification {
-  for project in $(oc get projects | grep $project_name | awk '{print $1}'); do
-    echo "Project: $project"
-    try=0
-    while :; do
-      oc get pods -n $project | grep buildconfig0-1-build
-      v1=$(oc get pods -n $project | grep -c buildconfig0-1-build)
-      oc get pods -n $project | grep Running | grep deploymentconfig0-1
-      v2=$(oc get pods -n $project | grep Running | grep -c deploymentconfig0-1)
-      oc get pods -n $project | grep Running | grep deploymentconfig1-1
-      v3=$(oc get pods -n $project | grep Running | grep -c deploymentconfig1-1)
-      oc get pods -n $project | grep Running | grep deploymentconfig2v0-1
-      v4=$(oc get pods -n $project | grep Running | grep -c deploymentconfig2v0-1)
-      if [[ $v1 -eq 1 ]] && [[ $v2 -eq 1 ]] && [[ $v3 -eq 1 ]] && [[ $v4 -eq 2 ]]; then
-        echo "All services are up!"
-        break
-      fi
-      ((try=${try}+1))
-      if [[ $try -eq $number_of_retries ]]; then
-        echo "In project $project not all pods are ready!"
-        exit 1
-      fi
-      echo "Retrying in $wait_time seconds"
-      sleep $wait_time
-    done
-  done
-}
-
-function delete_projects {
-  if [[ ! -z "$1" ]] && [[ $(echo "$1" | awk '{print tolower($0)}') = "true" ]]; then
-    echo "Deleting projects"
-    oc delete project -l purpose=test
-  else
-    echo "Test projects are not deleted"
-    oc get projects --show-labels | grep purpose=test
-  fi
-}
-
 # Test Run
+number_of_pods_before_test=$(oc get pods -A | grep -c Running)
+echo "Number of pods before test: $number_of_pods_before_test"
+
 disable_kube_api_server_on_node ${nodes[0]}
+disable_kube_api_server_on_node ${nodes[1]}
 disable_kube_controller_manager_on_node ${nodes[0]}
-cd ..
-./cluster-loader.py -f config/pyconfigMasterVertScale.yaml
-echo "Sleep for 10 seconds"
-sleep 10
-project_verification
+disable_kube_controller_manager_on_node ${nodes[1]}
+number_of_pods_during_test=$(oc get pods -A | grep -c Running)
+echo "Number of pods during test: $number_of_pods_during_test"
+if [[ $number_of_pods_before_test -ne $((${number_of_pods_during_test}+4)) ]]; then
+  echo "Number of pods during the test should be less than before test - kube-apiserver and kube-controller-manager should be down"
+  echo "Number of pods before test: $number_of_pods_before_test"
+  echo "Number of pods during test: $number_of_pods_during_test"
+  exit 1
+fi
+
 enable_kube_api_server_on_node ${nodes[0]}
+enable_kube_api_server_on_node ${nodes[1]}
 enable_kube_controller_manager_on_node ${nodes[0]}
-delete_projects $1
+enable_kube_controller_manager_on_node ${nodes[1]}
+number_of_pods_after_test=$(oc get pods -A | grep -c Running)
+echo "Number of pods after test:  $number_of_pods_after_test"
+if [[ $number_of_pods_before_test -ne $number_of_pods_after_test ]]; then
+  echo "Number of pods before test and after should be the same"
+  echo "Number of pods before test: $number_of_pods_before_test"
+  echo "Number of pods after test:  $number_of_pods_after_test"
+  exit 1
+fi

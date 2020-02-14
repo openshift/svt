@@ -15,6 +15,9 @@
 #
 # Run test: bash master-failover-kitchen-sink.sh
 # Run test and remove test projects after run: bash master-failover-kitchen-sink.sh true
+#
+# Changes:
+#   skordas: update enable api and controller functions to check if there is 4/4 running
 ##############################################################################
 
 if [[ $(oc get nodes | grep -c master) -ne 3 ]]; then
@@ -81,7 +84,7 @@ function enable_kube_api_server_on_node {
   try=0
   while :; do
     oc get pods -o wide -n openshift-kube-apiserver | grep $1 | grep Running
-    number_running_pods=$(oc get pods -o wide -n openshift-kube-apiserver | grep $1 | grep Running | grep -c 3/3)
+    number_running_pods=$(oc get pods -o wide -n openshift-kube-apiserver | grep $1 | grep Running | grep -c 4/4)
     if [[ $number_running_pods -eq 1 ]]; then
       echo "On node $1 kube-apiserver is up"
       break
@@ -103,7 +106,7 @@ function enable_kube_controller_manager_on_node {
   try=0
   while :; do
     oc get pods -o wide -n openshift-kube-controller-manager | grep $1 | grep Running
-    number_running_pods=$(oc get pods -o wide -n openshift-kube-controller-manager | grep $1 | grep Running | grep -c 3/3)
+    number_running_pods=$(oc get pods -o wide -n openshift-kube-controller-manager | grep $1 | grep Running | grep -c 4/4)
     if [[ $number_running_pods -eq 1 ]]; then
       echo "On node $1 kube-controller-manager is up"
       break
