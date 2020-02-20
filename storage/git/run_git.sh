@@ -22,6 +22,12 @@ bash files/scripts/create-oc-objects.sh $test_project_name $test_project_number 
 echo "Sleep for 60 seconds..."
 sleep 60
 
+start_time=`date +%s`
+
 bash files/scripts/test-git-m.sh $test_project_name $test_project_number $iteration $working_folder 2>&1 | tee -a $test_log_file
+
+end_time=`date +%s`
+total_time=`echo $end_time - $start_time | bc`
+echo "Total time : $total_time"
 
 echo -e "\nTest log file: $test_log_file"
