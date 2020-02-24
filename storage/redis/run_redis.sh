@@ -31,4 +31,10 @@ bash files/scripts/create-oc-objects.sh $test_project_name $test_project_number 
 echo "Sleep 60 sec..."
 sleep 60
 
+start_time=`date +%s`
+
 bash files/scripts/test-redis-m.sh $test_project_name $test_project_number $iteration $ycsb_threads $workload $working_directory
+
+end_time=`date +%s`
+total_time=`echo $end_time - $start_time | bc`
+echo "Total time : $total_time"
