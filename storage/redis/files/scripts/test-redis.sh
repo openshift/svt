@@ -25,7 +25,7 @@ for i in $(seq 1 ${ITERATION}); do
   for load  in $(echo ${WORKLOAD} | sed -e s/,/" "/g); do
 	for thread in $(echo ${THREADS} | sed -e s/,/" "/g); do
 	  echo "ITERATION: ${i}; WORKLOAD: ${load}; THREADS: ${thread}"
-      oc -n ${NAMESPACE} exec "${REDIS_POD}" -- scl enable rh-redis32 -- redis-cli -a redhat FLUSHDB
+      oc -n ${NAMESPACE} exec "${REDIS_POD}" -- scl enable rh-redis5 -- redis-cli -a redhat FLUSHDB
 	  oc -n ${NAMESPACE} exec "${YCSB_POD}" -- ./bin/ycsb load redis -s -threads ${thread} -P "workloads/${load}" -p "redis.host=${REDIS_IP}" -p "redis.port=6379" -p "redis.password=redhat" 2>&1 | tee -a ${output_dir}/redis_load_data_${NAMESPACE}_iter_${i}_${load}_threads_${thread}.txt
       oc -n ${NAMESPACE} exec "${YCSB_POD}" -- ./bin/ycsb run redis -s -threads ${thread} -P "workloads/${load}" -p "redis.host=${REDIS_IP}" -p "redis.port=6379" -p "redis.password=redhat" 2>&1 | tee -a ${output_dir}/redis_run_load_${NAMESPACE}_iter_${i}_${load}_threads_${thread}.txt
 	done

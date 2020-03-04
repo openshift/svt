@@ -8,7 +8,7 @@ REDIS_PASSWORD: redhat
 ###minimal 3Gi for workload_template
 VOLUME_CAPACITY: 100Gi
 STORAGE_CLASS_NAME: gp2
-REDIS_VERSION: 3.2
+REDIS_VERSION: 5
 iteration: 3
 ycsb_threads: 10
 #workload: workloada,workloadb,workloadc,workloadd,workloade,workloadf,workload_template

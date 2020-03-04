@@ -76,13 +76,12 @@ function wait_until_the_pod_is_ready {
 
 for i in $(seq 1 ${ITERATION});
 do
-  echo "delete ${i}..."
   NAMESPACE="${NAMESPACE_BASENAME}-${i}"
   if [[ "${DELETE_EXISTING_PROJECTS}" == "true" ]];
   then
+    echo "delete ${i}..."
     oc delete project ${NAMESPACE} --wait=false
   fi
-  sleep 10
 done
 
 for i in $(seq 1 ${ITERATION});
