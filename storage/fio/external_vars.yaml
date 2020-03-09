@@ -1,0 +1,9 @@
+---
+NODE_SELECTOR_KEY: fio
+NODE_SELECTOR_VALUE: fio
+SCRIPTS_FOLDER: /tmp/scripts
+TEST_PROJECT_NAME: storage-test-fio
+VOLUME_CAPACITY: 1000Gi
+STORAGE_CLASS_NAME: gp2
+IMAGE: quay.io/openshift-scale/scale-ci-fio:latest
+CLEANING_AFTER_TEST: false
