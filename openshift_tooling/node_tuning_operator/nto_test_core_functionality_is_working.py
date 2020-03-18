@@ -5,12 +5,18 @@ from utils import *
 #############################################################
 # Test: Node Tuning Operator: core functionality is working #
 #############################################################
+# Changes:                                                  #
+#   skordas:                                                #
+#   Updating Test Case to work with OCP 4.4                 #
+#############################################################
+
+
+max_map_count = 262144
 
 
 def cleanup():
     print("Cleaning after test")
     execute_command("oc delete project my-logging-project")
-    execute_command("oc delete tuned max-pid-test -n openshift-cluster-node-tuning-operator")
 
 
 def count_log_applied_lines(list_of_pods, node_with_app):
@@ -80,6 +86,7 @@ def test():
     print_step("Verify that after creating new resource with 'es' label pod will be tuned")
     execute_command("oc new-project my-logging-project")
     execute_command("oc create -f https://raw.githubusercontent.com/hongkailiu/svt-case-doc/master/files/pod_test.yaml")
+
     # Getting node where pod with 'web' name is running
     node_where_app_is_running = execute_command("oc get pod web --no-headers -o=custom-columns=NODE:.spec.nodeName").rstrip()
     # Verification node roles
@@ -93,72 +100,28 @@ def test():
     print("Pod running on node: {} with role: {} - profile to verify: {}".format(node_where_app_is_running, node_type, profile))
     execute_command("oc project openshift-cluster-node-tuning-operator")
     tuned_pod = execute_command("oc get pods -o wide | grep tuned | grep {} | cut -d ' ' -f 1".format(node_where_app_is_running)).rstrip()
-    print("Waiting 30 seconds, to be sure changes has applied")
-    countdown(30)
+    passed(None)
 
-    # Verification that increasing kernel.pid_max will affect every node
-    print_step("Verify that modification of a parameter: kernel.pid_max will take effect on every node of the cluster.")
+    # Verification that node tuning operator apply new vm.max_map_count on correct nodes
+    print_step("Verification that node tuning operator apply new vm.max_map_count on correct nodes.")
     print("Checking logs of tuned pods on each node before test")
     tuning_applied_before = count_log_applied_lines(tuned_pods, node_where_app_is_running)
     execute_command("oc label pod web -n my-logging-project  tuned.openshift.io/elasticsearch=")
+    countdown(10)
 
-    execute_command("oc create -f content/tuned-kernel-pid_max.yml")
-    print("Waiting 15 seconds, to be sure changes has applied")
-    countdown(15)
-    # Here kernel-pid_max from max-pid-test tuned
-    kernel_pid_max_after = int(execute_command("oc get tuned max-pid-test -n openshift-cluster-node-tuning-operator -o yaml | grep \" kernel.pid_max=>\" | cut -d '>' -f 2").rstrip())
-
+    # Checking every node
     for pod in tuned_pods:
         repeats = 0
         while True:
-            kernel_pid_max_on_node = int(execute_command_on_node(pod['node'], "sysctl kernel.pid_max").rstrip().split("=")[1])
-            if (pod['pod'] == tuned_pod and kernel_pid_max_after == kernel_pid_max_on_node) or (pod['pod'] != tuned_pod and kernel_pid_max_after != kernel_pid_max_on_node ):
-                print("Match on node: {}, on pod: {}, with value: {}".format(pod['node'], pod['pod'], kernel_pid_max_on_node))
+            max_map_count_on_node = int(execute_command_on_node(pod['node'], "sysctl vm.max_map_count").rstrip().split("=")[1])
+            if (pod['pod'] == tuned_pod and max_map_count == max_map_count_on_node) or (pod['pod'] != tuned_pod and max_map_count != max_map_count_on_node ):
+                print("Match on node: {}, on pod: {}, with value: {}".format(pod['node'], pod['pod'], max_map_count_on_node))
                 break
             repeats += 1
             countdown(10)
             if repeats == 12:
-                fail("On node {} kernel.pid_max is {} instead {}".format(pod['node'], kernel_pid_max_on_node, kernel_pid_max_after), cleanup)
+                fail("On node {} kernel.pid_max is {} instead {}".format(pod['node'], max_map_count_on_node, max_map_count), cleanup)
                 return False
-
-    countdown(30)
-    print("Checking logs of tuned pods on each node after test")
-    tuning_applied_after = count_log_applied_lines(tuned_pods, node_where_app_is_running)
-    print("\nResults:")
-    print("Pod\t\tBefore\tAfter")
-    for i in range(len(tuned_pods)):
-        print("{}\t{}\t{}".format(tuned_pods[i]['pod'], tuning_applied_before[i], tuning_applied_after[i]))
-
-    for i in range(len(tuning_applied_before)):
-        if tuning_applied_after[i] <= tuning_applied_before[i]:
-            fail("All pods should be tuned.", cleanup)
-            return False
-    passed(None)
-
-    # Verification that removing tuned kernel.pid_max will affect each node
-    print_step("Verify that removing tuned kernel.pid_max will take effect on every node of the cluster.")
-    print("Checking logs of tuned pods on each node before test")
-    tuning_applied_before = count_log_applied_lines(tuned_pods, node_where_app_is_running)
-
-    execute_command("oc delete tuned max-pid-test -n openshift-cluster-node-tuning-operator")
-    print("Waiting 15 seconds, to be sure changes has applied")
-    countdown(15)
-    # Here kernel-pid_max from default tuned
-    kernel_pid_max_after = int(execute_command("oc get tuned default -n openshift-cluster-node-tuning-operator -o yaml | grep \" kernel.pid_max\" | cut -d '>' -f 2").rstrip())
-
-    for pod in tuned_pods:
-        repeats = 0
-        while True:
-            kernel_pid_max_on_node = int(execute_command_on_node(pod['node'], "sysctl kernel.pid_max").rstrip().split("=")[1])
-            if kernel_pid_max_after == kernel_pid_max_on_node:
-                print("Match on node: {} with value: {}".format(pod['node'], kernel_pid_max_on_node))
-                break
-            repeats += 1
-            countdown(10)
-            if repeats == 12:
-                fail("On node {} kernel.pid_max is {} instead {}".format(pod['node'], kernel_pid_max_on_node, kernel_pid_max_after), cleanup)
-                return False
-    passed(None)
 
     print("Checking logs of tuned pods on each node after test")
     tuning_applied_after = count_log_applied_lines(tuned_pods, node_where_app_is_running)
@@ -167,10 +130,14 @@ def test():
     for i in range(len(tuned_pods)):
         print("{}\t{}\t{}".format(tuned_pods[i]['pod'], tuning_applied_before[i], tuning_applied_after[i]))
 
+    should_pass = False
     for i in range(len(tuning_applied_before)):
-        if tuning_applied_after[i] <= tuning_applied_before[i]:
-            fail("All pods should be tuned.", cleanup)
-            return False
+        if tuning_applied_after[i] > tuning_applied_before[i]:
+            should_pass = True
+
+    if not should_pass:
+        fail("All pods should be tuned.", cleanup)
+        return False
     passed(None)
 
     # Getting number of secrets after tests

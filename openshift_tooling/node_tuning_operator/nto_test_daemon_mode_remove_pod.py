@@ -5,6 +5,10 @@ from utils import *
 ###########################################
 # Test: Node Tuning Operator: Daemon node #
 ###########################################
+# Changes:                                #
+#   skordas:                              #
+#   Removing wait time after label pod    #
+###########################################
 
 expected_max_map_count = 262144
 
@@ -36,7 +40,6 @@ def test():
     for pod in pods:
         print_step("Labeling pod: {}".format(pod))
         execute_command("oc label pod {} tuned.openshift.io/elasticsearch=".format(pod))
-        countdown(15)
         print_step("Verifying vm.max_map_count value on all nodes")
         max_map_count = []
         for node in nodes:
@@ -50,7 +53,6 @@ def test():
 
         print_step("Removing pod: {}".format(pod))
         execute_command("oc delete pod {}".format(pod))
-        countdown(15)
         print_step("Verifying vm.max_map_count value on all nodes")
         max_map_count = []
         for node in nodes:

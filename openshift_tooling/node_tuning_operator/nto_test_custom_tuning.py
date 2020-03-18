@@ -5,11 +5,16 @@ from utils import *
 ########################################################
 # Test: Node Tuning Operator: custom tuning is working #
 ########################################################
+# Changes:                                             #
+#   skordas:                                           #
+#   Updating Test Case to work with OCP 4.4            #
+########################################################
 
 
 def cleanup():
     print("Cleaning after test")
-    execute_command("oc delete tuned router -n openshift-cluster-node-tuning-operator")
+    execute_command("oc delete tuned nf-conntrack-max -n openshift-cluster-node-tuning-operator")
+    execute_command("oc delete project my-logging-project")
 
 
 def test():
@@ -22,118 +27,76 @@ def test():
     del nodes[-1]
     passed("List of nodes:\n" + str(nodes))
 
-    # Changing project
-    print_step("Changing project to 'openshift-cluster-node-tuning-operator'")
-    execute_command("oc project openshift-cluster-node-tuning-operator")
-
-    # Getting all pods in project
-    print_step("Getting information about pods")
-    tuned_pods = execute_command("oc get pods --no-headers -o=custom-columns=NAME:.metadata.name | grep tuned").split("\n")
+    # Getting all tuned pods in project
+    print_step("Getting information about tuned pods pods")
+    tuned_pods = execute_command("oc get pods -n openshift-cluster-node-tuning-operator --no-headers -o=custom-columns=NAME:.metadata.name | grep tuned").split("\n")
     del tuned_pods[-1]  # split method is giving extra empty field after last line from response
     passed("List of tuned pods:\n" + str(tuned_pods))
 
+    # Creating test project
+    print_step("Create project and get information where app is running")
+    execute_command("oc new-project my-logging-project")
+    execute_command("oc create -f https://raw.githubusercontent.com/hongkailiu/svt-case-doc/master/files/pod_test.yaml")
+    countdown(10)
+    execute_command("oc label pod web -n my-logging-project tuned.openshift.io/elasticsearch=")
+
+    # Getting node where pod with 'web' name is running
+    node_where_app_is_running = execute_command("oc get pod web --no-headers -o=custom-columns=NODE:.spec.nodeName").rstrip()
+    tuned_operator_pod = execute_command("oc get pods -n openshift-cluster-node-tuning-operator -o wide | grep {} | cut -d ' ' -f 1".format(node_where_app_is_running))
+
     # Creation a new profile
     print_step("Create new profile: router")
-    execute_command("oc create -f content/tuned-router.yml")
-    print("Wait 120 seconds to be sure change has applied.")
-    countdown(120)
+    execute_command("oc create -f content/tuned-nf-conntrack-max.yml")
 
     # Verification if new tuned exist
     print_step("Verify if new tuned exist")
-    number_of_tuned_router = int(execute_command("oc get tuned | grep -c router"))
-    print("Number of tuned router: {}".format(number_of_tuned_router))
+    number_of_tuned_router = int(execute_command("oc get tuned -n openshift-cluster-node-tuning-operator | grep -c nf-conntrack-max"))
+    print("Number of tuned nf-conntrack-max: {}".format(number_of_tuned_router))
     if number_of_tuned_router == 1:
         passed(None)
     else:
         fail("There should be one tuned router but it was: {}".format(number_of_tuned_router), cleanup)
         return False
 
-    # Verification if custom tuning applied to tuned-profiles
-    print_step("Verify if custom tuning applied to tuned-profiles")
-    tuned_profiles_expected = """    openshift-router: |
-          summary=A custom OpenShift profile for the router
-        name: router"""
-    tuned_profiles_actual = execute_command("oc get cm/tuned-profiles -o yaml | grep router").rstrip()
-    if tuned_profiles_actual.replace(" ", "") == tuned_profiles_expected.replace(" ", ""):
+    # Verification if correct tuned applied on node
+    print_step("Verify if correct profile is active on node")
+    tuned_profiles_actual = execute_command("oc get profiles.tuned.openshift.io {} -n openshift-cluster-node-tuning-operator -o json | jq -r '.spec.config.tunedProfile'".format(node_where_app_is_running)).rstrip()
+    if tuned_profiles_actual.replace(" ", "") == "nf-conntrack-max":
         passed(None)
     else:
-        fail("Expected value:\n{}\nActual value:\n{}".format(tuned_profiles_expected, tuned_profiles_actual), cleanup)
+        fail("Expected value:\nnf-conntrack-max\nActual value:\n{}".format(tuned_profiles_actual), cleanup)
         return False
-
-    # Verification if custom tuning applied to tuned-recommend
-    print_step("Verify if custom tuning applied to tuned-recommend")
-    tuned_recommend_expected = """    [openshift-router,0]
-        /var/lib/tuned/ocp-pod-labels.cfg=.*\\bdeployment-ingresscontroller=default\\n
-        name: router"""
-    tuned_recommend_actual = execute_command("oc get cm/tuned-recommend -o yaml | grep -e router -e deployment-ingresscontroller").rstrip()
-    if tuned_recommend_actual.replace(" ", "") == tuned_recommend_expected.replace(" ", ""):
-        passed(None)
-    else:
-        fail("Expected value:\n{}\nActual value:\n{}".format(tuned_recommend_expected, tuned_recommend_actual), cleanup)
-        return False
-
-    # Checking which nodes are tuned with router profile:
-    print_step("Check which node is tuned by router profile")
-    tuned_router_nodes = execute_command("oc get pods --all-namespaces --show-labels -o wide | grep  router | tr -s ' ' | cut -d ' ' -f 8").rstrip().split("\n")
-    print("tuned router node: {}".format(tuned_router_nodes))
 
     # Checking all nodes for net.ipv4.ip_local_port_range values on all nodes:
-    print_step("Check all nodes for net.ipv4.ip_local_port_range value")
+    print_step("Check all nodes for etfilter.nf_conntrack_max value")
     for node in nodes:
-        ip_local_port_range = execute_command_on_node(node, "sysctl net.ipv4.ip_local_port_range | cut -d ' ' -f 3 | sed 's/\t/ /g'").rstrip()
-        print("Node:                         {}".format(node))
-        print("net.ipv4.ip_local_port_range: {}".format(ip_local_port_range))
-        if (node in tuned_router_nodes and ip_local_port_range != "1024 65535") or (node not in tuned_router_nodes and ip_local_port_range == "1024 65535"):
-            fail("On node {} net.ipv4.ip_local_port_range is {}".format(node, ip_local_port_range), cleanup)
+        conntrack_max = execute_command_on_node(node, "sysctl net.netfilter.nf_conntrack_max | cut -d ' ' -f 3 | sed 's/\t/ /g'").rstrip()
+        print("Node:                      {}".format(node))
+        print("etfilter.nf_conntrack_max: {}".format(conntrack_max))
+        if (node in node_where_app_is_running and conntrack_max != "1048578") or (node not in node_where_app_is_running and conntrack_max == "1048578"):
+            fail("On node {} net.netfilter.nf_conntrack_max is {}".format(node, conntrack_max), cleanup)
             return False
     passed(None)
-
-    # Checking all nodes for net.ipv4.tcp_tw_reuse values on all nodes:
-    print_step("Check all nodes for net.ipv4.tcp_tw_reuse value:")
-    for node in nodes:
-        tcp_tw_reuse = int(execute_command_on_node(node, "sysctl net.ipv4.tcp_tw_reuse | cut -d ' ' -f 3").rstrip())
-        print("Node: {}".format(node))
-        print("net.ipv4.tcp_tw_reuse: {}".format(tcp_tw_reuse))
-        if (node in tuned_router_nodes and tcp_tw_reuse != 1) or (node not in tuned_router_nodes and tcp_tw_reuse == 1):
-            fail("On node {} net.ipv4.tcp_tw_reuse is {}".format(node, tcp_tw_reuse), cleanup)
-            return False
-    passed(None)
-
-    # Checking which pod is tuned with router profile:
-    print_step("Get tuned pod on node with applied router profile:")
-    tuned_router_pods = []
-    for node in tuned_router_nodes:
-        tuned_router_pods.append(execute_command("oc get pods -o wide | grep {} | cut -d ' ' -f 1".format(node)).rstrip())
-    print("tuned router pods: {}".format(tuned_router_pods))
 
     # Checking logs on every pod:
     print_step("Check logs on every pod")
     for pod in tuned_pods:
-        log = execute_command("oc logs {} | grep profile | tail -n1".format(pod)).rstrip()
+        log = execute_command("oc logs {} -n openshift-cluster-node-tuning-operator | grep profile | tail -n1".format(pod)).rstrip()
         print("Pod: {}".format(pod))
         print('Log: {}'.format(log))
-        if (pod in tuned_router_pods and "openshift-router" not in log) or (pod not in tuned_router_pods and "openshift-router" in log):
+        if (pod in tuned_operator_pod and "nf-conntrack-max" not in log) or (pod not in tuned_operator_pod and "nf-conntrack-max" in log):
             fail("On pod: {} founded log: {}".format(pod, log), cleanup)
-            return False
-    passed(None)
-
-    # Checking if pods are correct labeled
-    print_step("Check pods labels")
-    for node in nodes:
-        number_of_labeled_pods = int(execute_command("oc get pod -n openshift-ingress --show-labels -o wide | grep {} | grep -c router-default".format(node)))
-        if (node in tuned_router_nodes and number_of_labeled_pods == 0) or (node not in tuned_router_nodes and number_of_labeled_pods != 0):
-            fail("On node: {} founded {} labeled pods".format(node, number_of_labeled_pods), cleanup)
             return False
     passed(None)
 
     # Cleaning after test
     print_step("Cleaning after test")
     cleanup()
-    number_of_tuned_router = int(execute_command("oc get tuned | grep -c router"))
+    number_of_tuned_router = int(execute_command("oc get tuned | grep -c nf-conntrack-max"))
     if number_of_tuned_router == 0:
         passed(None)
     else:
-        fail("It shouldn't be any tuned router, but it was: {}".format(number_of_tuned_router), cleanup)
+        fail("It shouldn't be any tuned nf-conntrack-max, but it was: {}".format(number_of_tuned_router), cleanup)
         return False
 
     # All steps passed
