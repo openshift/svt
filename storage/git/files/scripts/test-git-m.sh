@@ -11,14 +11,12 @@ readonly TEST_BUILD_NUMBER=${5}
 scripts_dir=$(dirname $0)
 output_dir=${scripts_dir}
 
-if [[ ! -z "${benchmark_results_dir}" ]]; then
-  output_dir="${benchmark_results_dir}"
-fi
-
 echo "NAMESPACE_BASENAME: ${NAMESPACE_BASENAME}"
 echo "NAMESPACE_NUMBER: ${NAMESPACE_NUMBER}"
 echo "ITERATION: ${ITERATION}"
 echo "TMP_FOLDER: ${TMP_FOLDER}"
+echo "scripts_dir: ${scripts_dir}"
+echo "output_dir: ${output_dir}"
 
 for i in $(seq 1 ${NAMESPACE_NUMBER});
 do
