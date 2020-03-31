@@ -1,0 +1,137 @@
+{
+  "Kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "deploymentTemplate",
+    "creationTimestamp": null,
+    "annotations": {
+      "description": "This template will create a deployment, and a service.",
+      "tags": ""
+    }
+  },
+  "objects": [
+      {
+      "kind": "Deployment",
+      "apiVersion": "apps/v1",
+      "metadata": {
+        "name": "deployment1v${IDENTIFIER}"
+      },
+      "spec": {
+        "template": {
+          "metadata": {
+            "labels": {
+              "name": "replicationcontroller1v${IDENTIFIER}"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "helloworld1v${IDENTIFIER}",
+                "image": "openshift/${IMAGE}",
+                "ports": [
+                  {
+                    "containerPort": 8080,
+                    "protocol": "TCP"
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "ENVVAR1_1v${IDENTIFIER}",
+                    "value": "${ENV_VALUE}"
+                  },
+                  {
+                    "name": "ENVVAR2_1v${IDENTIFIER}",
+                    "value": "${ENV_VALUE}"
+                  },
+                  {
+                    "name": "ENVVAR3_1v${IDENTIFIER}",
+                    "value": "${ENV_VALUE}"
+                  },
+                  {
+                    "name": "ENVVAR4_1v${IDENTIFIER}",
+                    "value": "${ENV_VALUE}"
+                  }
+                ],
+                "resources": {},
+                "imagePullPolicy": "IfNotPresent",
+                "capabilities": {},
+                "securityContext": {
+                  "capabilities": {},
+                  "privileged": false
+                }
+              }
+            ],
+            "restartPolicy": "Always",
+            "serviceAccount": ""
+          }
+        },
+        "replicas": 1,
+        "selector": {
+          "matchLabels": {
+             "name": "replicationcontroller1v${IDENTIFIER}"
+          }
+        },
+        "triggers": [
+          {
+            "type": "ConfigChange"
+          }
+        ],
+        "strategy": {
+          "type": "RollingUpdate"
+        }
+      }
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "service1v${IDENTIFIER}"
+      },
+      "spec": {
+        "selector": {
+          "name": "replicationcontroller1v${IDENTIFIER}"
+        },
+        "ports": [
+          {
+            "name": "serviceport1v${IDENTIFIER}",
+            "protocol": "TCP",
+            "port": 80,
+            "targetPort": 8080
+          }
+        ],
+        "portalIP": "",
+        "type": "ClusterIP",
+        "sessionAffinity": "None"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1",
+      "required": true
+    },
+    {
+      "name": "IMAGE",
+      "description": "Image to use for deployment",
+      "value": "hello-openshift",
+      "required": false
+    },
+    {
+      "name": "ENV_VALUE",
+      "description": "Value to use for environment variables",
+      "generate": "expression",
+      "from": "[A-Za-z0-9]{255}",
+      "required": false
+    }
+  ],
+  "labels": {
+    "template": "deploymentTemplate"
+  }
+
+}
+

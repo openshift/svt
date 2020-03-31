@@ -1,0 +1,111 @@
+{
+  "Kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "deploymentTemplate",
+    "creationTimestamp": null,
+    "annotations": {
+      "description": "This template will create a deployment with 1 replica and 4 env vars",
+      "tags": ""
+    }
+  },
+  "objects": [
+      {
+      "kind": "Deployment",
+      "apiVersion": "apps/v1",
+      "metadata": {
+        "name": "deployment${IDENTIFIER}"
+      },
+      "spec": {
+        "template": {
+          "metadata": {
+            "labels": {
+              "name": "replicationcontroller${IDENTIFIER}"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "pause${IDENTIFIER}",
+                "image": "${IMAGE}",
+                "ports": [
+                  {
+                    "containerPort": 8080,
+                    "protocol": "TCP"
+                  }
+                ],
+                "env": [
+                  {
+                    "name": "ENVVAR1_${IDENTIFIER}",
+                    "value": "${ENV_VALUE}"
+                  },
+                  {
+                    "name": "ENVVAR2_${IDENTIFIER}",
+                    "value": "${ENV_VALUE}"
+                  },
+                  {
+                    "name": "ENVVAR3_${IDENTIFIER}",
+                    "value": "${ENV_VALUE}"
+                  },
+                  {
+                    "name": "ENVVAR4_${IDENTIFIER}",
+                    "value": "${ENV_VALUE}"
+                  }
+                ],
+                "resources": {},
+                "imagePullPolicy": "IfNotPresent",
+                "capabilities": {},
+                "securityContext": {
+                  "capabilities": {},
+                  "privileged": false
+                }
+              }
+            ],
+            "restartPolicy": "Always",
+            "serviceAccount": ""
+          }
+        },
+        "replicas": 1,
+        "selector": {
+           "matchLabels": {
+             "name": "replicationcontroller${IDENTIFIER}"
+           }
+        },
+        "triggers": [
+          {
+            "type": "ConfigChange"
+          }
+        ],
+        "strategy": {
+          "type": "RollingUpdate"
+        }
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1",
+      "required": true
+    },
+    {
+      "name": "IMAGE",
+      "description": "Image to use for deployment",
+      "value": "gcr.io/google-containers/pause-amd64:3.0",
+      "required": false
+    },
+    {
+      "name": "ENV_VALUE",
+      "description": "Value to use for environment variables",
+      "generate": "expression",
+      "from": "[A-Za-z0-9]{255}",
+      "required": false
+    }
+  ],
+  "labels": {
+    "template": "deploymentTemplate"
+  }
+
+}
+
