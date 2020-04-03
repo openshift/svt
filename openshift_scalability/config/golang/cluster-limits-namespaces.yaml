@@ -12,7 +12,7 @@ ClusterLoader:
 
         -
           num: 1
-          file: ./deployment-config-ns-per-cluster-template.json
+          file: ./deployment-ns-per-cluster-template.json
           parameters:
             -
               ENV_VALUE: "asodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij0emc2oed2ed2ed2e2easodfn209e8j0eij12"
