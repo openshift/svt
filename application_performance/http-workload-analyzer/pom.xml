@@ -1,0 +1,136 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.redhat.os.svt</groupId>
+	<artifactId>http-workload-analyzer</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>http-workload-analyzer</name>
+	<url>https://www.openshift.com/</url>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<final-name>http-workload-analyzer</final-name>
+		<compiler-plugin-version>3.1</compiler-plugin-version>
+		<maven-jar-plugin-version>3.2.0</maven-jar-plugin-version>
+		<maven-surefire-plugin-version>2.19.1</maven-surefire-plugin-version>
+		<maven-failsafe-plugin-version>2.19.1</maven-failsafe-plugin-version>
+		<jdk-version>1.8</jdk-version>
+		<slf4j-version>1.7.7</slf4j-version>
+		<apache-commons-version>1.3</apache-commons-version>
+		<apache-commons-compress-version>1.20</apache-commons-compress-version>
+		<apache-commons-io-version>2.5</apache-commons-io-version>
+		<logback-classic-version>1.1.2</logback-classic-version>
+		<jmeter-maven-plugin-version>1.10.1</jmeter-maven-plugin-version>
+		<jmeter-analysis-maven-plugin-version>1.0.6</jmeter-analysis-maven-plugin-version>
+		<testng-version>6.9.8</testng-version>
+		<Jmeter-main-version>2.13</Jmeter-main-version>
+		<Jmeter-report-version>2.12</Jmeter-report-version>
+		<snakeyaml-version>1.16</snakeyaml-version>
+		<jfreechart-version>1.0.15</jfreechart-version>
+	</properties>
+
+	<build>
+		<finalName>${final-name}</finalName>
+		<resources>
+			<resource>
+				<directory>src/main/config/log</directory>
+			</resource>
+			<resource>
+				<directory>src/main/config/test</directory>
+			</resource>
+			<resource>
+				<directory>src/main/config/analyzer</directory>
+			</resource>
+			<!-- <resource> <directory>src/main/config/configurationInternal</directory> 
+				</resource> -->
+		</resources>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${compiler-plugin-version}</version>
+				<configuration>
+					<source>${jdk-version}</source>
+					<target>${jdk-version}</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+					<archive>
+						<manifest>
+							<mainClass>com.redhat.os.svt.workloads.parser.WorkloadParser</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+				<executions>
+					<execution>
+						<id>assemble-all</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven-surefire-plugin-version}</version>
+				<configuration>
+					<suiteXmlFiles>
+						<suiteXmlFile>src/main/config/test/preperftests.xml</suiteXmlFile>
+					</suiteXmlFiles>
+					<properties>
+						<property>
+							<name>usedefaultlisteners</name>
+							<value>true</value>
+						</property>
+					</properties>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<dependencies>
+		<!-- start test frameworks -->
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<version>${testng-version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- end test frameworks -->
+
+		<!-- start log frameworks -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j-version}</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback-classic-version}</version>
+		</dependency>
+		<!-- end log frameworks -->
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>${apache-commons-io-version}</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-compress -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-compress</artifactId>
+			<version>${apache-commons-compress-version}</version>
+		</dependency>
+		<!-- end apache tools -->
+	</dependencies>
+</project>
