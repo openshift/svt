@@ -122,11 +122,11 @@ def do_post_actions(namespace, build_name, build_time):
             return
         global_build_status[idx] = STATUS_LOGGING
         start_regex = re.compile(
-            ".*(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d).\d+Z\sPushing")
+            ".*(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d{3})\d+Z\sPushing")
         end_regex = re.compile(
-            ".*(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d).\d+Z\s(Successfully pushed|"
+            ".*(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d{3})\d+Z\s(Successfully pushed|"
             + "Push successful)")
-        push_date_fmt = "%Y-%m-%dT%H:%M:%S"
+        push_date_fmt = "%Y-%m-%dT%H:%M:%S.%f"
 
         command = "oc logs --timestamps -n " + namespace + " build/" + \
                   build_name
@@ -151,7 +151,7 @@ def do_post_actions(namespace, build_name, build_time):
 
         stats_idx = idx[0:idx.rindex('-')]
         if (build_time == 0) or (push_time == 0):
-            logger.info("Invalid data - not included in summary statistics")
+            logger.info("Invalid data - not included in summary statistics: " + namespace + ":" + build_name)
             global_build_stats[stats_idx]["invalid"] += 1
             global_build_status[idx] = STATUS_LOGGING_ERROR
         else:
