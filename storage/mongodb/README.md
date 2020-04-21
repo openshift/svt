@@ -12,7 +12,7 @@ $ git clone https://github.com/openshift/svt.git
 
 ```sh
 $ cd storage/mongodb 
-$ ./runmongo_db.sh
+    $ ./runmongo.sh
 ```
 
 **kubeconfig** Before start be sure `oc` client will use correct authorization:
