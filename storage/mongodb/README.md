@@ -41,7 +41,7 @@ STORAGE_CLASS_NAME: glusterfs-storage
 MONGODB_VERSION: 3.2
 iteration: 10
 ycsb_threads: 10,20
-workload: workloada,workloadb
+workload: workloada
 recordcount: 1000       
 operationcount: 1000
 distribution: uniform
@@ -49,7 +49,7 @@ distribution: uniform
 
 If necessary adapt **external_vars.yaml** to correspond specific test needs 
 
-This example will allocate **1024Mi** RAM for MongoDB pod, run YCSB with 10,20 threads, execute **workloada** and **workloadb**, run 10 iterations with 
+This example will allocate **1024Mi** RAM for MongoDB pod, run YCSB with 10,20 threads, execute **workloada** , run 10 iterations with 
 **recordcount=1000** , **operationcount=1000**
 Storage used for Mongodb pod will be carved from storageclass with name **gluster-storage** and size of PVC will be  **10Gi** 
 YCSB **uniform** distribution will be used and 10 test projects will be created 
@@ -72,7 +72,7 @@ STORAGE_CLASS_NAME: glusterfs-storage
 MONGODB_VERSION: 3.2
 iteration: 10
 ycsb_threads: 10,20,30,40
-workload: workloada,workloadb,workloadc,workloade
+workload: workloada
 recordcount: 1000       
 operationcount: 1000
 distribution: uniform
@@ -88,3 +88,5 @@ This will execute YCSB test against MongoDB pod for various combination
 
 If **operationcount** and **recordcount** are hight, then in order for test to work it is necessary to 
 start test with bigger PVC size. 
+
+You can run all YCSB workloads: **workloada**, **workloadb**, **workloadc**, **workloadd**, **workloade**, **workloadf**, **workload_template** but **workloadd** and **workloade** fail to run for iterations more than one in the same DB!

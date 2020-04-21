@@ -11,7 +11,8 @@ STORAGE_CLASS_NAME: gp2
 MONGODB_VERSION: 3.2
 iteration: 10
 ycsb_threads: 16
-workload: workloada,workloadb,workloadc,workloadd,workloade,workloadf,workload_template
+workload: workloada
+# workload: workloada,workloadb,workloadc,workloadd,workloade,workloadf,workload_template
 recordcount: 1000
 operationcount: 1000
 distribution: uniform
