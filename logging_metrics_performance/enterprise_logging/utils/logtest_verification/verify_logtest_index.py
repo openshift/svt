@@ -88,9 +88,17 @@ class ElsHelper:
         print(r.text)
         return
 
-    def get_index_doc_count(self, index):
+    def get_index_doc_count(self, index, query=None):
         count_endpoint = "/{}/_count".format(index)
-        count_request = requests.get(self.base_url + count_endpoint, headers=self.headers, verify=False)
+        data = None
+        headers = self.headers
+        if query:
+            data = {"query": query}
+            print(data)
+            headers['Content-Type'] = "application/json"
+            count_request = requests.get(self.base_url + count_endpoint, headers=headers, verify=False, data=json.dumps(data))
+        else:
+            count_request = requests.get(self.base_url + count_endpoint, headers=headers, verify=False)
         count_request.raise_for_status()
         index_count = count_request.json()["count"]
         return index_count
@@ -157,12 +165,14 @@ class ElsHelper:
                 json.dump(r1_dict, f, indent=2)
         return r1_dict
 
-    def index_generator(self, index):
+    def index_generator(self, index, query=None):
         endpoint = "/{}/_search".format(index)
         url = self.base_url + endpoint
         params = {"scroll": "1m"}
         result_size = 10000
         data = {"sort": ["_doc"], "size": result_size}
+        if query is not None:
+            data["query"] = query
         scroll_headers = {"Content-Type": "application/json"}
         scroll_headers.update(self.headers)
         scroll_endpoint = "/_search/scroll"
@@ -171,7 +181,7 @@ class ElsHelper:
         scroll_data = {"scroll": "1m", "scroll_id": scroll_id}
 
         # Get number of documents in the index
-        index_count = self.get_index_doc_count(index)
+        index_count = self.get_index_doc_count(index, query=query)
         print("Index document count: {}".format(index_count))
 
         num_of_scrolls = max(int(math.ceil((index_count / result_size))), 1)
@@ -356,8 +366,11 @@ if __name__ == '__main__':
     parser.add_argument('--print-nodes', action='store_true')
     parser.add_argument('--stream', action='store_true', help='Process messages in 10k chunks to reduce memory footprint. Disables ability to save index to a file.')
     parser.add_argument('--verbose', '-v', action='store_true', help='Set verbose logging.')
+    parser.add_argument('--query', help='Example: {"term":{"kubernetes.namespace_name":"logtest0"}}')
+    parser.add_argument('--count', action='store_true', help='Output document count given index. Can be augmented with --query')
 
     args = parser.parse_args()
+    # print(args)
 
     if len(sys.argv) < 2:
         parser.print_usage()
@@ -416,6 +429,18 @@ if __name__ == '__main__':
             es.print_nodes()
             exit(0)
 
+        # Handle --query
+        if args.query:
+            query = json.loads(args.query)
+        else:
+            query = None
+
+        # Handle --count
+        if args.count:
+            c = es.get_index_doc_count(args.index, query=query)
+            print(c)
+            exit(0)
+
         # Make sure --index is specified since all actions require index from this point on
         if args.index is None:
             print("Please provide index through CLI --index")
@@ -429,10 +454,10 @@ if __name__ == '__main__':
             expected_max = args.max
             if args.max is None:
                 print("WARNING: --max not specified, defaulting to # of docs in index: ", end="")
-                expected_max = es.get_index_doc_count(args.index)
+                expected_max = es.get_index_doc_count(args.index, query=query)
                 print("{}".format(expected_max))
-            verify_els_message_stream(es.index_generator(args.index), expected_max)
-            es.index_generator(args.index)
+            verify_els_message_stream(es.index_generator(args.index, query=query), expected_max)
+            # es.index_generator(args.index, query=query)
             exit()
         print("Starting to dump index...")
         if args.verbose:
