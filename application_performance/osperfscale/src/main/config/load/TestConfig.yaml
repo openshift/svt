@@ -14,18 +14,14 @@
 ## 
 
 testParameters:
-   - testSuiteName: nodejs
-     appURL: nodejs-mongodb-example-nodejs-mongodb0.0605-mce.qe.rhcloud.com
+   - testSuiteName: appRoute
+     appURL: appURL
      numberOfUsers: [10]
      rampUpTime: [30]
      intervalBetweenAppHits: [500]
-   - testSuiteName: eap64
-     appURL: eap-app-eap64-mysql0.0605-mce.qe.rhcloud.com
+   - testSuiteName: appSvc
+     appURL: svcIP
+     port: 8080
      numberOfUsers: [10]
      rampUpTime: [30]
      intervalBetweenAppHits: [500]
-   - testSuiteName: dancer
-     appURL: dancer-mysql-example-dancer-mysql0.0605-mce.qe.rhcloud.com
-     numberOfUsers: [10]
-     rampUpTime: [30]
-     intervalBetweenAppHits: [500]          

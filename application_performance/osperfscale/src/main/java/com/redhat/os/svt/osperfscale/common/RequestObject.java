@@ -10,7 +10,7 @@ public class RequestObject {
 	@SerializedName("tls-session-reuse")
 	private boolean tlsSessionReuse;
 	private String host; 
-	private String port; 
+	private int port;
 	private String method; 
 	private String path; 
 //	headers: an array of custom HTTP headers
@@ -40,10 +40,10 @@ public class RequestObject {
 	public void setHost(String host) {
 		this.host = host;
 	}
-	public String getPort() {
+	public int getPort() {
 		return port;
 	}
-	public void setPort(String port) {
+	public void setPort(int port) {
 		this.port = port;
 	}
 	public String getMethod() {

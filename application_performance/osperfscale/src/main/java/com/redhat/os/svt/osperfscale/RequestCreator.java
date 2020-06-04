@@ -40,6 +40,10 @@ public class RequestCreator {
 							aRequest.setHost(perfTestParameter.getAppURL());
 							aRequest.setMethod(AppConstants.DEFAULT_HTTP_METHOD);
 							aRequest.setPath(AppConstants.DEFAULT_PATH);
+							if(perfTestParameter.getPort()==0)
+								aRequest.setPort(AppConstants.DEFAULT_PORT);
+							else
+								aRequest.setPort(perfTestParameter.getPort());
 							DelayObject delay = new DelayObject();
 							delay.setMin(AppConstants.DEFAULT_MIN_DELAY);
 							delay.setMax((int)delays[j]);

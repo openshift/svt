@@ -6,6 +6,7 @@ public class PerfTestParameter{
 	long [] rampUpTime;
 	long [] numberOfUserLoops;
 	long [] numberOfAppLoops;
+	int port;
 	String appURL;
 	long [] intervalBetweenAppHits;
 	String testSuiteName;
@@ -52,4 +53,6 @@ public class PerfTestParameter{
 	public void setTestSuiteName(String testSuiteName) {
 		this.testSuiteName = testSuiteName;
 	}
+	public int getPort() {return port;}
+	public void setPort(int port) { this.port = port;}
 }

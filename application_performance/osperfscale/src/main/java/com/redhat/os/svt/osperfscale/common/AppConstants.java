@@ -26,6 +26,7 @@ public class AppConstants {
 	public static final String DEFAULT_HTTP_METHOD = "GET";
 	public static final String DEFAULT_PATH = "/";
 	public static final boolean DEFAULT_TLS_REUSE = true;
+	public static final int DEFAULT_PORT = 80;
 	public static final int DEFAULT_MIN_DELAY = 0;
 	public static final int DEFAULT_MAX_DELAY = 0;
 	
