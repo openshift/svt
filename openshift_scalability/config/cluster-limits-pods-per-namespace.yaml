@@ -1,6 +1,7 @@
 projects:
   - num: 1
     basename: clusterproject
+    nodeselector: "node-role.kubernetes.io/worker="
     tuning: default
     pods:
       - total: 15000

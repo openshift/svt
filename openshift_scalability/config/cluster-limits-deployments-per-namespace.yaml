@@ -2,6 +2,7 @@ projects:
   - num: 1
     basename: cluster
     ifexists: delete
+    nodeselector: "node-role.kubernetes.io/worker="
     templates:
       - 
         num: 2000 

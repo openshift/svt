@@ -1,6 +1,7 @@
 projects:
   - num: 1000
     basename: c
+    nodeselector: "node-role.kubernetes.io/worker="
     templates:
       -
         num: 1
