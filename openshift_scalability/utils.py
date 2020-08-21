@@ -2,7 +2,6 @@
 
 import json, subprocess, time, copy, sys, os, yaml, tempfile, shutil, math, re
 from datetime import datetime
-from clusterloaderstorage import *
 from multiprocessing import Process
 from flask import Flask, request
 import logging
@@ -315,7 +314,6 @@ def create_pods(podcfg, num, storagetype, globalvars):
         del (datapod)
         tmpfile.close()
 
-
 def pod_data(globalvars):
     logger.debug("pod_data function called")
 
@@ -326,7 +324,7 @@ def pod_data(globalvars):
             getpods = oc_command("kubectl get pods --namespace " + namespace, globalvars)
         else:
             getpods = oc_command("oc get pods -n " + namespace, globalvars)
-        all_status = getpods[0].split("\n")
+        all_status = str(getpods[0], 'utf-8').split("\n")
 
         size = len(all_status)
         all_status = all_status[1:size - 1]
