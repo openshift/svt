@@ -2,10 +2,10 @@
 
 import json, subprocess, time, copy, sys, os, yaml, tempfile, shutil, math, re
 from datetime import datetime
-from clusterloaderstorage import *
 from multiprocessing import Process
 from flask import Flask, request
 import logging
+
 
 formatter = logging.Formatter(fmt='%(asctime)s :: %(process)d :: %(levelname)-8s :: %(message)s', datefmt='%Y-%m-%d::%H:%M:%S')
 screen_handler = logging.StreamHandler(stream=sys.stdout)
@@ -25,12 +25,12 @@ def calc_time(timestr):
     elif tlist[1] == "hr":
         return int(tlist[0]) * 3600
     else:
-        logger.error("Invalid delay in rate_limit Exitting ........")
+        logger.error("Invalid delay in rate_limit Exiting ........")
         sys.exit()
 
 def oc_command(args, globalvars):
     """Run the OC/kubectl Command and return tuple with stdout, stderr, and return code"""
-    tmpfile=tempfile.NamedTemporaryFile()
+    tmpfile=tempfile.NamedTemporaryFile(mode='w')
     # see https://github.com/openshift/origin/issues/7063 for details why this is done.
     shutil.copyfile(globalvars["kubeconfig"], tmpfile.name)
     cmd = "KUBECONFIG=" + tmpfile.name + " " + args
@@ -75,7 +75,7 @@ def check_oc_version(globalvars):
             minor_version = result.group(2)
     else:
         version_string = oc_command("oc version", globalvars)
-        result = re.search("oc v(\d+)\.(\d+)\..*", version_string[0])
+        result = re.search("oc v(\d+)\.(\d+)\..*", version_string[0].decode('utf-8'))
         if result:
             major_version = result.group(1)
             minor_version = result.group(2)
@@ -131,7 +131,7 @@ def create_template(templatefile, num, parameters, globalvars):
         jmeter = any(param for param in parameters if param.get('RUN') == 'jmeter')
         if jmeter:
             for parameter in parameters:
-                for key, value in parameter.iteritems():
+                for key, value in parameter.items():
                     if key == "JMETER_SIZE":
                         size = int(value)
             num = math.ceil(float(len(jmeter_ips))/size)
@@ -142,13 +142,13 @@ def create_template(templatefile, num, parameters, globalvars):
     timings = {}
     i = 0
     while i < int(num):
-        tmpfile=tempfile.NamedTemporaryFile()
+        tmpfile=tempfile.NamedTemporaryFile(mode='w')
         templatejson = copy.deepcopy(data)
         cmdstring = "oc process -f %s" % templatefile
 
         if parameters:
             for parameter in parameters:
-                for key, value in parameter.iteritems():
+                for key, value in parameter.items():
                     if globalvars["autogen"] and jmeter:
                         if key == "TARGET_HOST":
                             value = ":".join(jmeter_ips[(size*i):(size*(i+1))])
@@ -208,7 +208,7 @@ def create_service(servconfig, num, globalvars):
     data = servconfig
     i = 0
     while i < int(num):
-        tmpfile=tempfile.NamedTemporaryFile()
+        tmpfile=tempfile.NamedTemporaryFile(mode='w')
         dataserv = copy.deepcopy(data)
         servicename = dataserv["metadata"]["name"] + str(i)
         dataserv["metadata"]["name"] = servicename
@@ -239,7 +239,7 @@ def create_pods(podcfg, num, storagetype, globalvars):
         if storagetype in ("ebs", "EBS"):
             # it is necessary to create ebs/pv/pvc for every pod, and pod file has to updated dinamically
             ebs_create(globalvars)
-            tmpfile=tempfile.NamedTemporaryFile()
+            tmpfile=tempfile.NamedTemporaryFile(mode='w')
             datapod = copy.deepcopy(data)
             podname = datapod["metadata"]["name"] + str(i)
             datapod["metadata"]["name"] = podname
@@ -254,7 +254,7 @@ def create_pods(podcfg, num, storagetype, globalvars):
 
         elif storagetype in ("ceph", "CEPH"):
             ceph_image_create(i,globalvars) # this will create pv/pvc/image - one at time
-            tmpfile = tempfile.NamedTemporaryFile()
+            tmpfile = tempfile.NamedTemporaryFile(mode='w')
             datapod = copy.deepcopy(data)
             podname = datapod["metadata"]["name"] + str(i)
             datapod["metadata"]["name"] = podname
@@ -277,7 +277,7 @@ def create_pods(podcfg, num, storagetype, globalvars):
 
         # here will be added ceph_create/gluster_create / nfs_create / iscsi_create storage backends
         else:
-            tmpfile=tempfile.NamedTemporaryFile()
+            tmpfile=tempfile.NamedTemporaryFile(mode='w')
             datapod = copy.deepcopy(data)
             podname = datapod["metadata"]["name"] + str(i)
             datapod["metadata"]["name"] = podname
@@ -314,7 +314,6 @@ def create_pods(podcfg, num, storagetype, globalvars):
         del (datapod)
         tmpfile.close()
 
-
 def pod_data(globalvars):
     logger.debug("pod_data function called")
 
@@ -325,7 +324,7 @@ def pod_data(globalvars):
             getpods = oc_command("kubectl get pods --namespace " + namespace, globalvars)
         else:
             getpods = oc_command("oc get pods -n " + namespace, globalvars)
-        all_status = getpods[0].split("\n")
+        all_status = str(getpods[0], 'utf-8').split("\n")
 
         size = len(all_status)
         all_status = all_status[1:size - 1]
@@ -345,7 +344,7 @@ def create_rc(rc_config, num, globalvars):
     basename = rc_config["metadata"]["name"]
 
     while i < num:
-        tmpfile=tempfile.NamedTemporaryFile()
+        tmpfile=tempfile.NamedTemporaryFile(mode='w')
         curdata = copy.deepcopy(data)
         newname = basename + str(i)
         globalvars["curprojenv"]["rcs"].append(newname)
@@ -394,7 +393,7 @@ def project_exists(projname, globalvars) :
     try :
         cmd = "kubectl" if globalvars["kubeopt"] else "oc"
         output = oc_command(cmd + " get project -o name " + projname, globalvars)[0].rstrip()
-        if output.endswith(projname) :
+        if output.decode('utf-8').endswith(projname) :
             exists = True
     except subprocess.CalledProcessError : # this is ok, means the project does not already exist
         pass
@@ -419,6 +418,7 @@ def delete_project(projname, globalvars) :
 
 def single_project(testconfig, projname, globalvars):
     globalvars["createproj"] = True
+
     if project_exists(projname,globalvars) :
         if testconfig["ifexists"] == "delete" :
             delete_project(projname,globalvars)
@@ -430,7 +430,7 @@ def single_project(testconfig, projname, globalvars):
 
     if globalvars["createproj"]:
         if globalvars["kubeopt"]:
-            tmpfile=tempfile.NamedTemporaryFile()
+            tmpfile=tempfile.NamedTemporaryFile(mode='w')
             with open("content/namespace-default.yaml") as infile:
                 nsconfig = yaml.load(infile)
             nsconfig["metadata"]["name"] = projname
@@ -523,7 +523,6 @@ def autogen_pod_wait(pods_running, num_expected):
 
 def project_handler(testconfig, globalvars):
     logger.debug("project_handler function called")
-
     total_projs = testconfig["num"]
     basename = testconfig["basename"]
     globalvars["env"] = []
@@ -567,7 +566,7 @@ def quota_handler(inputquota, globalvars):
         qconfig = json.load(infile)
     qconfig["metadata"]["namespace"] = globalvars["namespace"]
     qconfig["metadata"]["name"] = quota["name"]
-    tmpfile=tempfile.NamedTemporaryFile()
+    tmpfile=tempfile.NamedTemporaryFile(mode='w')
     json.dump(qconfig,tmpfile)
     tmpfile.flush()
     if globalvars["kubeopt"]:
@@ -638,7 +637,7 @@ def ebs_create(globalvars):
     pvjson["spec"]["accessModes"] = [pvpermissions]
     pvjson["spec"]["awsElasticBlockStore"]["volumeID"] = ebsvolumeid
     pvjson["spec"]["awsElasticBlockStore"]["fsType"] = fstype
-    pvtmpfile = tempfile.NamedTemporaryFile(delete=True)
+    pvtmpfile = tempfile.NamedTemporaryFile(mode='w', delete=True)
     json.dump(pvjson,open("pvebsexample.json", "w+"), sort_keys=True, indent=4, separators=(',', ': '))
     json.dump(pvjson,pvtmpfile,sort_keys=True, indent=4, separators=(',', ': '))
     pvtmpfile.flush()
@@ -656,7 +655,7 @@ def ebs_create(globalvars):
     pvcjson["metadata"]["namespace"] = namespace
     pvcjson["spec"]["resources"]["requests"]["storage"] = str(ebsvolumesize) + "Gi"
     pvcjson["spec"]["accessModes"] = [pvcpermissions]
-    pvctmpfile = tempfile.NamedTemporaryFile(delete=True)
+    pvctmpfile = tempfile.NamedTemporaryFile(mode='w', delete=True)
     json.dump(pvcjson, open("pvcebsexample.json", "w+"), sort_keys=True, indent=4, separators=(',', ': '))
     json.dump(pvcjson,pvctmpfile,sort_keys=True, indent=4, separators=(',', ': '))
     pvctmpfile.flush()
@@ -676,7 +675,7 @@ def ceph_secret_create(cephsecret,globalvars):
     cephsecjson["metadata"]["name"] = cephsecretname
     cephsecjson["metadata"]["namespace"] = namespace
     cephsecjson["data"]["key"] = cephsecret
-    sectmpfile = tempfile.NamedTemporaryFile(delete=True)
+    sectmpfile = tempfile.NamedTemporaryFile(mode='w', delete=True)
     json.dump(cephsecjson, open("cephseckey.json", "w+"), sort_keys=True, indent=4, separators=(',', ': '))
     json.dump(cephsecjson, sectmpfile, sort_keys=True, indent=4, separators=(',', ': '))
     sectmpfile.flush()
@@ -714,7 +713,7 @@ def ceph_image_create(i,globalvars):
     pvjson["spec"]["rbd"]["user"] = "admin"
     pvjson["spec"]["rbd"]["secretRef"]["name"] = cephsecretname
 
-    pvtmpfile = tempfile.NamedTemporaryFile(delete=True)
+    pvtmpfile = tempfile.NamedTemporaryFile(mode='w', delete=True)
     json.dump(pvjson,open("pvcephexample.json", "w+"), sort_keys=True, indent=4, separators=(',', ': '))
     json.dump(pvjson,pvtmpfile,sort_keys=True, indent=4, separators=(',', ': '))
     pvtmpfile.flush()
@@ -733,7 +732,7 @@ def ceph_image_create(i,globalvars):
     pvcjson["metadata"]["namespace"] = namespace
     pvcjson["spec"]["resources"]["requests"]["storage"] = str(cephimagesize) + "Gi"
     pvcjson["spec"]["accessModes"] = [pvcpermissions]
-    pvctmpfile = tempfile.NamedTemporaryFile(delete=True)
+    pvctmpfile = tempfile.NamedTemporaryFile(mode='w',delete=True)
     json.dump(pvcjson, open("pvccephexample.json", "w+"), sort_keys=True, indent=4, separators=(',', ': '))
     json.dump(pvcjson,pvctmpfile,sort_keys=True, indent=4, separators=(',', ': '))
     pvctmpfile.flush()
@@ -906,5 +905,5 @@ def find_quota(quotaset, name):
         else:
             continue
 
-    logger.error("Failed to find quota : " + name + " Exitting ......")
+    logger.error("Failed to find quota : " + name + " Exiting ......")
     sys.exit()

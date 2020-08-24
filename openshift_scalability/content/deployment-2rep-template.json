@@ -27,7 +27,7 @@
             "containers": [
               {
                 "name": "helloworld2v${IDENTIFIER}",
-                "image": "openshift2v/${IMAGE}",
+                "image": "openshift/${IMAGE}",
                 "ports": [
                   {
                     "containerPort": 8080,
