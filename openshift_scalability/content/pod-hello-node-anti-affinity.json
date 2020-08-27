@@ -48,10 +48,10 @@
              {
               "matchExpressions": [
                 {
-                  "key": "beta.kubernetes.io/arch",
+                  "key": "placement",
                   "operator": "NotIn",
                   "values": [
-                     "amd64"
+                     "affinity"
                   ]
                 }
                ]
