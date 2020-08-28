@@ -7,10 +7,10 @@ ClusterLoader:
       tuning: default
       ifexists: delete
       pods:
-        - num: 130
+        - num: 200
           image: gcr.io/google_containers/pause-amd64:3.0
           basename: pausepods
-          file: /root/svt/openshift_scalability/content/pod-pause-node-affinity.json
+          file: ./content/pod-pause-node-affinity.json
 
     - num: 1
       basename: node-anti-affinity-
@@ -20,14 +20,14 @@ ClusterLoader:
         - num: 130
           image: docker.io/ocpqe/hello-pod
           basename: hellopods
-          file: /root/svt/openshift_scalability/content/pod-hello-node-anti-affinity.json
+          file: ./content/pod-hello-node-anti-affinity.json
 
   tuningsets:
     - name: default
       pods:
         stepping:
           stepsize: 50
-          pause: 120
+          pause: 30
         ratelimit:
           delay: 0
 
