@@ -1,0 +1,6 @@
+projects:
+- basename: svt-
+  num: 2000
+  templates:
+  - file: ../../content/deployment-config-1rep-pause-template.json
+    num: 1
