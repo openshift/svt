@@ -65,7 +65,7 @@ function wait_until_the_pod_is_ready {
   local ready_pods
   while (( ($(date +%s) - ${start_time}) < ${timeout} ));
   do
-    ready_pods=$(oc get pod -n ${project} | grep ${pod} | grep -v deploy | grep Running | grep 1/1 | wc -l)
+    ready_pods=$(oc get pod -n ${project} | grep ${pod} | grep -v deploy | grep Running | grep 1/1 | wc -l | xargs)
     if [[ "${ready_pods}" == "1" ]]; then
       MY_TIME=$(($(date +%s) - ${start_time}))
       break
@@ -108,7 +108,7 @@ do
 #      echo "it took ${MY_TIME} seconds to delete the project ${NAMESPACE}"
 #    fi
 #  fi
-#  oc adm allows --node-selector - this is temporary change  
+#  oc adm allows --node-selector - this is temporary change
   oc adm new-project ${NAMESPACE} #--node-selector="type=hdd-test"
   oc process -f ${TMP_FOLDER}/files/oc/mongodb-persistent-template.yaml \
       -p MEMORY_LIMIT=${MEMORY_LIMIT} -p MONGODB_USER=${MONGODB_USER} \

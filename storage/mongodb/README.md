@@ -12,7 +12,7 @@ $ git clone https://github.com/openshift/svt.git
 
 ```sh
 $ cd storage/mongodb 
-    $ ./runmongo.sh
+    $ ./mongodb.sh
 ```
 
 **kubeconfig** Before start be sure `oc` client will use correct authorization:
@@ -20,6 +20,7 @@ $ cd storage/mongodb
 ```sh
 export KUBECONFIG=/path/to/auth/kubeconfig
 ```
+Setup project num and iteration nums in [mongodb.sh](mongodb.sh) you want to use during the test.
 
 Setup params in [external_vars.yaml](external_vars.yaml) you want to use during the test.
 
@@ -49,10 +50,14 @@ distribution: uniform
 
 If necessary adapt **external_vars.yaml** to correspond specific test needs 
 
+If wanting to use the latest mongo version, set the **MONGODB_VERSION** to **latest** and the mongodb.sh will find the latest version and overwrite the external_vars file.   
+
 This example will allocate **1024Mi** RAM for MongoDB pod, run YCSB with 10,20 threads, execute **workloada** , run 10 iterations with 
 **recordcount=1000** , **operationcount=1000**
 Storage used for Mongodb pod will be carved from storageclass with name **gluster-storage** and size of PVC will be  **10Gi** 
 YCSB **uniform** distribution will be used and 10 test projects will be created 
+
+You can delete the **STORAGE_CLASS_NAME** from the external_vars.yaml if you want to use the default storage class; if you want to set a specific storage class you can set it in the yaml 
 
 It is also possible to execute test with various values for memory for MongoDB pod all in one run, eg.
 
@@ -86,7 +91,10 @@ This will execute YCSB test against MongoDB pod for various combination
 
 **Important:** :exclamation:
 
-If **operationcount** and **recordcount** are hight, then in order for test to work it is necessary to 
+If **operationcount** and **recordcount** are hit, then in order for test to work it is necessary to 
 start test with bigger PVC size. 
 
 You can run all YCSB workloads: **workloada**, **workloadb**, **workloadc**, **workloadd**, **workloade**, **workloadf**, **workload_template** but **workloadd** and **workloade** fail to run for iterations more than one in the same DB!
+
+
+Final output of all project and iteration combos will be outputed to **mongodb.out**

@@ -13,6 +13,10 @@ readonly DISTRIBUTION=${8}
 
 scripts_dir=$(dirname $0)
 output_dir=${9}
+mongo_version=${10}
+
+
+m_version=$(echo $mongo_version | sed -e 's/\.//g')
 
 echo "NAMESPACE_BASENAME: ${NAMESPACE_BASENAME}"
 echo "NAMESPACE_NUMBER: ${NAMESPACE_NUMBER}"
@@ -25,7 +29,7 @@ for i in $(seq 1 ${NAMESPACE_NUMBER});
 do
   NAMESPACE="${NAMESPACE_BASENAME}-${i}"
   echo "NAMESPACE is ${NAMESPACE}"
-  "${scripts_dir}/test-mongo-load.sh" "${NAMESPACE}" "${ITERATION}" "${THREADS}" "${WORKLOAD}" "${RECORD_COUNT}" "${OPERATION_COUNT}" "${DISTRIBUTION}" "${output_dir}" & 
+  "${scripts_dir}/test-mongo-load.sh" "${NAMESPACE}" "${ITERATION}" "${THREADS}" "${WORKLOAD}" "${RECORD_COUNT}" "${OPERATION_COUNT}" "${DISTRIBUTION}" "${output_dir}" "${m_version}" &
 done
 
 wait
