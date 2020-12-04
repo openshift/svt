@@ -3,7 +3,7 @@
 proj_yaml="../../content/fio/fio-parameters-drain-node.yaml"
 
 pod_array=(1 2 5 10 25)
-iterations=1
+iterations=25
 final_log='drain_times.out'
 rm $final_log
 
