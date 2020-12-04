@@ -3,7 +3,7 @@
 proj_yaml="../../content/fio/fio-parameters-drain-node.yaml"
 
 pod_array=(1 2 5 10 25)
-iterations=25
+iterations=1
 final_log='drain_times.out'
 rm $final_log
 
@@ -72,10 +72,13 @@ oc label node ${node_1} aaa=bbb && oc label node ${node_2} aaa=bbb
 #Make node_2 SchedulingDisabled
 oc adm cordon ${node_2}
 
+rmdir output
+mkdir output
+
 for pods_n in "${pod_array[@]}"
 do
-  pods_log='loop_$pods_n.log'
-  pods_out='drain_times_$pods_n.out'
+  pods_log="output/loop_$pods_n.log"
+  pods_out="output/drain_times_$pods_n.out"
   rm $pods_log
   rm $pods_out
   python -c "from drain_helper import print_new_yaml_temp; print_new_yaml_temp($pods_n,'$proj_yaml')"
