@@ -42,8 +42,12 @@ function wait_until_all_pods_are_ready {
   local ready_pods
   while (( ($(date +%s) - ${start_time}) < ${timeout} ));
   do
-    ready_pods=$(oc get pod --all-namespaces | grep ${pod} | grep -v deploy | grep Running | grep 1/1 | wc -l)
+    ready_pods=$(oc get pod --all-namespaces | grep ${pod} | grep -v deploy | grep Running | grep 1/1 | wc -l | xargs)
     echo "running pods: ${ready_pods}"
+    if [[ ${ready_pods} -gt ${total} ]]; then
+      echo "${ready_pods} ready pods higher than expected total, exiting"
+      break
+    fi
     if [[ "${ready_pods}" == ${total} ]]; then
       MY_TIME=$(($(date +%s) - ${start_time}))
       break
@@ -80,6 +84,8 @@ do
   wait_until_all_pods_are_ready ${POD_NUMBER} fio 1200 10
   if (( ${MY_TIME} == -1 )); then
     echo "fio pod is not ready, time is up"
+    oc adm uncordon ${NODE_1}
+    oc adm cordon ${NODE_2}
     exit 1
   else
     echo "it took ${MY_TIME} seconds to get fio pod ready"
@@ -96,6 +102,7 @@ do
   wait_until_all_pods_are_ready ${POD_NUMBER} fio 1200 10
   if (( ${MY_TIME} == -1 )); then
     echo "fio pod is not ready, time is up"
+    oc adm cordon ${NODE_2}
     exit 1
   else
     echo "it took ${MY_TIME} seconds to get fio pod ready"
