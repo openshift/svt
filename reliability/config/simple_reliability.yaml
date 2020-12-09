@@ -11,7 +11,7 @@ reliability:
 
   appTemplates:
     - template: cakephp-mysql-persistent
-    - template: nodejs-mongo-persistent
+    - template: nodejs-postgresql-persistent
     - template: django-psql-persistent
     - template: rails-pgsql-persistent
     - template: dancer-mysql-persistent
