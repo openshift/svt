@@ -15,17 +15,23 @@ logger.setLevel(logging.INFO)
 logger.addHandler(screen_handler)
 
 def calc_time(timestr):
-    tlist = timestr.split()
-    if tlist[1] == "s":
-        return int(tlist[0])
-    elif tlist[1] == "min":
-        return int(tlist[0]) * 60
-    elif tlist[1] == "ms":
-        return int(tlist[0]) / 1000
-    elif tlist[1] == "hr":
-        return int(tlist[0]) * 3600
-    else:
-        logger.error("Invalid delay in rate_limit Exiting ........")
+
+    try:
+        tlist = str(timestr).split()
+        if tlist[1] == "s":
+            return int(tlist[0])
+        elif tlist[1] == "min":
+            return int(tlist[0]) * 60
+        elif tlist[1] == "ms":
+            return int(tlist[0]) / 1000
+        elif tlist[1] == "hr":
+            return int(tlist[0]) * 3600
+        else:
+            logger.error("Invalid delay in rate_limit Exiting ........")
+            sys.exit()
+    except Exception as e:
+        logger.error("Error setting pause time: " + str(e))
+        logger.error("Exiting ........")
         sys.exit()
 
 def oc_command(args, globalvars):
@@ -305,6 +311,7 @@ def create_pods(podcfg, num, storagetype, globalvars):
                 total_pods_created = int(globalvars["totalpods"])
                 if total_pods_created % stepsize == 0 and globalvars["tolerate"] is False:
                     pod_data(globalvars)
+                    logger.info("Pausing for " + str(pause))
                     time.sleep(calc_time(pause))
             if "rate_limit" in globalvars["tuningset"]:
                 delay = globalvars["tuningset"]["rate_limit"]["delay"]
@@ -324,8 +331,7 @@ def pod_data(globalvars):
             getpods = oc_command("kubectl get pods --namespace " + namespace, globalvars)
         else:
             getpods = oc_command("oc get pods -n " + namespace, globalvars)
-        all_status = str(getpods[0], 'utf-8').split("\n")
-
+        all_status = str(getpods[0]).decode('utf-8').split("\n")
         size = len(all_status)
         all_status = all_status[1:size - 1]
         for status in all_status:
@@ -553,7 +559,6 @@ def project_handler(testconfig, globalvars):
         for k, child in enumerate(children):
             os.waitpid(child, 0)
 
-
 def quota_handler(inputquota, globalvars):
     logger.debug("Function :: quota_handler")
 
@@ -574,7 +579,6 @@ def quota_handler(inputquota, globalvars):
     else:
         oc_command("oc create -f " + tmpfile.name, globalvars)
     tmpfile.close()
-
 
 def template_handler(templates, globalvars):
     logger.debug("template_handler function called")
@@ -620,7 +624,6 @@ def service_handler(inputservs, globalvars):
         service_config["metadata"]["name"] = basename
 
         create_service(service_config, num, globalvars)
-
 
 def ebs_create(globalvars):
     # just calling this function to create EBS, pv and pvc, EBS volume id == pv name == pvc name
