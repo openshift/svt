@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 memory_limity=$(cat external_vars.yaml | grep MEMORY_LIMIT | cut -d ' ' -f 2)
 ycsb_threads=$(cat external_vars.yaml | grep ycsb_threads | cut -d ' ' -f 2)
@@ -17,6 +17,10 @@ mongodb_user=$(cat external_vars.yaml | grep MONGODB_USER | cut -d ' ' -f 2)
 mongodb_password=$(cat external_vars.yaml | grep MONGODB_PASSWORD | cut -d ' ' -f 2)
 mongodb_database=$(cat external_vars.yaml | grep MONGODB_DATABASE | cut -d ' ' -f 2)
 mongodb_version=$(cat external_vars.yaml | grep MONGODB_VERSION | cut -d ' ' -f 2)
+
+if [[ $storage_class == "" ]]; then
+  storage_class=$(oc get sc | grep default | cut -d ' ' -f 1)
+fi
 
 
 echo "Memory limit:        $memory_limity"
@@ -41,11 +45,11 @@ chmod +x files/scripts/*.sh
 # Creating OCP objects
 bash files/scripts/create-oc-objects.sh $test_project_name $test_project_number $working_directory $delete_test_project_before_test $memory_limity $mongodb_user $mongodb_password $mongodb_database $volume_capacity $mongodb_version $storage_class
 echo "Sleep 60 sec..."
-sleep 60
+#sleep 60
 
 start_load=`date +%s`
 
-bash files/scripts/test-mongo-m-load.sh $test_project_name $test_project_number $iterations $ycsb_threads $workload $recordcount $operationcount $distribution $working_directory
+bash files/scripts/test-mongo-m-load.sh $test_project_name $test_project_number $iterations $ycsb_threads $workload $recordcount $operationcount $distribution $working_directory $mongodb_version
 
 end_load=`date +%s`
 total_load=`echo $end_load - $start_load | bc`
@@ -60,5 +64,5 @@ bash files/scripts/test-mongo-m-run.sh $test_project_name $test_project_number $
 end_run=`date +%s`
 total_run=`echo $end_run - $start_run | bc`
 
-echo "Total load : $total_load"
-echo "Total  run : $total_run"
+echo "\nTotal load : $total_load"
+echo "\nTotal run : $total_run"

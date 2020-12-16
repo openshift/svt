@@ -1,18 +1,16 @@
 ---
 test_project_name: storage-test-mongo
-test_project_number: 2
+test_project_number: 10
 delete_test_project_before_test: true
 MEMORY_LIMIT: 1024Mi
 MONGODB_USER: redhat
 MONGODB_PASSWORD: redhat
 MONGODB_DATABASE: testdb
-VOLUME_CAPACITY: 150Gi 
-STORAGE_CLASS_NAME: gp2
-MONGODB_VERSION: 3.2
-iteration: 10
+VOLUME_CAPACITY: 150Gi
+MONGODB_VERSION: latest
+iteration: 20
 ycsb_threads: 16
 workload: workloada
-# workload: workloada,workloadb,workloadc,workloadd,workloade,workloadf,workload_template
 recordcount: 1000
 operationcount: 1000
 distribution: uniform
