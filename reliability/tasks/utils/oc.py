@@ -1,23 +1,29 @@
 import subprocess
 import logging
 
-def oc(cmd, config=""):
+def shell(cmd):
     logger = logging.getLogger('reliability')
-    cmd = "oc " + cmd
     rc = 0
     result = ""
     logger.info("=>" + cmd)
-    if config:
-        cmd = "KUBECONFIG=" + config + " " + cmd
     try:
         result = subprocess.check_output(cmd, stderr=subprocess.STDOUT, shell=True)
     except subprocess.CalledProcessError as cpe:
         rc = cpe.returncode
         result = cpe.output
-    
+
     string_result = result.decode("utf-8")
     logger.info(str(rc) + ": " + string_result)
     return string_result, rc
+
+def oc(cmd, config=""):
+    cmd = "oc " + cmd
+    rc = 0
+    result = ""
+    if config:
+        cmd = "KUBECONFIG=" + config + " " + cmd
+    result,rc = shell(cmd)
+    return result,rc
 
 
 

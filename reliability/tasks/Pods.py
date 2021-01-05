@@ -1,4 +1,4 @@
-from  .utils.oc import oc
+from  .utils.oc import shell
 import logging
 
 
@@ -7,7 +7,7 @@ class Pods:
         self.logger = logging.getLogger('reliability')
 
     def check(self):
-        (result, rc) = oc("get pods --all-namespaces")
+        (result, rc) = shell('oc get pods --all-namespaces| egrep -v "Running|Complete"')
         if rc != 0:
            self.logger.error("get pods: failed")
 
