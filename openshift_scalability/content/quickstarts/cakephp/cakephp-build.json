@@ -121,7 +121,7 @@
             "displayName": "PHP Version",
             "name": "PHP_VERSION",
             "required": true,
-            "value": "7.2"
+            "value": "latest"
         },
         {
             "description": "The URL of the repository with your application source code.",
