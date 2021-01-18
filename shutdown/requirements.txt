@@ -1,0 +1,9 @@
+subprocess.run
+boto3
+google-api-python-client
+azure-mgmt-compute
+azure-keyvault
+azure-identity
+kubernetes
+oauth2client
+pyfiglet
