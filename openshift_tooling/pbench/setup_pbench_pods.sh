@@ -96,8 +96,11 @@ function create_service_account() {
         oc create serviceaccount useroot -n pbench
         oc adm policy add-scc-to-user privileged -z useroot -n pbench
 }
-	
-pushd /root/svt
+
+cur_loc=$(pwd)/../../
+
+pushd $cur_loc
+
 
 # Setup pbench-agent in pbench namespace
 oc project pbench &>/dev/null
@@ -106,6 +109,7 @@ if [[ $? == 0 ]]; then
 	echo "Deleting the pbench project"
 	cleanup
 fi
+
 oc create -f openshift_templates/performance_monitoring/pbench/pbench-namespace.yml -n pbench
 create_service_account
 
