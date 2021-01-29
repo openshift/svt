@@ -10,7 +10,7 @@ ClusterLoader:
         - num: 130
           image: docker.io/ocpqe/hello-pod
           basename: pod-affinity-security-in-s1
-          file: /root/svt/openshift_scalability/content/pod-pod-affinity.json
+          file: ../../content/pod-pod-affinity.json
 
     - num: 1
       basename: pod-anti-affinity-s1-
@@ -20,7 +20,7 @@ ClusterLoader:
         - num: 130
           image: docker.io/ocpqe/hello-pod
           basename: pod-anti-affinity-security-in-s1
-          file: /root/svt/openshift_scalability/content/pod-pod-anti-affinity.json
+          file: ../../content/pod-pod-anti-affinity.json
 
 
   tuningsets:
