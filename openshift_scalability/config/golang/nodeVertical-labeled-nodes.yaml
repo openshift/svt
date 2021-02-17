@@ -7,10 +7,9 @@ ClusterLoader:
       tuning: default
       ifexists: delete
       pods:
-        - num: 1000
-          image: gcr.io/google_containers/pause-amd64:3.0
-          basename: pausepods
-          file: pod-pause-labeled-nodes.json
+        - num: 660
+          basename: hello
+          file: ../../content/pod-pause-labeled-nodes.json
   tuningsets:
     - name: default
       pods:

@@ -1,15 +1,14 @@
 #!/bin/sh
 
-if [ "$#" -ne 3 ]; then
-  echo "syntax: $0 <TESTNAME> <TYPE> <ENVIRONMENT>"
+if [ "$#" -ne 2 ]; then
+  echo "syntax: $0 <TYPE> <ENVIRONMENT>"
   echo "<TYPE> should be either golang or python"
   echo "<ENVIRONMENT> should be either alderaan or aws"
   exit 1
 fi
 
-TESTNAME=$1
-TYPE=$2
-ENVIRONMENT=$3
+TYPE=$1
+ENVIRONMENT=$2
 LABEL="node-role.kubernetes.io/worker"
 CORE_COMPUTE_LABEL="core_app_node=true"
 TEST_LABEL="nodevertical=true"
@@ -25,15 +24,60 @@ long_sleep() {
   sleep $sleep_time
 }
 
-clean() { echo "Cleaning environment"; oc delete project --wait=true clusterproject0; }
+clean() {
+  echo "Cleaning environment"
+  project_name=clusterproject0
+  oc delete project --wait=false $project_name
+  wait_for_pod_deletion $project_name
+  wait_for_project_termination $project_name
+}
+
+function wait_for_project_termination() {
+  COUNTER=0
+  terminating=$(oc get projects | grep $1 | wc -l)
+  while [ $terminating -ne 0 ]; do
+    sleep 15
+    terminating=$(oc get projects | grep $1 | wc -l)
+    echo "$terminating projects are still there"
+    COUNTER=$((COUNTER + 1))
+    if [ $COUNTER -ge 20 ]; then
+      echo "$terminating projects are still there after 5 minutes"
+      exit 1
+    fi
+  done
+}
+
+function wait_for_pod_deletion() {
+  project_name=$1
+  counter=0
+  while true; do
+    pod_num=$(oc get pods -A | grep ${project_name} -c | xargs)
+    echo "\nThere are $pod_num pods still in namespace ${project_name}"
+    if [[ $pod_num -ne 0 ]]; then
+      still_terminating=1
+      echo "Pods in namespace ${project_name} are still Terminating"
+    else
+      echo "No more pods in namespace ${project_name}"
+      break
+    fi
+
+    if [[ $counter == 60 ]]; then
+      echo "We still have pods in namespace ${project_name}"
+      error_exit "We still have pods in namespace ${project_name}"
+    fi
+
+    ((counter++))
+    sleep 15
+  done
+
+}
 
 golang_clusterloader() {
   # Export kube config
   export KUBECONFIG=${KUBECONFIG-$HOME/.kube/config}
-  MY_CONFIG=config/golang/nodeVertical-labeled-nodes
-  sed -i "/- num: 1000/c \ \ \ \ \ \ \ \ \- num: $total_pod_count" /root/svt/openshift_scalability/config/golang/nodeVertical-labeled-nodes.yaml
+  MY_CONFIG=config/golang/nodeVertical-labeled-nodes.yaml
   # loading cluster based on yaml config file
-  VIPERCONFIG=$MY_CONFIG openshift-tests run-test "[Feature:Performance][Serial][Slow] Load cluster should load the cluster [Suite:openshift]"
+  VIPERCONFIG=$MY_CONFIG openshift-tests run-test "[sig-scalability][Feature:Performance] Load cluster should populate the cluster [Slow][Serial]"
 }
 
 python_clusterloader() {
@@ -72,11 +116,13 @@ for app_node in $(oc get nodes -l "$LABEL" -o json | jq '.items[].metadata.name'
 done
 
 # Get the pod count on the labeled nodes
-for node in $(oc get nodes -l="nodevertical=true" | awk 'NR > 1 {print $1}'); do
-	pods_running=$(oc describe node $node | grep -w "Non-terminated \Pods:" | awk  '{print $3}' | sed "s/(//g")
+for node in $(oc get nodes -l=$TEST_LABEL | awk 'NR > 1 {print $1}'); do
+	pods_running=$(oc describe node $node | grep -w "Non-terminated \Pods:" | awk '{print $3}' | sed "s/(//g")
 	pod_count=$(( pod_count+pods_running ))
 done
 total_pod_count=$(( 1000-pod_count ))
+
+echo "Total pods running in OpenShift cluster $total_pod_count"
 
 # Run the test
 if [ "$TYPE" == "golang" ]; then
@@ -91,9 +137,6 @@ else
   echo "$TYPE is not a valid option, available options: golang, python"
   exit 1
 fi
-
-# TODO(himanshu): fix clean function
-#./cluster-loader.py --clean
 
 # sleep after test is complete to gather post-test metrics...these should be the same as pre-test
 long_sleep
