@@ -11,6 +11,7 @@ if [ "$#" -lt 7 ]; then
   echo "   5. CLUSTER_LOADER_CONFIG_FILE"
   echo "   6. WAIT_TIME_BEFORE_STOPPING_PBENCH"
   echo "   7. PBENCH_RESULTS_INTERNAL_URL_PREFIX"
+  echo "   8. Run type: golang or python"
   exit 0
 fi
 
@@ -27,6 +28,7 @@ PBENCH_RESULTS_DIR_NAME=$4
 CLUSTER_LOADER_CONFIG_FILE=$5
 WAIT_TIME_BEFORE_STOPPING_PBENCH=${6:-$DEFAULT_COLLECTION_DURATION_SECS}
 PBENCH_RESULTS_INTERNAL_URL_PREFIX=$7
+run_type=$8
 
 
 echo "MASTER_PUBLIC_DNS from first argument: ${MASTER_PUBLIC_DNS}"
@@ -109,71 +111,21 @@ for i in ${ALL_NODES_INTERNAL} ${STANDALONE_ETCDS_PRIVATE_DNS} ; do
   ssh $i "ls -ltr /var/lib/pbench-agent/${PBENCH_RESULTS_DIR_NAME}/tools-default"
 done
 
-
 date
-
-echo -e "\nOCP cluster info:"
-oc version
-openshift version
-oc get nodes -o wide
-oc get pods --all-namespaces -o wide
 
 docker version
 docker images
 docker ps
 oc describe node | grep Runtime
 
-cd /root/svt/openshift_scalability
-pwd
-ls -ltr
 
-
-echo -e "\n\n############## Running Golang cluster-loader ######################"
+echo -e "\n\n############## Running cluster-loader ######################"
 echo -e "\nCurrent bash shell options: $(echo $-)"
 
-export KUBECONFIG=${KUBECONFIG-$HOME/.kube/config}
-
-GOLANG_CLUSTER_LOADER_CONFIG_FILE=$(echo ${CLUSTER_LOADER_CONFIG_FILE} | cut -f 1 -d '.')
-
-echo -e "\nGoLang cluster-loader config file without extension is: '${GOLANG_CLUSTER_LOADER_CONFIG_FILE}'"
-echo -e "\nRunning: '/usr/libexec/atomic-openshift/extended.test --ginkgo.focus=\"Load cluster\" --viper-config=config/golang/${GOLANG_CLUSTER_LOADER_CONFIG_FILE}"
-/usr/libexec/atomic-openshift/extended.test --ginkgo.focus="Load cluster" --viper-config=config/golang/${GOLANG_CLUSTER_LOADER_CONFIG_FILE}
-
-rc=$?
-
-echo -e "\nFinished executing GoLang cluster-loader: exit code was: $rc"
-
-oc get pods --all-namespaces -o wide
-echo -e "\nTotal number of running pods: $(oc get pods --all-namespaces -o wide | grep -v default | grep -ci running)"
-
-TOTAL_CLUSTERPROJECTS=$(oc get projects | grep -c clusterproject)
-echo -e "\nTotal number of clusterproject namespaces created: ${TOTAL_CLUSTERPROJECTS}"
-
-sleep 2
-
-for (( c=0; c<${TOTAL_CLUSTERPROJECTS}; c++ ))
-do
-  oc get all -n clusterproject${c}
-done
-
-echo -e "\nSleeping for 10 mins"
-sleep 600
-
-echo -e "\nDeleting the ${TOTAL_CLUSTERPROJECTS} projects we just created"
-for (( c=0; c<${TOTAL_CLUSTERPROJECTS}; c++ ))
-do
-  oc delete project clusterproject${c}
-done
-
-oc get projects
+create-loaded-projects.sh run_type
 
 echo -e "\nSleeping for ${WAIT_TIME_BEFORE_STOPPING_PBENCH} seconds ..."
 sleep ${WAIT_TIME_BEFORE_STOPPING_PBENCH}
-
-oc get projects
-
-oc get pods --all-namespaces -o wide
-echo -e "\nTotal number of running pods: $(oc get pods --all-namespaces -o wide | grep -v default | grep -ci running)"
 
 date
 echo -e "\nStopping pbench tools ..."
