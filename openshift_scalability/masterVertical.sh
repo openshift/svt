@@ -28,9 +28,9 @@ fi
 golang_clusterloader() {
   # Export kube config
   export KUBECONFIG=${KUBECONFIG-$HOME/.kube/config}
-  MY_CONFIG=config/golang/pyconfigMasterVertScalePause
+  MY_CONFIG=config/golang/pyconfigMasterVertScalePause.yaml
   # loading cluster based on yaml config file
-  VIPERCONFIG=$MY_CONFIG openshift-tests run-test "[Feature:Performance][Serial][Slow] Load cluster should load the cluster [Suite:openshift]"
+  VIPERCONFIG=$MY_CONFIG openshift-tests run-test "[sig-scalability][Feature:Performance] Load cluster should populate the cluster [Slow][Serial]"
 }
 
 python_clusterloader() {
@@ -53,3 +53,15 @@ fi
 
 echo "sleeping $SETTLE_TIME for settling after tests"
 sleep $SETTLE_TIME
+
+#validate all
+c_projects=$(oc get project | grep -o "c\d")
+
+for proj in $c_projects; do
+  oc get all -n $proj
+done
+
+#need to cleanup
+for proj in $c_projects; do
+  oc delete project $proj
+done
