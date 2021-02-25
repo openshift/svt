@@ -4,14 +4,13 @@ projects:
     ifexists: delete
     tuning: default
     pods:
-      - total: 1000
-      - num: 100
-        image: gcr.io/google_containers/pause-amd64:3.0
-        basename: pausepods
+      - total: 100
+      - num: 660
         file: content/pod-pause.json
+        basename: hello
         storage:
           - type: none
-          
+
 quotas:
   - name: default
     file: default
@@ -20,7 +19,7 @@ tuningsets:
   - name: default
     pods:
       stepping:
-        stepsize: 50
-        pause: 60 s
+        stepsize: 100
+        pause: 10 s
       rate_limit:
         delay: 0 ms
