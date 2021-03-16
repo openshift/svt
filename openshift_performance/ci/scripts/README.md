@@ -1,3 +1,15 @@
+## Concurrent builds README
+
+### Purpose
+The conc_builds.sh scripts is a flexible tool for driving builds in OpenShift.  This test is intended to reocrd the times of concurrent builds of a specific application and the time it takes to push the image to a registry.
+
+It combines many different tools including cluster-loader and build_test 
+
+### Install python packages
+
+```
+$ pip install pytimeparse logging pyyaml rbd rados
+
 ## conc_builds README
 
 ### Purpose 
@@ -35,11 +47,12 @@ $ pip install -r ../../../openshift_scalability/cluster_loader_requirements.txt
 
 ### Setup
 
-**Projects and applicatons:**  It is recommended that [cluster-loader](https://github.com/openshift/svt/blob/master/openshift_scalability/README.md) be used to create projects, deployments, build configurations, etc.   **pod_density** is a complimentary tool that can run the pod creation by **cluster_loader**.
+**Projects and applicatons:**  It is recommended that [cluster-loader](https://github.com/openshift/svt/blob/master/openshift_scalability/README.md) be used to create projects, deployments, build configurations, etc.   **build_test** is a complimentary tool that can run the builds created by **cluster_loader**.
 
 An example cluster-loader config that works with build_test.py is [master-vert.yaml](https://github.com/openshift/svt/blob/master/openshift_scalability/config/master-vert-pv.yaml)
 
 This will create namespaces as below.  These projects will be specified in the build_test json config.
+svt-<app_name>-<number>
 
 ```
 # oc get ns
@@ -82,3 +95,35 @@ You'll need to edit the version of the imagestream to latest or a specific versi
 
 You can find the latest version by the following: 
 ```oc get imagestreamtag -A | grep <image_stream> ```
+
+If you want to change the number of projects you have to edit the number of projects in conc_builds.sh as well as the num field at the top of the [yaml files](https://github.com/openshift/svt/tree/master/openshift_performance/ci/content) specific for the application.  By default conc_builds and the content yaml files create 75 projects
+
+
+
+
+### Usage
+
+```./conc_builds.sh ```
+
+
+### Debugging steps
+
+```oc get builds -A``` (--all-namespaces if before 4.0)
+
+```oc describe build/<buildName> -n <namespace>```
+ 
+```oc get pods -A ```
+
+```oc describe pod/<podName> -n <namespace> ```
+  
+```oc logs <podName> -n <namespace> | grep error```
+
+
+
+
+### Solutions to issues
+
+
+https://access.redhat.com/solutions/3467561
+
+https://docs.openshift.com/container-platform/3.10/install_config/registry/registry_known_issues.html
