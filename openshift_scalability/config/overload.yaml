@@ -1,0 +1,26 @@
+projects:
+  - num: 100
+    basename: four
+    nodeselector: "node-role.kubernetes.io/worker="
+    tuning: default
+    pods:
+      - total: 100
+      - num: 10
+        image: gcr.io/google_containers/pause-amd64:3.0
+        basename: pausepods
+        file: content/pod-pause.json
+        storage:
+          - type: none
+
+quotas:
+  - name: default
+    file: default
+
+tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 500
+        pause: 5 s
+      rate_limit:
+        delay: 0 ms

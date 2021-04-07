@@ -1,0 +1,55 @@
+{
+  "kind": "Template",
+  "apiVersion": "template.openshift.io/v1",
+  "metadata": {
+    "name": "networkPolicyTemplate",
+    "creationTimestamp": null,
+    "annotations": {
+      "description": "This template will create a default Network Policie.",
+      "tags": ""
+    }
+  },
+  "objects": [
+    {
+      "kind": "NetworkPolicy",
+      "apiVersion": "networking.k8s.io/v1",
+      "metadata": {
+        "name": "np-${IDENTIFIER}",
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "name": "pause-amd64"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "namespaceSelector": {
+                  "matchLabels": {
+                    "purpose": "test"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1",
+      "required": true
+    }
+  ],
+  "labels": {
+    "template": "serviceTemplate"
+  }
+}

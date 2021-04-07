@@ -1,0 +1,186 @@
+{
+  "kind": "Template",
+  "apiVersion": "template.openshift.io/v1",
+  "metadata": {
+    "name": "networkPolicyTemplate",
+    "creationTimestamp": null,
+    "annotations": {
+      "description": "This template will create a 5 Network Policies.",
+      "tags": ""
+    }
+  },
+  "objects": [
+    {
+      "kind": "NetworkPolicy",
+      "apiVersion": "networking.k8s.io/v1",
+      "metadata": {
+        "name": "np0-${NAME}-${IDENTIFIER}",
+        "namespace": "${NAME}"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "name": "pause-amd64"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "namespaceSelector": {
+                  "matchLabels": {
+                    "purpose": "test"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "NetworkPolicy",
+      "apiVersion": "networking.k8s.io/v1",
+      "metadata": {
+        "name": "np1-${NAME}-${IDENTIFIER}",
+        "namespace": "${NAME}"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "name": "pause-amd64"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "namespaceSelector": {
+                  "matchLabels": {
+                    "purpose": "test"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "NetworkPolicy",
+      "apiVersion": "networking.k8s.io/v1",
+      "metadata": {
+        "name": "np2-${NAME}-${IDENTIFIER}",
+        "namespace": "${NAME}"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "name": "pause-amd64"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "namespaceSelector": {
+                  "matchLabels": {
+                    "purpose": "test"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "NetworkPolicy",
+      "apiVersion": "networking.k8s.io/v1",
+      "metadata": {
+        "name": "np3-${NAME}-${IDENTIFIER}",
+        "namespace": "${NAME}"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "name": "pause-amd64"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "namespaceSelector": {
+                  "matchLabels": {
+                    "purpose": "test"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "kind": "NetworkPolicy",
+      "apiVersion": "networking.k8s.io/v1",
+      "metadata": {
+        "name": "np4-${NAME}-${IDENTIFIER}",
+        "namespace": "${NAME}"
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "name": "pause-amd64"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "from": [
+              {
+                "namespaceSelector": {
+                  "matchLabels": {
+                    "purpose": "test"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1",
+      "required": true
+    },
+    {
+      "name": "NAME",
+      "description": "Specific name of service. Could be project name",
+      "value": "default",
+      "required": true
+    }
+  ],
+  "labels": {
+    "template": "serviceTemplate"
+  }
+}
