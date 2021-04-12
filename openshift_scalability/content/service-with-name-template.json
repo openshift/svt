@@ -1,0 +1,251 @@
+{
+  "kind": "Template",
+  "apiVersion": "template.openshift.io/v1",
+  "metadata": {
+    "name": "serviceTemplate",
+    "creationTimestamp": null,
+    "annotations": {
+      "description": "This template will create a 10 services.",
+      "tags": ""
+    }
+  },
+  "objects": [
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "service0-${NAME}-${IDENTIFIER}",
+        "labels": {
+          "name": "hello-openshift"
+        }
+      },
+      "spec": {
+        "selector": {
+          "name": "hello-openshift"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "service1-${NAME}-${IDENTIFIER}",
+        "labels": {
+          "name": "hello-openshift"
+        }
+      },
+      "spec": {
+        "selector": {
+          "name": "hello-openshift"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "service2-${NAME}-${IDENTIFIER}",
+        "labels": {
+          "name": "hello-openshift"
+        }
+      },
+      "spec": {
+        "selector": {
+          "name": "hello-openshift"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "service3-${NAME}-${IDENTIFIER}",
+        "labels": {
+          "name": "hello-openshift"
+        }
+      },
+      "spec": {
+        "selector": {
+          "name": "hello-openshift"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "service4-${NAME}-${IDENTIFIER}",
+        "labels": {
+          "name": "hello-openshift"
+        }
+      },
+      "spec": {
+        "selector": {
+          "name": "hello-openshift"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "service5-${NAME}-${IDENTIFIER}",
+        "labels": {
+          "name": "hello-openshift"
+        }
+      },
+      "spec": {
+        "selector": {
+          "name": "hello-openshift"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "service6-${NAME}-${IDENTIFIER}",
+        "labels": {
+          "name": "hello-openshift"
+        }
+      },
+      "spec": {
+        "selector": {
+          "name": "hello-openshift"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "service7-${NAME}-${IDENTIFIER}",
+        "labels": {
+          "name": "hello-openshift"
+        }
+      },
+      "spec": {
+        "selector": {
+          "name": "hello-openshift"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "service8-${NAME}-${IDENTIFIER}",
+        "labels": {
+          "name": "hello-openshift"
+        }
+      },
+      "spec": {
+        "selector": {
+          "name": "hello-openshift"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "service9-${NAME}-${IDENTIFIER}",
+        "labels": {
+          "name": "hello-openshift"
+        }
+      },
+      "spec": {
+        "selector": {
+          "name": "hello-openshift"
+        },
+        "ports": [
+          {
+            "protocol": "TCP",
+            "port": 8080,
+            "targetPort": 8080
+          }
+        ]
+      }
+    }
+  ],
+  "parameters": [
+    {
+      "name": "IDENTIFIER",
+      "description": "Number to append to the name of resources",
+      "value": "1",
+      "required": true
+    },
+    {
+      "name": "NAME",
+      "description": "Specific name of service. Could be project name",
+      "value": "openshift",
+      "required": true
+    }
+  ],
+  "labels": {
+    "template": "serviceTemplate"
+  }
+}
