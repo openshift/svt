@@ -59,14 +59,18 @@ def edit_machine_sets(worker_node_num):
                 break
 
 
-def get_pods_per_node():
-
-    worker_node = run('oc get nodes | grep worker').strip()
-    worker_node_list = worker_node.split("\n")
-    for node in worker_node_list:
-        node_name = re.split(r'\s{2,}', node)[0]
-        pods_in_node = run('oc get pods --all-namespaces -o wide | grep ' + str(node_name) + ' | grep svt -c').strip()
-        print("There are " + str(pods_in_node) + " running in node " + str(node_name))
+def pods_in_nodes():
+    nodes =run("oc get pods -A -o wide | grep svt | awk '{print $8}'")
+    node_list = nodes.split('\n')
+    node_json= {}
+    for node in node_list:
+        if node.strip() == "":
+            continue
+        if node in node_json.keys():
+            continue
+        count = node_list.count(node)
+        node_json[node] = count
+        print("There are " + str(count) + " svt pods running on node " + str(node))
 
 
 def see_if_error(output_file):
@@ -102,7 +106,7 @@ def get_error_logs(pod_item, output_file):
     namespace = pod_item[0]
     name = pod_item[1]
     #append to file
-    with open(output_file, "a") as f:
+    with open(name + namespace +".out", "w+") as f:
         f.write("Debugging info for " + name + " in namespace "+ namespace + '\n')
         #logs = run("oc describe pod/" + str(name) + " -n " + namespace)
         #f.write("Describe pod " + str(logs) + '\n')

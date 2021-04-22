@@ -6,7 +6,7 @@
 
 outputfile=pod_density.out
 process_num=5
-scale_num=20
+scale_num=22
 project_num=2000
 
 if [ "$#" -lt 1 ]; then
@@ -84,7 +84,7 @@ function wait_for_pod_creation() {
 
 function pods_per_node() {
   echo "get pods per node"
-  python -c 'import pod_density_helper; pod_density_helper.get_pods_per_node()'
+  python -c 'import pod_density_helper; pod_density_helper.pods_in_nodes()'
 }
 
 function rewrite_yaml() {
@@ -104,12 +104,12 @@ function wait_for_project_termination() {
       exit 1
     fi
   done
-  svt_proj=$(oc get projects | grep svt | wc -l)
+  svt_proj=$(oc get projects | grep svt- | wc -l)
   if [ $svt_proj -ne 0 ]; then
     echo "$svt_proj svt projects are still there"
     exit 1
   fi
-  pods=$(oc get pods -A | grep svt | wc -l)
+  pods=$(oc get pods -A | grep svt- | wc -l)
   if [ $pods -ne 0 ]; then
     echo "$pods svt pods are still there"
     exit 1
@@ -121,9 +121,18 @@ function set_default_project() {
   oc project default
 }
 
+
+function set_cordon_nodes() {
+  prom_nodes=$(oc get pods -A -o wide | grep prometheus-k8s |  awk  '{print $8}')
+  for node in $prom_nodes; do
+    oc adm cordon $node
+  done
+}
+
 rm -rf $outputfile
 echo "Starting pod density $now" >>$outputfile
 scale_up $scale_num
+set_cordon_nodes
 set_default_project
 delete_projects
 wait_for_project_termination
