@@ -1,13 +1,28 @@
 #!/bin/bash
 
-jobs_amount=300
+if [ "$#" -ne 1 ]; then
+  jobs_amount=300
+else
+  jobs_amount=$1
+fi
+
+function prepare_project() {
+  oc project default
+  oc delete projects -l test=concurent-jobs
+  while [ $(oc get projects | grep -c Terminating) -gt 0 ]; do
+    oc get projects | grep -c Terminating
+    sleep 5
+  done
+  oc new-project svt-conc-jobs-$jobs_amount
+  oc label namespace svt-conc-jobs-$jobs_amount test=concurent-jobs
+}
 
 function create_jobs()
 {
-for i in $(seq 1 $jobs_amount);
-do
+  for i in $(seq 1 $jobs_amount);
+  do
     cat ../content/conc_jobs.yaml | sed "s/%JOB_ID%/$i/g" | oc create -f -
-done
+  done
 }
 
 function wait_for_completion()
@@ -20,6 +35,7 @@ function wait_for_completion()
   done
 }
 
+prepare_project
 start_time=`date +%s`
 create_jobs
 wait_for_completion
