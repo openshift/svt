@@ -1,6 +1,6 @@
 #!/bin/bash
 #number or projects (default 100)
-basename=svt-overload
+basename=svt-overload-
 num_of_projects=100
 
 # for multiple_objects is a number you want to multiple specific objects in template
