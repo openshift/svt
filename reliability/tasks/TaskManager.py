@@ -1,8 +1,7 @@
-from ReliabilityConfig import ReliabilityConfig
+from .GlobalData import global_data
 from .Projects import all_projects
 from .Apps import all_apps
 from .Pods import all_pods
-from .Users import all_users
 from .Task import Task
 from .utils.oc import oc
 import logging
@@ -21,16 +20,14 @@ class TaskManager:
         self.time_subs["day"] = 86400
         self.time_subs["week"] = 604800
         self.time_subs["month"] = 2419200
-        self.rc = ReliabilityConfig(config_file)
-        self.rc.load_config()
-        self.config = self.rc.config['reliability']
+        self.init_global_data(config_file)
         self.init_timing()
         self.logger = logging.getLogger('reliability')
         self.cwd = os.getcwd()
 
-
-
-    
+    def init_global_data(self,config_file):
+        global_data.init()
+        global_data.load_data(config_file)
 
     def init_timing(self):
         def parse_time(time_string):
@@ -43,10 +40,9 @@ class TaskManager:
             elif unit == "h":
                 value = value * 3600
             return value
-            
 
         time_subs = {}
-        time_subs = self.config['timeSubstitutions']
+        time_subs = global_data.config['timeSubstitutions']
         for unit in time_subs.keys():
             self.time_subs[unit] = parse_time(time_subs[unit])
 
@@ -80,15 +76,15 @@ class TaskManager:
         all_apps.init()
         all_projects.init()
 
-        task = Task(self.config,{'action': 'create', 'resource': 'projects','quantity': 2})
+        task = Task(global_data.config,{'action': 'create', 'resource': 'projects','quantity': 2})
         task.execute()
- #       task = Task(self.config,{'action': 'scaleUp', 'resource': 'apps'})
+ #       task = Task(global_data.config,{'action': 'scaleUp', 'resource': 'apps'})
  #       task.execute()
- #       task = Task(self.config,{'action': 'scaleDown', 'resource': 'apps'})
+ #       task = Task(global_data.config,{'action': 'scaleDown', 'resource': 'apps'})
  #       task.execute()
- #       task = Task(self.config,{'action': 'visit', 'resource': 'apps'})
+ #       task = Task(global_data.config,{'action': 'visit', 'resource': 'apps'})
  #       task.execute()
-        task = Task(self.config,{'action': 'delete', 'resource': 'projects'})
+        task = Task(global_data.config,{'action': 'delete', 'resource': 'projects'})
         task.execute()
 
     def check_desired_state(self):
@@ -117,25 +113,23 @@ class TaskManager:
         self.init_tasks()
         (next_execution, next_execution_time) = self.calculate_next_execution()
         current_time = 0
-        sleep_time = self.config["limits"]["sleepTime"]
+        sleep_time = global_data.config["limits"]["sleepTime"]
 
         all_pods.init()
         all_apps.init()
         all_projects.init()
-        all_projects.max_projects = int(self.config["limits"]["maxProjects"])
+        all_projects.max_projects = int(global_data.config["limits"]["maxProjects"])
 
         state = "run"
         while state == "run" or state == "pause":
-            self.rc.load_config()
-            self.config = self.rc.config['reliability']
             self.logger.debug("Current time: " + str(current_time) + " next execution: " + str(next_execution))
             state = self.check_desired_state()
             if current_time >= next_execution_time and state == "run" : 
                 for execution_type in next_execution.keys():
-                    if execution_type in self.config["tasks"]:
-                        tasks = self.config["tasks"][execution_type]
+                    if execution_type in global_data.config["tasks"]:
+                        tasks = global_data.config["tasks"][execution_type]
                         for task_to_execute in tasks:
-                            task = Task(self.config,task_to_execute)
+                            task = Task(task_to_execute)
                             task.execute()
                     self.schedule_next(execution_type)
                 (next_execution, next_execution_time) = self.calculate_next_execution()

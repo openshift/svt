@@ -1,4 +1,5 @@
 reliability:
+  kubeconfig: ~/Downloads/kubeconfig
   timeSubstitutions:
     minute: 10s
     hour: 30s
@@ -18,8 +19,8 @@ reliability:
 
   users:
     - admin_user: kubeadmin
-    - admin_password: Pn38G-UyeHS-3uKvF-6zJyU
-    - user_file: /home/mifiedle/mffiedler_git/svt/reliability/config/users.spec  
+    - admin_password: R3xrm-uIABR-BB4Za-xaWWF
+    - user_file: /Users/qili/Downloads/users.spec
   tasks:
     minute:
       - action: check

@@ -1,23 +1,24 @@
+from .GlobalData import global_data
 from .Apps import all_apps, App
 from .Projects import all_projects
 from .Projects import Projects
 from .Pods import all_pods
-from .Users import all_users
 from .Monitor import monitor
 from .utils.oc import oc
 import random
 import logging
+import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 
 class Task:
-    def __init__(self,config,task):
-        self.config = config
+    def __init__(self, task):
         self.task = task
-        self.templates = config["appTemplates"]
+        self.templates = global_data.config["appTemplates"]
         self.logger = logging.getLogger('reliability')
+        self.cwd = os.getcwd()
         random.seed()
-
 
     def get_targets(self, candidates, percent):
         targets = []
@@ -46,6 +47,18 @@ class Task:
         monitor.init()
         resource = self.task["resource"]
         action = self.task["action"]
+        persona = self.task.setdefault("persona","admin")
+        concurrency = self.task.setdefault("concurrency",1)
+
+        # prepare concurrency number of kubeconfigs
+        kubeconfigs = []
+
+        if persona == "admin":
+                kubeconfigs.append(global_data.kubeconfigs["kubeadmin"])
+        elif persona == "developer":
+            for i in range(0, concurrency):
+                name = "testuser-" + str(i)
+                kubeconfigs.append(global_data.kubeconfigs[name])
 
         # Project actions
         if resource == "projects":
@@ -61,7 +74,11 @@ class Task:
                         else:
                             app = App(project_base_name, new_project.name, project_base_name, project_base_name)
                         new_project.app = app
-                        all_apps.add(app)            
+                        all_apps.add(app) 
+                    # with ThreadPoolExecutor() as pool:
+                    #     results = pool.map(all_projects.add, kubeconfigs)
+                    #     for result in results:
+                    #         print(result)          
             elif action == "delete":
                 self.logger.debug("delete projects")
                 projects = list(all_projects.projects.keys())
@@ -113,9 +130,16 @@ class Task:
         # Session actions
         elif resource == "session" :
             if action == "login":
-                result, rc = oc("login -u " + self.task["user"] + " -p " + self.task["password"])
-                if rc !=0 :
-                    self.logger.error("Login failed")
+                for i in range (0, concurrency):
+                    if persona == "admin":
+                        name = "kubeadmin"
+                    elif persona == "developer":
+                        name = "testuser-" + str(i)
+                    password = global_data.users[name].password
+                    kubeconfig = global_data.kubeconfigs[name]
+                    result, rc = oc("login -u " + name + " -p " + password + " --kubeconfig " + kubeconfig)
+                    if rc !=0 :
+                        self.logger.error("Login failed")
         elif resource == "monitor" :
             if action == "clusteroperators":
                 self.logger.debug("Monitor clusteroperators")
