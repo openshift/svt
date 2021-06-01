@@ -1,0 +1,36 @@
+projects:
+  - num: 99
+    basename: clusterproject
+    tuning: default
+    ifexists: delete
+    pods:
+      - total: 10
+      - num: 5
+        image: gcr.io/google_containers/pause-amd64:3.0
+        basename: pausepods
+        file: ../../content/pod-pause.json
+        storage:
+          - type: none
+    templates:
+      - num: 10
+        file: ../../content/build-config-template.json
+      - num: 10
+        file: ../../content/build-template.json
+      - num: 20
+        file:  ../../content/image-stream-all-template.json
+      - num: 200
+        file: ../../content/ssh-secret-template.json
+      - num: 10
+        file: ../../content/route-template.json
+  
+tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 20
+        pause: 5 s
+      ratelimit:
+        delay: 250 ms
+quotas:
+  - name: default
+
