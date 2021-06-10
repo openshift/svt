@@ -3,7 +3,9 @@ from .Projects import all_projects
 from .Apps import all_apps
 from .Pods import all_pods
 from .Task import Task
+from .Session import Session
 from .utils.oc import oc
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
 import time
@@ -13,7 +15,6 @@ import sys
 
 class TaskManager:
     def __init__(self,config_file):
-        self.elapsed_time = 0
         self.time_subs = {}
         self.time_subs["minute"] = 60
         self.time_subs["hour"] = 3600
@@ -98,14 +99,30 @@ class TaskManager:
             state = "run"
         
         return state
+    
+    # re-login all users to avoid login session token in kubeconfig expiration. The default timeout is 1 day.
+    def relogin(self):
+        # re-login 23 hours since last login
+        if time.time() - global_data.last_login_time > 3600*23:
+            self.logger.info("Re-login for all users to avoid login session token expiration")
+            login_args = []
+            for user in global_data.users:
+                password = global_data.users[user].password
+                kubeconfig = global_data.kubeconfigs[user]
+                login_args.append((user, password, kubeconfig))
+            # login concurrently
+            with ThreadPoolExecutor(max_workers=51) as executor:
+                results = executor.map(lambda t: Session().login(*t), login_args)
+                for result in results:
+                    self.logger.info(result)
+            global_data.last_login_time = time.time()
 
     def dump_stats(self):
-        all_apps.refresh_stats()
         self.logger.info("Total projects: " + str(all_projects.total_projects))
         self.logger.info("Failed apps " + str(all_apps.failed_apps))
-        self.logger.info("Successful app visits: " + str(all_apps.visit_succeded))
-        self.logger.info("Failed app visits: " + str(all_apps.visit_failed))
-        self.logger.info("Total builds: " + str(all_apps.build_count))
+        self.logger.info("Successful app visits: " + str(global_data.app_visit_succeeded))
+        self.logger.info("Failed app visits: " + str(global_data.app_visit_failed))
+        self.logger.info("Total builds: " + str(global_data.total_build_count))
 
     def start(self):
         self.logger.info("Task manager started in working directory: " + self.cwd + " at: " + str(datetime.datetime.now()))
@@ -118,7 +135,23 @@ class TaskManager:
         all_pods.init()
         all_apps.init()
         all_projects.init()
-        all_projects.max_projects = int(global_data.config["limits"]["maxProjects"])
+        max_projects = int(global_data.config["limits"]["maxProjects"])
+        # get the projects creation concurrency
+        projects_create_concurrency = 0
+        try:
+            for tasks in global_data.config["tasks"].values():
+                for task in tasks:
+                    if task["action"] == "create" and task["resource"] == "projects":
+                        projects_create_concurrency = (task["concurrency"] if (task["concurrency"] > projects_create_concurrency) else projects_create_concurrency)
+        except KeyError as e :
+            self.logger.warning("KeyError " + str(e))
+        if projects_create_concurrency != 0:
+            if max_projects < projects_create_concurrency:
+                self.logger.warn(f"maxProjects {max_projects} should be larger than the projects create concurrency {projects_create_concurrency}")
+            # as projects are created concurrently, the next round will not start if the left capacity is less than the concurrency 
+            all_projects.max_projects = max_projects-max_projects%projects_create_concurrency
+            self.logger.info(str(all_projects.max_projects) + " is set as the max projects number regarding to the concurrency " 
+                + str(projects_create_concurrency) + ". Origin maxProjects is " + str(max_projects))
 
         state = "run"
         while state == "run" or state == "pause":
@@ -129,6 +162,7 @@ class TaskManager:
                     if execution_type in global_data.config["tasks"]:
                         tasks = global_data.config["tasks"][execution_type]
                         for task_to_execute in tasks:
+                            self.relogin()
                             task = Task(task_to_execute)
                             task.execute()
                     self.schedule_next(execution_type)

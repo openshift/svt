@@ -1,4 +1,5 @@
 from tasks.utils.oc import oc
+from tasks.Session import Session
 import logging
 import os
 import shutil
@@ -27,6 +28,7 @@ class Contexts:
                 os.remove(kubeconfig_path)
             os.system('cp ' + kubeconfig + ' ' +  kubeconfig_path)
             self.kubeconfigs[name] = kubeconfig_path
+            # prepare parameters list - username, password and kubeconfig - for Session.login
             login_args.append((users[name].name, users[name].password, kubeconfig_path))
         self.logger.info('Creating kubeconfig files for users is done.')
 
@@ -37,25 +39,13 @@ class Contexts:
         workers = 51
         # if max_workers=None, default is 5 * cpu cores
         with ThreadPoolExecutor(max_workers=workers) as executor:
-            results = executor.map(lambda t: self.login(*t), login_args)
+            results = executor.map(lambda t: Session().login(*t), login_args)
             for result in results:
-                print(result)
+                self.logger.info(result)
         #end = perf_counter()
         #print('perf of {} workers is: {} second'.format(workers, end - start))
         self.logger.info('Creating context for users is done.')
 
-    def login(self, username, password, kubeconfig):
-        result, rc = oc('login -u ' + username + ' -p ' + password, kubeconfig)
-        if rc !=0:
-            self.logger.error('Login with user "{}" failed'.format(username))
-            print(result)
-            return 'Login with user "{}" failed.'.format(username)
-        else:
-            return 'Login with user "{}" successfully.'.format(username)
-
-    def get_kubeconfigs(self):
-        return self.kubeconfigs
-    
     def init(self):
         pass
 

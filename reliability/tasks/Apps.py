@@ -1,3 +1,4 @@
+from .GlobalData import global_data
 from  .utils.oc import oc
 import requests
 import time
@@ -11,17 +12,17 @@ class App:
         self.deployment = deployment
         self.build_config = build_config
         self.route = route
-        self.build_count = 0
-        self.visit_succeded = 0
-        self.visit_failed = 0
         self.logger = logging.getLogger('reliability')
 
-    def build(self):
-        (result, rc) = oc("start-build -n " + self.project + " " + self.build_config)
+    def build(self, kubeconfig):
+        (result, rc) = oc("start-build -n " + self.project + " " + self.build_config, kubeconfig)
         if rc != 0:
             self.logger.error("build_app: Failed to create app " + self.deployment + " in project " + self.project)
+            return "App build failed for build config : " + self.build_config
         else:
-            self.build_count += 1
+            with global_data.builds_lock:
+                global_data.total_build_count += 1
+            return "App build succeeded for build config : " + self.build_config
 
     def visit(self):
         visit_success = False
@@ -29,51 +30,47 @@ class App:
             r = requests.get("http://" + self.route + "/")
             self.logger.info(str(r.status_code) + ": visit: " + self.route)
             if r.status_code == 200:
-                self.visit_succeded += 1
                 visit_success = True
-            else:
-                self.visit_failed += 1
-        except Exception:
-            self.visit_failed += 1
-            self.logger.error("visit: " + self.route)
+        except Exception as e :
+            self.logger.error(f"visit: {self.route} Exception {e}")
         return visit_success
-        
 
-    def scale_up(self):
-        (result, rc) = oc("scale --replicas=2 -n " + self.project + " dc/" + self.deployment)
+    def scale_up(self, kubeconfig):
+        (result, rc) = oc("scale --replicas=2 -n " + self.project + " dc/" + self.deployment, kubeconfig)
         if rc !=0 :
             self.logger.error("scale_up: Failed to scale up " + self.project + "." + self.deployment)
+            return "App scale up failed for deployment : " + self.deployment
+        else:
+            return "App scale up succeeded for deployment : " + self.deployment
     
-    def scale_down(self):
-        (result, rc) = oc("scale --replicas=1 -n " + self.project + " dc/" + self.deployment)
+    def scale_down(self, kubeconfig):
+        (result, rc) = oc("scale --replicas=1 -n " + self.project + " dc/" + self.deployment, kubeconfig)
         if rc !=0 :
             self.logger.error("scale_down: Failed to scale down " + self.project + "." + self.deployment)
-        
+            return "App scale down failed for deployment : " + self.deployment
+        else:
+            return "App scale down succeeded for deployment : " + self.deployment
     
 class Apps:
     def __init__(self):
-        self.build_count = 0
-        self.visit_succeded = 0
-        self.visit_failed = 0
         self.failed_apps = 0
         self.apps = {}
         self.logger = logging.getLogger('reliability')
 
-    def add(self, app):
-        (result, rc) = oc("new-app -n " + app.project + " --template " + app.template)
+    def add(self, app, kubeconfig):
+        (result, rc) = oc("new-app -n " + app.project + " --template " + app.template, kubeconfig)
         if rc != 0:
             self.logger.error("create_app: Failed to create app " + app.deployment + " in project " + app.project)
+            return None
         else:
             self.apps[app.project + "." + app.deployment] = app
-            (route,rc) = oc("get route --no-headers -n " + app.project + " | awk {'print $2'} | grep " + app.template)
+            (route,rc) = oc("get route --no-headers -n " + app.project + " | awk {'print $2'} | grep " + app.template, kubeconfig)
             if rc == 0:
                 app.route = route.rstrip()
                 max_tries = 60
                 current_tries = 0
                 visit_success = False
                 while not visit_success and current_tries <= max_tries:
-                    # don't count failed visits before app is ready
-                    app.visit_failed = 0
                     self.logger.info(app.template + " route not available yet, sleeping 10 seconds") 
                     time.sleep(10)
                     current_tries += 1
@@ -81,19 +78,10 @@ class Apps:
                 if not visit_success:
                     self.failed_apps += 1
                     self.logger.error("add_app: " + app.project + "." + app.deployment + " did not become available" )
+        return app
 
-    def refresh_stats(self):
-        for key in self.apps.keys():
-            self.build_count += self.apps[key].build_count
-            self.visit_succeded += self.apps[key].visit_succeded
-            self.visit_failed += self.apps[key].visit_failed
-
-    
     # removing an app just removes the dictionary entry, actual app removed by project deletion
     def remove(self,app):
-        self.build_count += app.build_count
-        self.visit_succeded += app.visit_succeded
-        self.visit_failed += app.visit_failed
         self.apps.pop(app.project + "." + app.deployment)
 
     def simulate(self):

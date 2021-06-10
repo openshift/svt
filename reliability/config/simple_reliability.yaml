@@ -1,5 +1,5 @@
 reliability:
-  kubeconfig: ~/Downloads/kubeconfig
+  kubeconfig: <path_to_kubeconfig>
   timeSubstitutions:
     minute: 10s
     hour: 30s
@@ -7,6 +7,9 @@ reliability:
     week: 3m
     month: 4m
   limits:
+    # total number of projects to create
+    # for 3 nodes m5.xlarge cluster, 30 is recomended
+    # for 5 nodes m5.xlarge cluster, 60 is recomended
     maxProjects: 20
     sleepTime: 10
 
@@ -18,45 +21,66 @@ reliability:
     - template: dancer-mysql-persistent
 
   users:
-    - admin_user: kubeadmin
-    - admin_password: <password>
-    - user_file: /Users/qili/Downloads/users.spec
+    - kubeadmin_file: <path_to_kubeadmin-password>
+    - user_file: <path_to_users.spec>
   tasks:
     minute:
       - action: check
         resource: pods
+        persona: admin
+        concurrency: 1
       - action: check
         resource: projects
+        persona: developer
+        concurrency: 2
       - action: create
         resource: projects
         quantity: 1
+        persona: developer
+        concurrency: 2
     hour:
       - action: check
         resource: projects
+        persona: developer
+        concurrency: 2
       - action: visit
         resource: apps
         applyPercent: 100
+        persona: user
+        concurrency: 10
       - action: create
         resource: projects
         quantity: 1
+        persona: developer
+        concurrency: 2
       - action: scaleUp
         resource: apps
         applyPercent: 50
+        persona: developer
+        concurrency: 2
       - action: scaleDown
         resource: apps
         applyPercent: 50
+        persona: developer
+        concurrency: 2
       - action: build
         resource: apps
         applyPercent: 33
+        persona: developer
+        concurrency: 2
       - action: modify
         resource: projects
         applyPercent: 25
+        persona: developer
+        concurrency: 2
     week:
       - action: delete
         resource: projects
         applyPercent: 25
+        persona: developer
+        concurrency: 2
       - action: login
         resource: session
-        user: testuser-47
-        password: LNrHdFaoJh9X
+        persona: developer
+        concurrency: 5
 
