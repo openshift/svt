@@ -27,8 +27,10 @@ class Users:
         
         if len(self.users) == 0:
             self.logger.warning("load_users: " + user_file + " contained no users")
-        return
     
+    def get_users(self):
+        return self.users
+
     def init(self):
         pass
 

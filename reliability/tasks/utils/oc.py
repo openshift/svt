@@ -17,11 +17,12 @@ def shell(cmd):
     return string_result, rc
 
 def oc(cmd, config=""):
-    cmd = "oc " + cmd
     rc = 0
     result = ""
     if config:
-        cmd = "KUBECONFIG=" + config + " " + cmd
+        cmd = "oc --kubeconfig " + config + ' ' + cmd
+    else:
+        cmd = "oc " + cmd
     result,rc = shell(cmd)
     return result,rc
 

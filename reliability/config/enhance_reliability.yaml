@@ -1,0 +1,40 @@
+reliability:
+  kubeconfig: ~/Downloads/kubeconfig
+  timeSubstitutions:
+    minute: 10s
+    hour: 30s
+    day: 2m
+    week: 3m
+    month: 4m
+  limits:
+    maxProjects: 20
+    # sleepTime should be <= mix of timeSubstitutions in the current design,
+    # or else, tasks with timeSubstitutions < sleepTime will be executed with the interval of sleepTime.
+    sleepTime: 10
+
+  appTemplates:
+    - template: cakephp-mysql-persistent
+    - template: nodejs-postgresql-persistent
+    - template: django-psql-persistent
+    - template: rails-pgsql-persistent
+    - template: dancer-mysql-persistent
+
+  users:
+    - admin_user: kubeadmin
+    - admin_password: R3xrm-uIABR-BB4Za-xaWWF
+    - user_file: /Users/qili/Downloads/users.spec
+  tasks:
+    minute:
+      # - action: login
+      #   resource: session
+      #   persona: admin
+      #   concurrency: 1
+      - action: login
+        resource: session
+        persona: developer
+        concurrency: 3
+      # - action: create
+      #   resource: projects
+      #   quantity: 1
+      #   persona: developer
+      #   concurrency: 2
