@@ -19,7 +19,7 @@ reliability:
 
   users:
     - admin_user: kubeadmin
-    - admin_password: R3xrm-uIABR-BB4Za-xaWWF
+    - admin_password: <password>
     - user_file: /Users/qili/Downloads/users.spec
   tasks:
     minute:
