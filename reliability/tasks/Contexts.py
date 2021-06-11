@@ -65,7 +65,7 @@ if __name__ == '__main__':
     class TestUser:
         def __init__(self):
             self.name = 'kubeadmin'
-            self.password = 'R3xrm-uIABR-BB4Za-xaWWF'
+            self.password = '<password>'
     user = TestUser()
     users = {'kubeadmin': user}
     all_contexts.create_kubeconfigs('~/Downloads/kubeconfig', users)
