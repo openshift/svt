@@ -15,12 +15,12 @@ class Users:
 
     def load_users(self,user_file):
         try:
-            f = open(user_file)
-            reader = csv.reader(f)
-            user_list = list(reader)
-            for user_entry in user_list[0]:
-                name,password = user_entry.split(':')
-                self.users[name] = User(name,password)
+            with open(user_file) as f:
+                reader = csv.reader(f)
+                user_list = list(reader)
+                for user_entry in user_list[0]:
+                    name,password = user_entry.split(':')
+                    self.users[name] = User(name,password)
 
         except Exception as e:
             self.logger.warning("load_users: " + user_file + " failed to load or does not exist: " + str(e))
@@ -28,6 +28,14 @@ class Users:
         if len(self.users) == 0:
             self.logger.warning("load_users: " + user_file + " contained no users")
     
+    def load_admin(self, kubeadmin_file):
+        try:
+            with open(kubeadmin_file) as f:
+                password = f.read()
+                self.users["kubeadmin"] = User("kubeadmin", password)
+        except Exception as e:
+            self.logger.warning("load_admin: " + kubeadmin_file + " failed to load or does not exist: " + str(e))
+
     def get_users(self):
         return self.users
 

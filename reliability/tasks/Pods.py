@@ -6,10 +6,11 @@ class Pods:
     def __init__(self):
         self.logger = logging.getLogger('reliability')
 
-    def check(self):
-        (result, rc) = shell('oc get pods --all-namespaces| egrep -v "Running|Complete"')
-        if rc != 0:
-           self.logger.error("get pods: failed")
+    def check(self, namespace, kubeconfig):
+        if namespace.startswith("all-namespaces"):
+            (result, rc) = shell('oc get pods -A --kubeconfig ' + kubeconfig + '| egrep -v "Running|Complete"')
+        else:
+            (result, rc) = shell('oc get pods --kubeconfig ' + kubeconfig + ' -n ' + namespace + '| egrep -v "Running|Complete"')
 
     def init(self):
         pass

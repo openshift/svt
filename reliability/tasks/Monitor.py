@@ -1,3 +1,4 @@
+from .GlobalData import global_data
 from .utils.oc import oc
 import logging
 import yaml
@@ -7,7 +8,9 @@ class Monitor:
         self.logger = logging.getLogger('reliability')
 
     def check_operators(self):
-        (result, rc) = oc("get clusteroperators -o yaml")
+        # This operation can only be done by admin user
+        kubeconfig = global_data.kubeconfigs["kubeadmin"]
+        (result, rc) = oc("get clusteroperators --kubeconfig " + kubeconfig + " -o yaml")
         if rc != 0:
             self.logger.error("get clusteroperators: failed")
         else:

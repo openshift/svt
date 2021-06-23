@@ -1,15 +1,16 @@
 reliability:
-  kubeconfig: ~/Downloads/kubeconfig
+  kubeconfig: <path_to_kubeconfig>
   timeSubstitutions:
-    minute: 10s
-    hour: 30s
+    minute: 30s
+    hour: 1m
     day: 2m
-    week: 3m
-    month: 4m
+    week: 6m
+    month: 6m
   limits:
-    maxProjects: 20
-    # sleepTime should be <= mix of timeSubstitutions in the current design,
-    # or else, tasks with timeSubstitutions < sleepTime will be executed with the interval of sleepTime.
+    # total number of projects to create
+    # for 3 nodes m5.xlarge cluster, 30 is recomended
+    # for 5 nodes m5.xlarge cluster, 60 is recomended
+    maxProjects: 25
     sleepTime: 10
 
   appTemplates:
@@ -18,23 +19,63 @@ reliability:
     - template: django-psql-persistent
     - template: rails-pgsql-persistent
     - template: dancer-mysql-persistent
-
   users:
-    - admin_user: kubeadmin
-    - admin_password: <password>
-    - user_file: /Users/qili/Downloads/users.spec
+    - kubeadmin_file: <path_to_kubeadmin-password>
+    - user_file: <path_to_users.spec>
   tasks:
     minute:
-      # - action: login
-      #   resource: session
-      #   persona: admin
-      #   concurrency: 1
+      - action: check
+        resource: pods
+        persona: admin
+        concurrency: 1
+      - action: check
+        resource: projects
+        persona: developer
+        concurrency: 5
+    hour:
+      - action: check
+        resource: projects
+        persona: developer
+        concurrency: 5
+      - action: create
+        resource: projects
+        quantity: 2
+        persona: developer
+        concurrency: 5
+      - action: visit
+        resource: apps
+        applyPercent: 100
+        persona: user
+        concurrency: 10
+      - action: scaleUp
+        resource: apps
+        applyPercent: 50
+        persona: developer
+        concurrency: 3
+      - action: scaleDown
+        resource: apps
+        applyPercent: 50
+        persona: developer
+        concurrency: 1
+      - action: build
+        resource: apps
+        applyPercent: 33
+        persona: developer
+        concurrency: 2
+      - action: modify
+        resource: projects
+        applyPercent: 25
+        persona: developer
+        concurrency: 2
+      - action: clusteroperators
+        resource: monitor
+    week:
+      - action: delete
+        resource: projects
+        applyPercent: 33
+        persona: developer
+        concurrency: 5
       - action: login
         resource: session
         persona: developer
-        concurrency: 3
-      # - action: create
-      #   resource: projects
-      #   quantity: 1
-      #   persona: developer
-      #   concurrency: 2
+        concurrency: 5
