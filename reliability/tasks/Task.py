@@ -7,6 +7,7 @@ from .Monitor import monitor
 from .Session import Session
 from .utils.oc import oc
 from .utils.LoadApp import LoadApp
+from .CustomizedTask import customizedTask
 import random
 import logging
 import time
@@ -263,3 +264,18 @@ class Task:
             if action == "clusteroperators":
                 self.logger.debug("Monitor clusteroperators")
                 monitor.check_operators()
+
+        # customized actions        
+        elif resource == "customize":
+            self.logger.debug("Execute customized oprations")
+            customize_task_args = []
+            self.logger.info(f"start customize tasks with {concurrency} users.")
+            for user in users:
+                kubeconfig = global_data.kubeconfigs[user]
+                customize_task_args.append((action, kubeconfig)) 
+            # execute customized task concurrently
+            with ThreadPoolExecutor(max_workers=workers) as executor:
+                    results =  executor.map(lambda t: customizedTask.execute_task(*t), customize_task_args)
+                    for result in results:
+                        if result != None:
+                            self.logger.info(f"{result}")

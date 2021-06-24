@@ -4,6 +4,7 @@ from .Apps import all_apps
 from .Pods import all_pods
 from .Task import Task
 from .Session import Session
+from .CustomizedTask import customizedTask
 from .utils.oc import oc
 from concurrent.futures import ThreadPoolExecutor
 import logging
@@ -123,7 +124,8 @@ class TaskManager:
         self.logger.info("Successful app visits: " + str(global_data.app_visit_succeeded))
         self.logger.info("Failed app visits: " + str(global_data.app_visit_failed))
         self.logger.info("Total builds: " + str(global_data.total_build_count))
-
+        self.logger.info("Successful customized task: " + str(customizedTask.customized_task_succeeded))
+        self.logger.info("Failed customized task: " + str(customizedTask.customized_task_failed))
     def start(self):
         self.logger.info("Task manager started in working directory: " + self.cwd + " at: " + str(datetime.datetime.now()))
         self.next_execution_time = {}
@@ -147,7 +149,7 @@ class TaskManager:
             self.logger.warning("KeyError " + str(e))
         if projects_create_concurrency != 0:
             if max_projects < projects_create_concurrency:
-                self.logger.warn(f"maxProjects {max_projects} should be larger than the projects create concurrency {projects_create_concurrency}")
+                self.logger.warning(f"maxProjects {max_projects} should be larger than the projects create concurrency {projects_create_concurrency}")
             # as projects are created concurrently, the next round will not start if the left capacity is less than the concurrency 
             all_projects.max_projects = max_projects-max_projects%projects_create_concurrency
             self.logger.info(str(all_projects.max_projects) + " is set as the max projects number regarding to the concurrency " 
@@ -178,7 +180,7 @@ class TaskManager:
 if __name__ == "__main__":
     
     sys.path.append("..")
-    rc = ReliabilityConfig("/home/mifiedle/mffiedler_git/svt/reliability/nextgen/config/simple_reliability.yaml")
+    rc = ReliabilityConfig("<path to config file, example: ../config/simple_reliability.yaml>")
     rc.load_config()
     config = rc.config['reliability']
     tm = TaskManager(config)

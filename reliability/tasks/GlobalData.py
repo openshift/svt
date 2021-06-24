@@ -16,6 +16,7 @@ class GlobalData:
         self.projects_lock = Lock()
         self.apps_lock = Lock()
         self.builds_lock = Lock()
+        self.customized_task_lock = Lock()
         self.total_build_count = 0
         self.app_visit_succeeded = 0
         self.app_visit_failed = 0
