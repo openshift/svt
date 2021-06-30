@@ -58,6 +58,6 @@ if __name__ == '__main__':
             self.password = '<password>'
     user = TestUser()
     users = {'kubeadmin': user}
-    all_contexts.create_kubeconfigs('~/Downloads/kubeconfig', users)
+    all_contexts.create_kubeconfigs('<path to kubeconfig of the cluster>"', users)
     with open(os.getcwd() + '/kubeconfigs/kubeconfig_kubeadmin') as f:
         print(f.read())

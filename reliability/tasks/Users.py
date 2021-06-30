@@ -46,6 +46,6 @@ all_users=Users()
     
 if __name__ == "__main__":
     all_users.init()
-    all_users.load_users("/home/mifiedle/mffiedler_git/svt/reliability/config/users.spec")
+    all_users.load_users("<path to users.spec>")
     for current_name in all_users.users.keys():
         print(all_users.users[current_name].name + " " + all_users.users[current_name].password) 

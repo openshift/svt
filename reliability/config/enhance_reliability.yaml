@@ -24,6 +24,19 @@ reliability:
     - user_file: <path_to_users.spec>
   tasks:
     minute:
+      # Specify an oc command to execute as 'action'.
+      # Don't use command that could return '1' as expected, e.g. oc get pods -A | egrep -v "Running|Completed".
+      # Use oc get pods -A | awk '$4!="Running" && $4!="Completed"' instead.
+      - action: oc whoami
+        resource: customize
+        persona: developer
+        concurrency: 5
+      # Specify a file to execute as 'action'.
+      # File contains lines of oc command to execute. Don't use command that could return '1' as expected.
+      - action: <path to file>
+        resource: customize
+        persona: admin
+        concurrency: 1
       - action: check
         resource: pods
         persona: admin
