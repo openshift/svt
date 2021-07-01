@@ -1,81 +1,50 @@
-OpenShift V4 Reliability 
-===========================
+# OpenShift V4 Reliability
+## Introduction
 Software reliability testing is a field of software testing that relates to testing a software's ability to function, given environmental conditions, for a particular amount of time.
 Openshift Reliability testing is an operational testing scheme that uses a baseline work efficiency specification to evaluate the stability of openshift system in the given amount of time. The purpose is to discover problems in functionality. The baseline work efficiency specification was made up of daily tasks such as applications developing, hosting and scaling. 
-<br/>
 
-Configure (WIP)
-===========================
-Tasks are classified as minutely, hourly, weekly or monthly.  To each of these intervals, a real time interval is assigned.  This is done to allow assigning activities with a natural spacing while allowing for faster simulation of the activities.  Below is a sample working configuration. Note that not all fields are currently supported as this tool is a work in progress.  In particular the percentages for performing activities on a subset of the resources is not yet implemented.
-```yaml
-reliability:
-  timeSubstitutions:
-    minute: 20s
-    hour: 1m
-    day: 2m
-    week: 3m
-    month: 4m
-  limits:
-    maxProjects: 20
-    sleepTime: 10
-
-  appTemplates:
-    - template: cakephp-mysql-example
-    - template: nodejs-mongodb-example
-    - template: django-psql-example
-    - template: rails-postgresql-example
-    - template: dancer-mysql-example
-  users:
-    - id: redhat
-      pw: redhat
-    - id: test
-      pw: test
-  tasks:
-    minute:
-      - action: check
-        resource: pods
-      - action: check
-        resource: projects
-      - action: create
-        resource: projects
-        quantity: 1
-    hour:
-      - action: check
-        resource: projects
-      - action: visit
-        resource: apps
-      - action: create
-        resource: projects
-        quantity: 3
-      - action: scaleUp
-        resource: apps
-        applyPercent: 50
-      - action: scaleDown
-        resource: apps
-        applyPercent: 100
-      - action: build
-        resource: apps
-        applyPercent: 50
-    week:
-      - action: delete
-        resource: projects
-        applyPercent: 30
-      - action: login
-        resource: session
-        user: kubeadmin
-        password: <password>
+## Git
+```
+$ git clone git@github.com:openshift/svt.git
+cd svt/reliability
 ```
 
+## Install dependencies
+**NOTE**: Recommended to use a virtual environment(pyenv,venv) so as to prevent conflicts with already installed packages.
+```
+$ pip3 install -r requirements.txt
+```
 
+## Configuration
+Example [config](https://github.com/openshift/svt/blob/master/reliability/config/example_reliability.yaml). 
 
-Execute
-===========================
-1. Edit your configuration file to represent the activities to be performed
-1. python reliability.py -f config_file
+### Files needed
 
-Logs will go to stdout and /tmp/reliability.log
+If you installed your cluster with [Flexy-install](https://mastern-jenkins-csb-openshift-qe.apps.ocp4.prod.psi.redhat.com/job/ocp-common/job/Flexy-install/), download kubeconfig, users.spec and kubeadmin-password files. If you installed cluster in other way, prepare the above files accordingly.
 
-Control activity execution (in script working directory):
+Replace `kubeconfig` `kubeadmin_password` and `user_file` with above files in your config file.
+```yaml
+reliability:
+  kubeconfig: <absolute_path_to_kubeconfig>
+  users:
+    - kubeadmin_password: <path_to_kubeadmin-password>
+    - user_file: <path_to_users.spec>
+```
+
+For more detail explaination about the configuration, please go to [Configuration Detail](#Configuration-Detail).
+
+## Run
+
+```
+python3 reliability.py -c <path to config file> -c <path to log config file> -l ./reliability.log --cerberus-history <path to file to save cerberus history is cerberus is enabled>
+```
+`-l` and `--cerberus-history` are optional.
+
+Logs will go to stdout and `/tmp/reliability.log` by default if `-l` is not specified.
+
+Cerberus history file will go to `/tmp/cerberus-history.json` by default if `--cerberus-history` is not specified.
+
+## Control activity execution (in script working directory):
 ```bash
 # pause execution
 touch pause
@@ -84,6 +53,174 @@ rm pause
 # clean shutdown at end of next activity cycle
 touch halt
 ```
+
+## Configuration Detail
+Example [config](https://github.com/openshift/svt/blob/master/reliability/config/example_reliability.yaml). Below sections explains each part of the configuration file.
+
+### Tasks Time Substitutions
+[Tasks](#Tasks) are classified as minutely, hourly, weekly or monthly.  To each of these intervals, a real time interval is assigned.  This is done to allow assigning activities with a natural spacing while allowing for faster simulation of the activity. For example, in the following config, `day` tasks will be exectued in every 2 minutes.
+```yaml
+reliability:
+  timeSubstitutions:
+    minute: 10s
+    hour: 30s
+    day: 2m
+    week: 3m
+    month: 4m
+```
+
+### Limits
+`maxProjects` limits the max project can be created during the reliability test. When the limit is reached, new project creation task will not create project until project number is below `maxProjects`.
+
+The number depends on the size of the cluster. Recomendations can be found in the example [config](https://github.com/openshift/svt/blob/master/reliability/config/example_reliability.yaml).
+
+`sleepTime` controls the time to wait between each task.
+```yaml
+reliability:
+  limits:
+    # total number of projects to create
+    # for 3 nodes m5.xlarge cluster, 25 to 30 is recomended
+    # for 5 nodes m5.xlarge cluster, 60 is recomended
+    maxProjects: 25
+    sleepTime: 10
+```
+
+### Cerberus Integration
+Reliablity can integrate with [Cerberus](https://github.com/cloud-bulldozer/cerberus) to check the healthy of the cluster and take action accordingly.
+
+The below configuration enables the Cerberus integration `cerberus_enable: True`, and provided the Cerberus api `cerberus_api: "http://0.0.0.0:8080"` where Reliability test can get the [Cerberus status and history](https://github.com/cloud-bulldozer/cerberus#metrics-api) from. The `cerberus_fail_action` configures how Reliability test acts when Cerberus status is False.
+
+`pause`: When Cerberus status is 'False', pause Reliability test until Cerberus status is changed to 'True'.
+
+`halt`: When Cerberus status is 'False', halt(end) Reliablity test.
+
+`continue`: When Cerberus status is 'False', continue Reliability test and warn the False status in Reliability log.
+
+**NOTE:** If cerberusIntegration is enabled, no matter which `cerberus_fail_action` is used,  when there is update of Cerberus' history, the new history will be saved to a file. See [Run](#Run) section below for configuring of the file.
+
+**NOTE:** If Cerberus Integration is enabled, start Cerberus before reliability test.
+```yaml
+reliability:
+  cerberusIntegration:
+    # start cerberus https://github.com/cloud-bulldozer/cerberus before starting reliabiity test.
+    cerberus_enable: True
+    # if cerberus_enable is false, the following 2 items are ignored.
+    cerberus_api: "http://0.0.0.0:8080"
+    # action to take when cerberus status is False, valid data: pause/halt/continue
+    cerberus_fail_action: pause
+```
+
+### Tasks
+Tasks defines what to do for each interval.
+
+In each task, persona and concurrency can be defined to tell Reliability test which user(s) to be used to exectue the action on the resource. For examle, the following task will have 5 developer users to check projects of their own concurrently, in 'minute' in terval (check #### Tasks timeSubstitutions).
+
+```yaml
+tasks:
+    minute:
+      - action: check
+        resource: projects
+        persona: developer
+        concurrency: 5
+```
+
+Currenlty there is one admin user, defined in kubeadmin-password file, and multiple(50 in Flexy-install created cluster) developer users, defeined in users.spec.
+
+The following resources and actions are supported now:
+
+| action | resource | persona | concurrency | quantity | applyPercent | comment |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| check  | pod | admin/developer | 1/n | N/A | N/A | For developer, check all pods not Running or Completed under the user(s) concurrently. For admin, check all namespaces. | 
+| create | project | admin/developer | 1/n | x | N/A | Create x projects for the user(s) concurrently, also create an app for each project. |
+| check  | project | admin/developer | 1/n | N/A | N/A | Check projects under the user(s) concurrently. |
+| modify  | project | admin/developer | 1/n | N/A | x% | Modify(create secret) for x% of the projects under the user(s) concurrently. |
+| delete  | project | admin/developer | 1/n | N/A | x% | Delete x% of the projects under the user(s) concurrently. |
+| visit  | apps | admin/developer | 1/n | N/A | x% | Visit x% of the apps under the user(s) concurrently. |
+| build  | apps | admin/developer | 1/n | N/A | x% | Build x% of the apps under the user(s) concurrently. |
+| scaleup  | apps | admin/developer | 1/n | N/A | x% | Scaleup x% of the apps under the user(s) concurrently. |
+| scaledown  | apps | admin/developer | 1/n | N/A | x% | Scaledown  x% of the apps under the user(s) concurrently. |
+| login  | session | admin/developer | 1/n | N/A | N/A | Login with the user(s) concurrently. |
+| clusteroperators  | monitor | N/A | N/A | N/A | N/A | Check cluster operator by admin. |
+| customized oc command  | customize | admin/developer | 1/n | N/A | N/A | Run the customized oc command by the user(s) concurrently. |
+| file with customized oc command  | customize | admin/developer | 1/n | N/A | N/A | Run the file with customized oc command by the user(s) concurrently. |
+
+
+```yaml
+reliability:
+  tasks:
+    minute:
+      # Specify an oc command to execute as 'action'.
+      # Don't use command that could return '1' as expected, e.g. oc get pods -A | egrep -v "Running|Completed".
+      # Use oc get pods -A | awk '$4!="Running" && $4!="Completed"' instead.
+      - action: oc whoami
+        resource: customize
+        persona: developer
+        concurrency: 5
+      # Specify a file to execute as 'action'.
+      # File contains lines of oc command to execute. Don't use command that could return '1' as expected.
+      # - action: <path to file>
+      #   resource: customize
+      #   persona: admin
+      #   concurrency: 1
+      - action: check
+        resource: pods
+        persona: admin
+        concurrency: 1
+      - action: check
+        resource: projects
+        persona: developer
+        concurrency: 5
+    hour:
+      - action: check
+        resource: projects
+        persona: developer
+        concurrency: 5
+      - action: create
+        resource: projects
+        quantity: 2
+        persona: developer
+        concurrency: 5
+      - action: visit
+        resource: apps
+        applyPercent: 100
+        persona: user
+        concurrency: 10
+      - action: scaleUp
+        resource: apps
+        applyPercent: 50
+        persona: developer
+        concurrency: 3
+      - action: scaleDown
+        resource: apps
+        applyPercent: 50
+        persona: developer
+        concurrency: 1
+      - action: build
+        resource: apps
+        applyPercent: 33
+        persona: developer
+        concurrency: 2
+      - action: modify
+        resource: projects
+        applyPercent: 25
+        persona: developer
+        concurrency: 2
+      - action: clusteroperators
+        resource: monitor
+    week:
+      - action: delete
+        resource: projects
+        applyPercent: 33
+        persona: developer
+        concurrency: 5
+      - action: login
+        resource: session
+        persona: developer
+        concurrency: 5
+
+```
+
+
 
 
 

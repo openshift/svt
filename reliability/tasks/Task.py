@@ -17,7 +17,6 @@ import asyncio
 class Task:
     def __init__(self, task):
         self.task = task
-        self.templates = global_data.config["appTemplates"]
         self.logger = logging.getLogger('reliability')
         random.seed()
 
@@ -279,3 +278,4 @@ class Task:
                     for result in results:
                         if result != None:
                             self.logger.info(f"{result}")
+                            

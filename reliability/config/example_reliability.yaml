@@ -8,10 +8,18 @@ reliability:
     month: 4m
   limits:
     # total number of projects to create
-    # for 3 nodes m5.xlarge cluster, 30 is recomended
+    # for 3 nodes m5.xlarge cluster, 25 to 30 is recomended
     # for 5 nodes m5.xlarge cluster, 60 is recomended
-    maxProjects: 20
+    maxProjects: 25
     sleepTime: 10
+
+  cerberusIntegration:
+    # start cerberus https://github.com/cloud-bulldozer/cerberus before starting reliabiity test.
+    cerberus_enable: True
+    # if cerberus_enable is false, the following 2 items are ignored.
+    cerberus_api: "http://0.0.0.0:8080"
+    # action to take when cerberus status is False, valid data: pause/halt/continue
+    cerberus_fail_action: pause
 
   appTemplates:
     - template: cakephp-mysql-persistent
@@ -21,10 +29,23 @@ reliability:
     - template: dancer-mysql-persistent
 
   users:
-    - kubeadmin_file: <path_to_kubeadmin-password>
+    - kubeadmin_password: <path_to_kubeadmin-password>
     - user_file: <path_to_users.spec>
   tasks:
     minute:
+      # Specify an oc command to execute as 'action'.
+      # Don't use command that could return '1' as expected, e.g. oc get pods -A | egrep -v "Running|Completed".
+      # Use oc get pods -A | awk '$4!="Running" && $4!="Completed"' instead.
+      - action: oc whoami
+        resource: customize
+        persona: developer
+        concurrency: 5
+      # Specify a file to execute as 'action'.
+      # File contains lines of oc command to execute. Don't use command that could return '1' as expected.
+      # - action: <path to file>
+      #   resource: customize
+      #   persona: admin
+      #   concurrency: 1
       - action: check
         resource: pods
         persona: admin
@@ -32,37 +53,32 @@ reliability:
       - action: check
         resource: projects
         persona: developer
-        concurrency: 2
-      - action: create
-        resource: projects
-        quantity: 1
-        persona: developer
-        concurrency: 2
+        concurrency: 5
     hour:
       - action: check
         resource: projects
         persona: developer
-        concurrency: 2
+        concurrency: 5
+      - action: create
+        resource: projects
+        quantity: 2
+        persona: developer
+        concurrency: 5
       - action: visit
         resource: apps
         applyPercent: 100
         persona: user
         concurrency: 10
-      - action: create
-        resource: projects
-        quantity: 1
-        persona: developer
-        concurrency: 2
       - action: scaleUp
         resource: apps
         applyPercent: 50
         persona: developer
-        concurrency: 2
+        concurrency: 3
       - action: scaleDown
         resource: apps
         applyPercent: 50
         persona: developer
-        concurrency: 2
+        concurrency: 1
       - action: build
         resource: apps
         applyPercent: 33
@@ -73,14 +89,15 @@ reliability:
         applyPercent: 25
         persona: developer
         concurrency: 2
+      - action: clusteroperators
+        resource: monitor
     week:
       - action: delete
         resource: projects
-        applyPercent: 25
+        applyPercent: 33
         persona: developer
-        concurrency: 2
+        concurrency: 5
       - action: login
         resource: session
         persona: developer
         concurrency: 5
-

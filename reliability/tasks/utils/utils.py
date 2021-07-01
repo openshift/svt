@@ -8,4 +8,5 @@ def random_string(length):
 
 if __name__ == "__main__":
     print(random_string(5))
-    print(random_string(256))  
+    print(random_string(256))
+    
