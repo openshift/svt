@@ -1,0 +1,26 @@
+projects:
+  - basename: clusterproject
+    ifexists: delete
+    num: 10
+    tuning: default
+    templates:
+      - file: ../../../openshift_scalability/content/build-config-template.json
+        num: 10
+      - file: ../../../openshift_scalability/content/build-template.json
+        num: 10
+      - file: ../../../openshift_scalability/content/image-stream-all-template.json
+        num: 20
+      - file: ../../../openshift_scalability/content/ssh-secret-template.json
+        num: 200
+      - file: ../../../openshift_scalability/content/route-template.json
+        num: 10
+quotas:
+  - name: default
+tuningsets:
+  - name: default
+    pods:
+      rate_limit:
+        delay: 250 ms
+      stepping:
+        pause: 5 s
+        stepsize: 20

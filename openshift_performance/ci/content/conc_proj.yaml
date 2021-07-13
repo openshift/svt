@@ -1,14 +1,13 @@
 projects:
-  - num: 1
-    basename: clusterproject
+  - basename: clusterproject
     ifexists: default
+    num: 1000
     tuning: default
-
 tuningsets:
   - name: default
     pods:
-      stepping:
-        stepsize: 5
-        pause: 10 s
       rate_limit:
         delay: 250 ms
+      stepping:
+        pause: 10 s
+        stepsize: 5

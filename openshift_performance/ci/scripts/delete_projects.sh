@@ -1,7 +1,7 @@
 function delete_projects()
 {
-  echo "deleting projects"
-  oc delete project -l purpose=test
+  echo "deleting projects" >> delete.out
+  oc delete project -l purpose=test >> delete.out
 }
 
 function wait_for_project_termination()
@@ -10,7 +10,7 @@ function wait_for_project_termination()
   while [ $terminating -ne 0 ]; do
   sleep 5
   terminating=`oc get projects | grep Terminating | wc -l`
-  echo "$terminating projects are still terminating"
+  echo "$terminating projects are still terminating" >> delete.out
   done
 }
 
