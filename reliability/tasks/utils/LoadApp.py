@@ -40,3 +40,4 @@ if __name__ == "__main__":
     loop.run_until_complete(asyncio.wait(loadApp.tasks))
     end = perf_counter()
     print(f"Perf of {concurrency} visits is: {end - start} second.")
+    

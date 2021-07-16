@@ -28,13 +28,13 @@ class Users:
         if len(self.users) == 0:
             self.logger.warning("load_users: " + user_file + " contained no users")
     
-    def load_admin(self, kubeadmin_file):
+    def load_admin(self, kubeadmin_password_file):
         try:
-            with open(kubeadmin_file) as f:
+            with open(kubeadmin_password_file) as f:
                 password = f.read()
                 self.users["kubeadmin"] = User("kubeadmin", password)
         except Exception as e:
-            self.logger.warning("load_admin: " + kubeadmin_file + " failed to load or does not exist: " + str(e))
+            self.logger.warning("load_admin: " + kubeadmin_password_file + " failed to load or does not exist: " + str(e))
 
     def get_users(self):
         return self.users
@@ -48,4 +48,5 @@ if __name__ == "__main__":
     all_users.init()
     all_users.load_users("<path to users.spec>")
     for current_name in all_users.users.keys():
-        print(all_users.users[current_name].name + " " + all_users.users[current_name].password) 
+        print(all_users.users[current_name].name + " " + all_users.users[current_name].password)
+        

@@ -14,7 +14,7 @@ class Monitor:
         if rc != 0:
             self.logger.error("get clusteroperators: failed")
         else:
-            operator_info = yaml.load(result)
+            operator_info = yaml.safe_load(result)
             for item in operator_info["items"]:
                 name = item["metadata"]["name"]
                 for condition in item["status"]["conditions"]:

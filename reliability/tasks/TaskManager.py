@@ -6,6 +6,7 @@ from .Task import Task
 from .Session import Session
 from .CustomizedTask import customizedTask
 from .utils.oc import oc
+from .CerberusIntegration import cerberusIntegration
 from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
@@ -15,21 +16,17 @@ import sys
 
 
 class TaskManager:
-    def __init__(self,config_file):
+    def __init__(self, cerberus_history_file):
+        self.logger = logging.getLogger('reliability')
         self.time_subs = {}
         self.time_subs["minute"] = 60
         self.time_subs["hour"] = 3600
         self.time_subs["day"] = 86400
         self.time_subs["week"] = 604800
         self.time_subs["month"] = 2419200
-        self.init_global_data(config_file)
         self.init_timing()
-        self.logger = logging.getLogger('reliability')
         self.cwd = os.getcwd()
-
-    def init_global_data(self,config_file):
-        global_data.init()
-        global_data.load_data(config_file)
+        self.cerberus_history_file = cerberus_history_file
 
     def init_timing(self):
         def parse_time(time_string):
@@ -98,7 +95,26 @@ class TaskManager:
             self.logger.info("Pause file found - pausing.")
         else:
             state = "run"
-        
+            if global_data.cerberus_enable:
+                cerberus_status = cerberusIntegration.get_status(global_data.cerberus_api)
+                if cerberus_status == "False":
+                    if global_data.cerberus_fail_action == "halt":
+                        state = "halt" 
+                        self.logger.warning("Cerberus status is 'False'. Halt reliability test.")
+                    elif global_data.cerberus_fail_action == "pause":
+                        state = "pause" 
+                        self.logger.warning("Cerberus status is 'False'. Pause reliability test. Resolve cerberus failure to continue.")
+                    elif global_data.cerberus_fail_action == "continue":
+                        self.logger.warning("Cerberus status is 'False'. Reliability test will continue.")
+                    else:
+                        self.logger.warning(f"Cerberus status is False. cerberus_fail_action '{global_data.cerberus_fail_action}' is not recognized. Reliability test will continue.")
+                elif cerberus_status == "True":
+                    self.logger.info("Cerberus status is 'True'.")
+                else:
+                    self.logger.warning(f"Getting Cerberus status failed, response is '{cerberus_status}'.")
+                    
+                cerberusIntegration.save_history(global_data.cerberus_api, self.cerberus_history_file)
+            
         return state
     
     # re-login all users to avoid login session token in kubeconfig expiration. The default timeout is 1 day.
@@ -126,18 +142,18 @@ class TaskManager:
         self.logger.info("Total builds: " + str(global_data.total_build_count))
         self.logger.info("Successful customized task: " + str(customizedTask.customized_task_succeeded))
         self.logger.info("Failed customized task: " + str(customizedTask.customized_task_failed))
+
     def start(self):
         self.logger.info("Task manager started in working directory: " + self.cwd + " at: " + str(datetime.datetime.now()))
         self.next_execution_time = {}
         self.init_tasks()
         (next_execution, next_execution_time) = self.calculate_next_execution()
         current_time = 0
-        sleep_time = global_data.config["limits"]["sleepTime"]
 
         all_pods.init()
         all_apps.init()
         all_projects.init()
-        max_projects = int(global_data.config["limits"]["maxProjects"])
+        max_projects = global_data.maxProjects
         # get the projects creation concurrency
         projects_create_concurrency = 0
         try:
@@ -170,18 +186,10 @@ class TaskManager:
                     self.schedule_next(execution_type)
                 (next_execution, next_execution_time) = self.calculate_next_execution()
             if state == "pause":
-                self.dump_stats()                
-            time.sleep(sleep_time)
-            current_time += sleep_time
+                self.dump_stats()
+            self.logger.info(f"Sleep '{global_data.sleepTime}' seconds before running next task type (minute/hour/day/week/month).")          
+            time.sleep(global_data.sleepTime)
+            current_time += global_data.sleepTime
         
         self.dump_stats()
-            
-
-if __name__ == "__main__":
-    
-    sys.path.append("..")
-    rc = ReliabilityConfig("<path to config file, example: ../config/simple_reliability.yaml>")
-    rc.load_config()
-    config = rc.config['reliability']
-    tm = TaskManager(config)
-    tm.start()
+        
