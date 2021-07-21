@@ -1,0 +1,78 @@
+{
+    "version": true,
+    "size": 500,
+    "sort": [
+        {
+            "timestamp": {
+                "order": "desc",
+                "unmapped_type": "boolean"
+            }
+        }
+    ],
+    "aggs": {
+        "2": {
+            "date_histogram": {
+                "field": "timestamp",
+                "fixed_interval": "55m",
+                "time_zone": "America/New_York",
+                "min_doc_count": 1
+            }
+        }
+    },
+    "stored_fields": [
+        "*"
+    ],
+    "script_fields": {},
+    "docvalue_fields": [
+        {
+            "field": "timestamp",
+            "format": "date_time"
+        }
+    ],
+    "_source": {
+        "excludes": []
+    },
+    "query": {
+        "bool": {
+            "must": [],
+            "filter": [
+                {
+                    "match_all": {}
+                },
+                {
+                    "match_phrase": {
+                        "uuid": "51c20be3-3fcf-4fe6-87e9-31814f637a6a"
+                    }
+                },
+                {
+                    "match_phrase": {
+                        "metricName": "podLatencyQuantilesMeasurement"
+                    }
+                },
+                {
+                    "range": {
+                        "timestamp": {
+                            "gte": "2021-11-03T16:58:06.000Z",
+                            "lte": "2021-11-03T20:37:27.189Z",
+                            "format": "strict_date_optional_time"
+                        }
+                    }
+                }
+            ],
+            "should": [],
+            "must_not": []
+        }
+    },
+    "highlight": {
+        "pre_tags": [
+            "@kibana-highlighted-field@"
+        ],
+        "post_tags": [
+            "@/kibana-highlighted-field@"
+        ],
+        "fields": {
+            "*": {}
+        },
+        "fragment_size": 2147483647
+    }
+}

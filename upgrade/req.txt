@@ -1,0 +1,3 @@
+ PyOpenSSL
+ oauth2client
+ gspread
