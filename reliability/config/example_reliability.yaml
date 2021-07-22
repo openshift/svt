@@ -15,11 +15,20 @@ reliability:
 
   cerberusIntegration:
     # start cerberus https://github.com/cloud-bulldozer/cerberus before starting reliabiity test.
-    cerberus_enable: True
+    cerberus_enable: False
     # if cerberus_enable is false, the following 2 items are ignored.
     cerberus_api: "http://0.0.0.0:8080"
     # action to take when cerberus status is False, valid data: pause/halt/continue
     cerberus_fail_action: pause
+  
+  slackIntegration:
+    slack_enable: False
+    # the ID in the example is the id of slack channel #ocp-qe-reliability-monitoring.
+    slack_channel: C0266JJ4XM5
+    # slack_member is optional. If provided, the notification message will @ you. 
+    # you must be a member of the slack channel to receive the notification.
+    slack_member: <Your slack member id>
+
 
   appTemplates:
     - template: cakephp-mysql-persistent

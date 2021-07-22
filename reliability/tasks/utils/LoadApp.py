@@ -1,3 +1,4 @@
+from .SlackIntegration import slackIntegration
 import logging
 from aiohttp import ClientSession
 import asyncio
@@ -23,6 +24,8 @@ class LoadApp():
                     self.app_visit_succeeded += 1
                 else:
                     self.app_visit_failed += 1
+                    # send slack message if response code is not 200
+                    slackIntegration.post_message_in_slack(f"Access to {url} failed. Response code: {str(code)}")
 
     def set_tasks(self, urls, num):
         for url in urls:
