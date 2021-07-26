@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: rcexlc
+spec:
+  replicas: 110
+  selector:
+    app: sise
+  template:
+    metadata:
+      name: rc_local_storage
+      labels:
+        app: sise
+    spec:
+      containers:
+      - name: sise
+        image: quay.io/openshifttest/hello-openshift@sha256:aaea76ff622d2f8bcb32e538e7b3cd0ef6d291953f3e7c9f556c1ba5baf47e2e
+        ports:
+        - containerPort: 9876
+      volumeMounts:
+        - mountPath: /tmp
+          name: task-pv-storage
+      volumes:
+        - name: task-pv-storage
+          hostPath:
+            path: /mnt/data
+            type: Directory

@@ -1,0 +1,4 @@
+PyYAML>=5.1
+subprocess.run
+kubernetes==12.0.0a1
+openshift-client

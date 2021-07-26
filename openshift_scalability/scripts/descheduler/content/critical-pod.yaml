@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    env: test
+spec:
+  containers:
+  - name: quay.io/openshifttest/nginx@sha256:3936fb3946790d711a68c58be93628e43cbca72439079e16d154b5db216b58da
+    imagePullPolicy: IfNotPresent
+  priority: 2000000000
+  priorityClassName: system-cluster-critical

@@ -1,0 +1,17 @@
+projects:
+  - num: 10
+    basename: eap64-mysql
+    tuning: default
+    ifexists: delete
+    templates:
+      - num: 1
+        file: ../../content/quickstarts/eap/eap64-mysql-deploy.json
+
+tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 5
+        pause: 0 min
+      rate_limit:
+        delay: 0 ms

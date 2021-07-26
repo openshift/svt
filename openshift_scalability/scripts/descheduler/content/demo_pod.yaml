@@ -1,0 +1,12 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  generateName: mypod
+  labels:
+    foo: bar
+  annotations:
+    "descheduler.alpha.kubernetes.io/evict": ""
+spec:
+  containers:
+  - name: pause
+    image: k8s.gcr.io/pause:3.1

@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: hello-daemonset
+spec:
+  selector:
+    matchLabels:
+      name: hello-daemonset
+  template:
+    metadata:
+      labels:
+        name: hello-daemonset
+    spec:
+      containers:
+        - name: registry
+          image: quay.io/openshifttest/hello-openshift@sha256:aaea76ff622d2f8bcb32e538e7b3cd0ef6d291953f3e7c9f556c1ba5baf47e2e
+          ports:
+          - containerPort: 80
+            protocol: TCP
