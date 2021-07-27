@@ -1,3 +1,4 @@
+from .SlackIntegration import slackIntegration
 import subprocess
 import logging
 
@@ -11,6 +12,9 @@ def shell(cmd):
     except subprocess.CalledProcessError as cpe:
         rc = cpe.returncode
         result = cpe.output
+        result_decode = result.decode("utf-8")
+        # send slack message if oc command return code is not 
+        slackIntegration.post_message_in_slack(f"cmd: {cmd}  failed. Result: {result_decode}")
 
     string_result = result.decode("utf-8")
     logger.info(str(rc) + ": " + string_result)

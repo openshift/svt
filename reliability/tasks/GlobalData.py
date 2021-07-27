@@ -1,5 +1,7 @@
-from tasks.Users import all_users, User
-from tasks.Contexts import all_contexts
+from .Users import all_users, User
+from .Contexts import all_contexts
+from .utils.oc import oc
+from .utils.SlackIntegration import slackIntegration
 from threading import Lock
 import logging
 import time
@@ -53,11 +55,19 @@ class GlobalData:
             else:
                 self.logger.error(f"kubeadmin_password file '{kubeadmin_password_file}' does not exist. Please the your config file.")
                 return False
+            # valid limits
             self.maxProjects = self.config["limits"].get("maxProjects", 25)
             self.sleepTime = self.config["limits"].get("sleepTime", 10)
+            # valid cerberus integration
             self.cerberus_enable = self.config["cerberusIntegration"].get("cerberus_enable", False)
             self.cerberus_api = self.config["cerberusIntegration"].get("cerberus_api", "http://0.0.0.0:8080")
-            self.cerberus_fail_action = self.config["cerberusIntegration"].get("cerberus_fail_action", "continue")      
+            self.cerberus_fail_action = self.config["cerberusIntegration"].get("cerberus_fail_action", "continue")
+            # valid slack integration and init
+            slack_enable = self.config["slackIntegration"].get("slack_enable", False)
+            slack_channel= self.config["slackIntegration"].get("slack_channel", "")
+            slack_member= self.config["slackIntegration"].get("slack_member", "")
+            slackIntegration.init(slack_enable, slack_channel, slack_member)
+
         except KeyError as e:
             self.logger.error(f"config file should contain key {e}.")
             return False
@@ -73,6 +83,13 @@ class GlobalData:
         else:
             self.logger.error(f"config file '{config_file}' does not exist.")
             return False
+
+        # send start slack integration
+        result ="unknown"
+        rc = 1
+        (result, rc)=oc("whoami --show-server", global_data.kubeconfig)
+        cluster_info = result if rc == 0 else "unknown"
+        slackIntegration.slack_report_reliability_start(cluster_info)
         
         all_users.init()
         # load all developer users

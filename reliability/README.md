@@ -35,6 +35,10 @@ For more detail explaination about the configuration, please go to [Configuratio
 
 ## Run
 
+### Run Reliability Test
+If you want to receive notifications about the start stop of the test and errors happen during the test.
+Check [Slack Integration](#Slack-Integration) before running the test.
+
 ```
 python3 reliability.py -c <path to config file> -c <path to log config file> -l ./reliability.log --cerberus-history <path to file to save cerberus history is cerberus is enabled>
 ```
@@ -109,6 +113,27 @@ reliability:
     # action to take when cerberus status is False, valid data: pause/halt/continue
     cerberus_fail_action: pause
 ```
+
+### Slack Integration
+Receive notifications about the start stop of the test and errors happen during the test.
+
+Set environment virable SLACK_API_TOKEN before running the test. Contact qili@redhat.com for the token.
+
+```yaml
+  slackIntegration:
+    slack_enable: False
+    # the ID in the example is the id of slack channel #ocp-qe-reliability-monitoring.
+    slack_channel: C0266JJ4XM5
+    # slack_member is optional. If provided, the notification message will @ you. 
+    # you must be a member of the slack channel to receive the notification.
+    slack_member: <Your slack member id>
+```
+
+In the above configuration, notifications will be sent to [#ocp-qe-reliability-monitoring](https://coreos.slack.com/archives/C0266JJ4XM5) (Channel ID: C0266JJ4XM5) in [CoreOS](coreos.slack.com) workspace, and @ the user of slack_member if you configured.
+
+If you're in [CoreOS](coreos.slack.com) workspace, but you want to use your own slack channel, create a slack channel and install App `OCP Reliability` which already exists in CoreOS workspace.
+
+If you want to use your own App(slack_api_token), create an [app](https://api.slack.com/apps?new_granular_bot_app=1) and add a bot to it on slack. Slack Bot Token Scopes permissions are [channels:read] [chat:write] [groups:read] [im:read] [mpim:read]. You will get a token after the app is installed to a workspace. Install the app to your channel. Set the token to SLACK_API_TOKEN environment variable.
 
 ### Tasks
 Tasks defines what to do for each interval.

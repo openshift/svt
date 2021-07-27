@@ -5,8 +5,8 @@ from .Pods import all_pods
 from .Task import Task
 from .Session import Session
 from .CustomizedTask import customizedTask
-from .utils.oc import oc
 from .CerberusIntegration import cerberusIntegration
+from .utils.SlackIntegration import slackIntegration
 from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
@@ -88,6 +88,7 @@ class TaskManager:
 
     def check_desired_state(self):
         if os.path.isfile(self.cwd + "/halt"):
+            slackIntegration.post_message_in_slack("Reliability test is going to halt.")
             state = "halt"
             self.logger.info("Halt file found, shutting down reliability.")
         elif os.path.isfile(self.cwd + "/pause"):
@@ -135,13 +136,17 @@ class TaskManager:
             global_data.last_login_time = time.time()
 
     def dump_stats(self):
-        self.logger.info("Total projects: " + str(all_projects.total_projects))
-        self.logger.info("Failed apps " + str(all_apps.failed_apps))
-        self.logger.info("Successful app visits: " + str(global_data.app_visit_succeeded))
-        self.logger.info("Failed app visits: " + str(global_data.app_visit_failed))
-        self.logger.info("Total builds: " + str(global_data.total_build_count))
-        self.logger.info("Successful customized task: " + str(customizedTask.customized_task_succeeded))
-        self.logger.info("Failed customized task: " + str(customizedTask.customized_task_failed))
+        status = []
+        status.append(f"Total projects: {str(all_projects.total_projects)}")
+        status.append(f"Failed apps: {str(all_apps.failed_apps)}")
+        status.append(f"Successful app visits: {str(global_data.app_visit_succeeded)}")
+        status.append(f"Failed app visits: {str(global_data.app_visit_failed)}")
+        status.append(f"Total builds: {str(global_data.total_build_count)}")
+        status.append(f"Successful customized task: {str(customizedTask.customized_task_succeeded)}")
+        status.append(f"Failed customized task: {str(customizedTask.customized_task_failed)}")
+        status = "\n".join(status)
+        self.logger.info("Reliability test status:\n"+ status)
+        slackIntegration.post_message_in_slack("Reliability test status:\n" + status)
 
     def start(self):
         self.logger.info("Task manager started in working directory: " + self.cwd + " at: " + str(datetime.datetime.now()))
