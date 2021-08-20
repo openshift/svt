@@ -1,6 +1,6 @@
 #!/bin/bash
 
-jobs_amount=(300 400 600 900)
+jobs_amount=(300 400 600 800 900)
 results_file=conc_jobs_result_$(date +%Y%m%d%H%M%S).out
 
 function create_jobs() {

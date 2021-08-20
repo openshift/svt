@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: busybox
-        image: busybox
+        image: quay.io/quay/busybox
         resources:
           requests:
             memory: "50Mi"
