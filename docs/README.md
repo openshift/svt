@@ -11,3 +11,5 @@
 ## Few rules for writing documentation for SVT
 * SVT Repository is in public domain, so please remove any password or sensitive data before pushing changes.
 * For each new content please add link into table of contents.
+
+# dummy change, do not merge
