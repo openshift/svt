@@ -8,9 +8,9 @@ class Pods:
 
     def check(self, namespace, kubeconfig):
         if namespace.startswith("all-namespaces"):
-            (result, rc) = shell('oc get pods -A --kubeconfig ' + kubeconfig + '| egrep -v "Running|Complete"')
+            (result, rc) = shell('oc get pods -A -o wide --kubeconfig ' + kubeconfig + '| egrep -v "Running|Complete"')
         else:
-            (result, rc) = shell('oc get pods --kubeconfig ' + kubeconfig + ' -n ' + namespace + '| egrep -v "Running|Complete"')
+            (result, rc) = shell('oc get pods -o wide --kubeconfig ' + kubeconfig + ' -n ' + namespace + '| egrep -v "Running|Complete"')
 
     def init(self):
         pass
