@@ -1,0 +1,8 @@
+projects:
+  - num: 5000
+    basename: pause
+    templates:
+      - num: 1
+        file: ../../../openshift_scalability/content/deployment-config-1rep-pause-template.json
+quotas:
+  - name: default
