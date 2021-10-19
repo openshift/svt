@@ -117,11 +117,11 @@
             "value": "openshift"
         },
         {
-            "description": "Version of PHP image to be used (7.2 or latest).",
+            "description": "Version of PHP image to be used (7.3 or latest).",
             "displayName": "PHP Version",
             "name": "PHP_VERSION",
             "required": true,
-            "value": "latest"
+            "value": "7.3"
         },
         {
             "description": "The URL of the repository with your application source code.",

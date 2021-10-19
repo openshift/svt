@@ -449,7 +449,7 @@
                             ],
                             "from": {
                                 "kind": "ImageStreamTag",
-                                "name": "mysql:5.7",
+                                "name": "mysql:latest",
                                 "namespace": "${NAMESPACE}"
                             }
                         },
@@ -482,7 +482,7 @@
             "displayName": "PHP Version",
             "name": "PHP_VERSION",
             "required": true,
-            "value": "7.2"
+            "value": "7.3"
         },
         {
             "description": "Maximum amount of memory the CakePHP container can use.",

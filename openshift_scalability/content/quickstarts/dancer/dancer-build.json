@@ -52,7 +52,7 @@
                         ],
                         "from": {
                             "kind": "ImageStreamTag",
-                            "name": "perl:5.26",
+                            "name": "perl:latest",
                             "namespace": "${NAMESPACE}"
                         }
                     },

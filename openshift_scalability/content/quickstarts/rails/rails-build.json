@@ -78,7 +78,7 @@
                         ],
                         "from": {
                             "kind": "ImageStreamTag",
-                            "name": "ruby:2.5",
+                            "name": "ruby:2.7",
                             "namespace": "${NAMESPACE}"
                         }
                     },
