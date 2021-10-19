@@ -449,7 +449,7 @@
                             ],
                             "from": {
                                 "kind": "ImageStreamTag",
-                                "name": "mysql:8.0",
+                                "name": "mysql:latest",
                                 "namespace": "${NAMESPACE}"
                             }
                         },
