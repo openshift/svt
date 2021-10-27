@@ -52,7 +52,7 @@ cliparser.add_option("-t", "--tolerate-bad-pods", action="store_true", default=F
 
 testconfig = {}
 with open(options.cfgfile) as stream:
-    testconfig = yaml.load(stream)
+    testconfig = yaml.safe_load(stream)
 
 globalvars = {}
 globalvars["cleanoption"] = options.cleanall

@@ -19,7 +19,7 @@ def print_new_yaml(num, fileName):
     # append to file
     yaml = YAML()
     with open(fileName, "r") as f:
-        yaml_file = yaml.load(f)
+        yaml_file = yaml.safe_load(f)
         yaml_file['projects'][0]['num'] = num
     with open(fileName, "w+") as f:
         yaml.indent(mapping=2, sequence=4, offset=2)
@@ -30,7 +30,7 @@ def print_new_yaml_temp(num, fileName):
     # append to file
     yaml = YAML()
     with open(fileName, "r") as f:
-        yaml_file = yaml.load(f)
+        yaml_file = yaml.safe_load(f)
         yaml_file['projects'][0]['templates'][0]['num'] = num
     with open(fileName, "w+") as f:
         yaml.indent(mapping=2, sequence=4, offset=2)
