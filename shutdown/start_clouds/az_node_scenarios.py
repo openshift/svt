@@ -12,7 +12,7 @@ class azure_node_scenarios():
         credentials = DefaultAzureCredential()
         logging.info("credential " + str(credentials))
 
-        az_account_yaml = yaml.load(az_account, Loader=yaml.FullLoader)
+        az_account_yaml = yaml.safe_load(az_account)
         subscription_id = az_account_yaml[0]['id']
         self.compute_client = ComputeManagementClient(credentials, subscription_id)
 

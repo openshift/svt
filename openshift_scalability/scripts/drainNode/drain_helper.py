@@ -4,7 +4,7 @@ import yaml
 def print_new_yaml_temp(num, fileName):
     # append to file
     with open(fileName, "r") as f:
-        yaml_file = yaml.load(f, Loader=yaml.FullLoader)
+        yaml_file = yaml.safe_load(f)
         yaml_file['projects'][0]['templates'][0]['num'] = num
     with open(fileName, "w+") as f:
         str_file = yaml.dump(yaml_file)
