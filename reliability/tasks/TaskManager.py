@@ -177,6 +177,7 @@ class TaskManager:
                 + str(projects_create_concurrency) + ". Origin maxProjects is " + str(max_projects))
 
         state = "run"
+        last_state = "run"
         while state == "run" or state == "pause":
             self.logger.debug("Current time: " + str(current_time) + " next execution: " + str(next_execution))
             state = self.check_desired_state()
@@ -190,7 +191,10 @@ class TaskManager:
                             task.execute()
                     self.schedule_next(execution_type)
                 (next_execution, next_execution_time) = self.calculate_next_execution()
-            if state == "pause":
+                last_state = "run"
+            # only dump state on the first pause state after run state
+            if state == "pause" and last_state != "pause":
+                last_state = "pause"
                 self.dump_stats()
             self.logger.info(f"Sleep '{global_data.sleepTime}' seconds before running next task type (minute/hour/day/week/month).")          
             time.sleep(global_data.sleepTime)
