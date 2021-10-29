@@ -29,6 +29,37 @@ reliability:
     # you must be a member of the slack channel to receive the notification.
     slack_member: <Your slack member id>
 
+    krakenIntegration:
+    kraken_enable: False
+    # supported Kraken scenarios: https://github.com/cloud-bulldozer/kraken-hub/blob/main/README.md#supported-chaos-scenarios
+    # pod-scenarios, container-scenarios, node-scenarios, zone-outages, time-scenarios, 
+    # node-cpu-hog, node-memory-hog, node-io-hog
+    # Please specify the parameters for each scenario. e.g. For pod-scenarios,
+    # refer to https://github.com/cloud-bulldozer/kraken-hub/blob/main/docs/pod-scenarios.md#supported-parameters
+    kraken_scenarios: 
+      - name: pod-scenarios_etcd
+        scenario: "pod-scenarios"
+        interval_unit: minutes # weeks,days,hours,minutes,seconds
+        interval_number: 8
+        # start_date: "2021-10-28 17:36:00" # Optional. format: 2021-10-20 10:00:00.
+        # end_date: "2021-10-28 17:50:00" # Optional.
+        # timezone: "Asia/Shanghai" # Optional. e.g. US/Eastern. Default is "UTC
+      - name: pod-scenarios_monitoring
+        scenario: "pod-scenarios"
+        interval_unit: minutes
+        interval_number: 10
+        parameters:
+          NAMESPACE: openshift-monitoring
+          POD_LABEL: app.kubernetes.io/component=prometheus
+          EXPECTED_POD_COUNT: 2
+      # - ode-scenarios_workerstopstart
+      #   scenario: "node-scenarios"
+      #   interval_unit: minutes
+      #   interval_number: 15
+      #   parameters:
+      #     AWS_DEFAULT_REGION: us-east-2
+      #     AWS_ACCESS_KEY_ID: xxxx
+      #     AWS_SECRET_ACCESS_KEY: xxxx
 
   appTemplates:
     - template: cakephp-mysql-persistent

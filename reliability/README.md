@@ -36,9 +36,13 @@ For more detail explaination about the configuration, please go to [Configuratio
 ## Run
 
 ### Run Reliability Test
-If you want to receive notifications about the start stop of the test and errors happen during the test.
-Check [Slack Integration](#Slack-Integration) before running the test.
+If you want to receive notifications about the start stop of the test and errors happen during the Reliability test, configure [Slack Integration](#Slack-Integration) before running the Reliability test.
 
+If you want to leverage Cerberus to check the healthy of the cluster and take action during the Reliability test, configure [Cerberus Integration](#Cerberus-Integration) before running the Reliability test.
+
+If you want to add [Kraken](https://github.com/cloud-bulldozer/kraken-hub) to inject errors during the Reliability test, configure [Kraken Integration](#Kraken-Integration) before running the Reliability test.
+
+Run the test
 ```
 python3 reliability.py -c <path to config file> -c <path to log config file> -l ./reliability.log --cerberus-history <path to file to save cerberus history is cerberus is enabled>
 ```
@@ -90,9 +94,9 @@ reliability:
 ```
 
 ### Cerberus Integration
-Reliablity can integrate with [Cerberus](https://github.com/cloud-bulldozer/cerberus) to check the healthy of the cluster and take action accordingly.
+Reliablity can integrate with [Cerberus](https://github.com/cloud-bulldozer/cerberus) to check the healthy of the cluster and take action accordingly during the Reliability test.
 
-The below configuration enables the Cerberus integration `cerberus_enable: True`, and provided the Cerberus api `cerberus_api: "http://0.0.0.0:8080"` where Reliability test can get the [Cerberus status and history](https://github.com/cloud-bulldozer/cerberus#metrics-api) from. The `cerberus_fail_action` configures how Reliability test acts when Cerberus status is False.
+The below configuration example enables the Cerberus integration `cerberus_enable: True`, and provided the Cerberus api `cerberus_api: "http://0.0.0.0:8080"` where Reliability test can get the [Cerberus status and history](https://github.com/cloud-bulldozer/cerberus#metrics-api) from. The `cerberus_fail_action` configures how Reliability test acts when Cerberus status is False.
 
 `pause`: When Cerberus status is 'False', pause Reliability test until Cerberus status is changed to 'True'.
 
@@ -115,7 +119,7 @@ reliability:
 ```
 
 ### Slack Integration
-Receive notifications about the start stop of the test and errors happen during the test.
+Receive notifications about the start stop of the Reliability test and errors happen during the Reliability test.
 
 Set environment virable SLACK_API_TOKEN before running the test. Contact qili@redhat.com for the token.
 
@@ -128,12 +132,44 @@ Set environment virable SLACK_API_TOKEN before running the test. Contact qili@re
     # you must be a member of the slack channel to receive the notification.
     slack_member: <Your slack member id>
 ```
-
 In the above configuration, notifications will be sent to [#ocp-qe-reliability-monitoring](https://coreos.slack.com/archives/C0266JJ4XM5) (Channel ID: C0266JJ4XM5) in [CoreOS](coreos.slack.com) workspace, and @ the user of slack_member if you configured.
 
 If you're in [CoreOS](coreos.slack.com) workspace, but you want to use your own slack channel, create a slack channel and install App `OCP Reliability` which already exists in CoreOS workspace.
 
 If you want to use your own App(slack_api_token), create an [app](https://api.slack.com/apps?new_granular_bot_app=1) and add a bot to it on slack. Slack Bot Token Scopes permissions are [channels:read] [chat:write] [groups:read] [im:read] [mpim:read]. You will get a token after the app is installed to a workspace. Install the app to your channel. Set the token to SLACK_API_TOKEN environment variable.
+
+### Kraken Integration
+Configure Kraken scenario(s) to trigger error injection during the Reliability test.
+
+The below configuration example enables the Kraken integration by setting `kraken_enable: True`. 
+`kraken_scenarios` defines the [Kraken scenario(s)](https://github.com/cloud-bulldozer/kraken-hub/blob/main/README.md#supported-chaos-scenarios) you want to run during Reliability test. Refer to each Kraken scenario's document for the supported `parameters`, e.g [pod-scenarios](https://github.com/cloud-bulldozer/kraken-hub/blob/main/docs/pod-scenarios.md#supported-parameters).
+
+`interval_unit` and `interval_number` schedules how often the Kraken scenario is triggered. `start_date` and `end_date` with `timezone` are used to limit the time range to schedule the Kraken scenario. The scheduler feature makes use of [apscheduler](https://apscheduler.readthedocs.io/en/latest/modules/triggers/interval.html#module-apscheduler.triggers.interval).
+
+Though Kraken senarios support to run the error injection multiple times with iterations or in daemon mode as parameter, in Reliability test, you may want to get notification of start and end time of each error injection, to check what errors happen in Reliability test during the error injection period. In this case, configure in Reliability test to trigger the Kraken snario with `interval_unit` and `interval_number` is recommended.
+
+If [Slack Integration](#Slack-Integration) is enabled, notification of the Kraken scenarios' start and end time as well as result will be send to the slack channel. You can check what errors of Reliability test happen during the Kraken error injection.
+
+```yaml
+  krakenIntegration:
+    kraken_enable: True
+    kraken_scenarios: 
+      -
+        scenario: "pod-scenarios"
+        interval_unit: minutes # weeks,days,hours,minutes,seconds
+        interval_number: 10
+        start_date: "2021-10-21 2:38:00" # Optional. format: 2021-10-20 10:00:00.
+        end_date: "2021-10-21 2:58:00"  # Optional. format: 2012-10-20 10:00:00.
+        timezone: "UTC" # Optional. Default to "UTC
+      -
+        scenario: "node-scenarios"
+        interval_unit: minutes
+        interval_number: 20
+        parameters:
+          AWS_DEFAULT_REGION: xxx
+          AWS_ACCESS_KEY_ID: xxx
+          AWS_SECRET_ACCESS_KEY: xxx
+```
 
 ### Tasks
 Tasks defines what to do for each interval.

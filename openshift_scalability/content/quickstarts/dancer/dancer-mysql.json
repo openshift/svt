@@ -118,7 +118,7 @@
                         ],
                         "from": {
                             "kind": "ImageStreamTag",
-                            "name": "perl:5.26",
+                            "name": "perl:latest",
                             "namespace": "${NAMESPACE}"
                         }
                     },
@@ -391,7 +391,7 @@
                             ],
                             "from": {
                                 "kind": "ImageStreamTag",
-                                "name": "mysql:5.7",
+                                "name": "mysql:8.0",
                                 "namespace": "${NAMESPACE}"
                             }
                         },
