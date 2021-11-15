@@ -1,5 +1,6 @@
 from tasks.TaskManager import TaskManager
 from tasks.GlobalData import global_data
+from tasks.KrakenIntegration import KrakenIntegration
 from optparse import OptionParser
 import logging
 import sys
@@ -33,6 +34,13 @@ if __name__ == "__main__":
     # init global data
     if not global_data.load_data(options.config):
         sys.exit(1)
+    
+    # init Kraken integration
+    kraken_enable = global_data.config["krakenIntegration"].get("kraken_enable", False)
+    if kraken_enable:
+        krakenIntegration = KrakenIntegration()
+        krakenIntegration.add_jobs()
+        krakenIntegration.start()
 
     # start task manager
     task_manager = TaskManager(options.cerberus_history)
