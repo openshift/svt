@@ -16,41 +16,46 @@ def run(command):
         return ""
     return output
 
-def get_upgrade_duration(expected_version):
+def get_upgrade_duration():
     version_str = run("oc get clusterversion -o json")
-    last_version = expected_version.split(',')[-1]
     all_versions = []
     end_date_time = datetime.now()
     start_date_time = datetime.now()
     if version_str != "":
         version_json = json.loads(version_str)
         earliesetStartingTime = datetime.max
+        latestCompletiontime = datetime.min
         for item in version_json['items']:
+            lastVersion = True
+            counter = 0
             for hist in item['status']['history']:
+                print(counter)
+                print(len(item['status']['history']) )
+                if (len(item['status']['history']) - 1) == counter:
+                    lastVersion = False
+                counter += 1
                 all_versions.append(hist['version'])
                 print("hist" + str(hist['version']))
-                if last_version in hist['version']:
-                    start_time = hist['startedTime']
-                    if not hist['completionTime']:
-                        end_date_time = datetime.now()
-                        print("date time now ")
-                    else:
-                        end_time = hist['completionTime']
-                        end_date_time = datetime.strptime(end_time[:-1], "%Y-%m-%dT%H:%M:%S")
-
-                    start_date_time = datetime.strptime(start_time[:-1], "%Y-%m-%dT%H:%M:%S")
-                    if start_date_time < earliesetStartingTime:
-                        cur_date_time = datetime.strptime(hist['startedTime'][:-1], "%Y-%m-%dT%H:%M:%S")
-                        earliesetStartingTime = cur_date_time
+                start_time = hist['startedTime']
+                if not hist['completionTime']:
+                    latestCompletiontime = datetime.now()
+                    print("date time now ")
                 else:
-                    cur_date_time = datetime.strptime(hist['startedTime'][:-1], "%Y-%m-%dT%H:%M:%S")
-                    if cur_date_time < earliesetStartingTime:
-                        earliesetStartingTime = cur_date_time
+                    end_time = hist['completionTime']
+                    end_date_time = datetime.strptime(end_time[:-1], "%Y-%m-%dT%H:%M:%S")
+                    if end_date_time > latestCompletiontime:
+                        print("last completion" + str(end_date_time))
+                        latestCompletiontime = end_date_time
 
-        time_elapsed = end_date_time - earliesetStartingTime
+                start_date_time = datetime.strptime(start_time[:-1], "%Y-%m-%dT%H:%M:%S")
+                if (start_date_time < earliesetStartingTime) and lastVersion:
+                    print('earliest re set' + str(start_date_time))
+                    earliesetStartingTime = start_date_time
+
+        time_elapsed = latestCompletiontime - earliesetStartingTime
 
         print("time elapsed" + str(time_elapsed))
-
+        print('all versions ' + str(all_versions))
         return str(time_elapsed), sorted(all_versions)
     return get_oc_version(), ""
 
@@ -89,7 +94,7 @@ def get_pod_latencies():
         p99_list.append(pod_info[2])
     return avg_list
 
-def write_to_sheet(google_sheet_account, flexy_id, expected_version, job_url, status, scale, force):
+def write_to_sheet(google_sheet_account, flexy_id, job_url, status, scale, force):
     scopes = [
     'https://www.googleapis.com/auth/spreadsheets',
     'https://www.googleapis.com/auth/drive'
@@ -100,16 +105,13 @@ def write_to_sheet(google_sheet_account, flexy_id, expected_version, job_url, st
     sheet = file.open_by_url("https://docs.google.com/spreadsheets/d/1uiKGYQyZ7jxchZRU77lsINpa23HhrFWjphsqGjTD-u4/edit?usp=sharing")
     #open sheet
 
-
-
     index = 2
     flexy_url ="https://mastern-jenkins-csb-openshift-qe.apps.ocp-c1.prod.psi.redhat.com/job/ocp-common/job/Flexy-install/" + str(flexy_id)
     flexy_cell = '=HYPERLINK("' + str(flexy_url) + '","' + str(flexy_id) + '")'
 
     cloud_type, install_type, network_type = flexy_install_type(flexy_url)
 
-
-    duration, all_versions = get_upgrade_duration(expected_version)
+    duration, all_versions = get_upgrade_duration()
     ci_cell = '=HYPERLINK("' + str(job_url) + '","' + str(all_versions[1:]) + '")'
     tz = timezone('EST')
     worker_count = run("oc get nodes | grep worker | wc -l | xargs").strip()
@@ -125,4 +127,4 @@ def write_to_sheet(google_sheet_account, flexy_id, expected_version, job_url, st
     row = [flexy_cell, all_versions[0], ci_cell, worker_count, status, duration, scale, force, cloud_type, install_type, network_type, sno, str(datetime.now(tz))]
 
     ws = sheet.worksheet("Upgrade Output")
-    ws.insert_row(row, index, "USER_ENTERED")
+    #ws.insert_row(row, index, "USER_ENTERED")
