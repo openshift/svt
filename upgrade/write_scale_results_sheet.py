@@ -6,19 +6,10 @@ from datetime import datetime
 import calendar
 from pytz import timezone
 import get_es_data
-
-def run(command):
-    try:
-        output = subprocess.check_output(command, shell=True,
-                                         universal_newlines=True)
-    except Exception as e:
-        print("Failed to run %s" % (command))
-        print("Error %s" % (str(e)))
-        return ""
-    return output
+import write_helper
 
 def get_benchmark_uuid():
-    benchmark_str = run("oc get benchmark -n benchmark-operator -o json")
+    benchmark_str = write_helper.run("oc get benchmark -n benchmark-operator -o json")
     if benchmark_str != "":
         benchmark_json = json.loads(benchmark_str)
         for item in benchmark_json['items']:
@@ -37,24 +28,11 @@ def get_benchmark_uuid():
 
             workload_args = json.dumps(item['spec']['workload']['args'])
             print('workload ' + str(type(workload_args)))
-
-            # get total duration of run from logs
-
             return grafana_cell, workload_args
     return "", ""
 
-def get_oc_version():
-    cluster_version_str = run("oc get clusterversion -o json")
-    cluster_version_json = json.loads(cluster_version_str)
-    for item in cluster_version_json['items']:
-        for status in item['status']['conditions']:
-            if status['type'] == "Progressing":
-                version = status['message'].split(" ")[-1]
-                print('version ' + str(version))
-                return version
-
 def get_nodes():
-    cluster_version_str = run("oc get nodes -o json")
+    cluster_version_str = write_helper.run("oc get nodes -o json")
     cluster_version_json = json.loads(cluster_version_str)
     for item in cluster_version_json['items']:
         for status in item['status']['conditions']:
@@ -62,20 +40,6 @@ def get_nodes():
                 version = status['message'].split(" ")[-1]
                 print('version ' + str(version))
                 return version
-
-
-def get_pod_latencies():
-    # In the form of [[json_data['quantileName'], json_data['avg'], json_data['P99']...]
-    pod_latencies_list = get_es_data.get_pod_latency_data()
-    if len(pod_latencies_list) != 0:
-        print(str(pod_latencies_list))
-        avg_list = []
-        p99_list = []
-        for pod_info in pod_latencies_list:
-            avg_list.append(pod_info[1])
-            p99_list.append(pod_info[2])
-        return avg_list
-    return ["", "", "", ""]
 
 def write_to_sheet(google_sheet_account, flexy_id, ci_job, job_type, job_url, status):
     scopes = [
@@ -95,12 +59,12 @@ def write_to_sheet(google_sheet_account, flexy_id, ci_job, job_type, job_url, st
     flexy_cell='=HYPERLINK("https://mastern-jenkins-csb-openshift-qe.apps.ocp-c1.prod.psi.redhat.com/job/ocp-common/job/Flexy-install/'+str(flexy_id)+'","'+str(flexy_id)+'")'
     grafana_cell, workload_args = get_benchmark_uuid()
     ci_cell = '=HYPERLINK("'+str(job_url) + '","' + str(ci_job) + '")'
-    version = get_oc_version()
+    version = write_helper.get_oc_version()
     tz = timezone('EST')
 
 
     row = [version, flexy_cell, ci_cell, grafana_cell, status, workload_args]
-    row.extend(get_pod_latencies())
+    row.extend(write_helper.get_pod_latencies())
     row.append(str(datetime.now(tz)))
     print(row)
     ws.insert_row(row, index, "USER_ENTERED")

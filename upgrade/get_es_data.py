@@ -46,7 +46,6 @@ def print_new_json(new_value, find_key, fileName):
     with open(fileName, "w+") as f:
         json.dump(new_json_file, f, indent=4)
 
-
 def get_benchmark_data():
 
     benchmark_str = run("oc get benchmark -n benchmark-operator -o yaml")
@@ -77,7 +76,8 @@ def execute_command(es_url, fileName):
     json_response = json.loads(str_response)
     for hits in json_response['hits']['hits']:
         data_info.append(get_data_from_json(hits['_source']))
-    return data_info
+    sorted_data = sorted(data_info, key=lambda kv:(kv[0], kv[1], kv[2]), reverse=True)
+    return sorted_data
 
 
 def get_data_from_json(json_data):
@@ -91,5 +91,3 @@ def get_pod_latency_data():
         rewrite_data(creation_time, uuid, file_name)
         return execute_command(es_url, file_name)
     return []
-# response = get_pod_latency_data()
-# print(response)
