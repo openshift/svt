@@ -40,15 +40,16 @@ class Contexts:
         # if max_workers=None, default is 5 * cpu cores
         with ThreadPoolExecutor(max_workers=workers) as executor:
             results = executor.map(lambda t: Session().login(*t), login_args)
+            # if any of the user login fails, return False
             for result in results:
-                self.logger.info(result)
+                if result == False:
+                    return False
+                #self.logger.info(result)
         #end = perf_counter()
         #print('perf of {} workers is: {} second'.format(workers, end - start))
         self.logger.info('Creating context for users is done.\n' +
             '====================================================================')
-
-    def init(self):
-        pass
+        return True
 
 all_contexts = Contexts()
 

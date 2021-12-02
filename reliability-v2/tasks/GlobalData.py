@@ -72,15 +72,21 @@ class GlobalData:
         self.users = all_users.get_users()
         
         # create kubeconfig with contexts for all users
-        all_contexts.init()
-        all_contexts.create_kubeconfigs(self.kubeconfig,self.users)
-        self.last_login_time = time.time()
-        self.kubeconfigs = all_contexts.kubeconfigs
+        if all_contexts.create_kubeconfigs(self.kubeconfig,self.users):
+            self.kubeconfigs = all_contexts.kubeconfigs
+            return True
+        else:
+            self.logger.error(f"Init user failed.Reliability test stopped. Please check log for detail.")
+            if slackIntegration.slack_enable:
+                slackIntegration.error(f"Init user failed.Reliability test stopped. Please check log for detail.")
+            return False
 
     def init_scheduler(self):
         # start background scheduled tasks
         scheduledTasks.start()
-        scheduledTasks.scheduler.add_job(self.relogin, 'interval', minutes=120)
+        scheduledTasks.scheduler.add_job(self.relogin, 'interval', minutes=60)
+        self.logger.info(f"Relogin job is added with interval: minutes=60.")
+        self.logger.debug(scheduledTasks.scheduler.print_jobs())
 
     def init_intgration(self):
         # init Slack integration

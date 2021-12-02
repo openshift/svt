@@ -18,7 +18,8 @@ class KrakenIntegration:
             if rc ==  0:
                 self.cmd = "docker"
             else:
-                slackIntegration.post_message_in_slack(f"Kraken Integration failed. Please install podman or install and start docker first.")
+                if slackIntegration.slack_enable:
+                    slackIntegration.error(f"Kraken Integration failed. Please install podman or install and start docker first.")
                 exit()
 
     def add_jobs(self, scheduler):
@@ -43,7 +44,7 @@ class KrakenIntegration:
             scheduler.add_job(self.run_kraken, 'interval', **interval, args=[name,scenario])
             self.logger.info(f"[kraken Integration] Kraken scenario '{name}' is added with interval: {interval}.")
             self.logger.debug(scheduler.print_jobs())
-            slackIntegration.post_message_in_slack(f":chaos-monkey: Kraken scenario '{name}' is added with interval: {interval}.")
+            slackIntegration.info(f":chaos-monkey: Kraken scenario '{name}' is added with interval: {interval}.")
 
     def run_kraken(self, *args):
         # generate env parameters to be used in command
@@ -58,7 +59,7 @@ class KrakenIntegration:
         # run the Kraken-hub scenario as container
         run_result, run_rc = shell(f"{self.cmd} run --name={name} --net=host {parameter_string} -v {self.kubeconfig}:/root/.kube/config:Z -d quay.io/openshift-scale/kraken:{scenario}")
         self.logger.info(f"[kraken Integration] Kraken scenario job '{name}' is triggered.")
-        slackIntegration.post_message_in_slack(f":chaos-monkey: Kraken scenario job '{name}' is triggered.")
+        slackIntegration.info(f":chaos-monkey: Kraken scenario job '{name}' is triggered.")
 
         # get container id
         container_id = ""
@@ -87,10 +88,10 @@ class KrakenIntegration:
                     if "[ERROR]" in line:
                         log_error = f"{log_error}{line}"
                 if log_error != "":
-                    slackIntegration.post_message_in_slack(f":chaos-monkey::boom:Kraken scenario job '{name}' is finished with Error.\n{log_error}")
+                    slackIntegration.info(f":chaos-monkey::boom:Kraken scenario job '{name}' is finished with Error.\n{log_error}")
                     self.logger.error(f"[kraken Integration] Kraken scenario job '{name}' is finished with Error.\n{log_error}")
                 else:
-                    slackIntegration.post_message_in_slack(f":chaos-monkey:Kraken scenario job '{name}' is finished.")
+                    slackIntegration.info(f":chaos-monkey:Kraken scenario job '{name}' is finished.")
                     self.logger.info(f"[kraken Integration] Kraken scenario job '{name}' is finished.")
             else:
                 self.logger.error(f"[kraken Integration] Kraken scenario job '{name}' log retrive failed.")

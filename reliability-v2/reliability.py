@@ -36,8 +36,7 @@ if __name__ == "__main__":
 
         global_data.init_scheduler()
         global_data.init_intgration()
-        global_data.init_users()
-
-        # start task manager
-        taskManager = TaskManager(options.cerberus_history)
-        taskManager.start()
+        if global_data.init_users():
+            # start task manager
+            taskManager = TaskManager(options.cerberus_history)
+            taskManager.start()
