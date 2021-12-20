@@ -87,13 +87,13 @@ class TaskManager:
                 elif state == "pause":
                     time.sleep(60)
                     state = self.check_state()
-            slackIntegration.post_message_in_slack(f"Reliability test is going to halt")
+            slackIntegration.info(f"Reliability test is going to halt")
             rc = 1
 
         elif isinstance(loops,int) and loops > 0:
             for loop in range(loops):
                 if state == "halt":
-                    slackIntegration.post_message_in_slack(f"Reliability test is going to halt")
+                    slackIntegration.info(f"Reliability test is going to halt")
                     rc = 1
                     break
                 while state == "pause":
@@ -111,7 +111,7 @@ class TaskManager:
                     self.logger.info(f"Will sleep {trigger} before next loop of group '{name}'")
                     time.sleep(trigger)
                 elif state == "halt":
-                    slackIntegration.post_message_in_slack(f"Reliability test is going to halt")
+                    slackIntegration.info(f"Reliability test is going to halt")
                     rc = 1
                     break
         else:
@@ -152,7 +152,7 @@ class TaskManager:
 
     def check_state(self):
         if os.path.isfile(os.getcwd() + "/halt"):
-            slackIntegration.post_message_in_slack("Reliability test is going to halt.")
+            slackIntegration.info("Reliability test is going to halt.")
             state = "halt"
             self.logger.info("Halt file found, shutting down reliability.")
         elif os.path.isfile(os.getcwd() + "/pause"):
@@ -190,4 +190,4 @@ class TaskManager:
 
         # get results
         results = self.tasks.get_results()
-        slackIntegration.post_message_in_slack("Reliability test results:\n" + results)
+        slackIntegration.info("Reliability test results:\n" + results)

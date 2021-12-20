@@ -55,7 +55,7 @@ class SlackIntegration:
         )
         
     # Post messages in slack
-    def post_message_in_slack(self, slack_message):
+    def info(self, slack_message):
         timestamp = (time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime()))
         try:
             self.slack_client.chat_postMessage(
@@ -64,7 +64,18 @@ class SlackIntegration:
                 thread_ts=self.thread_ts
             )
         except Exception as e:
-            self.logger.warning(f"post_message_in_slack had exception: '{e}")
+            self.logger.warning(f"post_info_to_slack had exception: '{e}")
+
+    def error(self, slack_message):
+        timestamp = (time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime()))
+        try:
+            self.slack_client.chat_postMessage(
+                channel=self.slack_channel,
+                text=f"[{timestamp}] {self.slack_tag} :boom: {slack_message}",
+                thread_ts=self.thread_ts
+            )
+        except Exception as e:
+            self.logger.warning(f"post_error_to_slack had exception: '{e}")        
 
     # Report the start of reliability test in slack channel
     def slack_report_reliability_start(self, cluster_info):

@@ -18,12 +18,15 @@ class Tasks:
         self.results = {}
 
     def get_results(self):
-        results = ["[Function]: Total / Passed / Failed"]
+        results = [f"{'[Function]'.ljust(25)}|{'Total'.rjust(10)}|{'Passed'.rjust(10)}|{'Failed'.rjust(10)}|"]
+        results.append("-----------------------------------------------------------")
         for key,value in self.results.items():
             passed = value["passed"]
             failed = value["failed"]
             total = passed + failed
-            results.append(f"[{key}]: {total} / {passed} / {failed}")
+            function = f"[{key}]"
+            results.append(f"{function.ljust(25)}|{str(total).rjust(10)}|{str(passed).rjust(10)}|{str(failed).rjust(10)}|")
+        results.append("-----------------------------------------------------------")
         results = "\n".join(results)
         self.logger.info(f"Reliability test results:\n"+ results)
         return results
@@ -57,7 +60,7 @@ class Tasks:
         self.logger.info(f"[Task] User {user}: new project '{namespace}'")
         retry = 5
         while retry > 0:
-            result,rc = oc(f"get project {namespace} --no-headers",kubeconfig_admin,ignore_slack=True)
+            result,rc = oc(f"get project {namespace} --no-headers",kubeconfig_admin,ignore_log=True,ignore_slack=True)
             if "Terminating" in result:
                 sleep(20)
                 retry -= 1
@@ -130,11 +133,13 @@ class Tasks:
         visit_success = False
         try:
             r = requests.get(f"http://{route}/")
-            self.logger.info(f"Response code:{str(r.status_code)}. Visit: {route}")
+            if r.status_code != 200:
+                self.logger.info(f"Response code:{str(r.status_code)}. Visit failed: {route}")
             if r.status_code == 200:
+                self.logger.info(f"Response code:{str(r.status_code)}. Visit succeeded: {route}")
                 visit_success = True
         except Exception as e :
-            self.logger.error(f"Visit: {route}. Exception: {e}")
+            self.logger.error(f"Visit exception: {route}. Exception: {e}")
         return visit_success
 
     def load_app(self,user,namespace,clients="1"):
@@ -149,7 +154,7 @@ class Tasks:
             results = executor.map(self.__visit_app, urls)
             return_value = 0
             for result in results:
-                #self.logger.info(result)
+                # if any of the client visit fails, load_app func is marked as failed.
                 if result == True:
                     self.__log_result(0)
                 if result != True:
@@ -217,13 +222,13 @@ class Tasks:
         # This operation can only be done by admin user
         kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: check operators")
-        (result,rc) = oc(f"get co --no-headers | awk '{{print $1 $3 $4 $5 $7}}' | grep -v TrueFalseFalse",kubeconfig,ignore_slack=True)
+        (result,rc) = oc(f"get co --no-headers | awk '{{print $1 $3 $4 $5 $7}}' | grep -v TrueFalseFalse",kubeconfig,ignore_log=True,ignore_slack=True)
         if rc == 1 and result == "":
             self.logger.info(f"Cluster operators are healthy.")
             rc_return = 0
         elif rc == 0 :
             self.logger.error(f"Operator degraded: {result}")
-            slackIntegration.post_message_in_slack(f":boom: Operator degraded: {result}")
+            slackIntegration.error(f"Operator degraded: {result}")
             rc_return = 1
         self.__log_result(rc_return)
         return(result,rc_return)

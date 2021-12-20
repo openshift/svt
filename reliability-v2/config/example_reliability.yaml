@@ -1,8 +1,8 @@
 reliability:
-  kubeconfig: /Users/qili/Downloads/kubeconfig
+  kubeconfig: <path_to_kubeconfig>
   users:
-    - kubeadmin_password: /Users/qili/Downloads/kubeadmin-password
-    - user_file: /Users/qili/Downloads/users.spec
+    - kubeadmin_password: <path_to_kubeadmin-password>
+    - user_file: <path_to_users.spec>
 
   appTemplates:
     - template: cakephp-mysql-persistent
@@ -31,16 +31,15 @@ reliability:
       interval: 10
       tasks: 
         - func check_operators
-        - oc whoami --show-server
+        - oc get project -l purpose=reliability
         - kubectl get pods -A -o wide | egrep -v "Completed|Running"
-        - pwd
-
+        
     - name: developer-1
       persona: developer
-      users: 2
-      loops: 10
+      users: 15
+      loops: forever
       trigger: 60
-      jitter: 60
+      jitter: 300
       interval: 10
       tasks:
         - func delete_all_projects # clear all projects

@@ -27,7 +27,7 @@ class LoadApp():
                     else:
                         self.app_visit_failed += 1
                         # send slack message if response code is not 200
-                        slackIntegration.post_message_in_slack(f":boom: Access to {url} failed. Response code: {str(code)}")
+                        slackIntegration.error(f"Access to {url} failed. Response code: {str(code)}")
                         return 1
         except Exception as e :
             self.logger.error(f"LoadApp get: {url} Exception {e}")
