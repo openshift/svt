@@ -13,7 +13,6 @@ function create_projects() {
 
 create_projects $pause_deploy_file
 
-
 for i in $(oc get projects | grep pause | grep -Eo 'pause\S*');
 do
   echo "$i"
@@ -22,18 +21,32 @@ done
 
 
 network_namespace="openshift-sdn"
+container_name="sdn"
 sdn_project_count=$(oc get projects | grep sdn | wc -l | xargs)
 echo "sdn count $sdn_project_count"
 if [[ $sdn_project_count -ne 1 ]]; then
-  network_namespace="openshift-ovn"
+  network_namespace="openshift-ovn-kubernetes"
+  container_name="ovnkube-node"
 fi
 
 network_pods=$(oc get pods -n $network_namespace -o name)
 
 echo $network_pods
 
-echo "Manually check dump flows for $network_namespace pods by the following commands"
-echo "'oc rsh -n $network_namespace <network_pod>'"
-echo "'ovs-ofctl dump-flows br0 -O openflow13 | grep table=80'\n"
+total_policies=0
+for pod in $network_pods;
+do
+   count=$(oc exec $pod -n $network_namespace -c $container_name -- ovs-ofctl dump-flows br0 -O openflow13 | grep table=80 | wc -l | xargs)
+   echo "$count"
+   total_policies=$(($total_policies + $count))
+done
+
+echo "Total flows in pods $total_policies"
+
+if [[ $total_policies -ge 5000 ]]; then
+  echo "PASS"
+else
+  echo "FAIL, not enough policies in flow, see https://bugzilla.redhat.com/show_bug.cgi?id=1752636#c61"
+fi
 
 echo "When done, delete all projects using 'oc delete project -l purpose=test'"
