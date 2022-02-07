@@ -22,12 +22,6 @@ done
 
 network_namespace="openshift-sdn"
 container_name="sdn"
-sdn_project_count=$(oc get projects | grep sdn | wc -l | xargs)
-echo "sdn count $sdn_project_count"
-if [[ $sdn_project_count -ne 1 ]]; then
-  network_namespace="openshift-ovn-kubernetes"
-  container_name="ovnkube-node"
-fi
 
 network_pods=$(oc get pods -n $network_namespace -o name)
 
