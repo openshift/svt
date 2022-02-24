@@ -217,6 +217,13 @@ class Tasks:
         self.__log_result(rc)
         return (result,rc)
 
+    def apply(self,user,namespace,file):
+        kubeconfig = global_data.kubeconfigs[user]
+        self.logger.info(f"[Task] apply file {file} in namespace {namespace}.")
+        (result, rc) = oc(f"apply -f {file} -n {namespace}",kubeconfig)
+        self.__log_result(rc)
+        return (result,rc)
+
     # admin tasks
     def check_operators(self,user):
         # This operation can only be done by admin user
