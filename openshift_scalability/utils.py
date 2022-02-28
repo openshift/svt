@@ -55,6 +55,7 @@ def oc_command_with_retry(args, globalvars, max_retries=10, backoff_period=10):
     """Run the oc_command function but check returncode for 0, retry otherwise"""
     output = oc_command(args, globalvars)
     retry_count = 0
+
     while (output[2] != 0):
         if retry_count >= max_retries:
             logger.error("Unable to complete with {} retries".format(retry_count))
@@ -162,7 +163,7 @@ def create_template(templatefile, num, parameters, globalvars):
                             value = router_ip
 
                     cmdstring += " " + parameter_flag + " %s='%s'" % (key, value)
-        cmdstring += " " + parameter_flag + " IDENTIFIER=%i" % i
+        #cmdstring += " " + parameter_flag + " IDENTIFIER=%i" % i
 
         processedstr = oc_command_with_retry(cmdstring, globalvars)
         templatejson = json.loads(processedstr[0])

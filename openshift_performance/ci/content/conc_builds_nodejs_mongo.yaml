@@ -1,0 +1,17 @@
+projects:
+  - num: 500
+    basename: svt-nodejs-
+    ifexists: default
+    tuning: default
+
+    templates:
+      - num: 1
+        file: ../../../openshift_scalability/content/quickstarts/nodejs/nodejs-mongodb.json
+tuningsets:
+  - name: default
+    pods:
+      stepping:
+        stepsize: 5
+        pause: 10 s
+      rate_limit:
+        delay: 250 ms
