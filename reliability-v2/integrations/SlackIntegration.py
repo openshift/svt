@@ -13,6 +13,13 @@ class SlackIntegration:
         self.slack_client = None
         self.slack_tag = ""
         self.thread_ts = None
+        self.rate_limit = {}
+        self.rate_limit_number = 2
+        self.rate_limit_interval = 3600
+        self.limited_messages = ("Unable to connect to the server: dial tcp",
+        "Unable to connect to the server: dial tcp: lookup",
+        "error: You must be logged in to the server (Unauthorized)",
+        "Result: Error from server (AlreadyExists): project.project.openshift.io")
     
     def init_slack_client(self, slack_channel, slack_member):
         # Init slack client
@@ -56,26 +63,28 @@ class SlackIntegration:
         
     # Post messages in slack
     def info(self, slack_message):
-        timestamp = (time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime()))
-        try:
-            self.slack_client.chat_postMessage(
-                channel=self.slack_channel,
-                text=f"[{timestamp}] {self.slack_tag} {slack_message}",
-                thread_ts=self.thread_ts
-            )
-        except Exception as e:
-            self.logger.warning(f"post_info_to_slack had exception: '{e}")
+        if not self.rate_limit_message(slack_message):
+            timestamp = (time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime()))
+            try:
+                self.slack_client.chat_postMessage(
+                    channel=self.slack_channel,
+                    text=f"[{timestamp}] {self.slack_tag} {slack_message}",
+                    thread_ts=self.thread_ts
+                )
+            except Exception as e:
+                self.logger.warning(f"post_info_to_slack had exception: '{e}")
 
     def error(self, slack_message):
-        timestamp = (time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime()))
-        try:
-            self.slack_client.chat_postMessage(
-                channel=self.slack_channel,
-                text=f"[{timestamp}] {self.slack_tag} :boom: {slack_message}",
-                thread_ts=self.thread_ts
-            )
-        except Exception as e:
-            self.logger.warning(f"post_error_to_slack had exception: '{e}")        
+        if not self.rate_limit_message(slack_message):
+            timestamp = (time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime()))
+            try:
+                self.slack_client.chat_postMessage(
+                    channel=self.slack_channel,
+                    text=f"[{timestamp}] {self.slack_tag} :boom: {slack_message}",
+                    thread_ts=self.thread_ts
+                )
+            except Exception as e:
+                self.logger.warning(f"post_error_to_slack had exception: '{e}")
 
     # Report the start of reliability test in slack channel
     def slack_report_reliability_start(self, cluster_info):
@@ -85,5 +94,30 @@ class SlackIntegration:
                 link_names=True,
                 text=f"[{timestamp}] {self.slack_tag} Reliability-v2 test has started on cluster: {cluster_info}")
             self.thread_ts = response['ts']
+
+    # Rate limit the number of messages 
+    def rate_limit_message(self,message):
+        for limited_message in self.limited_messages:
+            if limited_message in message:
+                if self.rate_limit.get(message)!= None:
+                    new_time = time.time()
+                    self.rate_limit[message]["number"] += 1
+                    if new_time - self.rate_limit[message]["time"] > self.rate_limit_interval:
+                        self.rate_limit[message]["number"] = 1
+                        self.rate_limit[message]["time"] = time.time()
+                        return False
+                    else:
+                    # Limit the message if it is sent more than 2 times
+                        if self.rate_limit[message]["number"] > self.rate_limit_number:
+                            self.logger.warning(f"Limit message for greater than {self.rate_limit_number} times in {self.rate_limit_interval} seconds")
+                            return True
+                        else:
+                            return False
+                else:
+                    self.rate_limit[message] = {}
+                    self.rate_limit[message]["number"] = 1
+                    self.rate_limit[message]["time"] = time.time()
+                    return False
+        return False
 
 slackIntegration = SlackIntegration()
