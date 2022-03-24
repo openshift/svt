@@ -237,6 +237,8 @@ class Tasks:
             self.logger.error(f"Operator degraded: {result}")
             slackIntegration.error(f"Operator degraded: {result}")
             rc_return = 1
+        else:
+            rc_return = 1
         self.__log_result(rc_return)
         return(result,rc_return)
 
