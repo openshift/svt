@@ -19,7 +19,8 @@ class SlackIntegration:
         self.limited_messages = ("Unable to connect to the server: dial tcp",
         "Unable to connect to the server: dial tcp: lookup",
         "error: You must be logged in to the server (Unauthorized)",
-        "Result: Error from server (AlreadyExists): project.project.openshift.io")
+        "Result: Error from server (AlreadyExists): project.project.openshift.io",
+        "load_app: visit route")
     
     def init_slack_client(self, slack_channel, slack_member):
         # Init slack client
