@@ -1,0 +1,17 @@
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: allow-same-namespace
+spec:
+  podSelector: 
+    #matchLabels:
+    matchExpressions:
+      # postgresql for django-psql-persistent, nodejs-postgresql-persistent, rails-pgsql-persistent
+      # database for dancer-mysql-persistent
+      # mysql for cakephp-mysql-persistent
+      - {key: name, operator: In, values: [postgresql,database,mysql]}
+  ingress:
+  - from:
+    # allow pod from the same namespace
+    - podSelector: {}
