@@ -62,9 +62,10 @@ class TaskManager:
         jitter = users_task["jitter"]
         tasks = users_task["tasks"]
 
-        random_jitter = random.randint(1,jitter)
-        self.logger.info(f"User {user} will sleep {random_jitter} seconds as jitter")
-        time.sleep(random_jitter)
+        if jitter > 0:
+            random_jitter = random.randint(1,jitter)
+            self.logger.info(f"User {user} will sleep {random_jitter} seconds as jitter")
+            time.sleep(random_jitter)
 
         state = self.check_state()
 

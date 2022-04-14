@@ -112,7 +112,7 @@ class Tasks:
             return(result,rc)
         else:
             (route,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $2'}} | grep {template}",kubeconfig)
-            if rc == 0:
+            if rc == 0 and "No resources found" not in route:
                 route = route.rstrip()
                 max_tries = 60
                 current_tries = 0
@@ -121,12 +121,21 @@ class Tasks:
                     self.logger.info(f"{template} route not available yet, sleeping 10 seconds") 
                     sleep(20)
                     current_tries += 1
-                    visit_success = self.__visit_app(route)
+                    visit_success,status_code = self.__visit_app(route)
                 if not visit_success:
-                    self.logger.error(f"add_app: {namespace}.{template} did not become available" )
+                    self.logger.error(f"new_app: visit '{route}' failed after {max_tries} retries. status_code: {status_code}")
+                    slackIntegration.error(f"new_app: visit '{route}' failed after {max_tries} retries. status_code: {status_code}")
+                    # return 1 so the upcoming tasks won't be run
+                    self.__log_result(1)
+                    return(visit_success,1)
+                else:
+                    self.__log_result(0)
             else:
                 visit_success = False
-            self.__log_result(rc)
+                self.logger.error(f"new_app: get route failed for '{namespace}.{template}'.")
+                slackIntegration.error(f"new_app: get route failed for '{namespace}.{template}'.")
+                self.__log_result(1)
+                return(visit_success,1)
             return(visit_success,0)
 
     def __visit_app(self,route):
@@ -138,29 +147,39 @@ class Tasks:
             if r.status_code == 200:
                 self.logger.info(f"Response code:{str(r.status_code)}. Visit succeeded: {route}")
                 visit_success = True
+            return visit_success, r.status_code
         except Exception as e :
             self.logger.error(f"Visit exception: {route}. Exception: {e}")
-        return visit_success
+            return visit_success, 0
 
     def load_app(self,user,namespace,clients="1"):
         kubeconfig = global_data.kubeconfigs[user]
         (route,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $2'}}",kubeconfig)
-        route = route.rstrip()
-        self.logger.info(f"[Task] load app route {route} in namespace {namespace} with {clients} clients.")
-        urls = []
-        for i in range(int(clients)):
-            urls.append(route)
-        with ThreadPoolExecutor() as executor:
-            results = executor.map(self.__visit_app, urls)
-            return_value = 0
-            for result in results:
-                # if any of the client visit fails, load_app func is marked as failed.
-                if result == True:
-                    self.__log_result(0)
-                if result != True:
-                    self.__log_result(1)
-                    return_value = 1
-        return ("",return_value)
+        if rc == 0 and "No resources found" not in route:
+            route = route.rstrip()
+            self.logger.info(f"[Task] load app route {route} in namespace {namespace} with {clients} clients.")
+            urls = []
+            for i in range(int(clients)):
+                urls.append(route)
+            with ThreadPoolExecutor() as executor:
+                results = executor.map(self.__visit_app, urls)
+                return_value = 0
+                for result in results:
+                    # if any of the client visit fails, load_app func is marked as failed.
+                    if result[0] == True:
+                        self.__log_result(0)
+                    if result[0] != True:
+                        self.__log_result(1)
+                        return_value = 1
+                        status_code = result[1]
+            if return_value == 1:
+                self.logger.error(f"load_app: visit route '{route}' failed. status_code: {status_code}")
+                slackIntegration.error(f"load_app: visit route '{route}' failed. status_code: {status_code}")
+            return ("",return_value)
+        else:
+            self.logger.error(f"load_app: get route failed for namespace '{namespace}'.")
+            slackIntegration.error(f"load_app: get route failed for namespace '{namespace}'.")
+            return ("",1)
 
 #when halt get the following: 
 #for result in list(results[0]):
