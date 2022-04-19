@@ -44,6 +44,8 @@ reliability:
       tasks:
         - func delete_all_projects # clear all projects
         - func new_project 2 # new 2 projects
+        # If network policy is planed in the test, uncomment the following line
+        #- func apply 2 "<path to /reliability-v2/networkpolicy/allow-same-namespace.yaml>" # Apply network policy to 2 projects
         - func check_all_projects # check all project under this user
         - func new_app 2 # new app in 2 namespaces
         - func load_app 2 10 # load apps in 2 namespaces with 10 clients for each

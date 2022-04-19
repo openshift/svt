@@ -41,13 +41,16 @@ For more detail explaination about the configuration, please go to [Configuratio
 
 #### Run the test
 ```
-python3 reliability.py -c <path to config file> -l <path to log config file> --cerberus-history <path to file to save cerberus history is cerberus is enabled>
+python3 reliability.py -c <path to config file>
 ```
 `-l` and `--cerberus-history` are optional.
 
 Logs will go to stdout and `/tmp/reliability.log` by default if `-l` is not specified.
 
 Cerberus history file will go to `/tmp/cerberus-history.json` by default if `--cerberus-history` is not specified.
+```
+python3 reliability.py -c <path to config file> -l <path to log config file> --cerberus-history <path to file to save cerberus history is cerberus is enabled>
+```
 
 #### Integration
 [Slack Integration](#Slack-Integration) 
@@ -201,9 +204,10 @@ reliability:
       tasks:
         - func delete_all_projects # clear all projects
         - func new_project 2 # new 2 projects
+        - func apply 2 "<path to /reliability-v2/networkpolicy/allow-same-namespace.yaml>" # Apply network policy to 2 projects
         - func check_all_projects # check all project under this user
-        - func load_app 2 10 # load apps in 2 namespaces with 10 clients for each
         - func new_app 2 # new app in 2 namespaces
+        - func load_app 2 10 # load apps in 2 namespaces with 10 clients for each
         - func build 1 # build app in 1 namespace
         - func scale_up 2 # scale up app in 2 namespaces
         - func scale_down 1 # scale down app in 2 namespaces
@@ -218,15 +222,16 @@ The following funcs are supported now:
 | func | parameters | persona | comment |
 | ---- | ---- | ---- | ---- |
 | delete_all_projects  | N/A | developer | delete all projects for a user | 
-| new_project | number of projects | developer | Create n projects for the user|
+| new_project | number_of_projects | developer | Create n projects for the user|
 | check_all_projects  | N/A | developer | Check projects under the user|
-| new_app  | number of projects | developer | New an app under each project|
-| load_app  | number of projects number of clients | developer | Load an app under each project with a number of clients|
-| build  | number of projects | developer | Build under each project|
-| scale_up  | number of projects | developer | Scaleup the deployment from 1 to 2 under each project|
-| scale_down  | number of projects | developer | Scaledown the deployment from 2 to 1 under each project|
-| check_pods  | number of projects | developer | Check pods under each project|
-| delete_project  | number of projects | developer | Delete each project|
+| new_app  | number_of_projects | developer | New an app under each project|
+| load_app  | number_of_projects  number_of_clients | developer | Load an app under each project with a number of clients|
+| apply  | number_of_projects  file_location | developer admin | apply a file under each project|
+| build  | number_of_projects | developer | Build under each project|
+| scale_up  | number_of_projects | developer | Scaleup the deployment from 1 to 2 under each project|
+| scale_down  | number_of_projects | developer | Scaledown the deployment from 2 to 1 under each project|
+| check_pods  | number_of_projects | developer | Check pods under each project|
+| delete_project  | number_of_projects | developer | Delete each project|
 | check_operators  | N/A | admin | Check Degraded operators|
 
 
