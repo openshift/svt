@@ -96,8 +96,9 @@ class GlobalData:
         if slack_enable:
             slackIntegration.init_slack_client(slack_channel, slack_member)
             # send start slack integration
-            (result, rc)=oc("whoami --show-server", self.kubeconfig)
-            cluster_info = result if rc == 0 else "unknown"
+            (server, rc)=oc("whoami --show-server", self.kubeconfig)
+            (version, rc)=oc("version", self.kubeconfig)
+            cluster_info = server + version if rc == 0 else "unknown"
             slackIntegration.slack_report_reliability_start(cluster_info)
 
         # init Ceberus integration
