@@ -161,7 +161,7 @@ class Tasks:
             urls = []
             for i in range(int(clients)):
                 urls.append(route)
-            with ThreadPoolExecutor() as executor:
+            with ThreadPoolExecutor(max_workers=int(clients)) as executor:
                 results = executor.map(self.__visit_app, urls)
                 return_value = 0
                 for result in results:
