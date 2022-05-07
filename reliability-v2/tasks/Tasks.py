@@ -248,13 +248,25 @@ class Tasks:
         # This operation can only be done by admin user
         kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: check operators")
-        (result,rc) = oc(f"get co --no-headers | awk '{{print $1 $3 $4 $5 $7}}' | grep -v TrueFalseFalse",kubeconfig,ignore_log=True,ignore_slack=True)
+        # Headers AVAILABLE   PROGRESSING   DEGRADED
+        # Check if operators are progressing
+        (result,rc) = oc(f"get co --no-headers| grep 'True.*True.*False'",kubeconfig,ignore_log=True,ignore_slack=True)
+        if rc == 0 :
+            self.logger.info(f"Operator progressing: {result}")
+            slackIntegration.info(f"Operator progressing: {result}")
+            rc_return = 0
+        elif rc == 1 and result == "":
+            rc_return = 0
+        else:
+            rc_return = 1
+        # Check if operators are unavailable or degraded
+        (result,rc) = oc(f"get co --no-headers| grep -v 'True.*[True|False].*False'",kubeconfig,ignore_log=True,ignore_slack=True)
         if rc == 1 and result == "":
             self.logger.info(f"Cluster operators are healthy.")
             rc_return = 0
         elif rc == 0 :
-            self.logger.error(f"Operator degraded: {result}")
-            slackIntegration.error(f"Operator degraded: {result}")
+            self.logger.error(f"Operator unavailable or degraded: {result}")
+            slackIntegration.error(f"Operator unavailable or degraded: {result}")
             rc_return = 1
         else:
             rc_return = 1
