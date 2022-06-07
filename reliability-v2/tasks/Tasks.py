@@ -273,6 +273,24 @@ class Tasks:
         self.__log_result(rc_return)
         return(result,rc_return)
 
+    def check_nodes(self,user):
+        kubeconfig = global_data.kubeconfigs[user]
+        self.logger.info(f"[Task] User {user}: check nodes")
+        # Check if nodes are Ready
+        (result,rc) = oc(f"get nodes --no-headers| grep -v ' Ready'",kubeconfig,ignore_log=True,ignore_slack=True)
+        if rc == 0:
+            self.logger.error(f"Some nodes are not Ready: {result}")
+            slackIntegration.error(f"Some nodes are not Ready: {result}")
+            rc_return = 1
+        elif rc == 1 and result == "":
+            self.logger.info(f"Nodes are healthy.")
+            rc_return = 0
+        else:
+            self.logger.error(f"Check node failed: {result}")
+            slackIntegration.error(f"Check node failed: {result}")
+            rc_return = 1
+        return(result,rc_return)
+
     def oc_task(self,task,user):
         kubeconfig = global_data.kubeconfigs[user]
         (result, rc) = oc(task,kubeconfig)

@@ -32,6 +32,7 @@ reliability:
       tasks: 
         - func check_operators
         - oc get project -l purpose=reliability
+        - func check_nodes
         - kubectl get pods -A -o wide | egrep -v "Completed|Running"
         
     - name: developer-1
