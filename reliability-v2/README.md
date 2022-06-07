@@ -233,6 +233,7 @@ The following funcs are supported now:
 | check_pods  | number_of_projects | developer | Check pods under each project|
 | delete_project  | number_of_projects | developer | Delete each project|
 | check_operators  | N/A | admin | Check Degraded operators|
+| check_nodes  | N/A | admin | Check not Ready nodes|
 
 
 
