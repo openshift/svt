@@ -1,0 +1,17 @@
+jobs:
+  - name: ${NAME}
+    namespace: ${NAMESPACE}
+    jobIterations: ${JOB_ITERATION}
+    qps: ${QPS}
+    burst: ${BURST}
+    namespacedIterations: true
+    podWait: false
+    verifyObjects: true
+    objects:
+    - objectTemplate: "pause-deployment.yml"
+      replicas: 1
+    - objectTemplate: "pause-service.yml"
+      replicas: 1
+      inputVars:
+        serviceType: ${SERVICE_TYPE}
+        

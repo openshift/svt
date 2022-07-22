@@ -31,9 +31,8 @@
         "source": {
           "type": "Git",
           "git": {
-            "uri": "git://github.com/tiwillia/hello-openshift-example.git"
-          },
-          "dockerfile": "FROM openshift/hello-openshift\nUSER example"
+            "uri": "quay.io/openshifttest/pause:latest"
+          }
         },
         "strategy": {
           "type": "Source",
