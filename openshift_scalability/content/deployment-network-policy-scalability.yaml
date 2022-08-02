@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: network-policy-scalability
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 500
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: network-policy-scalability
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: network-policy-scalability
+        nl.duo.networkpolicy.adota: "true"
+        nl.duo.networkpolicy.allow-ingress: "true"
+        nl.duo.networkpolicy.as400: "true"
+    spec:
+      containers:
+      - image: openshift/hello-openshift:latest
+        imagePullPolicy: IfNotPresent
+        name: ubi
