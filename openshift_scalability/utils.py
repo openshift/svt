@@ -568,7 +568,7 @@ def quota_handler(inputquota, globalvars):
         quotafile = "content/quota-default.json"
 
     with open(quotafile,'r') as infile:
-        qconfig = json.safe_load(infile)
+        qconfig = json.load(infile)
     qconfig["metadata"]["namespace"] = globalvars["namespace"]
     qconfig["metadata"]["name"] = quota["name"]
     tmpfile=tempfile.NamedTemporaryFile(mode='w')
@@ -619,7 +619,7 @@ def service_handler(inputservs, globalvars):
 
         service_config = {}
         with open(servfile) as stream:
-            service_config = json.safe_load(stream)
+            service_config = json.load(stream)
         service_config["metadata"]["namespace"] = namespace
         service_config["metadata"]["name"] = basename
 
@@ -634,7 +634,7 @@ def ebs_create(globalvars):
     global ebsvolumeid
     ebsvolumeid = ec2_volume(ebsvolumesize,ebsvtype,ebstagprefix,ebsregion)
     with open("content/pv-default.json", "r") as pvstream:
-        pvjson = json.safe_load(pvstream)
+        pvjson = json.load(pvstream)
     pvjson["metadata"]["name"] = ebsvolumeid
     pvjson["spec"]["capacity"]["storage"] = str(ebsvolumesize) + "Gi"  # this has to be like this till k8s 23357 is fixed
     pvjson["spec"]["accessModes"] = [pvpermissions]
@@ -653,7 +653,7 @@ def ebs_create(globalvars):
     pvtmpfile.close()
 
     with open("content/pvc-default.json", "r") as pvcstream:
-        pvcjson = json.safe_load(pvcstream)
+        pvcjson = json.load(pvcstream)
     pvcjson["metadata"]["name"] = ebsvolumeid
     pvcjson["metadata"]["namespace"] = namespace
     pvcjson["spec"]["resources"]["requests"]["storage"] = str(ebsvolumesize) + "Gi"
@@ -673,7 +673,7 @@ def ebs_create(globalvars):
 def ceph_secret_create(cephsecret,globalvars):
     namespace = globalvars["namespace"]
     with open("content/ceph-secret.json") as cephsec:
-        cephsecjson = json.safe_load(cephsec)
+        cephsecjson = json.load(cephsec)
 
     cephsecjson["metadata"]["name"] = cephsecretname
     cephsecjson["metadata"]["namespace"] = namespace
@@ -704,7 +704,7 @@ def ceph_image_create(i,globalvars):
     # ceph_volume function will create ceph images at ceph storage cluster side
     ceph_volume(cephpool,cephimagename,imagesize)
     with open("content/pv-ceph.json") as pvstream:
-        pvjson = json.safe_load(pvstream)
+        pvjson = json.load(pvstream)
 
     pvjson["metadata"]["name"] =  "cephvol" + str(i)
     pvjson["metadata"]["namespace"] = namespace
@@ -730,7 +730,7 @@ def ceph_image_create(i,globalvars):
     pvtmpfile.close()
 
     with open("content/pvc-default.json", "r") as pvcstream:
-        pvcjson = json.safe_load(pvcstream)
+        pvcjson = json.load(pvcstream)
     pvcjson["metadata"]["name"] = "cephclaim" + str(i)
     pvcjson["metadata"]["namespace"] = namespace
     pvcjson["spec"]["resources"]["requests"]["storage"] = str(cephimagesize) + "Gi"
@@ -839,7 +839,7 @@ def pod_handler(inputpods, globalvars):
 
         pod_config = {}
         with open(podfile) as stream:
-            pod_config = json.safe_load(stream)
+            pod_config = json.load(stream)
         pod_config["metadata"]["namespace"] = namespace
         pod_config["metadata"]["name"] = basename
 
@@ -872,7 +872,7 @@ def rc_handler(inputrcs, globalvars):
 
         rc_config = {}
         with open(rcfile) as stream:
-            rc_config = json.safe_load(stream)
+            rc_config = json.load(stream)
         rc_config["metadata"]["namespace"] = namespace
         rc_config["metadata"]["name"] = basename
         rc_config["spec"]["replicas"] = replicas
