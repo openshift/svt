@@ -18,15 +18,16 @@ class Tasks:
         self.results = {}
 
     def get_results(self):
-        results = [f"{'[Function]'.ljust(25)}|{'Total'.rjust(10)}|{'Passed'.rjust(10)}|{'Failed'.rjust(10)}|"]
-        results.append("-----------------------------------------------------------")
+        results = [f"{'[Function]'.ljust(25)}|{'Total'.rjust(10)}|{'Passed'.rjust(10)}|{'Failed'.rjust(10)}|{'Failure Rate'.rjust(10)}|"]
+        results.append("-----------------------------------------------------------------------")
         for key,value in self.results.items():
             passed = value["passed"]
             failed = value["failed"]
             total = passed + failed
+            failure_rate = '{:.1%}'.format(failed/total)
             function = f"[{key}]"
-            results.append(f"{function.ljust(25)}|{str(total).rjust(10)}|{str(passed).rjust(10)}|{str(failed).rjust(10)}|")
-        results.append("-----------------------------------------------------------")
+            results.append(f"{function.ljust(25)}|{str(total).rjust(10)}|{str(passed).rjust(10)}|{str(failed).rjust(10)}|{str(failure_rate).rjust(10)}|")
+        results.append("-----------------------------------------------------------------------")
         results = "\n".join(results)
         self.logger.info(f"Reliability test results:\n"+ results)
         return results
