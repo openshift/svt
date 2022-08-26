@@ -12,7 +12,7 @@
 
 source ../common.sh
 
-export jobs_amount=(${PARAMETERS:-100 500 1000 2000})
+export jobs_amount=(${PARAMETERS:-300 400 600 800 900})
 results_file=conc_jobs_result_$(date +%Y%m%d%H%M%S).out
 
 name="concjobs"

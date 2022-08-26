@@ -8,23 +8,28 @@
 ## Cluster config: 3 master (m5.2xlarge or equivalent) with 27 worker
 ## kube-burner config: perfscale_regerssion_ci/kubeburner-object-templates/large-network-policy.yml
 ## network-policy config: perfscale_regerssion_ci/content/allow_default_network_policy.yaml
+## PARAMETERS: number of JOB_ITERATION
 ################################################ 
 
-source ../utils/run_workload.sh
+source ../../utils/run_workload.sh
+source ../custom_workload_env.sh
+source ../common.sh
 source large_network_policy_env.sh
 
-echo "Use kube-burner to load the cluster with test objects"
-source custom_workload_env.sh
+# If PARAMETERS is set from upstream ci, overwirte JOB_ITERATION
+export JOB_ITERATION=${PARAMETERS:-5000}
+
+echo "======Use kube-burner to load the cluster with test objects======"
 run_workload
 
-echo "Apply network policy to all namespaces"
+echo "======Apply network policy to all namespaces======"
 for i in $(oc get projects | grep large-network-policy | grep -Eo 'large-network-policy\S*');
 do
   echo "$i"
   oc create -f ${NETWORK_POLICY} -n "$i"
 done
 
-echo "Verify there are enough policies in flow"
+echo "======Verify there are enough policies in flow======"
 network_namespace="openshift-sdn"
 container_name="sdn"
 sdn_project_count=$(oc get projects | grep sdn | wc -l | xargs)
@@ -49,12 +54,12 @@ do
    total_policies=$(($total_policies + $count))
 done
 
-echo "Total flows in pods $total_policies"
+echo "======Total flows in pods $total_policies======"
 
-if [[ $total_policies -ge 5000 ]]; then
+if [[ $total_policies -ge $JOB_ITERATION ]]; then
   echo "======PASS======"
   echo "Deleting test objects"
-  oc delete project -l kube-burner-job=large-network-policy
+  delete_project_by_label kube-burner-job=$NAME
   exit 0
 else
   echo "======FAIL======"
