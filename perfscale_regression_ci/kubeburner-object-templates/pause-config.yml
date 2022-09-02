@@ -7,6 +7,11 @@ jobs:
     namespacedIterations: true
     podWait: false
     verifyObjects: true
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
     objects:
     - objectTemplate: "pause-deployment.yml"
       replicas: 1
