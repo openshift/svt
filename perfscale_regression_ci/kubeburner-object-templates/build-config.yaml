@@ -1,0 +1,24 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: buildconfig{{.Replica}}-{{.Iteration}}
+spec:
+  triggers:
+  - type: GitHub
+    github:
+      secret: hello-openshift-secret{{.Iteration}}
+  - type: ImageChange
+  source:
+    type: Git
+    git:
+      uri: {{.git_image}}
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: imagestream-{{.Replica}}-{{.Iteration}}:latest
+  output:
+    to:
+      kind: ImageStreamTag
+      name: imagestream-{{.Replica}}-{{.Iteration}}:latest
