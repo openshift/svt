@@ -119,13 +119,20 @@ class Tasks:
                 current_tries = 0
                 visit_success = False
                 while not visit_success and current_tries <= max_tries:
-                    self.logger.info(f"{template} route not available yet, sleeping 10 seconds") 
-                    sleep(20)
+                    self.logger.info(f"{template} route not available yet, sleeping 30 seconds. Retry:{current_tries}.")
+                    sleep(30)
                     current_tries += 1
                     visit_success,status_code = self.__visit_app(route)
                 if not visit_success:
-                    self.logger.error(f"new_app: visit '{route}' failed after {max_tries} retries. status_code: {status_code}")
-                    slackIntegration.error(f"new_app: visit '{route}' failed after {max_tries} retries. status_code: {status_code}")
+                    # debug the namespace
+                    self.__get_namespace_resource(user,namespace,"pods")
+                    self.__get_namespace_resource(user,namespace,"events")
+                    # sleep 5 minutes for manual debug
+                    self.logger.info(f"new_app: visit '{route}' failed after 30 minutes. status_code: {status_code}. Wait 5 more minutes for manual debug.")
+                    slackIntegration.info(f"new_app: visit '{route}' failed after 30 minutes. status_code: {status_code}. Wait more 5 minutes for manual debug.")
+                    sleep(300)
+                    self.logger.error(f"new_app: visit '{route}' failed after 35 minutes. status_code: {status_code}")
+                    slackIntegration.error(f"new_app: visit '{route}' failed after 35 minutes. status_code: {status_code}")
                     # return 1 so the upcoming tasks won't be run
                     self.__log_result(1)
                     return(visit_success,1)
@@ -291,6 +298,11 @@ class Tasks:
             slackIntegration.error(f"Check node failed: {result}")
             rc_return = 1
         return(result,rc_return)
+
+    def __get_namespace_resource(self,user,namespace,type):
+        kubeconfig = global_data.kubeconfigs[user]
+        (result,rc) = oc(f"get {type} -n {namespace}",kubeconfig)
+        return (result,rc)
 
     def oc_task(self,task,user):
         kubeconfig = global_data.kubeconfigs[user]
