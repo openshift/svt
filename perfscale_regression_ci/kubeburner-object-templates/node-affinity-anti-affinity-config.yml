@@ -1,0 +1,41 @@
+jobs:
+  - name: ${AFFINTIY_NAME}
+    namespace: ${AFFINTIY_NAMESPACE}
+    jobIterations: ${AFFINITY_JOB_ITERATION}
+    qps: ${QPS}
+    burst: ${BURST}
+    namespacedIterations: false
+    podWait: false
+    verifyObjects: true
+    objects:
+    - objectTemplate: "node-affinity.yml"
+      replicas: 1
+    - objectTemplate: "node-affinity-service.yml"
+      replicas: 1
+      inputVars:
+        serviceType: ${SERVICE_TYPE}
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+  - name: ${ANTI_AFFINTIY_NAME}
+    namespace: ${ANTI_AFFINTIY_NAMESPACE}
+    jobIterations: ${ANTI_AFFINITY_JOB_ITERATION}
+    qps: ${QPS}
+    burst: ${BURST}
+    namespacedIterations: false
+    podWait: false
+    verifyObjects: true
+    objects:
+    - objectTemplate: "hello_node-anti-affinity.yml"
+      replicas: 1
+    - objectTemplate: "node-affinity-service.yml"
+      replicas: 1
+      inputVars:
+        serviceType: ${SERVICE_TYPE}
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
