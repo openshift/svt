@@ -10,10 +10,6 @@ jobs:
     objects:
     - objectTemplate: "node-affinity.yml"
       replicas: 1
-    - objectTemplate: "node-affinity-service.yml"
-      replicas: 1
-      inputVars:
-        serviceType: ${SERVICE_TYPE}
     namespaceLabels:
       security.openshift.io/scc.podSecurityLabelSync: false
       pod-security.kubernetes.io/enforce: privileged
@@ -30,10 +26,6 @@ jobs:
     objects:
     - objectTemplate: "hello_node-anti-affinity.yml"
       replicas: 1
-    - objectTemplate: "node-affinity-service.yml"
-      replicas: 1
-      inputVars:
-        serviceType: ${SERVICE_TYPE}
     namespaceLabels:
       security.openshift.io/scc.podSecurityLabelSync: false
       pod-security.kubernetes.io/enforce: privileged
