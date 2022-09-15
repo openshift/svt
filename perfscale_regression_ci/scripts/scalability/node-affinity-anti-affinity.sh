@@ -21,18 +21,9 @@ function show_node_labels() {
   oc get node -l beta.kubernetes.io/arch=intel
 }
 
-function check_no_error_pods()
-{
-  error=`oc get pods -n $1 | grep Error | wc -l`
-  if [ $error -ne 0 ]; then
-    echo "$error pods found, exiting"
-    #loop to find logs of error pods?
-    exit 1
-  fi
-}
 
-export ANTI_AFFINITY_JOB_ITERATION=${ANTI_AFFINITY_JOB_ITERATION:-130}
-export AFFINITY_JOB_ITERATION=${AFFINITY_JOB_ITERATION:-200}
+export ANTI_AFFINITY_JOB_ITERATION=${ANTI_AFFINITY_JOB_ITERATION:-190}
+export AFFINITY_JOB_ITERATION=${AFFINITY_JOB_ITERATION:-190}
 
 # Output some general information about the test environment
 date
@@ -96,7 +87,7 @@ echo "======Use kube-burner to load the cluster with test objects======"
 run_workload
 
 
-echo "======Waiting for the pods in both namespaces======"
+# Waiting for the pods in both namespaces - will add a check in the future
 sleep 60
 sleep 30
 
@@ -141,7 +132,7 @@ else
   echo -e "Actual $node_anti_affinity_pods_actual pods deployed does NOT match expected $node_anti_affinity_pods_expected pods for node Anti-affinity test. Node Anti-affinity test failed !"
 fi
 
-sleep 60
+#sleep 60
 
 
 echo "======Final test result======"
@@ -154,7 +145,7 @@ if [[ ${pass_or_fail} == 2 ]]; then
   delete_project_by_label kube-burner-job=$AFFINTIY_NAME
   delete_project_by_label kube-burner-job=$ANTI_AFFINTIY_NAME
 
-  sleep 30
+  #sleep 30
 
   ## remove node labels created by the test run and then show the labels have been removed.
   echo -e "\nRemoving the node labels"
