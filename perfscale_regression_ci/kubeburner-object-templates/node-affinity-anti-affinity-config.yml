@@ -5,7 +5,7 @@ jobs:
     qps: ${QPS}
     burst: ${BURST}
     namespacedIterations: false
-    podWait: false
+    podWait: true
     verifyObjects: true
     objects:
     - objectTemplate: "node-affinity.yml"
@@ -21,7 +21,7 @@ jobs:
     qps: ${QPS}
     burst: ${BURST}
     namespacedIterations: false
-    podWait: false
+    podWait: true
     verifyObjects: true
     objects:
     - objectTemplate: "hello_node-anti-affinity.yml"
