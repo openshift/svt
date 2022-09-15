@@ -43,11 +43,6 @@ echo -e "\nWorker  nodes are: $compute_nodes"
 declare -a node_array
 counter=1
 
-oc get nodes -l 'node-role.kubernetes.io/worker='
-oc describe nodes -l 'node-role.kubernetes.io/worker='
-
-initial_node_label="beta.kubernetes.io/arch=amd64"
-
 
 for n in ${compute_nodes}; do
   node_array[${counter}]=${n}
@@ -64,6 +59,7 @@ done
 # Uncomment the code when running  this test repeatedly on the same cluster (during debugging) to ensure the 
 # node labels are removed. Otherwise, the test will fail/end prematurely.
 #   echo -e "\nRemoving the node labels"
+# initial_node_label="beta.kubernetes.io/arch=amd64"
 # oc label nodes ${node_array[1]} cpu-
 # oc label nodes ${node_array[2]} cpu-
 # oc label nodes ${node_array[1]} --overwrite ${initial_node_label}
@@ -86,10 +82,10 @@ sleep 5
 echo "======Use kube-burner to load the cluster with test objects======"
 run_workload
 
+oc get nodes -l 'node-role.kubernetes.io/worker='
+oc describe nodes -l 'node-role.kubernetes.io/worker='
 
-# Waiting for the pods in both namespaces - will add a check in the future
-sleep 60
-sleep 30
+initial_node_label="beta.kubernetes.io/arch=amd64"
 
 
 echo "======Checking the pods for errors======"
@@ -131,8 +127,6 @@ if [ $node_anti_affinity_pods_expected == $node_anti_affinity_pods_actual ]; the
 else
   echo -e "Actual $node_anti_affinity_pods_actual pods deployed does NOT match expected $node_anti_affinity_pods_expected pods for node Anti-affinity test. Node Anti-affinity test failed !"
 fi
-
-#sleep 60
 
 
 echo "======Final test result======"
