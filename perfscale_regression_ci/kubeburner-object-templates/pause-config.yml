@@ -5,7 +5,7 @@ jobs:
     qps: ${QPS}
     burst: ${BURST}
     namespacedIterations: true
-    podWait: false
+    podWait: true
     verifyObjects: true
     namespaceLabels:
       security.openshift.io/scc.podSecurityLabelSync: false
