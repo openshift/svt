@@ -51,3 +51,13 @@ function delete_project_by_label() {
     sleep 5
   done
 }
+
+function check_no_error_pods()
+{
+  error=`oc get pods -n $1 | grep Error | wc -l`
+  if [ $error -ne 0 ]; then
+    echo "$error pods found, exiting"
+    #loop to find logs of error pods?
+    exit 1
+  fi
+}
