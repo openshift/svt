@@ -13,9 +13,9 @@ jobs:
       pod-security.kubernetes.io/audit: privileged
       pod-security.kubernetes.io/warn: privileged
     objects:
-    - objectTemplate: "pause-deployment.yml"
+    - objectTemplate: "pause-deployment.yaml"
       replicas: 1
-    - objectTemplate: "pause-service.yml"
+    - objectTemplate: "pause-service.yaml"
       replicas: 1
       inputVars:
         serviceType: ${SERVICE_TYPE}
