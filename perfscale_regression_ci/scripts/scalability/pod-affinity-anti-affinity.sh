@@ -152,18 +152,18 @@ pass_or_fail=0
 
 
 if [ $s1_affinity_pod_expected == $s1_affinity_pod_actual ]; then
-  echo -e "Actual $s1_affinity_pod_expected pods were sucessfully deployed. Node affinity test passed!"
+  echo -e "Actual $s1_affinity_pod_expected pods were sucessfully deployed. Pod affinity test passed!"
   (( ++pass_or_fail ))
 else
-  echo -e "Actual $s1_affinity_pod_actual pods deployed does NOT match expected $s1_affinity_pod_expected pods for node affinity test.  Node affinity test failed !"
+  echo -e "Actual $s1_affinity_pod_actual pods deployed does NOT match expected $s1_affinity_pod_expected pods for pod affinity test.  Pod affinity test failed !"
 fi
 
 
 if [ $s1_anti_affinity_pod_expected == $s1_anti_affinity_pod_actual ]; then
-  echo -e "Actual $s1_anti_affinity_pod_expected pods were sucessfully deployed.  Node Anti-affinity test passed!"
+  echo -e "Actual $s1_anti_affinity_pod_expected pods were sucessfully deployed.  Pod anti-affinity test passed!"
   (( ++pass_or_fail ))
 else
-  echo -e "Actual $s1_anti_affinity_pod_actual pods deployed does NOT match expected $s1_anti_affinity_pod_expected pods for node Anti-affinity test. Node Anti-affinity test failed !"
+  echo -e "Actual $s1_anti_affinity_pod_actual pods deployed does NOT match expected $s1_anti_affinity_pod_expected pods for pod anti-affinity test. Pod anti-affinity test failed !"
 fi
 
 
