@@ -30,9 +30,6 @@ oc describe node | grep Runtime
 
 echo "======Setup/Configuration: Create the s1-proj namespace and the s1-test pod======"
 
-current_date=$(date +%Y-%m-%d-%H%M)
-echo "Date timestamp used for s1 pod spec filename: ${current_date}"
-
 worker_nodes=$(oc get nodes -l 'node-role.kubernetes.io/worker=' | awk '{print $1}' | grep -v NAME | xargs)
 
 echo -e "\nWorker  nodes are: $worker_nodes"
