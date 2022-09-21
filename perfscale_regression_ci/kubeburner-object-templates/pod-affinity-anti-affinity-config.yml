@@ -1,11 +1,27 @@
 jobs:
+  - name: ${S1_PROJ_NAME}
+    namespace: ${S1_PROJ_NAMESPACE}
+    jobIterations: ${S1_PROJ_JOB_ITERATION}
+    qps: ${QPS}
+    burst: ${BURST}
+    namespacedIterations: false
+    podWait: false
+    verifyObjects: true
+    objects:
+    - objectTemplate: "pod-s1-affinity.yml"
+      replicas: 1
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
   - name: ${POD_AFFINTIY_NAME}
     namespace: ${POD_AFFINTIY_NAMESPACE}
     jobIterations: ${POD_AFFINITY_JOB_ITERATION}
     qps: ${QPS}
     burst: ${BURST}
     namespacedIterations: false
-    podWait: true
+    podWait: false
     verifyObjects: true
     objects:
     - objectTemplate: "pod-pod-affinity.yml"
@@ -21,7 +37,7 @@ jobs:
     qps: ${QPS}
     burst: ${BURST}
     namespacedIterations: false
-    podWait: true
+    podWait: false
     verifyObjects: true
     objects:
     - objectTemplate: "pod-pod-anti-affinity.yml"
