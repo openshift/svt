@@ -18,37 +18,6 @@ source pod-affinity-anti-affinity_env.sh
 export POD_ANTI_AFFINITY_JOB_ITERATION=${POD_ANTI_AFFINITY_JOB_ITERATION:-190}
 export POD_AFFINITY_JOB_ITERATION=${POD_AFFINITY_JOB_ITERATION:-190}
 
-function wait_for_running() {
-  counter=0
-  while true; do
-    all_running=1
-
-    oc get pods -n s1-proj -o wide
-    RUNNING=$(oc get pods -n s1-proj)
-    echo "Pod status in namespace s1-proj: ${RUNNING}"
-    if [[ $RUNNING =~ Running ]]; then
-      oc get pods -n s1-proj -o wide
-      echo "Pod s1 in namespace s1-proj is now Running"
-    else
-      all_running=0
-      echo "Pod s1 in namespace s1-proj is still not Running"
-    fi
-
-    if [ $all_running -eq 1 ]; then
-      break
-    fi
-
-    if [[ $counter == 10 ]]; then
-      echo "s1 pod failed to get into Running state"
-      error_exit "s1 pod failed to get into Running state"
-    fi
-
-    (( ++counter ))
-    sleep 15
-  done
-
-}
-
 
 # Output some general information about the test environment
 date
@@ -71,63 +40,25 @@ echo -e "\nWorker  nodes are: $worker_nodes"
 oc get nodes -l 'node-role.kubernetes.io/worker='
 oc describe nodes -l 'node-role.kubernetes.io/worker='
 
-# Create the yaml file for the pod
-echo -e "apiVersion: v1
-kind: Pod
-metadata:
-  name: s1-test-pod
-  labels:
-    security: s1
-
-spec:
-  containers:
-  - name: ocp
-    image: gcr.io/google-containers/pause-amd64:3.0
-    securityContext:
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop: [ALL]
-      runAsNonRoot: true
-      runAsUser: 2000
-      seccompProfile:
-        type: RuntimeDefault
-    ports:
-    - containerPort: 8080
-  dnsPolicy: ClusterFirst
-  restartPolicy: Always" > pod-s1-${current_date}.yaml
-
-ls -ltr pod-s1-${current_date}.yaml
-cat pod-s1-${current_date}.yaml
-
-# Create a new project
-oc new-project s1-proj
-
-# Create/deploy a pod in the new project
-oc create -f pod-s1-${current_date}.yaml
-
-oc get pods -n s1-proj -o wide
-
-check_no_error_pods s1-proj
-
-wait_for_running
-
-
-# Once the pod is running, find it's node
-s1pod_node=$(oc get pods -n s1-proj -o wide --no-headers | awk {'print $7}')
-
-echo -e "\nPod s1 was deployed on node ${s1pod_node}"
-
-oc project default
-
 
 echo "======Use kube-burner to load the cluster with test objects======"
 run_workload
 
 echo "======Checking the pods for errors======"
 
+wait_for_running $S1_PROJ_NAMESPACE
+check_no_error_pods $S1_PROJ_NAMESPACE
+
+wait_for_running $POD_AFFINTIY_NAMESPACE
 check_no_error_pods $POD_AFFINTIY_NAMESPACE
 
+wait_for_running $POD_ANTI_AFFINTIY_NAMESPACE
 check_no_error_pods $POD_ANTI_AFFINTIY_NAMESPACE
+
+# Once the pod is running, find it's node
+s1pod_node=$(oc get pods -n s1-proj -o wide --no-headers | awk {'print $7}')
+
+echo -e "\nPod s1 was deployed on node ${s1pod_node}"
 
 echo -e "\n============= Summary of pod count with affinity to s1 pod: =================="
 
@@ -176,9 +107,7 @@ if [[ ${pass_or_fail} == 2 ]]; then
   echo "Deleting test objects"
   delete_project_by_label kube-burner-job=$POD_AFFINTIY_NAME
   delete_project_by_label kube-burner-job=$POD_ANTI_AFFINTIY_NAME
-  delete_project_by_label "kubernetes.io/metadata.name=s1-proj"
-  rm -f   pod-s1-${current_date}.yaml
-
+  delete_project_by_label kube-burner-job=$S1_PROJ_NAMESPACE
   exit 0
 else
   echo -e "\nOverall Pod Affinity and Anti-affinity Testcase result:  FAIL"
