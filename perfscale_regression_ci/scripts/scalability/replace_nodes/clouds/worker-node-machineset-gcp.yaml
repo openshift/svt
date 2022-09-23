@@ -1,0 +1,62 @@
+apiVersion: machine.openshift.io/v1beta1
+kind: MachineSet
+metadata:
+  generation: 1
+  labels:
+    ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-cluster: ${CLUSTER_NAME}
+    ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-role: worker
+    ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-type: worker
+  name: ${CLUSTER_NAME}-worker-new
+  namespace: openshift-machine-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-cluster: ${CLUSTER_NAME}
+      ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machineset: ${CLUSTER_NAME}-worker-new
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-cluster: ${CLUSTER_NAME}
+        ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-role: worker
+        ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-type: worker
+        ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machineset: ${CLUSTER_NAME}-worker-new
+    spec:
+      metadata:
+        creationTimestamp: null
+        labels:
+          node-role.kubernetes.io/worker: ""
+      providerSpec:
+        value:
+          apiVersion: gcpprovider.openshift.io/v1beta1
+          canIPForward: false
+          credentialsSecret:
+            name: gcp-cloud-credentials
+          deletionProtection: false
+          disks:
+          - autoDelete: false
+            boot: true
+            image: ${WORKER_MACHINESET_IMAGE}
+            labels: null
+            sizeGb: ${OPENSHIFT_WORKER_NODE_VOLUME_SIZE}
+            type: ${OPENSHIFT_WORKER_NODE_VOLUME_TYPE}
+          kind: GCPMachineProviderSpec
+          machineType: ${OPENSHIFT_WORKER_NODE_INSTANCE_TYPE}
+          metadata:
+            creationTimestamp: null
+          networkInterfaces:
+          - network: ${NETWORK_NAME}
+            subnetwork: ${SUBNET_NETWORK_NAME}
+            publicIP: true
+          projectID: ${GCP_PROJECT}
+          region: ${GCP_REGION}
+          serviceAccounts:
+          - email: ${CLUSTER_NAME}-w@${GCP_SERVICE_ACCOUNT_EMAIL}
+            scopes:
+            - https://www.googleapis.com/auth/cloud-platform
+          tags:
+          - ${CLUSTER_NAME}-worker
+          userDataSecret:
+            name: worker-user-data
+          zone: ${GCP_REGION}-a

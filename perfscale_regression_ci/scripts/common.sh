@@ -69,3 +69,15 @@ function count_running_pods()
 
   echo "$(oc get pods -n ${my_namespace} -o wide | grep ${my_nodename} | grep Running | wc -l | xargs)"
 }
+
+function install_dittybopper() 
+{
+    # Clone and start dittybopper to monitor resource usage over time
+    git clone https://github.com/cloud-bulldozer/performance-dashboards.git
+    cd ./performance-dashboards/dittybopper
+    . ./deploy.sh &>dp_deploy.log & disown
+    sleep 60
+    cd ../..
+    dittybopper_route=$(oc get routes -A | grep ditty | awk -F" " '{print $3}')
+    echo "Dittybopper available at: $dittybopper_route \n"
+}
