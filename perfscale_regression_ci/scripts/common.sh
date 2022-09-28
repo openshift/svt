@@ -62,31 +62,10 @@ function check_no_error_pods()
   fi
 }
 
-function wait_for_running() {
-  counter=0
-  while true; do
-    all_running=1
+function count_running_pods()
+{
+  my_namespace=$1
+  my_nodename=$2
 
-    pods_not_running=$(oc get pods -n $1 --no-headers | grep -v Running | wc -l | xargs)
-    echo "pods_not_running: ${pods_not_running}"
-    if [[ "$pods_not_running" == "0" ]]; then
-      echo "Status of pod(s) in namespace $1: Running"
-    else
-      all_running=0
-      echo "Number pod(s) in namespace $1 is still not Running: $pods_not_running"
-    fi
-
-    if [ $all_running -eq 1 ]; then
-      break
-    fi
-
-    if [[ $counter == 15 ]]; then
-      echo "Pod(s) failed to get into Running state"
-      oc get pods -n $1 -o wide
-      error_exit "Pod(s) failed to get into Running state"
-    fi
-
-    (( ++counter ))
-    sleep 15
-  done
+  echo "$(oc get pods -n ${my_namespace} -o wide | grep ${my_nodename} | grep Running | wc -l | xargs)"
 }

@@ -43,13 +43,10 @@ run_workload
 
 echo "======Checking the pods for errors======"
 
-wait_for_running $S1_PROJ_NAMESPACE
 check_no_error_pods $S1_PROJ_NAMESPACE
 
-wait_for_running $POD_AFFINTIY_NAMESPACE
 check_no_error_pods $POD_AFFINTIY_NAMESPACE
 
-wait_for_running $POD_ANTI_AFFINTIY_NAMESPACE
 check_no_error_pods $POD_ANTI_AFFINTIY_NAMESPACE
 
 # Once the pod is running, find it's node
@@ -63,15 +60,13 @@ s1_affinity_pod_expected=$POD_AFFINITY_JOB_ITERATION
 s1_anti_affinity_pod_expected=$POD_ANTI_AFFINITY_JOB_ITERATION
 
 
-
-s1_affinity_pod_actual=$(oc get pods -n ${POD_AFFINTIY_NAMESPACE} -o wide | grep ${s1pod_node} | grep Running | wc -l | xargs)
+s1_affinity_pod_actual=$(count_running_pods ${POD_AFFINTIY_NAMESPACE} ${s1pod_node})
 echo -e "\nNumber of pods deployed with pod affinity to pod s1:  ${s1_affinity_pod_actual} , expecting ${s1_affinity_pod_expected} pods"
 
 echo -e "\n============= Summary of pod count with anit-affinity to s1 pod: =================="
 
 
-
-s1_anti_affinity_pod_actual=$(oc get pods -n ${POD_ANTI_AFFINTIY_NAMESPACE} -o wide | grep -v ${s1pod_node} | grep Running | wc -l | xargs)
+s1_anti_affinity_pod_actual=$(count_running_pods ${POD_ANTI_AFFINTIY_NAMESPACE} " -v ${s1pod_node}")
 echo -e "\nNumber of pods deployed with pod anti-affinity to pod s1 on nodes other than ${s1pod_node} is : ${s1_anti_affinity_pod_actual} , expecting ${s1_anti_affinity_pod_expected} pods"
 
 
