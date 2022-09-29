@@ -61,3 +61,11 @@ function check_no_error_pods()
     exit 1
   fi
 }
+
+function count_running_pods()
+{
+  my_namespace=$1
+  my_nodename=$2
+
+  echo "$(oc get pods -n ${my_namespace} -o wide | grep ${my_nodename} | grep Running | wc -l | xargs)"
+}
