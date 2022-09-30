@@ -6,7 +6,7 @@
 ## https://polarion.engineering.redhat.com/polarion/redirect/project/OSE/workitem?id=OCP-26279
 ## Bug related: https://bugzilla.redhat.com/show_bug.cgi?id=1752636
 ## Cluster config: 3 master (m5.2xlarge or equivalent) with 27 worker
-## kube-burner config: perfscale_regerssion_ci/kubeburner-object-templates/large-network-policy.yml
+## kube-burner config: perfscale_regerssion_ci/kubeburner-object-templates/large-network-policy.yaml
 ## network-policy config: perfscale_regerssion_ci/content/allow_default_network_policy.yaml
 ## PARAMETERS: number of JOB_ITERATION
 ################################################ 
