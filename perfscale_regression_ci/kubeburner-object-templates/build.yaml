@@ -1,0 +1,38 @@
+apiVersion: build.openshift.io/v1
+kind: Build
+metadata:
+  annotations:
+    openshift.io/build.number: '1'
+    openshift.io/build.pod-name: buildconfig{{.Replica}}-{{.Iteration}}-build
+  labels:
+    buildconfig: buildconfig{{.Replica}}-{{.Iteration}}
+    openshift.io/build-config.name: buildconfig{{.Replica}}-{{.Iteration}}
+    template: buildConfigTemplate
+  name: build{{.Replica}}-{{.Iteration}}
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: imagestream{{.Replica}}-{{.Iteration}}:latest
+  resources: {}
+  serviceAccount: builder
+  source:
+    dockerfile: |-
+      FROM openshift/hello-openshift
+      USER example
+    git:
+      uri: git://github.com/tiwillia/hello-openshift-example.git
+    secrets:
+    type: Git
+  strategy:
+    sourceStrategy:
+      from:
+        kind: DockerImage
+        name: openshift/hello-openshift@sha256:b4385c1776fec7175b35cf5e55b21902e5ba27d8d4d4b71bfb2f7cf9d0eb7a14
+    type: Source
+status:
+  config:
+    kind: BuildConfig
+    name: buildconfig{{.Replica}}-{{.Iteration}}
+  outputDockerImageReference: openshift/hello-openshift:latest
+  phase: Failed

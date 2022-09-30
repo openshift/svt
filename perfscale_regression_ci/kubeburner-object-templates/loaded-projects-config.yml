@@ -1,0 +1,40 @@
+jobs:
+  - name: ${NAME}
+    namespace: ${NAMESPACE}
+    jobIterations: ${JOB_ITERATION}
+    qps: ${QPS}
+    burst: ${BURST}
+    namespacedIterations: true
+    podWait: true
+    verifyObjects: true
+    waitFor: ${WAIT_FOR}
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+    objects:
+    - objectTemplate: "pause-pod.yaml"
+      replicas: 5
+    - objectTemplate: "image-stream.yaml"
+      replicas: 20
+      inputVars: 
+        image: gcr.io/google_containers/pause-amd64
+        name: pauseimagestream
+    - objectTemplate: "image-stream.yaml"
+      replicas: 20
+      inputVars: 
+        image: openshift/hello-openshift
+        name: 'imagestream'
+    - objectTemplate: "build-config.yaml"
+      replicas: 10
+      inputVars:
+        git_image: quay.io/openshifttest/pause:latest
+    - objectTemplate: "build.yaml"
+      replicas: 10
+    - objectTemplate: ssh-secret.yaml
+      replicas: 200 
+    - objectTemplate: "route.yaml"
+      replicas: 10
+
+        
