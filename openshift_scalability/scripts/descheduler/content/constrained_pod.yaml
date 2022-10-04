@@ -1,0 +1,19 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: mypod-constrained
+  labels:
+    foo: bar
+  annotations:
+    "descheduler.alpha.kubernetes.io/evict": ""
+spec:
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: test-zone
+    whenUnsatisfiable: DoNotSchedule
+    labelSelector:
+      matchLabels:
+        foo: bar
+  containers:
+  - name: pause
+    image: k8s.gcr.io/pause:3.1
