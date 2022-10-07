@@ -20,11 +20,15 @@ source ../common.sh
 source ../../utils/run_workload.sh
 
 # If parameters is set from upstream ci, overwrite params
+echo "Upstream PARAMETERS set to $PARAMETERS"
 export params=(${PARAMETERS:-gcp 15 120})
+echo "params is $params"
 
-export CLOUD="${params[0]}"
-export REPLICAS="${params[1]}"
-export JOB_ITERATIONS="${params[2]}"
+export CLOUD=${params[0]:-"gcp"}
+export REPLICAS=${params[1]:-"15"}
+export JOB_ITERATIONS=${params[2]:-"120"}
+
+echo "Testing with $CLOUD $REPLICAS $JOB_ITERATIONS"
 
 # Install dittybopper to check resource usage
 install_dittybopper
