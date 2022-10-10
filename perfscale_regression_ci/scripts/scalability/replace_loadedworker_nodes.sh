@@ -50,7 +50,7 @@ then
     python ./utils/ocp_utils.py cluster_health_check
     echo
     echo "Cleanup existing workload namespaces."
-    python  ./utils/cleanup.py ${WORKLOAD}
+    delete_project_by_label kube-burner-job=$WORKLOAD
     sleep 180
     python ./utils/ocp_utils.py cluster_health_check
     echo
