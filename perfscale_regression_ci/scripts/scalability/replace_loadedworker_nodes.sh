@@ -36,7 +36,7 @@ install_dittybopper
 if [ $? -eq 0 ]; 
 then 
     # Cluster health check prior to testing
-    python ./utils/ocp_utils.py cluster_health_check
+    python -c "import utils.ocp_utils as ocp_utils; ocp_utils.cluster_health_check()"
     echo "Run workload on current worker nodes machineset." 
     run_workload
     sleep 180
@@ -47,17 +47,17 @@ then
     python ./replacenodes.py ${CLOUD} ${REPLICAS} ${OPENSHIFT_WORKER_NODE_INSTANCE_TYPE}
     echo "Existing machines scaled down and new nodes are up."
     sleep 180 
-    python ./utils/ocp_utils.py cluster_health_check
+    python -c "import utils.ocp_utils as ocp_utils; ocp_utils.cluster_health_check()"
     echo
     echo "Cleanup existing workload namespaces."
     delete_project_by_label kube-burner-job=$WORKLOAD
     sleep 180
-    python ./utils/ocp_utils.py cluster_health_check
+    python -c "import utils.ocp_utils as ocp_utils; ocp_utils.cluster_health_check()"
     echo
     echo "Rerun workload on new machineset."
     run_workload
     sleep 180
-    python ./utils/ocp_utils.py cluster_health_check
+    python -c "import utils.ocp_utils as ocp_utils; ocp_utils.cluster_health_check()"
     echo
     echo "Test complete!"
     echo "Verify test results as defined in Polarion test case."

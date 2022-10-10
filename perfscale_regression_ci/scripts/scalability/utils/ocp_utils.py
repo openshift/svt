@@ -119,6 +119,3 @@ def cluster_health_check():
             print (err)
         else:
             break
-
-if(sys.argv[1]=='cluster_health_check'):
-    cluster_health_check()

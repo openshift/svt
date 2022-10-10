@@ -49,6 +49,4 @@ for machineset in machines_sets:
         print()
         ocp_utils.cluster_health_check()
         #delete_machineset(machineset) #After scaling down do not delete machinesets for this scenario
-
-# basic cluster health check after replacing nodes is complete
-ocp_utils.cluster_health_check()
+        
