@@ -14,9 +14,7 @@ spec:
       protocol: TCP
     terminationMessagePath: "/dev/termination-log"
     imagePullPolicy: IfNotPresent
-    capabilities: {}
     securityContext:
-      capabilities: {}
       privileged: false
   restartPolicy: Always
   dnsPolicy: ClusterFirst
