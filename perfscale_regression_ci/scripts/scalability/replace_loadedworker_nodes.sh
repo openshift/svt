@@ -9,6 +9,7 @@
 ### Cluster with 3 m5.2xlarge master nodes and 30 m5.xlarge worker cluster on AWS, or equivalent size of these profiles:
 #### AWS: IPI-on-AWS-OVN
 #### GCP: IPI-on-GCP-OVN
+#### Azure: IPI-on-Azure-OVN
 #### Alicloud: IPI-on-AlibabacloudOVN
 ## kube-burner config: 
 ### e2e-benchmarking/workloads/kube-burner/workloads/cluster-density/cluster-density.yml
