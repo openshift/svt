@@ -58,11 +58,11 @@ done
 # The following code removes node labels created by the test run and then show the labels have been removed.
 # Uncomment the code when running  this test repeatedly on the same cluster (during debugging) to ensure the 
 # node labels are removed. Otherwise, the test will fail/end prematurely.
-  echo -e "\nRemoving the node labels"
-initial_node_label="beta.kubernetes.io/arch=amd64"
-oc label nodes ${node_array[1]} cpu-
-oc label nodes ${node_array[2]} cpu-
-oc label nodes ${node_array[1]} --overwrite ${initial_node_label}
+# echo -e "\nRemoving the node labels"
+# initial_node_label="beta.kubernetes.io/arch=amd64"
+# oc label nodes ${node_array[1]} cpu-
+# oc label nodes ${node_array[2]} cpu-
+# oc label nodes ${node_array[1]} --overwrite ${initial_node_label}
 
 
 echo -e "\nLabeling node ${node_array[1]} with label 'cpu=4'"
