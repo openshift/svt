@@ -4,7 +4,6 @@ metadata:
   name: s1-test-pod
   labels:
     security: s1
-
 spec:
   containers:
   - name: ocp

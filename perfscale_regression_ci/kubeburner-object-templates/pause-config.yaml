@@ -1,9 +1,9 @@
 jobs:
-  - name: ${NAME}
-    namespace: ${NAMESPACE}
-    jobIterations: ${JOB_ITERATION}
-    qps: ${QPS}
-    burst: ${BURST}
+  - name: {{.NAME}}
+    namespace: {{.NAMESPACE}}
+    jobIterations: {{.JOB_ITERATION}}
+    qps: {{.QPS}}
+    burst: {{.BURST}}
     namespacedIterations: true
     podWait: true
     verifyObjects: true
@@ -18,5 +18,5 @@ jobs:
     - objectTemplate: "pause-service.yaml"
       replicas: 1
       inputVars:
-        serviceType: ${SERVICE_TYPE}
+        serviceType: {{.SERVICE_TYPE}}
         

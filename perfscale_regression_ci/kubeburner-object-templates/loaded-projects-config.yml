@@ -1,13 +1,13 @@
 jobs:
-  - name: ${NAME}
-    namespace: ${NAMESPACE}
-    jobIterations: ${JOB_ITERATION}
-    qps: ${QPS}
-    burst: ${BURST}
+  - name: {{.NAME}}
+    namespace: {{.NAMESPACE}}
+    jobIterations: {{.JOB_ITERATION}}
+    qps: {{.QPS}}
+    burst: {{.BURST}}
     namespacedIterations: true
     podWait: true
     verifyObjects: true
-    waitFor: ${WAIT_FOR}
+    waitFor: {{.WAIT_FOR}}
     namespaceLabels:
       security.openshift.io/scc.podSecurityLabelSync: false
       pod-security.kubernetes.io/enforce: privileged
