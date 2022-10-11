@@ -58,11 +58,11 @@ done
 # The following code removes node labels created by the test run and then show the labels have been removed.
 # Uncomment the code when running  this test repeatedly on the same cluster (during debugging) to ensure the 
 # node labels are removed. Otherwise, the test will fail/end prematurely.
-#   echo -e "\nRemoving the node labels"
-# initial_node_label="beta.kubernetes.io/arch=amd64"
-# oc label nodes ${node_array[1]} cpu-
-# oc label nodes ${node_array[2]} cpu-
-# oc label nodes ${node_array[1]} --overwrite ${initial_node_label}
+  echo -e "\nRemoving the node labels"
+initial_node_label="beta.kubernetes.io/arch=amd64"
+oc label nodes ${node_array[1]} cpu-
+oc label nodes ${node_array[2]} cpu-
+oc label nodes ${node_array[1]} --overwrite ${initial_node_label}
 
 
 echo -e "\nLabeling node ${node_array[1]} with label 'cpu=4'"
@@ -101,9 +101,9 @@ node_anti_affinity_pods_expected=$ANTI_AFFINITY_JOB_ITERATION
 
 echo "nodes ${node_array}"
 
-node_affinity_pods_actual=$(oc get pods -n node-affinity-0 -o wide | grep "node-affinity" | grep ${node_array[2]} | grep Running | wc -l | xargs )
+node_affinity_pods_actual=$(count_running_pods ${AFFINTIY_NAMESPACE} ${node_array[2]})
 
-node_anti_affinity_pods_actual=$(oc get pods -n node-anti-affinity-0 -o wide | grep "hello-pod-anti-affinity" | grep -v ${node_array[2]} | grep Running | wc -l | xargs)
+node_anti_affinity_pods_actual=$(count_running_pods ${ANTI_AFFINTIY_NAMESPACE} " -v ${node_array[2]}")
 
 
 echo "======Compare the expected and actual number of pods for each namespace. Get the PASS/FAIL result for each namespace======"
