@@ -8,7 +8,7 @@ jobs:
     podWait: true
     verifyObjects: true
     objects:
-    - objectTemplate: "pod-s1-affinity.yml"
+    - objectTemplate: "pod-s1-affinity.yaml"
       replicas: 1
     namespaceLabels:
       security.openshift.io/scc.podSecurityLabelSync: false
@@ -24,7 +24,7 @@ jobs:
     podWait: true
     verifyObjects: true
     objects:
-    - objectTemplate: "pod-pod-affinity.yml"
+    - objectTemplate: "pod-pod-affinity.yaml"
       replicas: 1
     namespaceLabels:
       security.openshift.io/scc.podSecurityLabelSync: false
@@ -40,7 +40,7 @@ jobs:
     podWait: true
     verifyObjects: true
     objects:
-    - objectTemplate: "pod-pod-anti-affinity.yml"
+    - objectTemplate: "pod-pod-anti-affinity.yaml"
       replicas: 1
     namespaceLabels:
       security.openshift.io/scc.podSecurityLabelSync: false

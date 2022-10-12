@@ -1,6 +1,6 @@
 # WORKLOAD_TEMPLATE for custom workload of kube-burner
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-export WORKLOAD_TEMPLATE=${WORKLOAD_TEMPLATE:-"${DIR}/../../kubeburner-object-templates/pod-affinity-anti-affinity-config.yml"}
+export WORKLOAD_TEMPLATE=${WORKLOAD_TEMPLATE:-"${DIR}/../../kubeburner-object-templates/pod-affinity-anti-affinity-config.yaml"}
 # ENVs to overwrite the kube-burner configuration file
 export S1_PROJ_NAME=${S1_PROJ_NAME:-"s1-proj"}
 export S1_PROJ_NAMESPACE=${S1_PROJ_NAMESPACE:-"s1-proj"}

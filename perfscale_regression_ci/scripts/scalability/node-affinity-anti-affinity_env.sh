@@ -1,6 +1,6 @@
 # WORKLOAD_TEMPLATE for custom workload of kube-burner
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-export WORKLOAD_TEMPLATE=${WORKLOAD_TEMPLATE:-"${DIR}/../../kubeburner-object-templates/node-affinity-anti-affinity-config.yml"}
+export WORKLOAD_TEMPLATE=${WORKLOAD_TEMPLATE:-"${DIR}/../../kubeburner-object-templates/node-affinity-anti-affinity-config.yaml"}
 # ENVs to overwrite the kube-burner configuration file
 export AFFINTIY_NAME=${AFFINTIY_NAME:-"node-affinity-0"}
 export AFFINTIY_NAMESPACE=${AFFINTIY_NAMESPACE:-"node-affinity-0"}
