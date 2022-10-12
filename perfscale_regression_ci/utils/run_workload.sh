@@ -15,5 +15,6 @@ run_workload(){
     setup
     cd e2e-benchmarking/workloads/kube-burner
     ./run.sh
+    cd ../../.. #prepare for cleanup
     cleanup
 }

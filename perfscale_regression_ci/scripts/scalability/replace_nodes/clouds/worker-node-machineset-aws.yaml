@@ -1,0 +1,73 @@
+apiVersion: machine.openshift.io/v1beta1
+kind: MachineSet
+metadata:
+  creationTimestamp: null
+  labels:
+    ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-cluster: ${CLUSTER_NAME}
+    ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-role: worker
+    ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-type: worker
+  name: ${CLUSTER_NAME}-worker-new
+  namespace: openshift-machine-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-cluster: ${CLUSTER_NAME}
+      ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machineset: ${CLUSTER_NAME}-worker-new
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-cluster: ${CLUSTER_NAME}
+        ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-role: worker
+        ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-type: worker
+        ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machineset: ${CLUSTER_NAME}-worker-new
+    spec:
+      metadata:
+        creationTimestamp: null
+        labels:
+          node-role.kubernetes.io/worker: ""
+      providerSpec:
+        value:
+          ami:
+            id: ${AMI_ID}
+          apiVersion: awsproviderconfig.openshift.io/v1beta1
+          canIPForward: false
+          credentialsSecret:
+            name: aws-cloud-credentials
+          deletionProtection: false
+          disks:
+          - autoDelete: false
+            boot: true
+            image: ${WORKER_MACHINESET_IMAGE}
+            labels: null
+            sizeGb: ${OPENSHIFT_WORKER_NODE_VOLUME_SIZE}
+            type: ${OPENSHIFT_WORKER_NODE_VOLUME_TYPE}
+          deviceIndex: 0
+          iamInstanceProfile:
+            id: ${CLUSTER_NAME}-worker-profile
+          instanceType: ${OPENSHIFT_WORKER_NODE_INSTANCE_TYPE}
+          kind: AWSMachineProviderConfig
+          metadata:
+            creationTimestamp: null
+          placement:
+            availabilityZone: ${CLUSTER_REGION}a
+            region: ${CLUSTER_REGION}
+          publicIp: true
+          securityGroups:
+          - filters:
+            - name: tag:Name
+              values:
+              - ${CLUSTER_NAME}-worker-sg
+          subnet:
+            filters:
+            - name: tag:Name
+              values:
+              - ${CLUSTER_NAME}-private-${CLUSTER_REGION}a
+          tags:
+          - name: kubernetes.io/cluster/${CLUSTER_NAME}-worker
+            value: owned
+          userDataSecret:
+            name: worker-user-data
+      versions:
+        kubelet: ""
