@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: web{{.Replica}}-{{.Iteration}}
+spec:
+  selector:
+    matchLabels:
+      app: server
+  serviceName: server{{.Replica}}-{{.Iteration}}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: server
+    spec:
+      containers:
+      - name: server
+        image: "openshift/hello-openshift"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: ".01"
+          limits:
+            memory: "256Mi"
+            cpu: "1"
+        ports:
+        - containerPort: 8080
+          name: web
+        volumeMounts:
+        - name: www
+          mountPath: "/mydata"
+  volumeClaimTemplates:
+  - metadata:
+      name: www
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: {{.storageclass}}

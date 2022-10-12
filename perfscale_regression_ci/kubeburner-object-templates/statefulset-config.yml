@@ -1,0 +1,25 @@
+jobs:
+  - name: {{.NAME}}
+    namespace: {{.NAMESPACE}}
+    jobIterations: {{.JOB_ITERATION}}
+    qps: {{.QPS}}
+    burst: {{.BURST}}
+    namespacedIterations: true
+    podWait: true
+    verifyObjects: true
+    waitFor: {{.WAIT_FOR}}
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+    objects:
+    - objectTemplate: "app-service.yaml"
+      replicas: {{.OBJ_REPLICAS}}
+    - objectTemplate: "statefulset.yaml"
+      replicas: {{.OBJ_REPLICAS}}
+      inputVars: 
+        pod_replicas: 2
+        storageclass: {{.STORAGE_CLASS}}
+
+        

@@ -20,6 +20,48 @@ function wait_for_completion() {
   done
 }
 
+# pass $name_identifier $number
+# e.g. wait_for_bound "job-" 100
+function wait_for_bound() {
+  name_identifier=$1
+  number=$2
+  COUNTER=0
+  bound=0
+  while [ $bound -lt $number ]; do
+    sleep 3
+    bound=$(oc get pvc -A  --no-headers | grep $name_identifier | grep -c Bound)
+    echo "$running pvc's are bound"
+    COUNTER=$((COUNTER + 1))
+    if [ $COUNTER -ge 400 ]; then
+      not_running=$(oc get pvc -A  --no-headers | grep $name_identifier | grep -v -c Bound)
+      echo "$not_running pvc are still not bound after 20 minutes"
+      exit 1
+    fi
+  done
+  echo "done looping"
+}
+
+# pass $name_identifier $number
+# e.g. wait_for_running "job-" 100
+function wait_for_running() {
+  name_identifier=$1
+  number=$2
+  COUNTER=0
+  running=0
+  while [ $running -lt $number ]; do
+    sleep 3
+    running=$(oc get pods -A  --no-headers | grep $name_identifier | grep -c Running)
+    echo "$running pods are running"
+    COUNTER=$((COUNTER + 1))
+    if [ $COUNTER -ge 400 ]; then
+      not_running=$(oc get pods -A  --no-headers | grep $name_identifier | grep -v -c Running)
+      echo "$not_running pods are still not running after 20 minutes"
+      exit 1
+    fi
+  done
+  echo "done looping"
+}
+
 # pass $name_identifier $object_type
 # e.g. wait_for_job_completion "job-" jobs
 function wait_for_termination() {
@@ -131,8 +173,16 @@ function get_worker_nodes()
 function get_node_name() {
   worker_name=$(echo $1 | rev | cut -d/ -f1 | rev)
   echo "$worker_name"
+function get_storageclass()
+{
+  for s_class in $(oc get storageclass -A --no-headers | awk '{print $1}'); do
+    s_class_annotations=$(oc get storageclass $s_class -o jsonpath='{.metadata.annotations}')
+    default_status=$(echo $s_class_annotations | jq '."storageclass.kubernetes.io/is-default-class"')
+    if [ "$default_status" = '"true"' ]; then
+        echo $s_class
+    fi 
+  done
 }
-
 function uncordon_all_nodes() {
   worker_nodes=$(oc get nodes -l node-role.kubernetes.io/worker= -o name)
   for worker in ${worker_nodes}; do
