@@ -1,5 +1,5 @@
-# OpenShift V4 Reliability - V2
-## Introduction
+OpenShift V4 Reliability - V2
+# Introduction
 Software reliability testing is a field of software testing that relates to testing a software's ability to function, given environmental conditions, for a particular amount of time.
 Openshift Reliability testing is an operational testing scheme that uses a baseline work efficiency specification to evaluate the stability of openshift system in the given amount of time. The purpose is to discover problems in functionality. The baseline work efficiency specification was made up of daily tasks such as applications developing, hosting and scaling. 
 
@@ -11,6 +11,25 @@ $ git clone git@github.com:openshift/svt.git
 cd svt/reliability-v2
 ```
 
+# Quick Start
+## Tmux
+[tmux](https://github.com/tmux/tmux/wiki) is a tool that can help to keep the reliability running in the background to avoid the termination of the run due to the unexpected termination of the terminal. Ad reliability test sometimes run for several days, we recommend you to run reliability in a tmux session.
+
+## start.sh
+[start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh) is a script to wrap the configuration and run steps below to quick start a reliability test. It can also upgrade the cluster every 24 hours if there is new nightly build.
+e.g. Run reliability test for 7 days and upgrade every 24 hours if there is new nightly build
+```
+start.sh -p <path to the folder holding kubeconfig kubeadmin-password and users.spec files> -t 7d -u
+```
+
+To enable slack notification, export the following env viriables before running start.sh
+
+export SLACK_API_TOKEN=<ask qili@redhat for the token>
+
+export SLACK_MEMBER=<get it by clicking 'Copy member ID' in your slack Profile>
+
+# Config and Run
+If you don't use [start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh), read the folowing steps know about more details about reliability configuration and run.
 ## Install dependencies
 **NOTE**: Recommended to use a virtual environment(pyenv,venv) so as to prevent conflicts with already installed packages.
 ```
