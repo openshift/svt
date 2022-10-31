@@ -81,3 +81,11 @@ function install_dittybopper()
     dittybopper_route=$(oc get routes -A | grep ditty | awk -F" " '{print $3}')
     echo "Dittybopper available at: $dittybopper_route \n"
 }
+
+function prepare_project() {
+  project_name=$1
+  project_label=$2
+
+  oc new-project project_name
+  oc label namespace project_name project_label
+}
