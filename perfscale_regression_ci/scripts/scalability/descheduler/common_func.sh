@@ -37,14 +37,6 @@ function get_descheduler_evicted() {
   echo "$logs"
 }
 
-#
-function edit_descheduler() {
-  kube_desch_name=$(oc get KubeDescheduler -n openshift-kube-descheduler-operator -o name)
-  #oc patch??
-  sched_seconds=$(oc get KubeDescheduler $kube_desch_name -n openshift-kube-descheduler-operator -o jsonpath='{.spec.deschedulingIntervalSeconds}')
-}
-
-
 function get_node_name() {
   worker_name=$(echo $1 | rev | cut -d/ -f1 | rev)
   echo "$worker_name"

@@ -26,7 +26,7 @@ pass_or_fail=1
 
 
 echo "Create and label new project"
-prepare_project
+prepare_project $name $label
 
 
 echo "Prepare worker nodes"
@@ -107,6 +107,6 @@ if [[ ${pass_or_fail} == 1 ]]; then
   exit 0
 else
   echo -e "\nDescheduler - Validate Descheduling Pods in a Deployment at scale Testcase result:  FAIL"
-  echo "Please debug. When debugging is complete, delete all projects using 'oc delete project -l kube-burner-job=$AFFINTIY_NAME' and 'oc delete project -l kube-burner-job=$ANTI_AFFINTIY_NAME'"
+  echo "Please debug. When debugging is complete, delete all projects using 'oc delete project $name' "
   exit 1
 fi
