@@ -86,6 +86,6 @@ function prepare_project() {
   project_name=$1
   project_label=$2
 
-  oc new-project project_name
-  oc label namespace project_name project_label
+  oc new-project $project_name
+  oc label namespace $project_name $project_label
 }
