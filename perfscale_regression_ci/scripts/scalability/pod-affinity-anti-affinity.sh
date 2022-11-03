@@ -18,6 +18,8 @@ source pod-affinity-anti-affinity_env.sh
 export POD_ANTI_AFFINITY_JOB_ITERATION=${POD_ANTI_AFFINITY_JOB_ITERATION:-190}
 export POD_AFFINITY_JOB_ITERATION=${POD_AFFINITY_JOB_ITERATION:-190}
 
+pod_affinity_identifier="pod-affinity-test"
+pod_anti_affinity_identifier="pod-anti-affinity-test"
 
 # Output some general information about the test environment
 date
@@ -60,13 +62,13 @@ s1_affinity_pod_expected=$POD_AFFINITY_JOB_ITERATION
 s1_anti_affinity_pod_expected=$POD_ANTI_AFFINITY_JOB_ITERATION
 
 
-s1_affinity_pod_actual=$(count_running_pods ${POD_AFFINTIY_NAMESPACE} ${s1pod_node})
+s1_affinity_pod_actual=$(count_running_pods ${POD_AFFINTIY_NAMESPACE} ${s1pod_node} ${pod_affinity_identifier})
 echo -e "\nNumber of pods deployed with pod affinity to pod s1:  ${s1_affinity_pod_actual} , expecting ${s1_affinity_pod_expected} pods"
 
 echo -e "\n============= Summary of pod count with anit-affinity to s1 pod: =================="
 
 
-s1_anti_affinity_pod_actual=$(count_running_pods ${POD_ANTI_AFFINTIY_NAMESPACE} " -v ${s1pod_node}")
+s1_anti_affinity_pod_actual=$(count_running_pods ${POD_ANTI_AFFINTIY_NAMESPACE} " -v ${s1pod_node}" ${pod_anti_affinity_identifier})
 echo -e "\nNumber of pods deployed with pod anti-affinity to pod s1 on nodes other than ${s1pod_node} is : ${s1_anti_affinity_pod_actual} , expecting ${s1_anti_affinity_pod_expected} pods"
 
 
