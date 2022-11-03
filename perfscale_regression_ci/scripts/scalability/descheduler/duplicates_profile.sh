@@ -11,12 +11,13 @@ source ../../common.sh
 
 
 function prepare_project() {
-  oc new-project $name
-  oc label namespace $name $label
+  oc new-project $project_name
+  oc label namespace $project_name $project_label
 }
 
-name="perf-test-pod-descheduler"
-label="test=$name"
+project_name="perf-test-pod-descheduler"
+project_label="test=$project_name"
+object_type="pods"
 i=0
 last_worker=""
 first_worker=""
@@ -26,11 +27,11 @@ pass_or_fail=1
 
 
 echo "Create and label new project"
-prepare_project $name $label
+prepare_project $project_name $project_label
 
 
 echo "Prepare worker nodes"
-worker_nodes=$(oc get nodes -l node-role.kubernetes.io/worker= -o name)
+worker_nodes=$(get_worker_nodes)
 
 
 for worker in ${worker_nodes}; do
@@ -52,7 +53,7 @@ oc create deployment hello-first --image=gcr.io/google-containers/pause-amd64:3.
 # oc edit dc hello and change the replica to 12
 oc scale --replicas=$scale_num deployment/hello-first
 
-wait_for_pod_creation hello-first
+wait_for_pod_creation hello-first $object_type
 
 oc adm cordon $first_worker
 oc adm uncordon $middle_worker
@@ -60,7 +61,7 @@ oc adm uncordon $middle_worker
 # create hello pods
 oc create deployment hello-second --image=gcr.io/google-containers/pause-amd64:3.0
 oc scale --replicas=$scale_num deployment/hello-second
-wait_for_pod_creation hello-second
+wait_for_pod_creation hello-second $object_type
 
 oc adm cordon $middle_worker
 oc adm uncordon $last_worker
@@ -71,7 +72,7 @@ oc create deployment hello-third --image=gcr.io/google-containers/pause-amd64:3.
 oc scale --replicas=$scale_num deployment/hello-third
 
 #wait till pods are running
-wait_for_pod_creation hello-third
+wait_for_pod_creation hello-third $object_type
 
 uncordon_all_nodes
 
@@ -84,8 +85,8 @@ get_descheduler_evicted
 deployment_list=('hello-first' 'hello-second' 'hello-third')
 for deployment in "${deployment_list[@]}"; do
   for worker in ${worker_nodes}; do
-    pod_count=$(get_pod_count $deployment $worker)
-    echo "$pod_count $deployment pods on $worker "
+    pod_count=$(count_running_pods ${project_name} $(get_node_name ${worker}) ${deployment})
+    echo "$pod_count $deployment $object_type on $worker "
     if [[ $pod_count -eq 190 ]]; then
       pass_or_fail=0
     fi
@@ -102,11 +103,11 @@ if [[ ${pass_or_fail} == 1 ]]; then
   # # delete projects:
   # ######### Clean up: delete projects and wait until all projects and pods are gone
   echo "Deleting test objects"
-  delete_project_by_label $label
+  delete_project_by_label $project_label
 
   exit 0
 else
   echo -e "\nDescheduler - Validate Descheduling Pods in a Deployment at scale Testcase result:  FAIL"
-  echo "Please debug. When debugging is complete, delete all projects using 'oc delete project $name' "
+  echo "Please debug. When debugging is complete, delete all projects using 'oc delete project $project_name' "
   exit 1
 fi
