@@ -24,7 +24,7 @@ jobs:
     podWait: true
     verifyObjects: true
     objects:
-    - objectTemplate: "hello_node-anti-affinity.yaml"
+    - objectTemplate: "hello-node-anti-affinity.yaml"
       replicas: 1
     namespaceLabels:
       security.openshift.io/scc.podSecurityLabelSync: false
