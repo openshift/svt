@@ -64,10 +64,11 @@ function check_no_error_pods()
 
 function count_running_pods()
 {
-  my_namespace=$1
-  my_nodename=$2
+  name_space=$1
+  node_name=$2
+  name_identifier=$3
 
-  echo "$(oc get pods -n ${my_namespace} -o wide | grep ${my_nodename} | grep Running | wc -l | xargs)"
+  echo "$(oc get pods -n ${name_space} -o wide | grep ""${name_identifier}"" | grep ${node_name} | grep Running | wc -l | xargs)"
 }
 
 function install_dittybopper() 
@@ -80,4 +81,22 @@ function install_dittybopper()
     cd ../..
     dittybopper_route=$(oc get routes -A | grep ditty | awk -F" " '{print $3}')
     echo "Dittybopper available at: $dittybopper_route \n"
+}
+
+function prepare_project() {
+  project_name=$1
+  project_label=$2
+
+  oc new-project $project_name
+  oc label namespace $project_name $project_label
+}
+
+function get_worker_nodes()
+{
+  echo "$(oc get nodes -l 'node-role.kubernetes.io/worker=' | awk '{print $1}' | grep -v NAME | xargs)"
+}
+
+function get_node_name() {
+  worker_name=$(echo $1 | rev | cut -d/ -f1 | rev)
+  echo "$worker_name"
 }

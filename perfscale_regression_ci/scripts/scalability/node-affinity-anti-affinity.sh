@@ -12,6 +12,8 @@
 source ../../utils/run_workload.sh
 source ../custom_workload_env.sh
 source ../common.sh
+source ./descheduler/common_func.sh
+
 source node-affinity-anti-affinity_env.sh
 
 function show_node_labels() {
@@ -24,6 +26,10 @@ function show_node_labels() {
 
 export ANTI_AFFINITY_JOB_ITERATION=${ANTI_AFFINITY_JOB_ITERATION:-190}
 export AFFINITY_JOB_ITERATION=${AFFINITY_JOB_ITERATION:-190}
+
+node_affinity_identifier="node-affinity"
+node_anti_affinity_identifier="hello-pod-anti-affinity"
+object_type="pods"
 
 # Output some general information about the test environment
 date
@@ -94,16 +100,15 @@ check_no_error_pods $AFFINTIY_NAMESPACE
 
 check_no_error_pods $ANTI_AFFINTIY_NAMESPACE
 
-
 echo "======Counting Pods in each namespace======"
 node_affinity_pods_expected=$AFFINITY_JOB_ITERATION
 node_anti_affinity_pods_expected=$ANTI_AFFINITY_JOB_ITERATION
 
 echo "nodes ${node_array}"
 
-node_affinity_pods_actual=$(count_running_pods ${AFFINTIY_NAMESPACE} ${node_array[2]})
+node_affinity_pods_actual=$(count_running_pods ${AFFINTIY_NAMESPACE} ${node_array[2]} ${node-affinity})
 
-node_anti_affinity_pods_actual=$(count_running_pods ${ANTI_AFFINTIY_NAMESPACE} " -v ${node_array[2]}")
+node_anti_affinity_pods_actual=$(count_running_pods ${ANTI_AFFINTIY_NAMESPACE} " -v ${node_array[2]}" ${node_anti_affinity_identifier})
 
 
 echo "======Compare the expected and actual number of pods for each namespace. Get the PASS/FAIL result for each namespace======"
