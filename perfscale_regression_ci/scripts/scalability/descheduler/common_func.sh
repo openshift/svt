@@ -34,7 +34,6 @@ function wait_for_descheduler_to_run() {
 
 
 function get_descheduler_evicted() {
-  #desched_pod=$(oc get pods -n openshift-kube-descheduler-operator --no-headers -o name | grep cluster)
   desched_pod=$(oc get pods -n openshift-kube-descheduler-operator --no-headers -o name | grep -v operator)
   logs=$(oc logs $desched_pod -n openshift-kube-descheduler-operator --tail=10 |  grep 'Number of evicted pods')
   echo "$logs"

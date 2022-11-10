@@ -6,14 +6,12 @@
 ## https://polarion.engineering.redhat.com/polarion/#/project/OSE/workitem?id=OCP-44241
 ## Cluster config: Cluster needed in AWS EC2 (at least m6i.large, 3 master/etcd, 3 worker/compute nodes)
 ################################################ 
-source ./common_func.sh
+
 source ../../common.sh
-
-
-function prepare_project() {
-  oc new-project $project_name
-  oc label namespace $project_name $project_label
-}
+source common_func.sh
+source duplicates_profile_env.sh
+source ../../../utils/run_workload.sh
+source ../../custom_workload_env.sh
 
 project_name="perf-test-pod-descheduler"
 project_label="test=$project_name"
@@ -22,17 +20,10 @@ i=0
 last_worker=""
 first_worker=""
 middle_worker=""
-scale_num=190
-pass_or_fail=1
-
-
-echo "Create and label new project"
-prepare_project $project_name $project_label
-
+pass_or_fail=0
 
 echo "Prepare worker nodes"
 worker_nodes=$(get_worker_nodes)
-
 
 for worker in ${worker_nodes}; do
   if [[ $i -eq 0 ]]; then
@@ -47,67 +38,54 @@ for worker in ${worker_nodes}; do
   i=$((i + 1))
 done
 
-echo "Deploy pods"
-### creates hello-1 pods
-oc create deployment hello-first --image=gcr.io/google-containers/pause-amd64:3.0
-# oc edit dc hello and change the replica to 12
-oc scale --replicas=$scale_num deployment/hello-first
+counter=0
+project_name_list=('duplicates-desched-first' 'duplicates-desched-sec' 'duplicates-desched-third')
+for project_name in "${project_name_list[@]}"; do
 
-wait_for_pod_creation hello-first $object_type
-
-oc adm cordon $first_worker
-oc adm uncordon $middle_worker
-
-# create hello pods
-oc create deployment hello-second --image=gcr.io/google-containers/pause-amd64:3.0
-oc scale --replicas=$scale_num deployment/hello-second
-wait_for_pod_creation hello-second $object_type
-
-oc adm cordon $middle_worker
-oc adm uncordon $last_worker
-
-
-# create hello pods
-oc create deployment hello-third --image=gcr.io/google-containers/pause-amd64:3.0
-oc scale --replicas=$scale_num deployment/hello-third
-
-#wait till pods are running
-wait_for_pod_creation hello-third $object_type
+  if [[ $counter -eq 1 ]]; then
+    oc adm uncordon $middle_worker
+    oc adm cordon $first_worker
+  elif [[ $counter -eq 2 ]]; then
+    oc adm uncordon $last_worker
+    oc adm cordon $middle_worker
+  fi
+  export NAME=$project_name
+  export NAMESPACE=$project_name
+  echo "======Use kube-burner to load the cluster with test objects - $project_name======"
+  run_workload
+  counter=$((counter + 1))
+done
 
 uncordon_all_nodes
 
+echo "Wait for descheduler to run"
 wait_for_descheduler_to_run
 
-
-echo "Check for pods eviction"
+echo "Get descheduler evicted"
 get_descheduler_evicted
 
-deployment_list=('hello-first' 'hello-second' 'hello-third')
-for deployment in "${deployment_list[@]}"; do
+deployment="hello-1"
+for project_name in "${project_name_list[@]}"; do
   for worker in ${worker_nodes}; do
-    pod_count=$(count_running_pods ${project_name} $(get_node_name ${worker}) ${deployment})
+    pod_count=$(count_running_pods ${project_name}-1 $(get_node_name ${worker}) ${deployment})
     echo "$pod_count $deployment $object_type on $worker "
-    if [[ $pod_count -eq 190 ]]; then
-      pass_or_fail=0
+    if [[ $pod_count -ne ${POD_REPLICAS} ]]; then
+      pass_or_fail=$((pass_or_fail + 1))
     fi
   done
   echo "\n"
 done
 
-oc project default
-
 echo "======Final test result======"
-if [[ ${pass_or_fail} == 1 ]]; then
+if [[ ${pass_or_fail} -eq 9 ]]; then
   echo -e "\nDescheduler - Validate Descheduling Pods in a Deployment at scale Testcase result:  PASS"
   echo "======Clean up test environment======"
-  # # delete projects:
-  # ######### Clean up: delete projects and wait until all projects and pods are gone
   echo "Deleting test objects"
-  delete_project_by_label $project_label
+ # delete_project_by_label kube-burner-job
 
   exit 0
 else
   echo -e "\nDescheduler - Validate Descheduling Pods in a Deployment at scale Testcase result:  FAIL"
-  echo "Please debug. When debugging is complete, delete all projects using 'oc delete project $project_name' "
+  echo "Please debug. When debugging is complete, delete all projects using 'oc delete project kube-burner-job' "
   exit 1
 fi
