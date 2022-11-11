@@ -20,27 +20,6 @@ function wait_for_completion() {
   done
 }
 
-# pass $name_identifier $number
-# e.g. wait_for_bound "job-" 100
-function wait_for_bound() {
-  name_identifier=$1
-  number=$2
-  COUNTER=0
-  bound=0
-  while [ $bound -lt $number ]; do
-    sleep 3
-    bound=$(oc get pvc -A  --no-headers | grep $name_identifier | grep -c Bound)
-    echo "$running pvc's are bound"
-    COUNTER=$((COUNTER + 1))
-    if [ $COUNTER -ge 400 ]; then
-      not_running=$(oc get pvc -A  --no-headers | grep $name_identifier | grep -v -c Bound)
-      echo "$not_running pvc are still not bound after 20 minutes"
-      exit 1
-    fi
-  done
-  echo "done looping"
-}
-
 # pass $name_identifier $object_type
 # e.g. wait_for_obj_creation "job-" pod
 function wait_for_obj_creation() {

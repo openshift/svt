@@ -18,10 +18,6 @@ echo "job iterations $JOB_ITERATION $OBJ_REPLICAS"
 echo "======Use kube-burner to load the cluster with test objects======"
 run_workload
 
-wait_for_bound $NAME $OBJ_REPLICAS
-
-wait_for_running $NAME $OBJ_REPLICAS
-
 oc describe nodes -l 'node-role.kubernetes.io/worker='
 
 running_pods=$(oc get pods -A | grep $NAME | grep Running -c)
@@ -40,10 +36,6 @@ export OBJ_REPLICAS=1
 echo "job iterations $JOB_ITERATION $OBJ_REPLICAS"
 echo "======Use kube-burner to load the cluster with test objects======"
 run_workload
-
-wait_for_bound $NAME $JOB_ITERATION
-
-wait_for_running $NAME $JOB_ITERATION
 
 oc describe nodes -l 'node-role.kubernetes.io/worker='
 

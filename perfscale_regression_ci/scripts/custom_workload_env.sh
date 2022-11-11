@@ -8,3 +8,5 @@ export METRICS_PROFILE=${METRICS_PROFILE:-"metrics-profiles/metrics.yaml"}
 export ALERTS_PROFILE=${ALERTS_PROFILE:-""}
 export COMPARISON_CONFIG=${COMPARISON_CONFIG:-"clusterVersion.json nodeMasters-max.json nodeAggWorkers.json"}
 export GEN_CSV=${GEN_CSV:-true}
+export QPS=${QPS:-20}
+export BURST=${BURST:-20}
