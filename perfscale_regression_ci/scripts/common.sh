@@ -41,25 +41,24 @@ function wait_for_bound() {
   echo "done looping"
 }
 
-# pass $name_identifier $number
-# e.g. wait_for_running "job-" 100
-function wait_for_running() {
+# pass $name_identifier $object_type
+# e.g. wait_for_obj_creation "job-" pod
+function wait_for_obj_creation() {
   name_identifier=$1
-  number=$2
+  object_type=$2
+
   COUNTER=0
-  running=0
-  while [ $running -lt $number ]; do
-    sleep 3
-    running=$(oc get pods -A  --no-headers | grep $name_identifier | grep -c Running)
-    echo "$running pods are running"
+  creating=$(oc get $object_type -A | grep $name_identifier | egrep -c -e "Pending|Creating|Error" )
+  while [ $creating -ne 0 ]; do
+    sleep 5
+    creating=$(oc get $object_type -A |  grep $name_identifier | egrep -c -e "Pending|Creating|Error")
+    echo "$creating $object_type are still not running/completed"
     COUNTER=$((COUNTER + 1))
-    if [ $COUNTER -ge 400 ]; then
-      not_running=$(oc get pods -A  --no-headers | grep $name_identifier | grep -v -c Running)
-      echo "$not_running pods are still not running after 20 minutes"
-      exit 1
+    if [ $COUNTER -ge 60 ]; then
+      echo "$creating $object_type are still not running/complete after 5 minutes"
+      break
     fi
   done
-  echo "done looping"
 }
 
 # pass $name_identifier $object_type
@@ -173,6 +172,9 @@ function get_worker_nodes()
 function get_node_name() {
   worker_name=$(echo $1 | rev | cut -d/ -f1 | rev)
   echo "$worker_name"
+
+}
+
 function get_storageclass()
 {
   for s_class in $(oc get storageclass -A --no-headers | awk '{print $1}'); do
