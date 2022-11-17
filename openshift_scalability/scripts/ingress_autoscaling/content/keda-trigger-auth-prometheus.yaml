@@ -1,0 +1,17 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+parameters:
+- name: TOKEN
+objects:
+- apiVersion: keda.sh/v1alpha1
+  kind: TriggerAuthentication
+  metadata:
+    name: keda-trigger-auth-prometheus
+  spec:
+    secretTargetRef:
+    - parameter: bearerToken
+      name: <token>
+      key: token
+    - parameter: ca
+      name: <token>
+      key: ca.crt
