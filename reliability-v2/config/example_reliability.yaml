@@ -34,6 +34,8 @@ reliability:
         - oc get project -l purpose=reliability
         - func check_nodes
         - kubectl get pods -A -o wide | egrep -v "Completed|Running"
+        # Run test case as scripts. KUBECONFIG of the current user is set as env. 
+        #- . <path to /content/create-delete-pod-ensure-service.sh>
         
     - name: developer-1
       persona: developer

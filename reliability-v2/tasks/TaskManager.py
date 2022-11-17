@@ -25,7 +25,6 @@ class TaskManager:
             cmd = task_split[1]
             _, rc = self.tasks.oc_task(cmd, user)
         elif task.startswith('kubectl ',0,8):
-            # todo: change name of oc.py
             task_split = task.split("kubectl ")
             cmd = task_split[1]
             _, rc = self.tasks.kubectl_task(cmd, user)
@@ -46,7 +45,7 @@ class TaskManager:
             else:
                 _, rc = eval(f"self.tasks.{func}")(user)
         else:
-            _, rc = self.tasks.shell_task(task)
+            _, rc = self.tasks.shell_task(task, user)
         self.logger.info((f"'{label}: finished. Result is: '{rc}'."))
 
         return rc
