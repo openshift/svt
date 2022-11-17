@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-1
+spec:
+  replicas: {{.pod_replicas}}
+  selector:
+    matchLabels:
+      app: pause
+  template:
+    metadata:
+      labels:
+        app: pause
+    spec:
+      containers:
+      - image: gcr.io/google-containers/pause-amd64:3.0
+        imagePullPolicy: IfNotPresent
+        name: pause
