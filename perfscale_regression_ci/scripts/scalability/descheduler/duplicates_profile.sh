@@ -21,6 +21,13 @@ last_worker=""
 first_worker=""
 middle_worker=""
 pass_or_fail=0
+scale_num=190
+
+validate_descheduler_installation "TopologyAndDuplicates"
+
+echo "Create and label new project"
+prepare_project $project_name $project_label
+
 
 echo "Prepare worker nodes"
 worker_nodes=$(get_worker_nodes)
