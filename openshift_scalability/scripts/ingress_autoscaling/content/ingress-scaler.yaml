@@ -1,0 +1,26 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: ingress-scaler
+spec:
+  scaleTargetRef:
+    apiVersion: operator.openshift.io/v1
+    kind: IngressController
+    name: default
+    envSourceContainerName: ingress-operator
+  minReplicaCount: 1
+  maxReplicaCount: <max_replica_count>
+  cooldownPeriod: 1
+  pollingInterval: 1
+  triggers:
+  - type: prometheus
+    metricType: AverageValue
+    metadata:
+      serverAddress: https://thanos-querier.openshift-monitoring.svc.cluster.local:9091
+      namespace: openshift-ingress-operator
+      metricName: 'kube-node-role'
+      threshold: '1'
+      query: 'sum(kube_node_role{role="worker",service="kube-state-metrics"})'
+      authModes: "bearer"
+    authenticationRef:
+      name: keda-trigger-auth-prometheus
