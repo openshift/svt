@@ -40,7 +40,7 @@ sdn_project_count=$(oc get projects | grep sdn | wc -l | xargs)
 #   container_name="ovnkube-node"
 # fi
 
-network_pods=$(oc get pods -n $network_namespace -o name)
+network_pods=$(oc get pods -n $network_namespace -o name | grep -v controller)
 
 echo $network_pods
 
