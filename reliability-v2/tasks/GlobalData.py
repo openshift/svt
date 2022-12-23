@@ -16,9 +16,16 @@ class GlobalData:
 
     def __init__(self):
         self.config = {}
+        self.verbose = 0
         self.users = {}
         self.kubeconfigs = {}
         self.logger = logging.getLogger('reliability')
+        
+    def init_verbose(self, verbose):
+        self.logger.info(f"verbose is set to {verbose}.")
+        if slackIntegration.slack_enable:
+            slackIntegration.info(f"verbose is set to {verbose}.")
+        self.verbose = verbose
         
     def valid_config(self, config):
         try:

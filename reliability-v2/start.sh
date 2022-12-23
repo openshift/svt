@@ -18,7 +18,7 @@ Usage: $(basename "${0}") [-p <path_to_auth_files>] [-t <time_to_run>] -u
   
   -t <time_to_run>             : Time to run the reliability test. e.g. 1d10h3m10s,7d,5m. Default is 10m. 
 
-  -p <path_to_auth_files>       : The local path that contains the kubeconfig, kubeadmin-password and users.spec files.
+  -p <path_to_auth_files>      : The local path that contains the kubeconfig, kubeadmin-password and users.spec files.
   
   -k <kubeconfig_path>         : The local path to kubeconfig file.
 
@@ -30,6 +30,8 @@ Usage: $(basename "${0}") [-p <path_to_auth_files>] [-t <time_to_run>] -u
 
   -u                           : Upgrade the cluster every 24 hours.
 
+  -v <verbose>                 : 0- no verbose, 1- pods and events of ns if new_app failed.
+
   -h                           : Help
 
 END
@@ -40,7 +42,7 @@ if [[ "$1" = "" ]];then
     exit 1
 fi
 
-while getopts ":n:t:p:k:a:s:i:uh" opt; do
+while getopts ":n:t:p:k:a:s:i:v:uh" opt; do
     case ${opt} in
     n)
         folder_name=${OPTARG}
@@ -66,6 +68,9 @@ while getopts ":n:t:p:k:a:s:i:uh" opt; do
     u)
         upgrade=true
         ;;
+    v)
+        verbose=${OPTARG}
+        ;;
     h)
         _usage
         exit 1
@@ -82,8 +87,6 @@ while getopts ":n:t:p:k:a:s:i:uh" opt; do
         ;;
     esac
 done
-
-SECONDS_TO_RUN=0
 
 start_log=start_$(date +"%Y%m%d_%H%M%S").log
 echo start.sh logs will be saved to $start_log.
@@ -156,6 +159,7 @@ function second_to_dhms {
     echo $human_readable_time
 }
 
+SECONDS_TO_RUN=0
 # $1 string of day hour minute second, e.g. 7d1h1m1s
 function dhms_to_seconds {
     echo "Total time to run is: $1"
@@ -220,17 +224,21 @@ elif [[ ! -z $kubeconfig && ! -z $users_spec && ! -z $kubeadmin_password ]]; the
     KUBECONFIG=$kubeconfig
 fi
 
+cd -
+
 echo "export KUBECONFIG=$KUBECONFIG"
 export KUBECONFIG
+
 oc get ns| grep dittybopper
 if [[ $? -eq 1 ]];then
     echo "Install dittybopper"
-    git clone git@github.com:cloud-bulldozer/performance-dashboards.git
+    if [[ ! -d performance-dashboards ]];then
+        git clone git@github.com:cloud-bulldozer/performance-dashboards.git
+    fi
     cd performance-dashboards/dittybopper
     ./deploy.sh
+    cd -
 fi
-
-cd -
 
 if [[ $(oc get storageclass -o json | jq .items) == "[]" ]];then
     cd utils
@@ -240,10 +248,13 @@ if [[ $(oc get storageclass -o json | jq .items) == "[]" ]];then
     ./deploy_nfs_provisioner.sh
     cd -
 fi
+log "info" "Cordon the node with nfs-provisioner"
+oc get po -n nfs-provisioner -o wide --no-headers | awk {'print $7'} | xargs oc adm cordon
 
 log "info" "Start Reliability test. Log is writting to $folder_name/reliability.log."
 # run in background and dont append output to nohup.out
-nohup python3 reliability.py -c $folder_name/reliability.yaml -l $folder_name/reliability.log > /dev/null 2>&1 &
+[[ -z $verbose ]] && verbose=0
+nohup python3 reliability.py -c $folder_name/reliability.yaml -l $folder_name/reliability.log -v $verbose > /dev/null 2>&1 &
 [[ -z $time_to_run ]] && time_to_run=10m
 dhms_to_seconds $time_to_run
 timestamp_start=$(date +%s)

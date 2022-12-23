@@ -124,15 +124,13 @@ class Tasks:
                     current_tries += 1
                     visit_success,status_code = self.__visit_app(route)
                 if not visit_success:
-                    # debug the namespace
-                    self.__get_namespace_resource(user,namespace,"pods")
-                    self.__get_namespace_resource(user,namespace,"events")
-                    # sleep 5 minutes for manual debug
-                    self.logger.info(f"new_app: visit '{route}' failed after 30 minutes. status_code: {status_code}. Wait 5 more minutes for manual debug.")
-                    slackIntegration.info(f"new_app: visit '{route}' failed after 30 minutes. status_code: {status_code}. Wait more 5 minutes for manual debug.")
-                    sleep(300)
-                    self.logger.error(f"new_app: visit '{route}' failed after 35 minutes. status_code: {status_code}")
-                    slackIntegration.error(f"new_app: visit '{route}' failed after 35 minutes. status_code: {status_code}")
+                    self.logger.info(f"new_app: visit '{route}' failed after 30 minutes. status_code: {status_code}. Wait 10 more minutes for manual debug.")
+                    slackIntegration.info(f"new_app: visit '{route}' failed after 30 minutes. status_code: {status_code}. Wait 10 more minutes for manual debug.")
+                    # sleep 10 minutes for manual debug
+                    sleep(600)
+                    self.logger.error(f"new_app: visit '{route}' failed after 40 minutes. status_code: {status_code}")
+                    slackIntegration.error(f"new_app: visit '{route}' failed after 40 minutes. status_code: {status_code}")
+                    self.__verbose_1(user,namespace)
                     # return 1 so the upcoming tasks won't be run
                     self.__log_result(1)
                     return(visit_success,1)
@@ -299,9 +297,24 @@ class Tasks:
             rc_return = 1
         return(result,rc_return)
 
-    def __get_namespace_resource(self,user,namespace,type):
+    def __verbose_1(self,user,namespace):
+        # debug the namespace
+        if global_data.verbose == "1":
+            (pods,rc) = self.__get_namespace_pods(user,namespace)
+            (events,rc) = self.__get_namespace_events(user,namespace)
+            self.logger.debug(f"Pods in {namespace}: {pods}")
+            self.logger.debug(f"Events of {namespace}: {events}")
+            #slackIntegration.debug(f"Pods in {namespace}: {pods}")
+            #slackIntegration.debug(f"Events of {namespace}: {events}")
+
+    def __get_namespace_pods(self,user,namespace):
         kubeconfig = global_data.kubeconfigs[user]
-        (result,rc) = oc(f"get {type} -n {namespace}",kubeconfig)
+        (result,rc) = oc(f"get po -o wide -n {namespace}",kubeconfig)
+        return (result,rc)
+
+    def __get_namespace_events(self,user,namespace):
+        kubeconfig = global_data.kubeconfigs[user]
+        (result,rc) = oc(f"get events -n {namespace}",kubeconfig)
         return (result,rc)
 
     def oc_task(self,task,user):
