@@ -1,0 +1,29 @@
+jobs:
+  - name: {{.NAME}}
+    namespace: {{.NAMESPACE}}
+    jobIterations: {{.JOB_ITERATION}}
+    qps: {{.QPS}}
+    burst: {{.BURST}}
+    namespacedIterations: true
+    podWait: true
+    verifyObjects: true
+    waitFor: {{.WAIT_FOR}}
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+    objects:
+    - objectTemplate: "pvc.yaml"
+      replicas: 1
+      inputVars:
+        storage_class: {{.STORAGE_CLASS}}
+    - objectTemplate: "rc_local_storage.yaml"
+      replicas: 1
+      inputVars:
+         pod_replicas: 110
+    - objectTemplate: "rc_using_pvc.yaml"
+      replicas: 1
+      inputVars:
+         pod_replicas: 110
+        
