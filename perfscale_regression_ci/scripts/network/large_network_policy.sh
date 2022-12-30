@@ -8,7 +8,7 @@
 ## Cluster config: 3 master (m5.2xlarge or equivalent) with 27 worker
 ## kube-burner config: perfscale_regerssion_ci/kubeburner-object-templates/large-network-policy.yaml
 ## network-policy config: perfscale_regerssion_ci/content/allow_default_network_policy.yaml
-## PARAMETERS: number of JOB_ITERATION
+## PARAMETERS: number of TEST_JOB_ITERATIONS
 ################################################ 
 
 source ../../utils/run_workload.sh
@@ -16,8 +16,8 @@ source ../custom_workload_env.sh
 source ../common.sh
 source large_network_policy_env.sh
 
-# If PARAMETERS is set from upstream ci, overwirte JOB_ITERATION
-export JOB_ITERATION=${PARAMETERS:-5000}
+# If PARAMETERS is set from upstream ci, overwirte TEST_JOB_ITERATIONS
+export TEST_JOB_ITERATIONS=${PARAMETERS:-5000}
 
 echo "======Use kube-burner to load the cluster with test objects======"
 run_workload

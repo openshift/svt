@@ -1,0 +1,142 @@
+apiVersion: v1
+items:
+- apiVersion: machine.openshift.io/v1beta1
+  kind: MachineSet
+  metadata:
+    creationTimestamp: null
+    labels:
+      ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-cluster: ${CLUSTER_NAME}
+      ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-role: ${ROLE}
+      ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-type: ${ROLE}
+    name: ${CLUSTER_NAME}-${ROLE}-${CLUSTER_REGION}b
+    namespace: openshift-machine-api
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-cluster: ${CLUSTER_NAME}
+        ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machineset: ${CLUSTER_NAME}-${ROLE}-${CLUSTER_REGION}b
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-cluster: ${CLUSTER_NAME}
+          ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-role: ${ROLE}
+          ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-type: ${ROLE}
+          ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machineset: ${CLUSTER_NAME}-${ROLE}-${CLUSTER_REGION}b
+      spec:
+        metadata:
+          creationTimestamp: null
+          labels:
+            node-role.kubernetes.io/${ROLE}: ""
+        providerSpec:
+          value:
+            ami:
+              id: ${AMI_ID}
+            apiVersion: awsproviderconfig.openshift.io/v1beta1
+            blockDevices:
+            - ebs:
+                iops: ${OPENSHIFT_NODE_VOLUME_IOPS}
+                volumeSize: ${OPENSHIFT_NODE_VOLUME_SIZE}
+                volumeType: ${OPENSHIFT_NODE_VOLUME_TYPE}
+            credentialsSecret:
+              name: aws-cloud-credentials
+            deviceIndex: 0
+            iamInstanceProfile:
+              id: ${CLUSTER_NAME}-worker-profile
+            instanceType: ${OPENSHIFT_NODE_INSTANCE_TYPE}
+            kind: AWSMachineProviderConfig
+            metadata:
+              creationTimestamp: null
+            placement:
+              availabilityZone: ${CLUSTER_REGION}b
+              region: ${CLUSTER_REGION}
+            publicIp: false
+            securityGroups:
+            - filters:
+              - name: tag:Name
+                values:
+                - ${CLUSTER_NAME}-worker-sg
+            subnet:
+              filters:
+              - name: tag:Name
+                values:
+                - ${CLUSTER_NAME}-private-${CLUSTER_REGION}b
+            tags:
+            - name: kubernetes.io/cluster/${CLUSTER_NAME}
+              value: owned
+            userDataSecret:
+              name: worker-user-data
+        versions:
+          kubelet: ""
+- apiVersion: machine.openshift.io/v1beta1
+  kind: MachineSet
+  metadata:
+    creationTimestamp: null
+    labels:
+      ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-cluster: ${CLUSTER_NAME}
+      ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-role: ${ROLE}
+      ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-type: ${ROLE}
+    name: ${CLUSTER_NAME}-${ROLE}-${CLUSTER_REGION}c
+    namespace: openshift-machine-api
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-cluster: ${CLUSTER_NAME}
+        ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machineset: ${CLUSTER_NAME}-${ROLE}-${CLUSTER_REGION}c
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-cluster: ${CLUSTER_NAME}
+          ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-role: ${ROLE}
+          ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machine-type: ${ROLE}
+          ${MACHINESET_METADATA_LABEL_PREFIX}/cluster-api-machineset: ${CLUSTER_NAME}-${ROLE}-${CLUSTER_REGION}c
+      spec:
+        metadata:
+          creationTimestamp: null
+          labels:
+            node-role.kubernetes.io/${ROLE}: ""
+        providerSpec:
+          value:
+            ami:
+              id: ${AMI_ID}
+            apiVersion: awsproviderconfig.openshift.io/v1beta1
+            blockDevices:
+            - ebs:
+                iops: ${OPENSHIFT_NODE_VOLUME_IOPS}
+                volumeSize: ${OPENSHIFT_NODE_VOLUME_SIZE}
+                volumeType: ${OPENSHIFT_NODE_VOLUME_TYPE}
+            credentialsSecret:
+              name: aws-cloud-credentials
+            deviceIndex: 0
+            iamInstanceProfile:
+              id: ${CLUSTER_NAME}-worker-profile
+            instanceType: ${OPENSHIFT_NODE_INSTANCE_TYPE}
+            kind: AWSMachineProviderConfig
+            metadata:
+              creationTimestamp: null
+            placement:
+              availabilityZone: ${CLUSTER_REGION}c
+              region: ${CLUSTER_REGION}
+            publicIp: false
+            securityGroups:
+            - filters:
+              - name: tag:Name
+                values:
+                - ${CLUSTER_NAME}-worker-sg
+            subnet:
+              filters:
+              - name: tag:Name
+                values:
+                - ${CLUSTER_NAME}-private-${CLUSTER_REGION}c
+            tags:
+            - name: kubernetes.io/cluster/${CLUSTER_NAME}
+              value: owned
+            userDataSecret:
+              name: worker-user-data
+        versions:
+          kubelet: ""
+kind: List
+metadata: {}

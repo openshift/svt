@@ -1,0 +1,9 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{.name}}
+spec:
+  #host: {{.applicationDomain}}
+  to:
+    kind: Service
+    name: {{.name}}

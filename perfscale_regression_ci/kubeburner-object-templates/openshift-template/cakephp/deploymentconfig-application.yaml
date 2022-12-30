@@ -1,0 +1,89 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  annotations:
+    description: Defines how to deploy the application server
+    template.alpha.openshift.io/wait-for-ready: "true"
+  name: {{.name}}
+spec:
+  replicas: 1
+  selector:
+    name: {{.name}}
+  strategy:
+    recreateParams:
+      pre:
+        execNewPod:
+          command:
+          - ./migrate-database.sh
+          containerName: cakephp-mysql-persistent
+        failurePolicy: Retry
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        name: {{.name}}
+      name: {{.name}}
+    spec:
+      nodeSelector: {{.nodeSelector}}
+      containers:
+      - env:
+        - name: DATABASE_SERVICE_NAME
+          value: {{.databaseServiceName}}
+        - name: DATABASE_ENGINE
+          value: {{.databaseEngine}}
+        - name: DATABASE_NAME
+          value: {{.databaseName}}
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              key: database-user
+              name: {{.name}}
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: database-password
+              name: {{.name}}
+        - name: CAKEPHP_SECRET_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: cakephp-secret-token
+              name: {{.name}}
+        - name: CAKEPHP_SECURITY_SALT
+          valueFrom:
+            secretKeyRef:
+              key: cakephp-security-salt
+              name: {{.name}}
+        - name: OPCACHE_REVALIDATE_FREQ
+          value: '{{.opcacheRevalidFreq}}'
+        image: ' '
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /health.php
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 60
+          timeoutSeconds: 3
+        name: cakephp-mysql-persistent
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /health.php
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 60
+          timeoutSeconds: 3
+        resources:
+          limits:
+            memory: {{.memoryLimit}}
+  triggers:
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - cakephp-mysql-persistent
+      from:
+        kind: ImageStreamTag
+        name: {{.name}}:latest
+    type: ImageChange
+  - type: ConfigChange
