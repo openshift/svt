@@ -194,7 +194,7 @@ python3 --version
 python3 -m venv reliability_venv > /dev/null
 source reliability_venv/bin/activate > /dev/null
 cd -
-pip3 install --upgrade pip >  > /dev/null 2>&1
+pip3 install --upgrade pip > /dev/null 2>&1
 pip3 install -r requirements.txt > /dev/null 2>&1
 
 cp config/example_reliability.yaml $folder_name/reliability.yaml
