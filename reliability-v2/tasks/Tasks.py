@@ -316,8 +316,9 @@ class Tasks:
         self.__log_result(rc)
         return (result,rc)
 
-    def shell_task(self,task):
-        (result, rc) = shell(task)
+    def shell_task(self,task,user):
+        kubeconfig = global_data.kubeconfigs[user]
+        (result, rc) = shell(task, kubeconfig)
         self.__log_result(rc)
         return (result,rc)
 
