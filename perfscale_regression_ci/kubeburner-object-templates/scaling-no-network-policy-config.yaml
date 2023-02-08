@@ -14,9 +14,7 @@ jobs:
       pod-security.kubernetes.io/audit: privileged
       pod-security.kubernetes.io/warn: privileged
     objects:
-    - objectTemplate: {{.NETWORK_POLICY}}
-      replicas: 1
-    - objectTemplate: "scaling-network-policy-deployment.yaml"
+    - objectTemplate: "scaling-no-network-policy-deployment.yaml"
       replicas: 1
       inputVars:
         pod_replicas: {{.POD_REPLICAS}}

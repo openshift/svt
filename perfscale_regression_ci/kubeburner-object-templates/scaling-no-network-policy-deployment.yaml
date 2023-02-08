@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: no-np-issue-test
+spec:
+  replicas: {{.pod_replicas}}
+  selector:
+    matchLabels:
+      app: no-np-issue-test
+  template:
+    metadata:
+      labels:
+        app: no-np-issue-test
+    spec:
+      containers:
+      - image: gcr.io/google-containers/pause-amd64:3.0
+        imagePullPolicy: IfNotPresent
+        name: pause

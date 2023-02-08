@@ -164,13 +164,12 @@ function check_deployment_pod_scale()
 		((count_scaling--))
 	done
 
-
 	if [ $count_scaling -lt 0 ]; then
 		echo "pods did not not scale to $final_pod_num"
 		exit 1
 	fi
 
-	pods_not_running=$(oc get pods -n $namespace --no-headers | egrep -v "Completed|Running" | wc -l)
+  pods_not_running=$(oc get pods -n $namespace --no-headers | egrep -v "Completed|Running" | wc -l)
 	echo "pods not running (due to scaling): $pods_not_running"
 
 	while [[ ( $count_running -gt 0 ) && ( $pods_not_running -gt 0 ) ]];
