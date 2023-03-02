@@ -191,6 +191,7 @@ python3 --version
 python3 -m venv reliability_venv > /dev/null
 source reliability_venv/bin/activate > /dev/null
 cd -
+pip3 install --upgrade pip > /dev/null 2>&1
 pip3 install -r requirements.txt > /dev/null 2>&1
 
 cp config/example_reliability.yaml $folder_name/reliability.yaml
@@ -260,8 +261,7 @@ timestamp_start=$(date +%s)
 timestamp_end=$(($timestamp_start + $SECONDS_TO_RUN))
 if [[ $os == "linux" ]]; then
     date_end_format=$(date --date=@$timestamp_end)
-elif [[ $os == "mac" ]]; then
-    date_end_format=$(date -j -f "%s" $timestamp_end "+%Y-%m-%d %H:%M:%S")
+elif [[ $os == "mac" ]]; then date_end_format=$(date -j -f "%s" $timestamp_end "+%Y-%m-%d %H:%M:%S")
 fi
 log "info" "Reliability test will run $time_to_run. Test will end on $date_end_format. \
 If you want to halt the test before that, open another terminal and 'touch halt' under reliability-v2 folder."
