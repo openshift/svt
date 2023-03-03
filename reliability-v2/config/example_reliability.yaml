@@ -34,12 +34,13 @@ reliability:
         - oc get project -l purpose=reliability
         - func check_nodes
         - kubectl get pods -A -o wide | egrep -v "Completed|Running"
-        # Run test case as scripts. KUBECONFIG of the current user is set as env. 
+        # Run test case as scripts. KUBECONFIG of the current user is set as env variable by reliability-v2. 
         #- . <path to /content/create-delete-pod-ensure-service.sh>
         
     - name: developer-1
       persona: developer
-      users: 15
+      user_start: 0 #user_start is inclusive
+      user_end: 15 #user_end is exclusive
       loops: forever
       trigger: 60
       jitter: 300
@@ -57,6 +58,15 @@ reliability:
         - func scale_down 1 # scale down app in 2 namespaces
         - func check_pods 2 # check pods in 2 namespaces 
         - func delete_project 2 # delete project in 2 namespaces
+
+    - name: developer-2
+      persona: developer
+      user_start: 15 #user_start is inclusive
+      user_end: 16 #user_end is exclusive
+      loops: 1
+      tasks:
+        - func new_project 2 # new 2 projects
+        - func new_app 2 # new app in 2 namespaces
 
   cerberusIntegration:
     # start cerberus https://github.com/cloud-bulldozer/cerberus before starting reliabiity test.

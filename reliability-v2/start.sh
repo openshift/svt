@@ -83,11 +83,6 @@ while getopts ":n:t:p:k:a:s:i:uh" opt; do
     esac
 done
 
-SECONDS_TO_RUN=0
-
-start_log=start_$(date +"%Y%m%d_%H%M%S").log
-echo start.sh logs will be saved to $start_log.
-
 # $1 info/warning/error, $2 log message
 function log {
     red="\033[31m"
@@ -96,13 +91,14 @@ function log {
     end="\033[0m"
     current_date=$(date "+%Y%m%d %H:%M:%S")
     log_level=$(echo $1 | tr '[a-z]' '[A-Z]')
+    log_path=$RELIABILITY_DIR/$folder_name/$start_log
     case ${log_level} in
     "INFO")
-        echo -e "${green}[$current_date][$log_level] $2${end}" | tee -a $start_log;;
+        echo -e "${green}[$current_date][$log_level] $2${end}" | tee -a $log_path;;
     "WARNING")
-        echo -e "${yellow}[$current_date][$log_level] $2${end}" | tee -a $start_log;;
+        echo -e "${yellow}[$current_date][$log_level] $2${end}" | tee -a $log_path;;
     "ERROR")
-        echo -e "${red}[$current_date][$log_level] $2${end}" | tee -a $start_log;;
+        echo -e "${red}[$current_date][$log_level] $2${end}" | tee -a $log_path;;
     esac
 }
 
@@ -160,28 +156,29 @@ function second_to_dhms {
 function dhms_to_seconds {
     echo "Total time to run is: $1"
     dhms=$1
-    echo $dhms | egrep "^[1-9]{1,}d"
-    if [[ $? -eq 0 ]]; then
-        days=$(echo $dhms | cut -d 'd' -f 1)
+    days=$(echo $dhms | grep -Eo "^[1-9][0-9]*d" | cut -d 'd' -f 1)
+    if [[ -n $days ]]; then
         SECONDS_TO_RUN=$(( $SECONDS_TO_RUN + $days * 86400 ))
     fi
-    echo $dhms | egrep "d[1-9]{1,}h"
-    if [[ $? -eq 0 ]]; then
-        hours=$(echo $dhms | cut -d 'd' -f 2 | cut -d 'h' -f 1)
+    hours=$(echo $dhms | grep -Eo "[1-9][0-9]*h" | cut -d 'h' -f 1)
+    if [[ -n $hours ]]; then
         SECONDS_TO_RUN=$(( $SECONDS_TO_RUN + $hours * 3600 ))
     fi
-    echo $dhms | egrep "h[1-9]{1,}m"
-    if [[ $? -eq 0 ]]; then
-        minutes=$(echo $dhms | cut -d 'h' -f 2 | cut -d 'm' -f 1)
+    minutes=$(echo $dhms | grep -Eo "[1-9][0-9]*m" | cut -d 'm' -f 1)
+    if [[ -n $minutes ]]; then
         SECONDS_TO_RUN=$(( $SECONDS_TO_RUN + $minutes * 60 ))
     fi
-    echo $dhms | egrep "m[1-9]{1,}s"
-    if [[ $? -eq 0 ]]; then
-        seconds=$(echo $dhms | cut -d 'm' -f 2 | cut -d 's' -f 1)
+    seconds=$(echo $dhms | grep -Eo "[1-9][0-9]*s" | cut -d 's' -f 1)
+    if [[ -n $seconds ]]; then
         SECONDS_TO_RUN=$(( $SECONDS_TO_RUN + $seconds ))
     fi
     echo "Total seconds to run is: $SECONDS_TO_RUN"
 }
+
+RELIABILITY_DIR=$(cd ${BASH_SOURCE[0]};pwd)
+SECONDS_TO_RUN=0
+start_log=start_$(date +"%Y%m%d_%H%M%S").log
+echo start.sh logs will be saved to $start_log.
 
 rm -rf halt
 
@@ -200,7 +197,6 @@ pip3 install -r requirements.txt > /dev/null 2>&1
 cp config/example_reliability.yaml $folder_name/reliability.yaml
 
 cd $folder_name
-
 
 if [[ ! -z $path_to_auth_files ]]; then
     generate_config $path_to_auth_files/kubeconfig $path_to_auth_files/kubeadmin-password $path_to_auth_files/users.spec
@@ -221,17 +217,27 @@ elif [[ ! -z $kubeconfig && ! -z $users_spec && ! -z $kubeadmin_password ]]; the
     KUBECONFIG=$kubeconfig
 fi
 
+cd $RELIABILITY_DIR
+
 echo "export KUBECONFIG=$KUBECONFIG"
 export KUBECONFIG
 oc get ns| grep dittybopper
 if [[ $? -eq 1 ]];then
     echo "Install dittybopper"
-    git clone https://github.com/cloud-bulldozer/performance-dashboards.git
+    cd utils
+    if [[ ! -f performance-dashboards ]]; then
+        git clone git@github.com:cloud-bulldozer/performance-dashboards.git
+    fi
     cd performance-dashboards/dittybopper
     ./deploy.sh
+    if [[ $? -eq 0 ]];then
+        log "info" "dittybopper installed successfully."
+    else
+        log "info" "dittybopper install failed."
+    fi
 fi
 
-cd -
+cd $RELIABILITY_DIR
 
 if [[ $(oc get storageclass -o json | jq .items) == "[]" ]];then
     cd utils
@@ -241,6 +247,10 @@ if [[ $(oc get storageclass -o json | jq .items) == "[]" ]];then
     ./deploy_nfs_provisioner.sh
     cd -
 fi
+
+cd $RELIABILITY_DIR
+log "info" "Clearing test ns with label purpose=reliability."
+oc delete ns -l purpose=reliability
 
 log "info" "Start Reliability test. Log is writting to $folder_name/reliability.log."
 # run in background and dont append output to nohup.out
@@ -278,7 +288,7 @@ else
             log "info" "Reliability test has been run $time_run_dhms. Time left $time_left_dhms. It will end on $date_end_format. Log is writting to $folder_name/reliability.log."
         fi
         if [[ $upgrade && $time_left -gt 0 ]]; then
-            upgrade_log=$folder_name/upgrade_$(date +"%Y%m%d_%H%M%S").log
+            upgrade_log=$RELIABILITY_DIR/$folder_name/upgrade_$(date +"%Y%m%d_%H%M%S").log
             log "info" "Will upgrade cluster to the latest Accept nightly build in background. Check the upgrade log in $upgrade_log."
             nohup ./upgrade.sh > $upgrade_log 2>&1 &
         fi

@@ -52,6 +52,11 @@ reliability:
     - user_file: <path_to_users.spec>
 ```
 
+If you installed your cluster with other ways, you need to prepare 3 files
+1. kubeconfig
+2. kubeadmin-password, a file contains password of kubeadmin user which is admin role
+3. users.spec, a file contains pares of usernames and passwords. e.g testuser-0:password1,testuser-1:password2,...,testuser-n:passwordn
+
 For more detail explaination about the configuration, please go to [Configuration Detail](#Configuration-Detail).
 
 ## Run
@@ -194,7 +199,7 @@ For tasks, `oc` `kubeconfig` shell and `func` are supported.
 ```yaml
 reliability:
   groups:
-      - name: admin-1
+    - name: admin-1
       # 'admin', 'developer' are supported.
       persona: admin
       # concurrent users to run the group. For admin, only 1 is supported.
@@ -209,21 +214,25 @@ reliability:
       interval: 10
       tasks: 
         - func check_operators
-        - oc whoami --show-server
+        - oc get project -l purpose=reliability
+        - func check_nodes
         - kubectl get pods -A -o wide | egrep -v "Completed|Running"
-        - pwd
+        # Run test case as scripts. KUBECONFIG of the current user is set as env. 
+        #- . <path to /content/create-delete-pod-ensure-service.sh>
 
     - name: developer-1
       persona: developer
-      users: 2
-      loops: 10
+      user_start: 0 #user_start is inclusive
+      user_end: 15 #user_end is exclusive
+      loops: forever
       trigger: 60
-      jitter: 60
+      jitter: 300
       interval: 10
       tasks:
         - func delete_all_projects # clear all projects
         - func new_project 2 # new 2 projects
-        - func apply 2 "<path to /reliability-v2/networkpolicy/allow-same-namespace.yaml>" # Apply network policy to 2 projects
+        # If network policy is planed in the test, uncomment the following line
+        #- func apply 2 "<path to /reliability-v2/networkpolicy/allow-same-namespace.yaml>" # Apply network policy to 2 projects
         - func check_all_projects # check all project under this user
         - func new_app 2 # new app in 2 namespaces
         - func load_app 2 10 # load apps in 2 namespaces with 10 clients for each
@@ -232,6 +241,15 @@ reliability:
         - func scale_down 1 # scale down app in 2 namespaces
         - func check_pods 2 # check pods in 2 namespaces 
         - func delete_project 2 # delete project in 2 namespaces
+
+    - name: developer-2
+      persona: developer
+      user_start: 15 #user_start is inclusive
+      user_end: 16 #user_end is exclusive
+      loops: 1
+      tasks:
+        - func new_project 2 # new 2 projects
+        - func new_app 2 # new app in 2 namespaces
 ```
 
 Currenlty there is one admin user, defined in kubeadmin-password file, and multiple(50 in Flexy-install created cluster) developer users, defeined in users.spec.

@@ -125,7 +125,6 @@ class TaskManager:
     def run_users_tasks(self,group):
         name = group.get("name","")
         persona = group.get("persona","os")
-        users = group.get("users",1)
         loops = group.get("loops",1)
         trigger = group.get("trigger",0)
         jitter = group.get("jitter",0)
@@ -134,11 +133,17 @@ class TaskManager:
         users_tasks = []
         # todo: validate
         if persona == "admin":
+            users = group.get("users",1)
+            # we have only one kubeadmin admin user, to avoid conflict admin operation bwtween different login session, only 1 admin user is supported now.
             users_tasks.append({"user":"kubeadmin","group_name":name,"loops":loops,"trigger":trigger,"interval":interval,"jitter":jitter,"tasks":tasks})
+            self.logger.info(f"Will run group '{name}' with admin user in {users} sessions concurrently")
         elif persona == "developer":
-            for i in range(users):
+            user_start = group.get("user_start",0)
+            user_end = group.get("user_end",15)
+            for i in range(user_start, user_end):
                 users_tasks.append({"user":f"testuser-{i}","group_name":name,"loops":loops,"trigger":trigger,"interval":interval,"jitter":jitter,"tasks":tasks})
-        self.logger.info(f"Will run group '{name}' with {users} users concurrently")
+            users = user_end - user_start
+            self.logger.info(f"Will run group '{name}' with {users} users concurrently")
         slackIntegration.info(f"Group {name} will run tasks with {users} users for {loops} loops. Adding a jitter of {jitter}s before group test started, wait {trigger}s between loops, wait {interval}s between tasks.")
         # run tasks with concurrent users
         with ThreadPoolExecutor(max_workers=users) as executor:
