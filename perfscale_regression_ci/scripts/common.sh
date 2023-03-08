@@ -185,3 +185,47 @@ function check_deployment_pod_scale()
 		exit 1
 	fi
 }
+
+# pass $expected_status_code $pod_ip $apiserver_pod_name
+# e.g. check_http_code $deny_traffic_code $pod_ip $apiserver_pod
+function check_http_code(){
+	# This applies to the image openshift/hello-openshift:latest
+	# When the network traffic is denied and api is called (curl):
+	# - the api returns a status code of 000
+	# - the script terminates with the exit code 28 with an error message "command terminated with exit code 28".
+	#
+	# When the network traffic returns and api is called (curl):
+	# - the api returns a code of 
+	# Hello OpenShift!
+	# 200
+
+    my_http_code=$1
+    my_pod_ip=$2
+  	my_apiserver_pod=$3
+	
+    for i in {1..120};
+	do
+		# The command "set +e" allows the script to execute even though the exit code is 28.
+        set +e
+
+		# When the traffic is denied, supress the error message by directing the output to "2> /dev/null". 
+		http_code=$(eval "oc exec $my_apiserver_pod -n openshift-oauth-apiserver -c oauth-apiserver -- curl -s http://${my_pod_ip}:8080 --connect-timeout 1 -w "%{http_code}" 2> /dev/null")
+		
+		# Check to see if the status code contains the string "200" (return traffic) or "000" (traffic denied)
+		if [[ $http_code = *"$my_http_code"* ]]; then
+    		break
+		fi
+   		sleep 1
+	done
+	set -e
+}
+
+# pass $num1 $num2
+# e.g. calculate_difference ${final_time_np} ${final_time_no_np}
+function calculate_difference(){
+	# Simple function returns the absolue value of the difference b/t two numbers
+	value_1=$1
+	value_2=$2
+	temp_value=$(($value_1-$value_2))
+	echo ${temp_value#-}
+}

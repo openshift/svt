@@ -13,6 +13,6 @@ spec:
         app: no-np-issue-test
     spec:
       containers:
-      - image: gcr.io/google-containers/pause-amd64:3.0
+      - image: openshift/hello-openshift:latest
         imagePullPolicy: IfNotPresent
-        name: pause
+        name: app-web
