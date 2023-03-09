@@ -140,7 +140,6 @@ if [[ $pass_fail -eq 6 ]]; then
   	# ######### Clean up: delete projects and wait until all projects and pods are gone
   	echo "Deleting test objects"
 	delete_project_by_label kube-burner-job
-    delete_project_by_label kube-burner-job
 	exit 0
 else
 	echo -e "\nOverall NetworkPolicy scalability - using customer network policy Testcase result:  FAIL"
