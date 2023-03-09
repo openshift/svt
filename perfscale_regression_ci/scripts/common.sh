@@ -154,8 +154,8 @@ function check_deployment_pod_scale()
 	# give an error message and exit the test. This same logic follows for count_running. It takes some time for the pods to 
 	# terminate (scale down) or start running (scale up). The pods should all be in a Running state before count_running 
 	# reaches a negative value. If count_running ecome negative, give an error message and exit the test.
-	count_scaling=1000
-	count_running=1000
+	count_scaling=200
+	count_running=200
 
 	while [[ ( $initial_pod_num -ne $final_pod_num ) && ( count_scaling -gt 0 ) ]];
 	do 
