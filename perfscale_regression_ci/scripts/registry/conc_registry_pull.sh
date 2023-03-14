@@ -4,11 +4,12 @@
 ## Desription: Script to concurrently pull from image registry by scaling up start up application
 ## Polarion test case: OCP-9226 - Concurrent pull from the registry
 ## https://polarion.engineering.redhat.com/polarion/redirect/project/OSE/workitem?id=OCP-9226
-## Cluster config: 3 master/2 infra/2 registry/200 workers. Type AWS m4.4xlarge (16 vCPU, 64GB RAM). Registry configured to use AWS S3 bucket for persistence
+## Cluster config: 3 master/2 infra/2 registry/200 workers. Type AWS m5.4xlarge (16 vCPU, 64GB RAM). Registry configured to use AWS S3 bucket for persistence
 ## Registry machineset template: perfscale_regerssion_ci/content/registry-node-machineset-aws.yaml
 ## Kubeburner config: perfscale_regerssion_ci/kubeburner-object-templates/cakephp-mysql-persistent.yaml
 ## Parameters: NAMESPACE_COUNT REPLICAS_LIST. e.g. conc_registry_pull.sh 1000 2 5 10 20 40
 ## ENV variable: SCALE_ONLY. Default false, if set to true, only do scaleup, ignore the registry machineset install and kube-burner.
+## ENV variable: CREATE_MOVE_REGISTRY. Default true, if set to false, skip the steps of installing registry machineset and move registry component.
 ## ENV variable: CLEANUP. Default false, if set to true, will delete the test namespaces.
 ################################################ 
 source ../../utils/run_workload.sh
@@ -18,6 +19,7 @@ source ../../kubeburner-object-templates/openshift-template/cakephp/cakephp-mysq
 source conc_registry_pull_env.sh
 
 export SCALE_ONLY=${SCALE_ONLY:-false}
+export CREATE_MOVE_REGISTRY=${CREATE_MOVE_REGISTRY:-true}
 export CLEANUP=${CLEANUP:-false}
 
 params=($@)
@@ -70,7 +72,8 @@ function fix(){
   # fixing issues recorded in https://docs.google.com/document/d/148Q-pIZlkZlyqdMDBI3Zr_I10_IDwMcKiBpuwP14lZw/edit#heading=h.nnxdwzdzlvx
   echo "Fixing cakephp-mysql-persistent application that are not running ."
   # resolve mysql replicacontroller not ready by deleting the mysql replicationcontroller and let it recreate
-  for namespace in $(oc get rc -A -l openshift.io/deployment-config.name=$database --no-headers| egrep -v '1.*1.*1' | awk '{print $1}'); do
+  for namespace in $(sum(node_namespace_pod_container:container_memory_working_set_bytes{cluster="", node=~"ip-10-0-167-50.us-east-2.compute.internal"}) by (pod)
+ | awk '{print $1}'); do
     oc get rc -n $namespace
     echo "----Recreate mysql replicacontrollers in namespace $namespace----"
     oc delete rc -l openshift.io/deployment-config.name=$database -n $namespace
@@ -109,11 +112,14 @@ echo "e.g. conc_registry_pull.sh 1000 2 5 10 20 40"
 echo "NAMESPACE_COUNT: $NAMESPACE_COUNT"
 echo "REPLICAS_LIST:${REPLICAS_LIST[@]}"
 echo "SCALE_ONLY: $SCALE_ONLY"
+echo "CREATE_MOVE_REGISTRY: $CREATE_MOVE_REGISTRY"
 echo "CLEANUP: $CLEANUP"
 # only work on aws now
 if [[ $SCALE_ONLY != true ]]; then
-  create_registry_machinesets ../../content/registry-node-machineset-aws.yaml registry
-  move_registry_to_registry_nodes
+  if [[ $CREATE_MOVE_REGISTRY == true ]]; then
+    create_registry_machinesets ../../content/registry-node-machineset-aws.yaml registry
+    move_registry_to_registry_nodes
+  fi
   echo "====Deleting namespace with label $label===="
   delete_project_by_label $label
   echo "======Use kube-burner to load the cluster with test objects======"
