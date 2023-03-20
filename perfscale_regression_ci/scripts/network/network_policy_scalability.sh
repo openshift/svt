@@ -51,9 +51,6 @@ do
     echo "=========================================================================="
 done
 
-final_time_np=${final_time_list[0]}
-final_time_no_np=${final_time_list[1]}
-
 sleep 5
 
 pod_name=$(oc get po -n ${NAMESPACE} --no-headers | head -n 1 | awk '{print $1}')
@@ -80,60 +77,47 @@ echo "Time taken for network policy to become active: $return_traffic_final_time
 
 echo "=========================================================================="
 
-policy_no_policy_difference=$(calculate_difference ${final_time_np} ${final_time_no_np})
-deny_return_traffic_difference=$(calculate_difference ${deny_final_time} ${return_traffic_final_time})
 
-if [[ ( $final_time_np -le 120 ) ]]; then
+final_time_np=${final_time_list[0]}
+final_time_no_np=${final_time_list[1]}
+
+if [[ ( $final_time_np -le 120 ) &&  ( $final_time_no_np -le 120 )]]; then
 	echo "Expected: test time with network policy $final_time_np s <= 120 s (2 minutes)."
-	((++pass_fail))
-else
-	echo "Test time with network policy $final_time_np s >= 120 s (2 minutes)."
-fi
-
-
-if [[ ( $final_time_no_np -le 120 ) ]]; then
 	echo "Expected: test time without network policy $final_time_no_np s <= 120 s (2 minutes)."
 	((++pass_fail))
 else
-	echo "Test time without network policy $final_time_no_np s >= 120 s (2 minutes)."
+	echo "Test time with network policy: $final_time_np s"
+	echo "Test time without network policy $final_time_no_np s"
 fi
 
 
-if [[ ( $deny_final_time -le 10 ) ]]; then
+if [[ ( $deny_final_time -le 10 ) && ( $return_traffic_final_time -le 10 ) ]]; then
 	echo "Expected: Time when network traffic blocked $deny_final_time s <= 10 s."
-	((++pass_fail))
-else
-	echo "Time when traffic blocked $deny_final_time s >= 10 s."
-fi
-
-
-if [[ ( $return_traffic_final_time -le 10 ) ]]; then
 	echo "Expected: Time when network traffic returns $return_traffic_final_time s <= 10 s."
 	((++pass_fail))
 else
-	echo "Time when network traffic returns $return_traffic_final_time s >= 10 s."
+	echo "Time when traffic blocked: $deny_final_time s"
+	echo "Time when network traffic returns: $return_traffic_final_time s"
 fi
 
 
-if [[ ( $policy_no_policy_difference -le 10 ) ]]; then
+policy_no_policy_difference=$(calculate_difference ${final_time_np} ${final_time_no_np})
+deny_return_traffic_difference=$(calculate_difference ${deny_final_time} ${return_traffic_final_time})
+
+if [[ ( $policy_no_policy_difference -le 10 ) && ( $deny_return_traffic_difference -le 10 ) ]]; then
 	echo "Expected: Difference in test times (with and without network policy) $policy_no_policy_difference s <= 10 s."
-	((++pass_fail))
-else
-	echo "Difference in test times (with and without network policy) $policy_no_policy_difference s >= 10 s."
-fi
-
-
-if [[ ( $deny_return_traffic_difference -le 10 ) ]]; then
 	echo "Expected: Difference in test times (traffic denied and traffic returned) $deny_return_traffic_difference s <= 10 s."
 	((++pass_fail))
 else
-	echo "Difference in test times (traffic denied and traffic returned) $deny_return_traffic_difference s >= 10 s."
+	echo "Difference in test times (with and without network policy): $policy_no_policy_difference"
+	echo "Difference in test times (traffic denied and traffic returned): $deny_return_traffic_difference"
 fi
+
 
 echo ""
 echo "======Final test result======"
 
-if [[ $pass_fail -eq 6 ]]; then
+if [[ $pass_fail -eq 3 ]]; then
 	echo -e "\nOverall NetworkPolicy scalability - using customer network policy Testcase result:  PASS"
   	echo "======Clean up test environment======"
 	# # delete projects:
