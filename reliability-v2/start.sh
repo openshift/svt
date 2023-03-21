@@ -175,7 +175,7 @@ function dhms_to_seconds {
     echo "Total seconds to run is: $SECONDS_TO_RUN"
 }
 
-RELIABILITY_DIR=$(cd ${BASH_SOURCE[0]};pwd)
+RELIABILITY_DIR=$(cd $(dirname ${BASH_SOURCE[0]});pwd)
 SECONDS_TO_RUN=0
 start_log=start_$(date +"%Y%m%d_%H%M%S").log
 echo start.sh logs will be saved to $start_log.
