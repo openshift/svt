@@ -9,7 +9,6 @@
 source ../common.sh
 source ../../utils/run_workload.sh
 source ../custom_workload_env.sh
-source common_func.sh
 source bulk_delete_env.sh
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
