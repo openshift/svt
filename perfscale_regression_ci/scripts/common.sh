@@ -139,3 +139,93 @@ function uncordon_all_nodes() {
     oc adm uncordon $worker
   done
 }
+
+# pass $namespace $deployment_name $initial_pod_num $final_pod_num
+# e.g. delete_project "test=concurent-job"
+function check_deployment_pod_scale()
+{
+	namespace=$1
+	deployment_name=$2
+	initial_pod_num=$3
+	final_pod_num=$4
+
+	# Sometimes, it takes a while for pods to scale (up or down). Decrement the counter each time we chack for the pods (in 
+	# the deployment). The pods should scale before count_scaling reaches a negative value, but if it does become negative, 
+	# give an error message and exit the test. This same logic follows for count_running. It takes some time for the pods to 
+	# terminate (scale down) or start running (scale up). The pods should all be in a Running state before count_running 
+	# reaches a negative value. If count_running ecome negative, give an error message and exit the test.
+	count_scaling=200
+	count_running=200
+
+	while [[ ( $initial_pod_num -ne $final_pod_num ) && ( count_scaling -gt 0 ) ]];
+	do 
+		oc get deployment $deployment_name  -n $namespace
+		initial_pod_num=$(oc get deployment $deployment_name --no-headers -n $namespace | awk -F ' {1,}' '{print $4}' )
+		((count_scaling--))
+	done
+
+	if [ $count_scaling -lt 0 ]; then
+		echo "pods did not not scale to $final_pod_num"
+		exit 1
+	fi
+
+  pods_not_running=$(oc get pods -n $namespace --no-headers | egrep -v "Completed|Running" | wc -l)
+	echo "pods not running (due to scaling): $pods_not_running"
+
+	while [[ ( $count_running -gt 0 ) && ( $pods_not_running -gt 0 ) ]];
+	do
+		pods_not_running=$(oc get pods -n $namespace --no-headers | egrep -v "Completed|Running" | wc -l)
+		((count_running--))
+		echo "pods not running: $pods_not_running"
+		sleep 3
+	done
+
+	if [ $count_running -lt 0 ]; then
+		echo "$pods_not_running still not running. Exiting test..."
+		exit 1
+	fi
+}
+
+# pass $expected_status_code $pod_ip $apiserver_pod_name
+# e.g. check_http_code $deny_traffic_code $pod_ip $apiserver_pod
+function check_http_code(){
+	# This applies to the image openshift/hello-openshift:latest
+	# When the network traffic is denied and api is called (curl):
+	# - the api returns a status code of 000
+	# - the script terminates with the exit code 28 with an error message "command terminated with exit code 28".
+	#
+	# When the network traffic returns and api is called (curl):
+	# - the api returns a code of 
+	# Hello OpenShift!
+	# 200
+
+    my_http_code=$1
+    my_pod_ip=$2
+  	my_apiserver_pod=$3
+	
+    for i in {1..120};
+	do
+		# The command "set +e" allows the script to execute even though the exit code is 28.
+        set +e
+
+		# When the traffic is denied, supress the error message by directing the output to "2> /dev/null". 
+		http_code=$(eval "oc exec $my_apiserver_pod -n openshift-oauth-apiserver -c oauth-apiserver -- curl -s http://${my_pod_ip}:8080 --connect-timeout 1 -w "%{http_code}" 2> /dev/null")
+		
+		# Check to see if the status code contains the string "200" (return traffic) or "000" (traffic denied)
+		if [[ $http_code = *"$my_http_code"* ]]; then
+    		break
+		fi
+   		sleep 1
+	done
+	set -e
+}
+
+# pass $num1 $num2
+# e.g. calculate_difference ${final_time_np} ${final_time_no_np}
+function calculate_difference(){
+	# Simple function returns the absolue value of the difference b/t two numbers
+	value_1=$1
+	value_2=$2
+	temp_value=$(($value_1-$value_2))
+	echo ${temp_value#-}
+}
