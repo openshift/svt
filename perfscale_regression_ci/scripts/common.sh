@@ -66,12 +66,29 @@ function wait_for_obj_creation() {
 # e.g. delete_project "test=concurent-job"
 function delete_project_by_label() {
   oc project default
+  
+
   oc delete projects -l $1 --wait=false --ignore-not-found=true
   while [ $(oc get projects -l $1 | wc -l) -gt 0 ]; do
     echo "Waiting for projects to delete"
     sleep 5
   done
+  
 }
+
+# pass $label $filename
+# e.g. delete_project "test=concurent-job" delete_status.out
+function delete_projects_time_to_file() { 
+
+  delete_file=$2
+  start_time=`date +%s`
+  delete_project_by_label $1
+  stop_time=`date +%s`
+  total_time=`echo $stop_time - $start_time | bc`
+  echo "Deletion Time - $total_time" >> $delete_file
+
+}
+
 
 function check_no_error_pods()
 {
