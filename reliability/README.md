@@ -1,4 +1,5 @@
 # OpenShift V4 Reliability
+This tool is not being maintained now. The new Reliability tool is here https://github.com/openshift/svt/tree/master/reliability-v2.
 ## Introduction
 Software reliability testing is a field of software testing that relates to testing a software's ability to function, given environmental conditions, for a particular amount of time.
 Openshift Reliability testing is an operational testing scheme that uses a baseline work efficiency specification to evaluate the stability of openshift system in the given amount of time. The purpose is to discover problems in functionality. The baseline work efficiency specification was made up of daily tasks such as applications developing, hosting and scaling. 

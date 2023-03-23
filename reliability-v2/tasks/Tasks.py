@@ -119,7 +119,7 @@ class Tasks:
                 current_tries = 0
                 visit_success = False
                 while not visit_success and current_tries <= max_tries:
-                    self.logger.info(f"{template} route not available yet, sleeping 30 seconds. Retry:{current_tries}.")
+                    self.logger.info(f"{template} route not available yet, sleeping 30 seconds. Retry:{current_tries}/{max_tries}.")
                     sleep(30)
                     current_tries += 1
                     visit_success,status_code = self.__visit_app(route)
@@ -225,24 +225,36 @@ class Tasks:
         (result,rc) = oc(f"start-build -n {namespace} {build_config}",kubeconfig)
         self.__log_result(rc)
         return (result,rc)
-
-    def scale_up(self,user,namespace):
+    
+    def scale_deployment(self,user,namespace,replicas="1"):
         kubeconfig = global_data.kubeconfigs[user]
-        (build_config,rc) = oc(f"get bc --no-headers -n {namespace} | awk {{'print $1'}}",kubeconfig)
-        deployment = build_config
-        self.logger.info(f"[Task] User {user}: scale up deployment '{deployment}'")
-        (result, rc) = oc(f"scale --replicas=2 -n {namespace} dc/{deployment}",kubeconfig)
+        (deployment, rc) = oc(f"get dc --no-headers -n {namespace} | grep persistent | awk {{'print $1'}}",kubeconfig)
+        deployment = deployment.rstrip()
+        self.logger.info(f"[Task] User {user}: scale deployment '{deployment}' to '{replicas}' replicas")
+        (result, rc) = oc(f"scale --replicas={replicas} -n {namespace} dc/{deployment}",kubeconfig)
+        if rc == 0:
+            sleep(30)
+            rc = self.__check_replicas(user,namespace,"dc",deployment,replicas)
         self.__log_result(rc)
         return (result,rc)
     
-    def scale_down(self,user,namespace):
+    def __check_replicas(self,user,namespace,object,deployment,replicas):
         kubeconfig = global_data.kubeconfigs[user]
-        (build_config, rc) = oc(f"get bc --no-headers -n {namespace} | awk {{'print $1'}}",kubeconfig)
-        deployment = build_config
-        self.logger.info(f"[Task] User {user}: scale down deployment '{deployment}'")
-        (result, rc) = oc(f"scale --replicas=1 -n {namespace} dc/{deployment}",kubeconfig)
-        self.__log_result(rc)
-        return (result,rc)
+        (result, rc) = oc("get "+object+"/"+deployment+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}'",kubeconfig)
+        max_tries = 10
+        current_tries = 0
+        while result != replicas and current_tries <= max_tries:
+            self.logger.info(f"[Task] User {user}: check {object} '{deployment}' to reach '{replicas}' replicas. Current replica:{result}. Retry:{current_tries}/{max_tries}")
+            (result, rc) = oc("get "+object+"/"+deployment+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}'",kubeconfig)
+            sleep(30)
+            current_tries += 1
+        if result != replicas:
+            # debug the namespace
+            self.__get_namespace_resource(user,namespace,object)
+            self.__get_namespace_resource(user,namespace,"events")
+            return(1)
+        else:
+            return(0)
 
     def apply(self,user,namespace,file):
         kubeconfig = global_data.kubeconfigs[user]
