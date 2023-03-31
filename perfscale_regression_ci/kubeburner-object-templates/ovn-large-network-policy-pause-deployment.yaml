@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ovn-lnp-pause-{{.Replica}}-{{.Iteration}}
+  labels:
+    app: ovn-lnp-pause-{{.Replica}}-{{.Iteration}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ovn-lnp-pause-{{.Replica}}-{{.Iteration}}
+  template:
+    metadata:
+      labels:
+        app: ovn-lnp-pause-{{.Replica}}-{{.Iteration}}
+    spec:
+      containers:
+      - name: ovn-lnp-pause
+        image: gcr.io/google-containers/pause-amd64:3.0
+        ports:
+        - containerPort: 8080
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
