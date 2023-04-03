@@ -182,6 +182,7 @@ echo start.sh logs will be saved to $start_log.
 
 rm -rf halt
 
+# Prepare venv
 [[ -z $folder_name ]] && folder_name="test"$(date "+%Y%m%d%H%M%S")
 mkdir $folder_name
 echo "Test folder $folder_name is created."
@@ -194,6 +195,7 @@ cd -
 pip3 install --upgrade pip > /dev/null 2>&1
 pip3 install -r requirements.txt > /dev/null 2>&1
 
+# Prepare config yaml file
 cp config/example_reliability.yaml $folder_name/reliability.yaml
 
 cd $folder_name
@@ -217,10 +219,58 @@ elif [[ ! -z $kubeconfig && ! -z $users_spec && ! -z $kubeadmin_password ]]; the
     KUBECONFIG=$kubeconfig
 fi
 
-cd $RELIABILITY_DIR
-
 echo "export KUBECONFIG=$KUBECONFIG"
 export KUBECONFIG
+
+# Deploy NFS storage class for cluster without storageclass
+cd $RELIABILITY_DIR
+
+if [[ $(oc get storageclass -o json | jq .items) == "[]" ]];then
+    cd utils
+    echo "Deploy nfs-provisioner"
+    #wget --quiet https://gitlab.cee.redhat.com/-/ide/project/wduan/openshift_storage/tree/master/-/nfs/deploy_nfs_provisioner.sh -O 
+    #chmod +x deploy_nfs_provisioner.sh
+    ./deploy_nfs_provisioner.sh
+    cd -
+fi
+
+# Configure storage for monitoring
+# https://docs.openshift.com/container-platform/4.12/scalability_and_performance/scaling-cluster-monitoring-operator.html#configuring-cluster-monitoring_cluster-monitoring-operator
+oc get cm -n openshift-monitoring cluster-monitoring-config -o yaml  | grep volumeClaimTemplate > /dev/null 2>&1
+if [[ $? -eq 1  ]]; then
+    export STORAGE_CLASS=$(oc get storageclass | grep default | awk '{print $1}')
+    export PROMETHEUS_RETENTION_PERIOD=30d
+    export PROMETHEUS_STORAGE_SIZE=500Gi
+    export ALERTMANAGER_STORAGE_SIZE=20Gi
+    envsubst < content/cluster-monitoring-config.yaml | oc apply -f -
+    echo "Sleep 60s to wait for monitoring to take the new config map."
+    sleep 60
+    oc rollout status -n openshift-monitoring deploy/cluster-monitoring-operator
+    oc rollout status -n openshift-monitoring sts/prometheus-k8s
+    token=$(oc create token -n openshift-monitoring prometheus-k8s --duration=6h)
+    URL=https://$(oc get route -n openshift-monitoring prometheus-k8s -o jsonpath="{.spec.host}")
+    prom_status="not_started"
+    echo "Sleep 30s to wait for prometheus status to become success."
+    sleep 30
+    retry=20
+    while [[ "$prom_status" != "success" && $retry -gt 0 ]]; do
+        retry=$(($retry-1))
+        echo "Prometheus status is not success yet, retrying in 10s, retries left: $retry."
+        sleep 10
+        prom_status=$(curl -s -g -k -X GET -H "Authorization: Bearer $token" -H 'Accept: application/json' -H 'Content-Type: application/json' "$URL/api/v1/query?query=up" | jq -r '.status')
+    done
+    if [[ "$prom_status" != "success" ]]; then
+        prom_status=$(curl -s -g -k -X GET -H "Authorization: Bearer $token" -H 'Accept: application/json' -H 'Content-Type: application/json' "$URL/api/v1/query?query=up" | jq -r '.status')
+        echo "Error: Prometheus status is '$prom_status'. 'success' is expected"
+        exit 1
+    else
+        echo "Prometheus is success now."
+    fi
+fi
+
+# Install dittybopper
+cd $RELIABILITY_DIR
+
 oc get ns| grep dittybopper
 if [[ $? -eq 1 ]];then
     echo "Install dittybopper"
@@ -237,21 +287,12 @@ if [[ $? -eq 1 ]];then
     fi
 fi
 
-cd $RELIABILITY_DIR
-
-if [[ $(oc get storageclass -o json | jq .items) == "[]" ]];then
-    cd utils
-    echo "Deploy nfs-provisioner"
-    #wget --quiet https://gitlab.cee.redhat.com/-/ide/project/wduan/openshift_storage/tree/master/-/nfs/deploy_nfs_provisioner.sh -O 
-    #chmod +x deploy_nfs_provisioner.sh
-    ./deploy_nfs_provisioner.sh
-    cd -
-fi
-
+# Cleanup test projects
 cd $RELIABILITY_DIR
 log "info" "Clearing test ns with label purpose=reliability."
 oc delete ns -l purpose=reliability
 
+# Start reliability test
 log "info" "Start Reliability test. Log is writting to $folder_name/reliability.log."
 # run in background and dont append output to nohup.out
 nohup python3 reliability.py -c $folder_name/reliability.yaml -l $folder_name/reliability.log > /dev/null 2>&1 &
@@ -295,5 +336,6 @@ else
     done
 fi
 
+# Stop reliability test
 touch halt
 log "info" "Reliability test is halted after running $time_to_run. Please check logs in $folder_name/reliability.log."

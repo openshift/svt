@@ -2,6 +2,9 @@ OpenShift V4 Reliability - V2
 # Introduction
 Reliability-v2 is a longevity test tool simulating customer actions with load, integrated with health check, error injection and failure & performance monitoring. 
 
+## Overview
+![Reliability-V2 Overview](media/openshift-reliability-test-v2-overview.png)
+
 ## Source
 Get the reliability-v2 tool from this git repo
 ```
@@ -170,7 +173,7 @@ reliability:
     - name: dev-prod
       user_name: testuser- 
       user_start: 15 # user_start is inclusive, start with testuser-15 in users.spec
-      user_end: 45 # user_end is exclusive, end with testuser-44 in users.spec
+      user_end: 16 # user_end is exclusive, end with testuser-15 in users.spec
       loops: forever
       trigger: 600
       jitter: 1200 # randomly start the users in this group in 20 minutes
