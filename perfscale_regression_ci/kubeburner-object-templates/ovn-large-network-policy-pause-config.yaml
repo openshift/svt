@@ -1,0 +1,21 @@
+jobs:
+  - name: {{.NAME}}
+    namespace: {{.NAMESPACE}}
+    jobIterations: {{.JOB_ITERATION}}
+    qps: {{.QPS}}
+    burst: {{.BURST}}
+    namespacedIterations: true
+    podWait: true
+    verifyObjects: true
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+    objects:
+    - objectTemplate: "ovn-large-network-policy-pause-deployment.yaml"
+      replicas: 1
+    - objectTemplate: "ovn-large-network-policy-pause-service.yaml"
+      replicas: 1
+      inputVars:
+        serviceType: {{.SERVICE_TYPE}}
