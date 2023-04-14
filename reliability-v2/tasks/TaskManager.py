@@ -25,7 +25,6 @@ class TaskManager:
             cmd = task_split[1]
             _, rc = self.tasks.oc_task(cmd, user)
         elif task.startswith('kubectl ',0,8):
-            # todo: change name of oc.py
             task_split = task.split("kubectl ")
             cmd = task_split[1]
             _, rc = self.tasks.kubectl_task(cmd, user)
@@ -46,7 +45,7 @@ class TaskManager:
             else:
                 _, rc = eval(f"self.tasks.{func}")(user)
         else:
-            _, rc = self.tasks.shell_task(task)
+            _, rc = self.tasks.shell_task(task, user)
         self.logger.info((f"'{label}: finished. Result is: '{rc}'."))
 
         return rc
@@ -61,7 +60,9 @@ class TaskManager:
         trigger = users_task["trigger"]
         interval = users_task["interval"]
         jitter = users_task["jitter"]
+        pre_tasks = users_task["pre_tasks"]
         tasks = users_task["tasks"]
+        post_tasks = users_task["post_tasks"]
         label = f"[Group:{group_name}] [User: {user}] [Total Loops: {loops}]"
 
         if jitter > 0:
@@ -70,83 +71,117 @@ class TaskManager:
             time.sleep(random_jitter)
 
         state = self.check_state()
-
-        if loops == "forever":
-            loop = 0
-            while state != "halt":
-                if state == "run":
-                    self.logger.info(f"{label}: will run loop {loop}")
-                    rc = 0
-                    for task in tasks:
-                        if rc == 0:
-                            rc = self.run_task(task, user)
-                            # sleep interval seconds between tasks
-                            self.logger.info(f"{label}: will sleep {interval}s before next task")
-                            time.sleep(interval)           
-                    loop += 1
-                    self.logger.info(f"{label}: will sleep {trigger}s after loop '{loop}'")
-                    time.sleep(trigger)
-                    state = self.check_state()
-                elif state == "pause":
-                    time.sleep(60)
-                    state = self.check_state()
-            slackIntegration.info(f"{label}: is going to halt after loop '{loop}'")
-            result = "{label}: halted after loop '{loop}'"
-
-        elif isinstance(loops,int) and loops > 0:
-            for loop in range(loops):
-                if state == "halt":
-                    slackIntegration.info(f"{label}: is going to halt before loop '{loop}'")
-                    result = "{label}: halted before loop '{loop}'"
-                    break
-                while state == "pause":
-                    time.sleep(60)
-                    state = self.check_state()
-                if state == "run":
-                    self.logger.info(f"{label}: will run loop {loop}")
-                    rc = 0
-                    for task in tasks:
-                        if rc == 0:
-                            rc = self.run_task(task, user)
-                            self.logger.info(f"{label}: will sleep {interval}s before next task")
-                            time.sleep(interval)
-                    self.logger.info(f"{label}: will sleep {trigger}s after loop '{loop}'")
-                    time.sleep(trigger)
-                    state = self.check_state()
-                elif state == "halt":
-                    slackIntegration.info(f"{label}: is going to halt after loop '{loop}'")
-                    result = f"{label}: halted after loop '{loop}'"
-                    break
-            result = f"{label}: loop finished"
+        # run pre tasks
+        while state == "pause":
+            time.sleep(60)
+            state = self.check_state()
+        pre_rc = 0
+        if state == "run":
+            self.logger.info(f"{label}: will run pre_tasks")
+            for pre_task in pre_tasks:
+                if pre_rc == 0:
+                    pre_rc = self.run_task(pre_task, user)
+                    time.sleep(20)
+        if pre_rc != 0:
+            result = f"{label}: pre tasks failed." 
         else:
-            self.logger.error(f"Invalid loop '{loops}'.")
+            state = self.check_state()
+            if loops == "forever":
+                loop = 0
+                while state != "halt":
+                    if state == "run":
+                        self.logger.info(f"{label}: will run loop {loop}")
+                        rc = 0
+                        for task in tasks:
+                            if rc == 0:
+                                rc = self.run_task(task, user)
+                                # sleep interval seconds between tasks
+                                self.logger.info(f"{label}: will sleep {interval}s before next task")
+                                time.sleep(interval)           
+                        loop += 1
+                        self.logger.info(f"{label}: will sleep {trigger}s after loop '{loop}'")
+                        time.sleep(trigger)
+                        state = self.check_state()
+                    elif state == "pause":
+                        time.sleep(60)
+                        state = self.check_state()
+                slackIntegration.info(f"{label}: is going to halt after loop '{loop}'")
+                result = f"{label}: halted after loop '{loop}'"
 
+            elif isinstance(loops,int) and loops > 0:
+                for loop in range(loops):
+                    if state == "halt":
+                        slackIntegration.info(f"{label}: is going to halt before loop '{loop}'")
+                        result = f"{label}: halted before loop '{loop}'"
+                        break
+                    while state == "pause":
+                        time.sleep(60)
+                        state = self.check_state()
+                    if state == "run":
+                        self.logger.info(f"{label}: will run loop {loop}")
+                        rc = 0
+                        for task in tasks:
+                            if rc == 0:
+                                rc = self.run_task(task, user)
+                                self.logger.info(f"{label}: will sleep {interval}s before next task")
+                                time.sleep(interval)           
+                        self.logger.info(f"{label}: will sleep {trigger}s after loop '{loop}'")
+                        time.sleep(trigger)
+                        state = self.check_state()
+                    elif state == "halt":
+                        slackIntegration.info(f"{label}: is going to halt after loop '{loop}'")
+                        result = f"{label}: halted after loop '{loop}'"
+                        break
+                result = f"{label}: loop finished"
+            else:
+                self.logger.error(f"Invalid loop '{loops}'.")
+            
+            # run post tasks even when there is halt
+            state = self.check_state()
+            while state == "pause":
+                time.sleep(60)
+                state = self.check_state()
+            self.logger.info(f"{label}: will run post_tasks")
+
+            post_rc = 0
+            for post_task in post_tasks:
+                if post_rc == 0:
+                    post_rc = self.run_task(post_task, user)
+                    time.sleep(20)
         return result
 
     def run_users_tasks(self,group):
         name = group.get("name","")
-        persona = group.get("persona","os")
-        users = group.get("users",1)
+        user_name = group.get("user_name","")
+        user_start = group.get("user_start",None)
+        user_end = group.get("user_end",None)
         loops = group.get("loops",1)
         trigger = group.get("trigger",0)
         jitter = group.get("jitter",0)
+        pre_tasks = group.get("pre_tasks",[])
         tasks = group.get("tasks",[])
+        post_tasks = group.get("post_tasks",[])
         interval = group.get("interval",60)
         users_tasks = []
-        # todo: validate
-        if persona == "admin":
-            users_tasks.append({"user":"kubeadmin","group_name":name,"loops":loops,"trigger":trigger,"interval":interval,"jitter":jitter,"tasks":tasks})
-        elif persona == "developer":
-            for i in range(users):
-                users_tasks.append({"user":f"testuser-{i}","group_name":name,"loops":loops,"trigger":trigger,"interval":interval,"jitter":jitter,"tasks":tasks})
-        self.logger.info(f"Will run group '{name}' with {users} users concurrently")
-        slackIntegration.info(f"Group {name} will run tasks with {users} users for {loops} loops. Adding a jitter of {jitter}s before group test started, wait {trigger}s between loops, wait {interval}s between tasks.")
-        # run tasks with concurrent users
-        with ThreadPoolExecutor(max_workers=users) as executor:
-            results = executor.map(self.run_tasks, users_tasks)
-            for result in results:
-                self.logger.info(f"Finished running group '{name}'. Result is {result}")
-        return (f"Finished running group '{name}'. Result is {result}")
+        user_count = 0
+        if user_start == None and user_end == None: 
+            users_tasks.append({"user":user_name,"group_name":name,"loops":loops,"trigger":trigger,"interval":interval,"jitter":jitter,"pre_tasks":pre_tasks,"tasks":tasks,"post_tasks":post_tasks})
+            user_count = 1
+        elif user_end > user_start:   
+            for i in range(user_start, user_end):
+                users_tasks.append({"user":f"{user_name}{i}","group_name":name,"loops":loops,"trigger":trigger,"interval":interval,"jitter":jitter,"pre_tasks":pre_tasks,"tasks":tasks,"post_tasks":post_tasks})
+            user_count = user_end - user_start
+        if user_count > 0:
+            self.logger.info(f"Will run group '{name}' with {user_count} users.")
+            slackIntegration.info(f"Group {name} will run tasks with {user_count} users for {loops} loops. Adding a jitter of {jitter}s before group test started, wait {trigger}s between loops, wait {interval}s between tasks.")
+            # run tasks with concurrent users
+            with ThreadPoolExecutor(max_workers=user_count) as executor:
+                results = executor.map(self.run_tasks, users_tasks)
+                for result in results:
+                    self.logger.info(f"User in group '{name} finished its run'. Result is {result}")
+            return (f"Finished running group '{name}'.")
+        else:
+            return (f"Can not run group '{name}'. user_end should be larger than user_end.")
 
     def run_groups(self,groups):
         with ThreadPoolExecutor() as executor:

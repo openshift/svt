@@ -1,11 +1,12 @@
 OpenShift V4 Reliability - V2
 # Introduction
-Software reliability testing is a field of software testing that relates to testing a software's ability to function, given environmental conditions, for a particular amount of time.
-Openshift Reliability testing is an operational testing scheme that uses a baseline work efficiency specification to evaluate the stability of openshift system in the given amount of time. The purpose is to discover problems in functionality. The baseline work efficiency specification was made up of daily tasks such as applications developing, hosting and scaling. 
+Reliability-v2 is a longevity test tool simulating customer actions with load, integrated with health check, error injection and failure & performance monitoring. 
 
-Reliability-v2 can simulate real world by concurrently running different tasks by multiple groups and users. 
+## Overview
+![Reliability-V2 Overview](media/openshift-reliability-test-v2-overview.png)
 
-## Git
+## Source
+Get the reliability-v2 tool from this git repo
 ```
 $ git clone git@github.com:openshift/svt.git
 cd svt/reliability-v2
@@ -15,33 +16,8 @@ cd svt/reliability-v2
 ## Tmux
 [tmux](https://github.com/tmux/tmux/wiki) is a tool that can help to keep the reliability running in the background to avoid the termination of the run due to the unexpected termination of the terminal. Ad reliability test sometimes run for several days, we recommend you to run reliability in a tmux session.
 
-## start.sh
-[start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh) is a script to wrap the configuration and run steps below to quick start a reliability test. It can also upgrade the cluster every 24 hours if there is new nightly build.
-e.g. Run reliability test for 7 days and upgrade every 24 hours if there is new nightly build
-```
-start.sh -p <path to the folder holding kubeconfig kubeadmin-password and users.spec files> -t 7d -u
-```
-
-To enable slack notification, export the following env viriables before running start.sh
-
-export SLACK_API_TOKEN=<ask qili@redhat for the token>
-
-export SLACK_MEMBER=<get it by clicking 'Copy member ID' in your slack Profile>
-
-# Config and Run
-If you don't use [start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh), read the folowing steps know about more details about reliability configuration and run.
-## Install dependencies
-**NOTE**: Recommended to use a virtual environment(pyenv,venv) so as to prevent conflicts with already installed packages.
-```
-$ pip3 install -r requirements.txt
-```
-
-## Configuration
-Example [config](https://github.com/openshift/svt/blob/master/reliability-v2/config/example_reliability.yaml). 
-
-### Files needed
-
-If you installed your cluster with [Flexy-install](https://mastern-jenkins-csb-openshift-qe.apps.ocp4.prod.psi.redhat.com/job/ocp-common/job/Flexy-install/), download kubeconfig, users.spec and kubeadmin-password files. If you installed cluster in other way, prepare the above files accordingly.
+## Prepare Authentication files
+If you installed your cluster with [Flexy-install](https://mastern-jenkins-csb-openshift-qe.apps.ocp4.prod.psi.redhat.com/job/ocp-common/job/Flexy-install/), download kubeconfig, users.spec and kubeadmin-password files from the Build Artifacts after the job completed successfully. The user `kubeadmin` has admin priviledge and its password is in kubeadmin-password. users.spec contains username and password pairs of 50 test users.
 
 Replace `kubeconfig` `kubeadmin_password` and `user_file` with above files in your config file.
 ```yaml
@@ -52,26 +28,49 @@ reliability:
     - user_file: <path_to_users.spec>
 ```
 
+If you installed your cluster with other ways, you need to prepare 3 files
+1. kubeconfig
+2. kubeadmin-password, a file contains password of kubeadmin user which is admin role
+3. users.spec, a file contains pares of usernames and passwords. e.g testuser-0:password1,testuser-1:password2,...,testuser-n:passwordn
+
 For more detail explaination about the configuration, please go to [Configuration Detail](#Configuration-Detail).
 
-## Run
+## A quick start script: start.sh
+[start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh) is a quick start script that helps you to do nessessary preparations and generate a default configurations based on [example_reliability.yaml](https://github.com/openshift/svt/blob/master/reliability-v2/config/example_reliability.yaml) and start a reliability test to run for a certain time. It can upgrade the cluster every 24 hours if there is new nightly build.
 
-### Run Reliability Test
-
-#### Run the test
+e.g. Run reliability test for 7 days with the default configuration and upgrade the cluster every 24 hours if there is new nightly build
 ```
-python3 reliability.py -c <path to config file>
-```
-`-l` and `--cerberus-history` are optional.
-
-Logs will go to stdout and `/tmp/reliability.log` by default if `-l` is not specified.
-
-Cerberus history file will go to `/tmp/cerberus-history.json` by default if `--cerberus-history` is not specified.
-```
-python3 reliability.py -c <path to config file> -l <path to log config file> --cerberus-history <path to file to save cerberus history is cerberus is enabled>
+start.sh -p <path to the folder holding kubeconfig, kubeadmin-password and users.spec files> -t 7d -u
 ```
 
-#### Integration
+To enable slack notification, export the following env viriables before running start.sh
+
+export SLACK_API_TOKEN=<ask qili@redhat for the token>
+
+export SLACK_MEMBER=<get it by clicking 'Copy member ID' in your slack Profile>
+
+If you don't want to use the default configuration, you can update (https://github.com/openshift/svt/blob/master/reliability-v2/config/example_reliability.yaml) before you trigger [start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh)
+
+For configuration details, check [Configuration](#Configuration)
+
+# Run without start.sh
+If [start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh) can not fit your requirment, you can run it with python. Read the folowing steps to know more details.
+
+## Install dependencies
+**NOTE**: Recommended to use a virtual environment(pyenv,venv) so as to prevent conflicts with already installed packages.
+```
+$ pip3 install -r requirements.txt
+```
+
+## Prepare Configuration
+Example [config](https://github.com/openshift/svt/blob/master/reliability-v2/config/example_reliability.yaml). 
+
+You can customize the configuration file, check [Configuration](#Configuration) for details.
+
+### Groups and Tasks
+Define your test scenario by adding [Groups and Tasks](Groups-And-Tasks).
+
+### Integration
 [Slack Integration](#Slack-Integration) 
 
 If you want to receive notifications about the start stop of the test and errors happen during the Reliability test, configure Slack Integration before running the Reliability test.
@@ -84,20 +83,153 @@ If you want to leverage Cerberus to check the health of the cluster and take act
 
 If you want to add [Kraken](https://github.com/cloud-bulldozer/kraken-hub) to inject chaos during the Reliability test, configure Kraken Integration before running the Reliability test.
 
-## Control activity execution (in script working directory):
+
+## Run
+
+```
+python3 reliability.py -c <path to the configuration file>
+```
+`-l` and `--cerberus-history` are optional.
+
+Logs will go to stdout and `/tmp/reliability.log` by default if `-l` is not specified.
+
+Cerberus history file will go to `/tmp/cerberus-history.json` by default if `--cerberus-history` is not specified.
+```
+python3 reliability.py -c <path to config file> -l <path to log config file> --cerberus-history <path to file to save cerberus history is cerberus is enabled>
+```
+
+## Pause and Stop 
+In the directory where you start reliability test:
 ```bash
 # pause execution
 touch pause
-# when ready to resume
+# resume from pause
 rm pause
-# clean shutdown at end of next activity cycle
+# clean shutdown at end of next loop
 touch halt
 ```
 
-## Configuration Detail
+# Configuration
 Example [config](https://github.com/openshift/svt/blob/master/reliability-v2/config/example_reliability.yaml). Below sections explains each part of the configuration file.
 
-### Cerberus Integration
+## Groups and Tasks
+A group defines a group of users with the similar behavior, they will run the same tasks. You can use any meaningful name for a group
+
+`user_name` the name of test user. If user_start and user_end exist, this will be username prefix
+
+`user_start` and `user_end` it defines the start and end range of users. `user_start` is inclusive, `user_end` is exclusive.
+
+`loops` defines the number of times each user will run the tasks. default is 1.
+
+`trigger` defines the time in second to wait between each loop. 
+
+`jitter` defines a random time in second to be added at the start of the first loop for a user. The purpose is to let users in a group to start at a different time. Default is 0.
+
+`tasks` define a list of tasks to run by a user. Each user will run the tasks in serial for the defined loops.
+
+`interval` defines the time in second to wait between each task in a tasks list.
+
+All users in a group run in parrellel. All groups run in parrellel.
+
+For tasks, oc cli, kubeconfig, shell script and build-in [func](Supported-Func)s are supported.
+
+```yaml
+reliability:
+  groups:
+    - name: admin
+      user_name: kubeadmin # username
+      loops: forever # run group for loops times. integer > 0 or 'forever', default is 1.
+      trigger: 600 # wait trigger seconds between each loop
+      jitter: 60 # randomly start the users in this group in trigger seconds. Default is 0.
+      interval: 10 # wait interval seconds between tasks.
+      tasks: 
+        - func check_operators
+        - oc get project -l purpose=reliability
+        - func check_nodes
+        - kubectl get pods -A -o wide | egrep -v "Completed|Running"
+        # Run test case as scripts. KUBECONFIG of the current user is set as env variable by reliability-v2. 
+        #- . <path to /content/create-delete-pod-ensure-service.sh>
+        
+    - name: dev-test
+      user_name: testuser- # if user_start and user_end exist, this will be username prefix
+      user_start: 0 # user_start is inclusive, start with testuser-0 in the users.spec file
+      user_end: 15 # user_end is exclusive, end with testuser-14 in the users.spec file
+      loops: forever
+      trigger: 60
+      jitter: 600 # randomly start the users in this group in 10 minutes
+      interval: 10
+      tasks:
+        - func delete_all_projects # clear all projects
+        - func new_project 2 # new 2 projects
+        # If network policy is planed in the test, uncomment the following line
+        #- func apply 2 "<path to /reliability-v2/networkpolicy/allow-same-namespace.yaml>" # Apply network policy to 2 projects
+        - func check_all_projects # check all project under this user
+        - func new_app 2 # new app in 2 namespaces
+        - func load_app 2 10 # load apps in 2 namespaces with 10 clients for each
+        - func build 1 # build app in 1 namespace
+        - func check_pods 2 # check pods in 2 namespaces 
+        - func delete_project 2 # delete project in 2 namespaces
+
+    - name: dev-prod
+      user_name: testuser- 
+      user_start: 15 # user_start is inclusive, start with testuser-15 in users.spec
+      user_end: 16 # user_end is exclusive, end with testuser-15 in users.spec
+      loops: forever
+      trigger: 600
+      jitter: 1200 # randomly start the users in this group in 20 minutes
+      interval: 600
+      pre_tasks: 
+          - func delete_all_projects # clear all projects
+          - func new_project 2 # new 2 projects
+          - func new_app 2 # new app in 2 namespaces
+      tasks:
+        - func load_app 2 10 # load apps in 2 namespaces with 10 clients for each
+        - func scale_deployment 2 2 # scale app in 2 namespaces to 2 replicas
+        - func scale_deployment 2 1 # scale app in 2 namespaces to 1 replicas
+      post_tasks: 
+        - func delete_project 2
+```
+## Supported func
+Funs are some build-in functions that calls oc cli to run some common operation(s).
+
+The following funcs are supported now:
+
+| name | parameters | user | comment |
+| ---- | ---- | ---- | ---- |
+| delete_all_projects  | N/A | developer | delete all projects for a user | 
+| new_project | number_of_projects | developer | Create n projects for the user|
+| check_all_projects  | N/A | developer | Check projects under the user|
+| new_app  | number_of_projects | developer | New an app under each project|
+| load_app  | number_of_projects  number_of_clients | developer | Load an app under each project with a number of clients|
+| apply  | number_of_projects  file_location | developer admin | apply a file under each project|
+| build  | number_of_projects | developer | Build under each project|
+| scale_deployment  | number_of_projects number_of_replicas | developer | Scaleup the deployment to number_of_replicas replicas under each project|
+| check_pods  | number_of_projects | developer | Check pods under each project|
+| delete_project  | number_of_projects | developer | Delete each project|
+| check_operators  | N/A | admin | Check Degraded operators|
+| check_nodes  | N/A | admin | Check not Ready nodes|
+
+## Slack Integration
+Receive notifications about the start stop of the Reliability test and errors happen during the Reliability test.
+
+Set environment virable SLACK_API_TOKEN before running the test. Contact qili@redhat.com for the token.
+
+```yaml
+  slackIntegration:
+    slack_enable: False
+    # the ID in the example is the id of slack channel #ocp-qe-reliability-monitoring.
+    slack_channel: C0266JJ4XM5
+    # slack_member is optional. If provided, the notification message will @ you. 
+    # you must be a member of the slack channel to receive the notification.
+    slack_member: <Your slack member id>
+```
+In the above configuration, notifications will be sent to [#ocp-qe-reliability-monitoring](https://coreos.slack.com/archives/C0266JJ4XM5) (Channel ID: C0266JJ4XM5) in [CoreOS](coreos.slack.com) workspace, and @ the user of slack_member if you configured.
+
+If you're in [CoreOS](coreos.slack.com) workspace, but you want to use your own slack channel, create a slack channel and install App `OCP Reliability` which already exists in CoreOS workspace.
+
+If you want to use your own App(slack_api_token), create an [app](https://api.slack.com/apps?new_granular_bot_app=1) and add a bot to it on slack. Slack Bot Token Scopes permissions are [channels:read] [chat:write] [groups:read] [im:read] [mpim:read]. You will get a token after the app is installed to a workspace. Install the app to your channel. Set the token to SLACK_API_TOKEN environment variable.
+
+## Cerberus Integration
 Reliablity can integrate with [Cerberus](https://github.com/cloud-bulldozer/cerberus) to check the healthy of the cluster and take action accordingly during the Reliability test.
 
 The below configuration example enables the Cerberus integration `cerberus_enable: True`, and provided the Cerberus api `cerberus_api: "http://0.0.0.0:8080"` where Reliability test can get the [Cerberus status and history](https://github.com/cloud-bulldozer/cerberus#metrics-api) from. The `cerberus_fail_action` configures how Reliability test acts when Cerberus status is False.
@@ -122,27 +254,7 @@ reliability:
     cerberus_fail_action: pause
 ```
 
-### Slack Integration
-Receive notifications about the start stop of the Reliability test and errors happen during the Reliability test.
-
-Set environment virable SLACK_API_TOKEN before running the test. Contact qili@redhat.com for the token.
-
-```yaml
-  slackIntegration:
-    slack_enable: False
-    # the ID in the example is the id of slack channel #ocp-qe-reliability-monitoring.
-    slack_channel: C0266JJ4XM5
-    # slack_member is optional. If provided, the notification message will @ you. 
-    # you must be a member of the slack channel to receive the notification.
-    slack_member: <Your slack member id>
-```
-In the above configuration, notifications will be sent to [#ocp-qe-reliability-monitoring](https://coreos.slack.com/archives/C0266JJ4XM5) (Channel ID: C0266JJ4XM5) in [CoreOS](coreos.slack.com) workspace, and @ the user of slack_member if you configured.
-
-If you're in [CoreOS](coreos.slack.com) workspace, but you want to use your own slack channel, create a slack channel and install App `OCP Reliability` which already exists in CoreOS workspace.
-
-If you want to use your own App(slack_api_token), create an [app](https://api.slack.com/apps?new_granular_bot_app=1) and add a bot to it on slack. Slack Bot Token Scopes permissions are [channels:read] [chat:write] [groups:read] [im:read] [mpim:read]. You will get a token after the app is installed to a workspace. Install the app to your channel. Set the token to SLACK_API_TOKEN environment variable.
-
-### Kraken Integration
+## Kraken Integration
 Configure Kraken scenario(s) to trigger error injection during the Reliability test.
 
 The below configuration example enables the Kraken integration by setting `kraken_enable: True`. 
@@ -181,79 +293,3 @@ If [Slack Integration](#Slack-Integration) is enabled, notification of the Krake
           AWS_SECRET_ACCESS_KEY: xxxx
           CLOUD_TYPE: aws
 ```
-
-### Groups and Tasks
-Groups define user groups. It simulate a number of users that have the similar behavior. 
-
-Tasks define the tasks to do for the users in each group.
-
-In the below example, it defines a group `developer-1`. `Users` in the group are 10 `developer` users as defined in `persona`. The group has some `tasks`. The 10 users will be run concurrently, each user will execute the tasks for 2 loops. There will be 60 seconds as `trigger` between each loop. Between each task, there will be 10 seconds as `interval`. Each user will delay the execution by jitter seconds at most, this is to add random to this group, so that at any given time different users could execute different tasks.
-
-For tasks, `oc` `kubeconfig` shell and `func` are supported.
-
-```yaml
-reliability:
-  groups:
-      - name: admin-1
-      # 'admin', 'developer' are supported.
-      persona: admin
-      # concurrent users to run the group. For admin, only 1 is supported.
-      users: 1
-      # run group for loops times. integer > 0 or 'forever', default is 1.
-      loops: forever
-      # wait trigger seconds between each loop
-      trigger: 600
-      # delay the group execution by jitter seconds at most. Default is 0.
-      jitter: 60
-      # wait interval seconds between tasks.
-      interval: 10
-      tasks: 
-        - func check_operators
-        - oc whoami --show-server
-        - kubectl get pods -A -o wide | egrep -v "Completed|Running"
-        - pwd
-
-    - name: developer-1
-      persona: developer
-      users: 2
-      loops: 10
-      trigger: 60
-      jitter: 60
-      interval: 10
-      tasks:
-        - func delete_all_projects # clear all projects
-        - func new_project 2 # new 2 projects
-        - func apply 2 "<path to /reliability-v2/networkpolicy/allow-same-namespace.yaml>" # Apply network policy to 2 projects
-        - func check_all_projects # check all project under this user
-        - func new_app 2 # new app in 2 namespaces
-        - func load_app 2 10 # load apps in 2 namespaces with 10 clients for each
-        - func build 1 # build app in 1 namespace
-        - func scale_up 2 # scale up app in 2 namespaces
-        - func scale_down 1 # scale down app in 2 namespaces
-        - func check_pods 2 # check pods in 2 namespaces 
-        - func delete_project 2 # delete project in 2 namespaces
-```
-
-Currenlty there is one admin user, defined in kubeadmin-password file, and multiple(50 in Flexy-install created cluster) developer users, defeined in users.spec.
-
-The following funcs are supported now:
-
-| func | parameters | persona | comment |
-| ---- | ---- | ---- | ---- |
-| delete_all_projects  | N/A | developer | delete all projects for a user | 
-| new_project | number_of_projects | developer | Create n projects for the user|
-| check_all_projects  | N/A | developer | Check projects under the user|
-| new_app  | number_of_projects | developer | New an app under each project|
-| load_app  | number_of_projects  number_of_clients | developer | Load an app under each project with a number of clients|
-| apply  | number_of_projects  file_location | developer admin | apply a file under each project|
-| build  | number_of_projects | developer | Build under each project|
-| scale_up  | number_of_projects | developer | Scaleup the deployment from 1 to 2 under each project|
-| scale_down  | number_of_projects | developer | Scaledown the deployment from 2 to 1 under each project|
-| check_pods  | number_of_projects | developer | Check pods under each project|
-| delete_project  | number_of_projects | developer | Delete each project|
-| check_operators  | N/A | admin | Check Degraded operators|
-| check_nodes  | N/A | admin | Check not Ready nodes|
-
-
-
-

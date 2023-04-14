@@ -64,7 +64,7 @@ class SlackIntegration:
         
     # Post messages in slack
     def info(self, slack_message):
-        if not self.rate_limit_message(slack_message):
+        if not self.rate_limit_message(slack_message) and self.slack_enable:
             timestamp = (time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime()))
             try:
                 self.slack_client.chat_postMessage(
@@ -76,7 +76,7 @@ class SlackIntegration:
                 self.logger.warning(f"post_info_to_slack had exception: '{e}")
 
     def error(self, slack_message):
-        if not self.rate_limit_message(slack_message):
+        if not self.rate_limit_message(slack_message) and self.slack_enable:
             timestamp = (time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime()))
             try:
                 self.slack_client.chat_postMessage(

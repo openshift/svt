@@ -1,0 +1,217 @@
+---
+# Source: networkpolicies-config-values/charts/networkpolicies-config/templates/networkpolicies.yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: stex-rd-networkpolicies-config-default-deny
+  labels:
+    helm.sh/chart: networkpolicies-config-0.1.0
+    app.kubernetes.io/name: networkpolicies-config
+    app.kubernetes.io/instance: stex-rd
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+# Source: networkpolicies-config-values/charts/networkpolicies-config/templates/networkpolicies.yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: stex-rd-networkpolicies-config-allow-dns
+  labels:
+    helm.sh/chart: networkpolicies-config-0.1.0
+    app.kubernetes.io/name: networkpolicies-config
+    app.kubernetes.io/instance: stex-rd
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  podSelector: {}
+  egress:
+      - ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 5353
+        - protocol: UDP
+          port: 5353
+  policyTypes:
+    - Egress
+---
+# Source: networkpolicies-config-values/charts/networkpolicies-config/templates/networkpolicies.yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: stex-rd-networkpolicies-config-allow-internal-api
+  labels:
+    helm.sh/chart: networkpolicies-config-0.1.0
+    app.kubernetes.io/name: networkpolicies-config
+    app.kubernetes.io/instance: stex-rd
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 10.146.45.123/32
+    ports:
+      - protocol: TCP
+        port: 443
+      - protocol: TCP
+        port: 6443
+  - to:
+    - ipBlock:
+        cidr: 10.146.45.21/32
+    ports:
+      - protocol: TCP
+        port: 443
+      - protocol: TCP
+        port: 6443
+  - to:
+    - ipBlock:
+        cidr: 10.146.45.112/32
+    ports:
+      - protocol: TCP
+        port: 443
+      - protocol: TCP
+        port: 6443
+---
+# Source: networkpolicies-config-values/charts/networkpolicies-config/templates/networkpolicies.yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: stex-rd-networkpolicies-config-allow-from-ic
+  labels:
+    helm.sh/chart: networkpolicies-config-0.1.0
+    app.kubernetes.io/name: networkpolicies-config
+    app.kubernetes.io/instance: stex-rd
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  podSelector:
+    matchLabels:
+      "nl.duo.networkpolicy.allow-ingress": 'true'
+  ingress:
+  - from:
+    - ipBlock:
+        cidr: 10.0.4.2/23
+  - from:
+    - ipBlock:
+        cidr: 10.1.2.2/23
+  - from:
+    - ipBlock:
+        cidr: 10.3.2.2/23
+  policyTypes:
+    - Ingress
+---
+# Source: networkpolicies-config-values/charts/networkpolicies-config/templates/networkpolicies.yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: stex-rd-networkpolicies-config-np-adota
+  labels:
+    helm.sh/chart: networkpolicies-config-0.1.0
+    app.kubernetes.io/name: networkpolicies-config
+    app.kubernetes.io/instance: stex-rd
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  podSelector:
+    matchLabels:
+      "nl.duo.networkpolicy.adota": 'true'
+  egress:
+    - to:
+      - ipBlock:
+          cidr: 172.30.191.193/32 # if $to.cidr # to.podSelector
+      ports:
+        - protocol: TCP
+          port: 636
+        - protocol: TCP
+          port: 3269
+    - to:
+      - ipBlock:
+          cidr: 172.30.191.194/32 # if $to.cidr # to.podSelector
+      ports:
+        - protocol: TCP
+          port: 636
+        - protocol: TCP
+          port: 3269
+    - to:
+      - ipBlock:
+          cidr: 172.30.191.196/32 # if $to.cidr # to.podSelector
+      ports:
+        - protocol: TCP
+          port: 636
+        - protocol: TCP
+          port: 3269
+    - to:
+      - ipBlock:
+          cidr: 172.30.191.195/32 # if $to.cidr # to.podSelector
+      ports:
+        - protocol: TCP
+          port: 636
+        - protocol: TCP
+          port: 3269 # range egress # if egress # if ingress
+  policyTypes:
+    - Egress
+---
+# Source: networkpolicies-config-values/charts/networkpolicies-config/templates/networkpolicies.yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: stex-rd-networkpolicies-config-np-as400
+  labels:
+    helm.sh/chart: networkpolicies-config-0.1.0
+    app.kubernetes.io/name: networkpolicies-config
+    app.kubernetes.io/instance: stex-rd
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  podSelector:
+    matchLabels:
+      "nl.duo.networkpolicy.as400": 'true'
+  egress:
+    - to:
+      - ipBlock:
+          cidr: 172.30.253.30/32 # if $to.cidr # to.podSelector
+      ports:
+        - protocol: TCP
+          port: 448
+        - protocol: TCP
+          port: 449
+        - protocol: TCP
+          port: 9471
+        - protocol: TCP
+          port: 9476 # range egress # if egress # if ingress
+  policyTypes:
+    - Egress
+---
+# Source: networkpolicies-config-values/charts/networkpolicies-config/templates/networkpolicies.yaml
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: stex-rd-networkpolicies-config-allow-prometheus
+  labels:
+    helm.sh/chart: networkpolicies-config-0.1.0
+    app.kubernetes.io/name: networkpolicies-config
+    app.kubernetes.io/instance: stex-rd
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  podSelector: {}
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          app.kubernetes.io/instance: prometheus-operator
+      podSelector:
+        matchLabels:
+          prometheus: k8s
+  policyTypes:
+    - Ingress

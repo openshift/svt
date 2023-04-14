@@ -8,6 +8,7 @@ jobs:
     podWait: true
     verifyObjects: true
     waitFor: {{.WAIT_FOR}}
+    preLoadImages: false
     namespaceLabels:
       security.openshift.io/scc.podSecurityLabelSync: false
       pod-security.kubernetes.io/enforce: privileged
@@ -15,26 +16,24 @@ jobs:
       pod-security.kubernetes.io/warn: privileged
     objects:
     - objectTemplate: "pause-pod.yaml"
-      replicas: 5
+      replicas: {{.POD_REPLICAS}}
     - objectTemplate: "image-stream.yaml"
-      replicas: 20
+      replicas: {{.IMAGES_STREAM_REPLICAS}}
       inputVars: 
         image: gcr.io/google_containers/pause-amd64
         name: pauseimagestream
     - objectTemplate: "image-stream.yaml"
-      replicas: 20
+      replicas:  {{.IMAGES_STREAM_REPLICAS}}
       inputVars: 
         image: openshift/hello-openshift
         name: 'imagestream'
     - objectTemplate: "build-config.yaml"
-      replicas: 10
+      replicas: {{.BUILDS_REPLICAS}}
       inputVars:
         git_image: quay.io/openshifttest/pause:latest
     - objectTemplate: "build.yaml"
-      replicas: 10
+      replicas: {{.BUILDS_REPLICAS}}
     - objectTemplate: ssh-secret.yaml
-      replicas: 200 
+      replicas: {{.SECRETS_REPLICAS}}
     - objectTemplate: "route.yaml"
-      replicas: 10
-
-        
+      replicas: {{.ROUTES_REPLICAS}}
