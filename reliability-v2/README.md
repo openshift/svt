@@ -147,9 +147,7 @@ reliability:
         - oc get project -l purpose=reliability
         - func check_nodes
         - kubectl get pods -A -o wide | egrep -v "Completed|Running"
-        # Run test case as scripts. KUBECONFIG of the current user is set as env variable by reliability-v2. 
-        #- . <path to /content/create-delete-pod-ensure-service.sh>
-        
+
     - name: dev-test
       user_name: testuser- # if user_start and user_end exist, this will be username prefix
       user_start: 0 # user_start is inclusive, start with testuser-0 in the users.spec file
@@ -162,7 +160,7 @@ reliability:
         - func delete_all_projects # clear all projects
         - func new_project 2 # new 2 projects
         # If network policy is planed in the test, uncomment the following line
-        #- func apply 2 "<path to /reliability-v2/networkpolicy/allow-same-namespace.yaml>" # Apply network policy to 2 projects
+        #- func apply 2 "<path_to_content>/allow-same-namespace.yaml" # Apply network policy to 2 projects
         - func check_all_projects # check all project under this user
         - func new_app 2 # new app in 2 namespaces
         - func load_app 2 10 # load apps in 2 namespaces with 10 clients for each
@@ -188,6 +186,20 @@ reliability:
         - func scale_deployment 2 1 # scale app in 2 namespaces to 1 replicas
       post_tasks: 
         - func delete_project 2
+
+    - name: dev-cronjob
+      user_name: testuser- # if user_start and user_end exist, this will be username prefix
+      user_start: 16
+      user_end: 22
+      trigger: 600
+      loops: forever
+      pre_tasks:
+        -  func new_project 1
+        -  <path_to_script>/cronjob.sh -n 10
+      tasks:
+        - <path_to_script>/cronjob.sh -c
+      post_tasks:
+        -  <path_to_script>/cronjob.sh -d
 ```
 ## Supported func
 Funs are some build-in functions that calls oc cli to run some common operation(s).

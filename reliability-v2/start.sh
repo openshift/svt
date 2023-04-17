@@ -118,6 +118,8 @@ function generate_config {
         sed -i s*'<path_to_kubeconfig>'*$1* reliability.yaml
         sed -i s*'<path_to_kubeadmin-password>'*$2* reliability.yaml
         sed -i s*'<path_to_users.spec>'*$3* reliability.yaml
+        sed -i s*'<path_to_script>'*$4* reliability.yaml
+        sed -i s*'<path_to_content>'*$5* reliability.yaml
         if [[ $SLACK_API_TOKEN != "" ]]; then
             sed -i s*'slack_enable: False'*'slack_enable: True'* reliability.yaml
             if [[ $SLACK_MEMBER != "" ]]; then
@@ -128,6 +130,8 @@ function generate_config {
         sed -i "" s*'<path_to_kubeconfig>'*$1* reliability.yaml
         sed -i "" s*'<path_to_kubeadmin-password>'*$2* reliability.yaml
         sed -i "" s*'<path_to_users.spec>'*$3* reliability.yaml
+        sed -i "" s*'<path_to_script>'*$4* reliability.yaml
+        sed -i "" s*'<path_to_content>'*$5* reliability.yaml
         if [[ $SLACK_API_TOKEN != "" ]]; then
             sed -i "" s*'slack_enable: False'*'slack_enable: True'* reliability.yaml
             if [[ $SLACK_MEMBER != "" ]]; then
@@ -200,8 +204,10 @@ cp config/example_reliability.yaml $folder_name/reliability.yaml
 
 cd $folder_name
 
+script_folder=$RELIABILITY_DIR/tasks/script
+content_folder=$RELIABILITY_DIR/content
 if [[ ! -z $path_to_auth_files ]]; then
-    generate_config $path_to_auth_files/kubeconfig $path_to_auth_files/kubeadmin-password $path_to_auth_files/users.spec
+    generate_config $path_to_auth_files/kubeconfig $path_to_auth_files/kubeadmin-password $path_to_auth_files/users.spec $script_folder $content_folder
     KUBECONFIG=$path_to_auth_files/kubeconfig
 elif [[ ! -z $flexy_install_build_id ]]; then
     JENKINS_JOB_URL="https://mastern-jenkins-csb-openshift-qe.apps.ocp-c1.prod.psi.redhat.com/job/ocp-common/job/Flexy-install/$flexy_install_build_id"
@@ -212,10 +218,10 @@ elif [[ ! -z $flexy_install_build_id ]]; then
     wget --quiet "$KUBEADMINPASSWORD_URL" -O kubeadmin-password
     wget --quiet "$USERSSPEC_URL" -O users.spec
     current_pwd=$(pwd)
-    generate_config $current_pwd/kubeconfig $current_pwd/kubeadmin-password $current_pwd/users.spec
+    generate_config $current_pwd/kubeconfig $current_pwd/kubeadmin-password $current_pwd/users.spec $script_folder $content_folder
     KUBECONFIG=$current_pwd/kubeconfig
 elif [[ ! -z $kubeconfig && ! -z $users_spec && ! -z $kubeadmin_password ]]; then
-    generate_config $kubeconfig $kubeadmin_password $users_spec
+    generate_config $kubeconfig $kubeadmin_password $users_spec $script_folder $content_folder
     KUBECONFIG=$kubeconfig
 fi
 

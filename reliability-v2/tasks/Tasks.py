@@ -32,18 +32,45 @@ class Tasks:
         self.logger.info(f"Reliability test results:\n"+ results)
         return results
 
-    def __log_result(self,rc):
-        # func is the name of the caller function
-        func = sys._getframe(1).f_code.co_name
+    def __log_result(self,rc,name="func"):
+        # func is the name of the caller function if name is not passed by the caller
+        if name == "func":
+            name = sys._getframe(1).f_code.co_name
         # set default if not already exist
-        self.results.setdefault(func, {"passed":0,"failed":0})
+        self.results.setdefault(name, {"passed":0,"failed":0})
             
         with self.result_lock:
             if rc == 0:
-                self.results[func]["passed"] += 1
+                self.results[name]["passed"] += 1
             else:
-                self.results[func]["failed"] += 1
-                    
+                self.results[name]["failed"] += 1
+
+    # check namespace are deleted successfully
+    def verify_project_deletion(self,user,namespace):
+        kubeconfig_admin = global_data.kubeconfigs["kubeadmin"]
+        self.logger.info(f"[Task] User {user}: verify project deletion '{namespace}'")
+        retry = 10
+        final_rc = 1
+        while retry > 0:
+            result,rc = oc(f"get project {namespace} --no-headers",kubeconfig_admin,ignore_log=True,ignore_slack=True)
+            if "not found" in result and rc == 1:
+                final_rc = 0
+                break
+            else:
+                self.logger.info(f"Deleting project '{namespace}', last get result: '{result}'. Retry left '{retry}'")
+                sleep(20)
+                retry -= 1
+        self.__log_result(final_rc)
+        return (result,final_rc)
+
+    # delete project in a namespace
+    def delete_project(self,user,namespace):
+        kubeconfig = global_data.kubeconfigs[user]
+        self.logger.info(f"[Task] User {user}: delete project '{namespace}'")
+        (result,rc) = oc(f"delete project {namespace}",kubeconfig)
+        self.__log_result(rc)
+        return (result,rc)
+
     # delete all project for a user
     def delete_all_projects(self,user):
         if user == "kubeadmin":
@@ -59,17 +86,18 @@ class Tasks:
         kubeconfig_admin = global_data.kubeconfigs["kubeadmin"]
         kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: new project '{namespace}'")
-        retry = 5
-        while retry > 0:
-            result,rc = oc(f"get project {namespace} --no-headers",kubeconfig_admin,ignore_log=True,ignore_slack=True)
-            if "Terminating" in result:
-                sleep(20)
-                retry -= 1
-            else:
-                # issue during test: in about 1/10 cases, last step gets no project, but
-                # next step shows already exists. Sleep 20s can mitigate but not avoid this issue.
-                sleep(20)
-                break
+        # Replaced the below lines of commented code by function verify_project_deletion. Will delete the below lines later.
+        # retry = 5
+        # while retry > 0:
+        #     result,rc = oc(f"get project {namespace} --no-headers",kubeconfig_admin,ignore_log=True,ignore_slack=True)
+        #     if "Terminating" in result:
+        #         sleep(20)
+        #         retry -= 1
+        #     else:
+        #         # issue during test: in about 1/10 cases, last step gets no project, but
+        #         # next step shows already exists. Sleep 20s can mitigate but not avoid this issue.
+        #         sleep(20)
+        #         break
         (result,rc) = oc(f"new-project --skip-config-write {namespace}",kubeconfig)
         if rc == 0:
             # developer is forbidden to patch resource "namespaces"
@@ -82,14 +110,6 @@ class Tasks:
         kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: check all projects for user {user}")
         (result,rc) = oc(f"get projects", kubeconfig)
-        self.__log_result(rc)
-        return (result,rc)
-
-    # delete project in a namespace
-    def delete_project(self,user,namespace):
-        kubeconfig = global_data.kubeconfigs[user]
-        self.logger.info(f"[Task] User {user}: delete project '{namespace}'")
-        (result,rc) = oc(f"delete project {namespace}",kubeconfig)
         self.__log_result(rc)
         return (result,rc)
 
@@ -146,6 +166,7 @@ class Tasks:
                 return(visit_success,1)
             return(visit_success,0)
 
+    # visit the given application route
     def __visit_app(self,route):
         visit_success = False
         try:
@@ -160,6 +181,7 @@ class Tasks:
             self.logger.error(f"Visit exception: {route}. Exception: {e}")
             return visit_success, 0
 
+    # load the route in the given namespace with 'clients' number of concurrent threads
     def load_app(self,user,namespace,clients="1"):
         kubeconfig = global_data.kubeconfigs[user]
         (route,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $2'}}",kubeconfig)
@@ -218,6 +240,7 @@ class Tasks:
     #     self.__log_result(return_value)
     #     return (return_msg,return_value) 
 
+    # start build a build config in a given namespace
     def build(self,user,namespace):
         kubeconfig = global_data.kubeconfigs[user]
         (build_config,rc) = oc(f"get bc --no-headers -n {namespace}| awk {{'print $1'}}",kubeconfig)
@@ -226,6 +249,7 @@ class Tasks:
         self.__log_result(rc)
         return (result,rc)
     
+    # scale the deployment config to given number of replicas in the given namespace
     def scale_deployment(self,user,namespace,replicas="1"):
         kubeconfig = global_data.kubeconfigs[user]
         (deployment, rc) = oc(f"get dc --no-headers -n {namespace} | grep persistent | awk {{'print $1'}}",kubeconfig)
@@ -238,6 +262,7 @@ class Tasks:
         self.__log_result(rc)
         return (result,rc)
     
+    # check replica numbers of a given deployment in the given namespace
     def __check_replicas(self,user,namespace,object,deployment,replicas):
         kubeconfig = global_data.kubeconfigs[user]
         (result, rc) = oc("get "+object+"/"+deployment+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}'",kubeconfig)
@@ -255,7 +280,8 @@ class Tasks:
             return(1)
         else:
             return(0)
-
+        
+    # oc apply a file
     def apply(self,user,namespace,file):
         kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] apply file {file} in namespace {namespace}.")
@@ -264,6 +290,7 @@ class Tasks:
         return (result,rc)
 
     # admin tasks
+    # check if the operators are all healthy
     def check_operators(self,user):
         # This operation can only be done by admin user
         kubeconfig = global_data.kubeconfigs[user]
@@ -292,7 +319,8 @@ class Tasks:
             rc_return = 1
         self.__log_result(rc_return)
         return(result,rc_return)
-
+    
+    # check if the nodes are all Ready
     def check_nodes(self,user):
         kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: check nodes")
@@ -311,26 +339,37 @@ class Tasks:
             rc_return = 1
         return(result,rc_return)
 
+    # oc get the given type of resource in the given namespace
     def __get_namespace_resource(self,user,namespace,type):
         kubeconfig = global_data.kubeconfigs[user]
         (result,rc) = oc(f"get {type} -n {namespace}",kubeconfig)
         return (result,rc)
-
+    
+    # run oc cli type of task
     def oc_task(self,task,user):
         kubeconfig = global_data.kubeconfigs[user]
         (result, rc) = oc(task,kubeconfig)
         self.__log_result(rc)
         return (result,rc)
 
+    # run kubectl type of task
     def kubectl_task(self,task,user):
         kubeconfig = global_data.kubeconfigs[user]
         (result, rc) = kubectl(task,kubeconfig)
         self.__log_result(rc)
         return (result,rc)
 
+    # run shell script type of task
     def shell_task(self,task,user):
         kubeconfig = global_data.kubeconfigs[user]
-        (result, rc) = shell(task, kubeconfig)
-        self.__log_result(rc)
+        # pass kubeconfig and user name to the shell task
+        # kubeconfig and user will be exported as env variables to the shell script
+        (result, rc) = shell(task, kubeconfig, user)
+        start_index=task.rfind('/')
+        if start_index == -1:
+            task_name=task
+        else:
+            task_name=task[start_index+1:]
+        self.__log_result(rc,task_name)
         return (result,rc)
 
