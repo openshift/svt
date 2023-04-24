@@ -1,0 +1,76 @@
+apiVersion: apps.openshift.io/v1
+kind: DeploymentConfig
+metadata:
+  annotations:
+    description: Defines how to deploy the database
+    template.alpha.openshift.io/wait-for-ready: "true"
+  name: {{.databaseServiceName}}
+spec:
+  replicas: 1
+  selector:
+    name: {{.databaseServiceName}}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        name: {{.databaseServiceName}}
+      name: {{.databaseServiceName}}
+    spec:
+      nodeSelector: {{.nodeSelector}}
+      containers:
+      - env:
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              key: database-user
+              name: {{.secretKeyRefName}}
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: database-password
+              name: {{.secretKeyRefName}}
+        - name: MYSQL_DATABASE
+          value: {{.databaseName}}
+        - name: MYSQL_DEFAULT_AUTHENTICATION_PLUGIN
+          value: {{.mysqlDefaultAuthenticationPlugin}}
+        image: ' '
+        livenessProbe:
+          initialDelaySeconds: 30
+          tcpSocket:
+            port: 3306
+          timeoutSeconds: 1
+        name: mysql
+        ports:
+        - containerPort: 3306
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -i
+            - -c
+            - MYSQL_PWD='{{.databasePassword}}' mysql -h 127.0.0.1 -u {{.databaseUser}}
+              -D {{.databaseName}} -e 'SELECT 1'
+          initialDelaySeconds: 5
+          timeoutSeconds: 1
+        resources:
+          limits:
+            memory: {{.memoryMysqlLimit}}
+        volumeMounts:
+        - mountPath: /var/lib/mysql/data
+          name: {{.databaseServiceName}}-data
+      volumes:
+      - name: {{.databaseServiceName}}-data
+        persistentVolumeClaim:
+          claimName: {{.databaseServiceName}}
+  triggers:
+  - imageChangeParams:
+      automatic: true
+      containerNames:
+      - mysql
+      from:
+        kind: ImageStreamTag
+        name: "mysql:{{.mysqlVersion}}"
+        namespace: openshift
+    type: ImageChange
+  - type: ConfigChange

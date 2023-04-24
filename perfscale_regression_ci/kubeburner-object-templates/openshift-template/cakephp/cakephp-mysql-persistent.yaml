@@ -1,0 +1,83 @@
+jobs:
+  - name: {{.JOBNAME}}
+    namespace: {{.NAMESPACE}}
+    jobIterations: {{.TEST_JOB_ITERATIONS}}
+    qps: {{.QPS}}
+    burst: {{.BURST}}
+    namespacedIterations: true
+    podWait: {{.POD_WAIT}}
+    cleanup: {{.CLEANUP}}
+    waitFor: {{.WAIT_FOR}}
+    waitWhenFinished: {{.WAIT_WHEN_FINISHED}}
+    verifyObjects: {{.VERIFY_OBJECTS}}
+    errorOnVerify: {{.ERROR_ON_VERIFY}}
+    maxWaitTimeout: {{.MAX_WAIT_TIMEOUT}}
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+    objects:
+    - objectTemplate: secret.yaml
+      replicas: 1
+      inputVars:
+        name: {{.NAME}}
+        cakephpSecretToken: {{.CAKEPHP_SECRET_TOKEN}}
+        cakephpSecuritySalt: {{.CAKEPHP_SECURITY_SALT}}
+        databasePassword: {{.DATABASE_PASSWORD}}
+        databaseUser: {{.DATABASE_USER}}
+    - objectTemplate: imagestream.yaml
+      replicas: 1
+      inputVars:
+        name: {{.NAME}}
+    - objectTemplate: buildconfig.yaml
+      replicas: 1
+      inputVars:
+        name: {{.NAME}}
+        nodeSelector: "{{.POD_NODE_SELECTOR}}"
+        sourceGitUri: {{.SOURCE_GIT_URI}}
+        phpVersion: {{.PHP_VERSION}}
+        githubWebhookSecret: {{.GITHUB_WEBHOOK_SECRET}}
+    - objectTemplate: pvc.yaml
+      replicas: 1
+      inputVars:
+        databaseServiceName: {{.DATABASE_SERVICE_NAME}}
+        volumeCapacity: {{.VOLUME_CAPACITY}}
+    - objectTemplate: deploymentconfig-database.yaml
+      replicas: 1
+      inputVars:
+        nodeSelector: "{{.POD_NODE_SELECTOR}}"
+        databaseServiceName: {{.DATABASE_SERVICE_NAME}}
+        databaseName: {{.DATABASE_NAME}}
+        mysqlDefaultAuthenticationPlugin: {{.MYSQL_DEFAULT_AUTHENTICATION_PLUGIN}}
+        databasePassword: {{.DATABASE_PASSWORD}}
+        databaseUser: {{.DATABASE_USER}}
+        memoryMysqlLimit: {{.MEMORY_MYSQL_LIMIT}}
+        secretKeyRefName: {{.NAME}}
+        mysqlVersion: {{.MYSQL_VERSION}}
+    - objectTemplate: service-database.yaml
+      replicas: 1
+      inputVars:
+        databaseServiceName: {{.DATABASE_SERVICE_NAME}}
+    - objectTemplate: deploymentconfig-application.yaml
+      replicas: 1
+      inputVars:
+        name: {{.NAME}}
+        nodeSelector: "{{.POD_NODE_SELECTOR}}"
+        databaseServiceName: {{.DATABASE_SERVICE_NAME}}
+        databaseName: {{.DATABASE_NAME}}
+        memoryLimit: {{.MEMORY_LIMIT}}
+        opcacheRevalidFreq: {{.OPCACHE_REVALIDATE_FREQ}}
+        databaseEngine: {{.DATABASE_ENGINE}}
+    - objectTemplate: service-application.yaml
+      replicas: 1
+      inputVars:
+        name: {{.NAME}}
+        databaseServiceName: {{.DATABASE_SERVICE_NAME}}
+    - objectTemplate: route.yaml
+      replicas: 1
+      inputVars:
+        name: {{.NAME}}
+        applicationDomain: {{.APPLICATION_DOMAIN}}
+        
+        

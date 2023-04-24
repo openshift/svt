@@ -12,9 +12,13 @@ cleanup(){
 }
 
 run_workload(){
-    setup
+    if [[ ! -d e2e-benchmarking/workloads/kube-burner ]]; then
+        setup
+    fi
     cd e2e-benchmarking/workloads/kube-burner
-    ./run.sh
+    ./run.sh |& tee "kube-burner-$(date +%Y%m%d%H%M%S).out"
     cd ../../.. #prepare for cleanup
     cleanup
 }
+
+set +ex

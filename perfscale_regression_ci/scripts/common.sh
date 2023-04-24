@@ -1,7 +1,7 @@
 #/!/bin/bash
 
 # pass $name_identifier $number
-# e.g. wait_for_job_completion "job-" 100
+# e.g. wait_for_completion "job-" 100
 function wait_for_completion() {
   name_identifier=$1
   number=$2
@@ -21,7 +21,6 @@ function wait_for_completion() {
 }
 
 # pass $name_identifier $object_type
-# e.g. wait_for_job_completion "job-" jobs
 function wait_for_termination() {
   name_identifier=$1
   object_type=$2
@@ -42,7 +41,6 @@ function wait_for_termination() {
 }
 
 # pass $name_identifier $object_type
-# e.g. wait_for_job_completion "job-" jobs
 function wait_for_obj_creation() {
   name_identifier=$1
   object_type=$2
@@ -60,7 +58,6 @@ function wait_for_obj_creation() {
     fi
   done
 }
-
 
 # pass $label
 # e.g. delete_project "test=concurent-job"
@@ -156,6 +153,68 @@ function uncordon_all_nodes() {
     oc adm uncordon $worker
   done
 }
+
+function create_registry_machinesets(){
+  template=$1
+  role=$2
+  node_label=node-role.kubernetes.io/$2=
+  if [[ $(oc get machinesets -n openshift-machine-api -l machine.openshift.io/cluster-api-machine-type=registry --no-headers | wc -l) -ge 1 ]]; then
+    echo "warning: registry machineset already exist"
+    oc get machinesets -n openshift-machine-api -l machine.openshift.io/cluster-api-machine-type=registry
+    return 1
+  fi
+  echo "====Creating and labeling nodes===="
+  export ROLE=$role
+  export OPENSHIFT_NODE_VOLUME_IOPS=0
+  export OPENSHIFT_NODE_VOLUME_SIZE=100
+  export OPENSHIFT_NODE_VOLUME_TYPE=gp2
+  export OPENSHIFT_NODE_INSTANCE_TYPE=m5.4xlarge
+  export CLUSTER_NAME=$(oc get machineset -n openshift-machine-api -o=go-template='{{(index (index .items 0).metadata.labels "machine.openshift.io/cluster-api-cluster" )}}')
+  if [[ $(oc get machineset -n openshift-machine-api $(oc get machinesets -A  -o custom-columns=:.metadata.name | shuf -n 1) -o=jsonpath='{.metadata.annotations}' | grep -c "machine.openshift.io") -ge 1 ]]; then
+    export MACHINESET_METADATA_LABEL_PREFIX=machine.openshift.io
+  else
+    export MACHINESET_METADATA_LABEL_PREFIX=sigs.k8s.io
+  fi
+  export AMI_ID=$(oc get machineset -n openshift-machine-api -o=go-template='{{(index .items 0).spec.template.spec.providerSpec.value.ami.id}}')
+  export CLUSTER_REGION=$(oc get machineset -n openshift-machine-api -o=go-template='{{(index .items 0).spec.template.spec.providerSpec.value.placement.region}}')
+  envsubst < $1 | oc apply -f -
+
+  retries=0
+  attempts=60
+  while [[ $(oc get nodes -l $node_label --no-headers -o jsonpath='{range .items[*]}{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' | grep True | wc -l ) -lt 1 ]]; do
+      oc get nodes -l $node_label --no-headers -o jsonpath='{range .items[*]}{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}' | grep True | wc -l 
+      oc get nodes -l $node_label
+      oc get machines -A | grep registry
+      oc get machinesets -A | grep registry
+      sleep 30
+      ((retries += 1))
+      if [[ ${retries} -gt ${attempts} ]]; then
+          echo "error: workload nodes didn't become READY in time, failing"
+          print_node_machine_info $role
+          exit 1
+      fi
+  done
+
+  oc label nodes --overwrite -l $node_label node-role.kubernetes.io/worker-
+  oc get nodes | grep $role
+  return 0
+}
+
+function print_node_machine_info() {
+    node_label=$1
+    for node in $(oc get nodes --no-headers -l node-role.kubernetes.io/$node_label= | egrep -e "NotReady|SchedulingDisabled" | awk '{print $1}'); do
+        oc describe node $node
+    done
+    for machine in $(oc get machines -n openshift-machine-api --no-headers -l machine.openshift.io/cluster-api-machine-type=$node_label| grep -v "Running" | awk '{print $1}'); do
+        oc describe machine $machine -n openshift-machine-api
+    done
+}
+
+function move_registry_to_registry_nodes(){
+  echo "====Moving registry to registry nodes===="
+  oc patch configs.imageregistry.operator.openshift.io/cluster -p '{"spec": {"nodeSelector": {"node-role.kubernetes.io/registry": ""}}}' --type merge
+  oc rollout status deployment image-registry -n openshift-image-registry
+  oc get po -o wide -n openshift-image-registry | egrep ^image-registry
 
 # pass $namespace $deployment_name $initial_pod_num $final_pod_num
 # e.g. delete_project "test=concurent-job"
