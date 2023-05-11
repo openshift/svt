@@ -215,6 +215,7 @@ function move_registry_to_registry_nodes(){
   oc patch configs.imageregistry.operator.openshift.io/cluster -p '{"spec": {"nodeSelector": {"node-role.kubernetes.io/registry": ""}}}' --type merge
   oc rollout status deployment image-registry -n openshift-image-registry
   oc get po -o wide -n openshift-image-registry | egrep ^image-registry
+}
 
 # pass $namespace $deployment_name $initial_pod_num $final_pod_num
 # e.g. delete_project "test=concurent-job"
