@@ -8,5 +8,6 @@ export JOB_ITERATION=${JOB_ITERATION:-15}
 export QPS=${QPS:-50}
 export BURST=${BURST:-50}
 export POD_REPLICAS=${POD_REPLICAS:=500}
+export COMPARISON_CONFIG=""
 # Other ENV needed by the test case script
-export NETWORK_POLICY=${NETWORK_POLICY:-"${DIR}/../../content/ovn_metrics_network_policy.yaml"}
+export NETWORK_POLICY=${NETWORK_POLICY:-"${DIR}/../../content/ovn-allow_default_network_policy.yaml"}
