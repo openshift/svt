@@ -2,8 +2,9 @@
 ################################################
 ## Auth=lhorsley@redhat.com 
 ## Desription: Script for checking ovnkube_master_sync_duration_seconds and ovnkube_master_pod_event_latency_seconds_bucket metrics on an OVN cluster
-## Polarion test case: 
-## Bug related: https://bugzilla.redhat.com/show_bug.cgi?id=1752636
+## Polarion test case: OCP-63785 - OVN Network Policies and Metrics
+## https://polarion.engineering.redhat.com/polarion/#/project/OSE/workitem?id=OCP-63785
+## Bug related: https://issues.redhat.com/browse/OCPBUGS-12265 and https://issues.redhat.com/browse/OCPBUGS-10799
 ## Cluster config: 3 master (m5.2xlarge or equivalent) with 40 workers
 ## kube-burner config: perfscale_regerssion_ci/kubeburner-object-templates/ovn-network-metrics-config.yaml
 ## network-policy config: perfscale_regerssion_ci/content/ovn_metrics_network_policy.yaml
@@ -20,6 +21,8 @@
 ## oc scale deployment network-operator -n openshift-network-operator --replicas=0
 ## 
 ## The master pods in the openshift-ovn-kubernetes namespace will restart. Once the pods have restarted, execute the test.
+## monitor the pods with this command: 
+## oc get pods -n openshift-ovn-kubernetes | grep master
 ################################################ 
 
 source ../../utils/run_workload.sh
