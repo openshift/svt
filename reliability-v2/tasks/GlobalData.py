@@ -10,6 +10,7 @@ from users.Session import Session
 from tasks.ScheduledTasks import scheduledTasks
 from integrations.SlackIntegration import slackIntegration
 from integrations.KrakenIntegration import KrakenIntegration
+import uuid
 
 # a class to hold config, users, kubeconfigs
 class GlobalData:
@@ -19,6 +20,7 @@ class GlobalData:
         self.users = {}
         self.kubeconfigs = {}
         self.logger = logging.getLogger('reliability')
+        self.uuid = uuid.uuid4()
         
     def valid_config(self, config):
         try:
@@ -94,7 +96,7 @@ class GlobalData:
         slack_channel= self.config["slackIntegration"].get("slack_channel", "")
         slack_member= self.config["slackIntegration"].get("slack_member", "")
         if slack_enable:
-            slackIntegration.init_slack_client(slack_channel, slack_member)
+            slackIntegration.init_slack(slack_channel, slack_member, self.uuid)
             # send start slack integration
             (server, rc)=oc("whoami --show-server", self.kubeconfig)
             (version, rc)=oc("version", self.kubeconfig)
@@ -131,5 +133,5 @@ class GlobalData:
 global_data = GlobalData()
 
 if __name__ == "__main__":
-    global_data.load_data('<path to config file>')
+    global_data.load_config('<path to config file>')
     print(global_data.config)

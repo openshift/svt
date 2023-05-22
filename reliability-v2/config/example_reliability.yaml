@@ -73,7 +73,7 @@ reliability:
     - name: dev-cronjob
       user_name: testuser- # if user_start and user_end exist, this will be username prefix
       user_start: 16
-      user_end: 22
+      user_end: 17
       trigger: 600
       jitter: 1200
       loops: forever

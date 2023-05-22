@@ -30,10 +30,10 @@ if __name__ == "__main__":
     # init logging
     logger = logging.getLogger('reliability')
     init_logger(logger,options.log_file)
+    logger.info(f"Test uuid: {global_data.uuid}")
 
     # init global data
     if global_data.load_config(options.config):
-
         global_data.init_scheduler()
         global_data.init_intgration()
         if global_data.init_users():

@@ -120,7 +120,7 @@ function generate_config {
         sed -i s*'<path_to_users.spec>'*$3* reliability.yaml
         sed -i s*'<path_to_script>'*$4* reliability.yaml
         sed -i s*'<path_to_content>'*$5* reliability.yaml
-        if [[ $SLACK_API_TOKEN != "" ]]; then
+        if [[ $SLACK_API_TOKEN != "" || SLACK_WEBHOOK_URL != "" ]]; then
             sed -i s*'slack_enable: False'*'slack_enable: True'* reliability.yaml
             if [[ $SLACK_MEMBER != "" ]]; then
                 sed -i s*'<Your slack member id>'*$SLACK_MEMBER* reliability.yaml
@@ -132,7 +132,7 @@ function generate_config {
         sed -i "" s*'<path_to_users.spec>'*$3* reliability.yaml
         sed -i "" s*'<path_to_script>'*$4* reliability.yaml
         sed -i "" s*'<path_to_content>'*$5* reliability.yaml
-        if [[ $SLACK_API_TOKEN != "" ]]; then
+        if [[ $SLACK_API_TOKEN != "" || SLACK_WEBHOOK_URL != "" ]]; then
             sed -i "" s*'slack_enable: False'*'slack_enable: True'* reliability.yaml
             if [[ $SLACK_MEMBER != "" ]]; then
                 sed -i "" s*'<Your slack member id>'*$SLACK_MEMBER* reliability.yaml
