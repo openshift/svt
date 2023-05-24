@@ -1,0 +1,59 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: deployment-template
+objects:
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+     name: ${WORKLOAD_NAME}
+     labels:
+       app: ${WORKLOAD_NAME}
+    spec:
+     selector:
+       matchLabels:
+         app: ${WORKLOAD_NAME}
+         tier: frontend
+     strategy:
+       type: Recreate
+     replicas: ${{REPLICAS}}
+     template:
+       metadata:
+         labels:
+           app: ${WORKLOAD_NAME}
+           tier: frontend
+       spec:
+         containers:
+         - name: ${WORKLOAD_NAME}
+           image: quay.io/openshift-psap-qe/nginx-alpine:multiarch
+           ports:
+           - containerPort: 8080
+           readinessProbe:
+             tcpSocket:
+               port: 8080
+             initialDelaySeconds: 5
+             periodSeconds: 10
+           livenessProbe:
+             tcpSocket:
+               port: 8080
+             initialDelaySeconds: 15
+             periodSeconds: 20
+           securityContext:
+             runAsNonRoot: true
+             seccompProfile:
+               type: RuntimeDefault
+             allowPrivilegeEscalation: false
+             capabilities:
+               drop:
+               - ALL
+           volumeMounts:
+           - name: web-data
+             mountPath: /usr/share/nginx/html
+         volumes:
+         - name: web-data
+           persistentVolumeClaim:
+             claimName: ${PVC_NAME}
+parameters:
+- name: WORKLOAD_NAME
+- name: REPLICAS
+- name: PVC_NAME

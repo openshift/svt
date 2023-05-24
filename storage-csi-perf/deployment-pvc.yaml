@@ -1,0 +1,20 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: pvc-template
+objects:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+     name: ${PVC_NAME}
+     labels:
+       app: ${WORKLOAD_NAME}
+    spec:
+     accessModes:
+       - ReadWriteOnce
+     resources:
+       requests:
+         storage: 1Gi
+parameters:
+  - name: PVC_NAME
+  - name: WORKLOAD_NAME

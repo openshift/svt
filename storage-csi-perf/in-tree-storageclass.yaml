@@ -1,0 +1,17 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: pvc-template
+objects:
+  - apiVersion: storage.k8s.io/v1
+    kind: StorageClass
+    metadata:
+      name: ${PROVISIONER}-in-tree
+    parameters:
+      fsType: ext4 
+    provisioner: kubernetes.io/${PROVISIONER} 
+    #provisioner: kubernetes.io/aws-ebs
+    reclaimPolicy: Delete
+    volumeBindingMode: WaitForFirstConsumer
+parameters:
+- name: PROVISIONER

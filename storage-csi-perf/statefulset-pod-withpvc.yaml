@@ -1,0 +1,59 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: statefulset-template
+objects:
+  - apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+     name: ${WORKLOAD_NAME}
+    spec:
+     serviceName: "${WORKLOAD_NAME}"
+     podManagementPolicy: "Parallel"
+     replicas: ${{REPLICAS}}
+     selector:
+       matchLabels:
+         app: ${WORKLOAD_NAME}
+     template:
+       metadata:
+         labels:
+           app: ${WORKLOAD_NAME}
+       spec:
+         containers:
+         - name: ${WORKLOAD_NAME}
+           image: quay.io/openshift-psap-qe/nginx-alpine:multiarch
+           securityContext:
+             runAsNonRoot: true
+             seccompProfile:
+               type: RuntimeDefault
+             allowPrivilegeEscalation: false
+             capabilities:
+               drop:
+               - ALL
+           ports:
+           - containerPort: 8080
+           readinessProbe:
+             tcpSocket:
+               port: 8080
+             initialDelaySeconds: 5
+             periodSeconds: 10
+           livenessProbe:
+             tcpSocket:
+               port: 8080
+             initialDelaySeconds: 15
+             periodSeconds: 20
+           volumeMounts:
+           - name: ${PVC_NAME}
+             mountPath: /usr/share/nginx/html
+     volumeClaimTemplates:
+     - metadata:
+         name: ${PVC_NAME}
+       spec:
+         accessModes: [ "ReadWriteOnce" ]
+         resources:
+           requests:
+             storage: 20Mi
+parameters:
+- name: WORKLOAD_NAME
+- name: REPLICAS
+- name: PVC_NAME
