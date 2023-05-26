@@ -225,7 +225,8 @@ The following funcs are supported now:
 Receive notifications about the start stop of the Reliability test and errors happen during the Reliability test.
 
 Export the either of the follwoing environment virables before running the test.
-export SLACK_WEBHOOK_URL OR SLACK_API_TOKEN, find them in https://vault.bitwarden.com 'Red Hat, Inc. vault' 'perfscale-reliability-credentials' item.
+If SLACK_API_TOKEN fails to work, the workaround is to export SLACK_WEBHOOK_URL.
+Find them in https://vault.bitwarden.com 'Red Hat, Inc. vault' 'perfscale-reliability-credentials' item.
 
 ```yaml
   slackIntegration:
