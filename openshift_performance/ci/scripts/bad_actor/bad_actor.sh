@@ -1,19 +1,6 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-################################################
+###############################################
 ## Auth=lhorsley@redhat.com, ematysek@redhat.com
 ## Description: Cluster resilience testing via creation and deletion of a large number of projects (in parallel) on a cluster (OVN or SDN)
-=======
-#!/bin/bash
-################################################
-## Auth=lhorsley@redhat.com, ematysek@redhat.com
-## Desription: Cluster resilience testing via creation and deletion of a large number of projects (in parallel) on an OVN cluster
->>>>>>> cd4006a (moved bad actor script to openshift_performance/ci/scripts/bad_actor)
-=======
-################################################
-## Auth=lhorsley@redhat.com, ematysek@redhat.com
-## Description: Cluster resilience testing via creation and deletion of a large number of projects (in parallel) on a cluster (OVN or SDN)
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
 ## Polarion test case: OCP-41643 - Load cluster to test bad actor resilience	
 ## https://polarion.engineering.redhat.com/polarion/#/project/OSE/workitem?id=OCP-41643
 ## Bug related: https://issues.redhat.com/browse/OCPBUGS-12266
@@ -23,16 +10,10 @@
 ##       while true; do oc get co --no-headers| grep -v 'True.*False.*False'; oc get nodes --no-headers| grep -v ' Ready'; date; sleep 10; done
 ################################################ 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> abfa901 (parameterized script)
 base_namespace=${1:-baa}
 num_projects=${2:-1000}
 num_parallel_processes=${3:-10}
 sleep_mins=${4:-5}
-<<<<<<< HEAD
 create_string="Create"
 delete_string="Delete"
 test_object_type="namespaces"
@@ -40,29 +21,6 @@ test_object_type="namespaces"
 
 
 # simple function to display the status of operators and nodes
-=======
-my_namespace="bad-actor"
-my_projects=2500
-my_parallel_processes=20
-=======
-base_namespace="bad-actor"
-num_projects=2500
-num_parallel_processes=20
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
-sleep_mins=5
-=======
->>>>>>> abfa901 (parameterized script)
-create_string="Create"
-delete_string="Delete"
-test_object_type="namespaces"
-
-<<<<<<< HEAD
->>>>>>> cd4006a (moved bad actor script to openshift_performance/ci/scripts/bad_actor)
-=======
-
-
-# simple function to display the status of operators and nodes
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
 function get_operator_and_node_status() {
   echo "Node and operator status"
   oc get nodes
@@ -78,15 +36,7 @@ function parallel_project_actions() {
   my_namespace=$2
   my_projects=$3
   my_paralllel_processes=$4
-<<<<<<< HEAD
-<<<<<<< HEAD
   my_num_jobs="\j"  # The prompt escape for number of jobs currently running
-=======
-  num_jobs="\j"  # The prompt escape for number of jobs currently running
->>>>>>> cd4006a (moved bad actor script to openshift_performance/ci/scripts/bad_actor)
-=======
-  my_num_jobs="\j"  # The prompt escape for number of jobs currently running
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
 
   if [ "$my_action" == "Create" ]; then
     my_command='oc new-project --skip-config-write "${my_namespace}${i}" > /dev/null && echo "Created project ${my_namespace}${i}" &>> op.log &'
@@ -94,36 +44,18 @@ function parallel_project_actions() {
     my_command='oc delete project "${my_namespace}${i}" >> op.log &'
   fi
 
-<<<<<<< HEAD
-<<<<<<< HEAD
   cycle_start_time=`date +%s`
 
   for ((i=0; i<$my_projects; i++)); do
    	while (( ${my_num_jobs@P} >= $my_paralllel_processes )); do
-=======
-  echo ""
-  echo "$(date) - $my_action cycle start"
-  for ((i=0; i<$my_projects; i++)); do
-   	while (( ${num_jobs@P} >= $my_paralllel_processes )); do
->>>>>>> cd4006a (moved bad actor script to openshift_performance/ci/scripts/bad_actor)
-=======
-  cycle_start_time=`date +%s`
-
-  for ((i=0; i<$my_projects; i++)); do
-   	while (( ${my_num_jobs@P} >= $my_paralllel_processes )); do
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
   			 wait -n
 	  done
     eval $my_command
   done
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
   cycle_end_time=`date +%s` 
   total_cycle_time=$((cycle_end_time - cycle_start_time))
-  
+
   echo $total_cycle_time
 }
 
@@ -136,7 +68,7 @@ function wait_for_obj_creation() {
   my_num_obj=$3
 
   COUNTER=0
-  
+
   creating_obj=$(oc get $my_object_type -A | grep $my_name_identifier | grep  "Active" | wc -l)
   while [[ $creating_obj -ne $my_num_obj ]]; do
     sleep 5
@@ -150,7 +82,6 @@ function wait_for_obj_creation() {
   done
 
   echo "All $my_num_obj $my_object_type have been created"
-<<<<<<< HEAD
 }
 
 # copied from perscale_regression_ci/common.sh
@@ -181,45 +112,6 @@ echo "number of projects: $num_projects"
 echo "Parallel processes: $num_parallel_processes"
 echo "Sleep time between create cycle and delete cycle: $sleep_mins"
 echo ""
-=======
-  echo "$(date) - $my_action cycle complete"
-  echo ""
-=======
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
-}
-
-# copied from perscale_regression_ci/common.sh
-# pass $name_identifier $object_type
-# e.g wait_for_termination $my_namespace $my_object_type
-function wait_for_termination() {
-  my_name_identifier=$1
-  my_object_type=$2
-
-  COUNTER=0
-  existing_obj=$(oc get $my_object_type -A| grep $my_name_identifier | wc -l)
-  while [ $existing_obj -ne 0 ]; do
-    sleep 5
-    existing_obj=$(oc get $my_object_type -A | grep $my_name_identifier | wc -l | xargs )
-    echo "Waiting for $my_object_type to be deleted: $existing_obj still exist"
-    COUNTER=$((COUNTER + 1))
-    if [ $COUNTER -ge 60 ]; then
-      echo "$existing_obj $my_object_type are still not deleted after 5 minutes"
-      exit 1
-    fi
-  done
-  echo "All $my_object_type are deleted"
-}
-
-
-echo "Starting run basename: $base_namespace"
-echo "number of projects: $num_projects"
-echo "Parallel processes: $num_parallel_processes"
-echo "Sleep time between create cycle and delete cycle: $sleep_mins"
-<<<<<<< HEAD
->>>>>>> cd4006a (moved bad actor script to openshift_performance/ci/scripts/bad_actor)
-=======
-echo ""
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
 
 # Start the log file
 echo "Writing subprocess logs to ./op.log"
@@ -227,8 +119,6 @@ if [ -e op.log ]; then
 	echo "op.og exists, subprocess logs will be appended"
 fi
 echo "$(date) - New Run" >> op.log
-<<<<<<< HEAD
-<<<<<<< HEAD
 echo ""
 
 # Start the timer
@@ -244,42 +134,11 @@ total_create_cycle_time=$(parallel_project_actions $create_string $base_namespac
 wait_for_obj_creation $base_namespace $test_object_type $num_projects
 echo "$(date) - Create cycle end time"
 echo ""
-=======
-=======
-echo ""
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
-
-# Start the timer
-echo "======= $(date) - Test start time ======="
-start_time=`date +%s`
-echo ""
-
-# Create the projects in parallel
-<<<<<<< HEAD
-parallel_project_actions $create_string $my_namespace $my_projects $my_parallel_processes
->>>>>>> cd4006a (moved bad actor script to openshift_performance/ci/scripts/bad_actor)
-=======
-echo "$(date) - Create cycle start time"
-total_create_cycle_time=$(parallel_project_actions $create_string $base_namespace $num_projects $num_parallel_processes)
-
-# Wait for all projects to be created (the test will exit if the process lasts longer than five minutes)
-wait_for_obj_creation $base_namespace $test_object_type $num_projects
-echo "$(date) - Create cycle end time"
-echo ""
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
 
 # Display the node and operator status
 get_operator_and_node_status
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 # Wait for  $sleep_mins minues
-=======
-# Wait for five minues
->>>>>>> cd4006a (moved bad actor script to openshift_performance/ci/scripts/bad_actor)
-=======
-# Wait for  $sleep_mins minues
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
 echo "Sleeping $sleep_mins mins..."
 sleep "${sleep_mins}m"
 echo ""
@@ -287,14 +146,13 @@ echo ""
 # Display the node and operator status
 get_operator_and_node_status
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 
 # Delete the projects in parallel
 echo "$(date) - Delete cycle start time"
 total_delete_cycle_time=$(parallel_project_actions $delete_string $base_namespace $num_projects $num_parallel_processes)
 
 # Wait for all projects to be deleted (the test will exit if the process lasts longer than five minutes)
+lenahorsley marked this conversation as resolved.
 wait_for_termination $base_namespace $test_object_type
 echo "$(date) - Delete cycle end time"
 echo ""
@@ -302,32 +160,6 @@ echo ""
 # Stop the timer and calculate the test time
 echo "======= $(date) - Test end time =======" 
 end_time=`date +%s`
-=======
-# Delete the projects in parallel
-parallel_project_actions $delete_string $my_namespace $my_projects $my_parallel_processes
-=======
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
-
-# Delete the projects in parallel
-echo "$(date) - Delete cycle start time"
-total_delete_cycle_time=$(parallel_project_actions $delete_string $base_namespace $num_projects $num_parallel_processes)
-
-# Wait for all projects to be deleted (the test will exit if the process lasts longer than five minutes)
-wait_for_termination $base_namespace $test_object_type
-echo "$(date) - Delete cycle end time"
-echo ""
-
-# Stop the timer and calculate the test time
-echo "======= $(date) - Test end time =======" 
-end_time=`date +%s`
-<<<<<<< HEAD
-echo "start time: $start_time"
-echo "end time: $end_time"
-final_time=$((end_time - start_time))
-echo "execution time for test $final_time s."
->>>>>>> cd4006a (moved bad actor script to openshift_performance/ci/scripts/bad_actor)
-=======
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
 echo ""
 
 # Display the node and operator status
@@ -339,16 +171,11 @@ nodes_not_ready=$(oc get nodes --no-headers | grep -v Ready | wc -l)
 
 echo ""
 echo "======Final test result======"
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
 final_time=$((end_time - start_time))
 echo "execution time for test $final_time s."
 echo "Total time for create cycle: $total_create_cycle_time s."
 echo "Total time for delete cycle: $total_delete_cycle_time s."
 echo ""
-<<<<<<< HEAD
 
 if [[ ( $bad_operators -eq 0 ) && ( $nodes_not_ready -eq 0 )  && ( $total_create_cycle_time -le 600 ) && ( $total_delete_cycle_time -le 600 )]]; then
   echo -e "\nBad Actor Testcase result:  PASS"
@@ -368,37 +195,4 @@ else
   echo "Creation time for $num_projects projects (expected time 600 seconds/10 minutes or less): $total_create_cycle_time s."
   echo "Deletion time for $num_projects projects (expected time 600 seconds/10 minutes or less): $total_delete_cycle_time s."
   exit 1
-fi
-=======
-=======
->>>>>>> 708e0c7 (adding checks for create/delete cycle times and namespace creation)
-
-if [[ ( $bad_operators -eq 0 ) && ( $nodes_not_ready -eq 0 )  && ( $total_create_cycle_time -le 600 ) && ( $total_delete_cycle_time -le 600 )]]; then
-  echo -e "\nBad Actor Testcase result:  PASS"
-  echo "Expected: Cluster operators are stable."
-  echo "Expected: All nodes are Ready."
-  echo "Expected: $num_projects projects created in 600 seconds/10 minutes (or less): $total_create_cycle_time s."
-  echo "Expected: $num_projects projects deleted in 600 seconds/10 minutes (or less): $total_delete_cycle_time s."
-  exit 0
-else
-  echo -e "\nBad Actor Testcase result:  FAIL"
-  echo "Operators (oc get co --no-headers| grep -v 'True.*False.*False'):"
-  oc get co --no-headers| grep -v 'True.*False.*False'
-  echo ""
-  echo "Nodes oc get nodes --no-headers | grep -v Ready):"
-  oc get nodes --no-headers | grep -v Ready
-  echo ""
-  echo "Creation time for $num_projects projects (expected time 600 seconds/10 minutes or less): $total_create_cycle_time s."
-  echo "Deletion time for $num_projects projects (expected time 600 seconds/10 minutes or less): $total_delete_cycle_time s."
-<<<<<<< HEAD
-	exit 1
-<<<<<<< HEAD
-fi
->>>>>>> cd4006a (moved bad actor script to openshift_performance/ci/scripts/bad_actor)
-=======
-fi
->>>>>>> 76e8927 (removing extra lines)
-=======
-  exit 1
-fi
->>>>>>> c1e99fb (removing extra spaces)
+fi 
