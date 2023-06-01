@@ -1,7 +1,7 @@
 #/!/bin/bash
 
 # pass $name_identifier $number
-# e.g. wait_for_job_completion "job-" 100
+# e.g. wait_for_completion "job-" 100
 function wait_for_completion() {
   name_identifier=$1
   number=$2
@@ -21,7 +21,6 @@ function wait_for_completion() {
 }
 
 # pass $name_identifier $object_type
-# e.g. wait_for_job_completion "job-" jobs
 function wait_for_termination() {
   name_identifier=$1
   object_type=$2
@@ -42,7 +41,6 @@ function wait_for_termination() {
 }
 
 # pass $name_identifier $object_type
-# e.g. wait_for_job_completion "job-" jobs
 function wait_for_obj_creation() {
   name_identifier=$1
   object_type=$2
@@ -61,17 +59,33 @@ function wait_for_obj_creation() {
   done
 }
 
-
 # pass $label
 # e.g. delete_project "test=concurent-job"
 function delete_project_by_label() {
   oc project default
+  
+
   oc delete projects -l $1 --wait=false --ignore-not-found=true
   while [ $(oc get projects -l $1 | wc -l) -gt 0 ]; do
     echo "Waiting for projects to delete"
     sleep 5
   done
+  
 }
+
+# pass $label $filename
+# e.g. delete_project "test=concurent-job" delete_status.out
+function delete_projects_time_to_file() { 
+
+  delete_file=$2
+  start_time=`date +%s`
+  delete_project_by_label $1
+  stop_time=`date +%s`
+  total_time=`echo $stop_time - $start_time | bc`
+  echo "Deletion Time - $total_time" >> $delete_file
+
+}
+
 
 function check_no_error_pods()
 {
@@ -138,7 +152,6 @@ function uncordon_all_nodes() {
   for worker in ${worker_nodes}; do
     oc adm uncordon $worker
   done
-
 }
 
 function create_registry_machinesets(){
