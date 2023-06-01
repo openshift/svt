@@ -293,8 +293,6 @@ function calculate_difference(){
 	value_2=$2
 	temp_value=$(($value_1-$value_2))
 	echo ${temp_value#-}
-<<<<<<< HEAD
-<<<<<<< HEAD
 }
 
 function get_operator_and_node_status() {
@@ -331,9 +329,4 @@ function parallel_project_actions() {
 
   echo "$(date) - $my_action cycle complete"
   echo ""
->>>>>>> 89ef709 (bad actor test case)
-=======
->>>>>>> b64827b (moved bad actor script to openshift_performance/ci/scripts/bad_actor)
-=======
->>>>>>> cd4006a (moved bad actor script to openshift_performance/ci/scripts/bad_actor)
 }
