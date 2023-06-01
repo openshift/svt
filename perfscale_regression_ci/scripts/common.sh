@@ -293,39 +293,3 @@ function calculate_difference(){
 	temp_value=$(($value_1-$value_2))
 	echo ${temp_value#-}
 }
-
-function get_operator_and_node_status() {
-  echo "Node and operator status"
-  oc get nodes
-  echo ""
-  oc get co
-  echo ""
-}
-
-# pass $string $my_namespace $my_projects $my_parallel_processes
-# e.g. carallel_project_actions $create_string $my_namespace $my_projects $my_parallel_processes
-function parallel_project_actions() {
-  my_action=$1
-  my_namespace=$2
-  my_projects=$3
-  my_paralllel_processes=$4
-  num_jobs="\j"  # The prompt escape for number of jobs currently running
-
-  if [ "$my_action" == "Create" ]; then
-    my_command='oc new-project --skip-config-write "${my_namespace}${i}" > /dev/null && echo "Created project ${my_namespace}${i}" &>> op.log &'
-  else
-    my_command='oc delete project "${my_namespace}${i}" >> op.log &'
-  fi
-
-  echo ""
-  echo "$(date) - $my_action cycle start"
-  for ((i=0; i<$my_projects; i++)); do
-   	while (( ${num_jobs@P} >= $my_paralllel_processes )); do
-  			 wait -n
-	  done
-    eval $my_command
-  done
-
-  echo "$(date) - $my_action cycle complete"
-  echo ""
-}
