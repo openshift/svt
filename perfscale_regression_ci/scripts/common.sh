@@ -138,8 +138,7 @@ function uncordon_all_nodes() {
   for worker in ${worker_nodes}; do
     oc adm uncordon $worker
   done
-<<<<<<< HEAD
-=======
+
 }
 
 function create_registry_machinesets(){
