@@ -43,10 +43,10 @@ e.g. Run reliability test for 7 days with the default configuration and upgrade 
 start.sh -p <path to the folder holding kubeconfig, kubeadmin-password and users.spec files> -t 7d -u
 ```
 
-To enable slack notification, export the following env viriables before running start.sh
+To enable slack notification, export either of the following env viriables before running start.sh
+export SLACK_WEBHOOK_URL OR SLACK_API_TOKEN, find them in https://vault.bitwarden.com 'Red Hat, Inc. vault' 'perfscale-reliability-credentials' item.
 
-export SLACK_API_TOKEN=<ask qili@redhat for the token>
-
+To make you tagged in the slack notification, export the following env virable.
 export SLACK_MEMBER=<get it by clicking 'Copy member ID' in your slack Profile>
 
 If you don't want to use the default configuration, you can update (https://github.com/openshift/svt/blob/master/reliability-v2/config/example_reliability.yaml) before you trigger [start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh)
@@ -224,7 +224,9 @@ The following funcs are supported now:
 ## Slack Integration
 Receive notifications about the start stop of the Reliability test and errors happen during the Reliability test.
 
-Set environment virable SLACK_API_TOKEN before running the test. Contact qili@redhat.com for the token.
+Export the either of the follwoing environment virables before running the test.
+If SLACK_API_TOKEN fails to work, the workaround is to export SLACK_WEBHOOK_URL.
+Find them in https://vault.bitwarden.com 'Red Hat, Inc. vault' 'perfscale-reliability-credentials' item.
 
 ```yaml
   slackIntegration:
@@ -239,7 +241,7 @@ In the above configuration, notifications will be sent to [#ocp-qe-reliability-m
 
 If you're in [CoreOS](coreos.slack.com) workspace, but you want to use your own slack channel, create a slack channel and install App `OCP Reliability` which already exists in CoreOS workspace.
 
-If you want to use your own App(slack_api_token), create an [app](https://api.slack.com/apps?new_granular_bot_app=1) and add a bot to it on slack. Slack Bot Token Scopes permissions are [channels:read] [chat:write] [groups:read] [im:read] [mpim:read]. You will get a token after the app is installed to a workspace. Install the app to your channel. Set the token to SLACK_API_TOKEN environment variable.
+If you want to use your own App(slack_api_token), create an [app](https://api.slack.com/apps?new_granular_bot_app=1) and add a bot to it on slack. Slack Bot Token Scopes permissions are [channels:read] [chat:write] [groups:read] [im:read] [mpim:read]. You will get a token after the app is installed to a workspace. Install the app to your channel. Set the token to SLACK_API_TOKEN environment variable. Since 2023-4-30 Slack Bot api with token has to be approved before it can be installed.
 
 ## Cerberus Integration
 Reliablity can integrate with [Cerberus](https://github.com/cloud-bulldozer/cerberus) to check the healthy of the cluster and take action accordingly during the Reliability test.
