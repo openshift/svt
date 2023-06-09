@@ -16,6 +16,8 @@ class Tasks:
         self.logger = logging.getLogger('reliability')
         self.result_lock = Lock()
         self.results = {}
+        self.kubeconfig_admin = ""
+        self.__get_admin()
 
     def get_results(self):
         results = [f"{'[Function]'.ljust(25)}|{'Total'.rjust(10)}|{'Passed'.rjust(10)}|{'Failed'.rjust(10)}|{'Failure Rate'.rjust(10)}|"]
@@ -45,21 +47,32 @@ class Tasks:
             else:
                 self.results[name]["failed"] += 1
 
+    def __get_admin(self):
+        for key in global_data.kubeconfigs:
+            if "admin" in key:
+                self.kubeconfig_admin = global_data.kubeconfigs[key]
+                break
+
     # check namespace are deleted successfully
     def verify_project_deletion(self,user,namespace):
-        kubeconfig_admin = global_data.kubeconfigs["kubeadmin"]
         self.logger.info(f"[Task] User {user}: verify project deletion '{namespace}'")
         retry = 10
         final_rc = 1
         while retry > 0:
-            result,rc = oc(f"get project {namespace} --no-headers",kubeconfig_admin,ignore_log=True,ignore_slack=True)
+            result,rc = oc(f"get project {namespace} --no-headers",self.kubeconfig_admin,ignore_log=True,ignore_slack=True)
             if "not found" in result and rc == 1:
+                # issue during test: in about 1/10 cases, oc get project step gets no project, but
+                # new_project step shows already exists or is being terminated. 
+                # Sleep 20s can mitigate but not avoid this issue.
+                sleep(20)
                 final_rc = 0
                 break
             else:
-                self.logger.info(f"Deleting project '{namespace}', last get result: '{result}'. Retry left '{retry}'")
+                self.logger.info(f"Verifying project deletion for project '{namespace}', last result: '{result}'. Retry left '{retry}'")
                 sleep(20)
                 retry -= 1
+        if retry == 0:
+            oc(f"get po -n {namespace}",self.kubeconfig_admin,ignore_slack=True)
         self.__log_result(final_rc)
         return (result,final_rc)
 
@@ -73,8 +86,8 @@ class Tasks:
 
     # delete all project for a user
     def delete_all_projects(self,user):
-        if user == "kubeadmin":
-            return ("admin user not allowed.",1)
+        if "admin" in user:
+            return ("admin user not allowed for delete_all_projects function.",1)
         kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: delete all projects for user {user}")
         (result,rc) = oc(f"delete project --all",kubeconfig)
@@ -83,13 +96,12 @@ class Tasks:
 
     # new a project
     def new_project(self,user,namespace):
-        kubeconfig_admin = global_data.kubeconfigs["kubeadmin"]
         kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: new project '{namespace}'")
         # Replaced the below lines of commented code by function verify_project_deletion. Will delete the below lines later.
         # retry = 5
         # while retry > 0:
-        #     result,rc = oc(f"get project {namespace} --no-headers",kubeconfig_admin,ignore_log=True,ignore_slack=True)
+        #     result,rc = oc(f"get project {namespace} --no-headers",self.kubeconfig_admin,ignore_log=True,ignore_slack=True)
         #     if "Terminating" in result:
         #         sleep(20)
         #         retry -= 1
@@ -101,7 +113,7 @@ class Tasks:
         (result,rc) = oc(f"new-project --skip-config-write {namespace}",kubeconfig)
         if rc == 0:
             # developer is forbidden to patch resource "namespaces"
-            oc(f"label namespace {namespace} purpose=reliability",kubeconfig_admin)
+            oc(f"label namespace {namespace} purpose=reliability",self.kubeconfig_admin)
         self.__log_result(rc)
         return (result,rc)
 
@@ -372,4 +384,3 @@ class Tasks:
             task_name=task[start_index+1:]
         self.__log_result(rc,task_name)
         return (result,rc)
-

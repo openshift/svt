@@ -41,12 +41,12 @@ class GlobalData:
                 self.logger.error(f"user_file '{user_file}' does not exist. Please check the config file.")
                 return False
 
-            # validate kubeadmin_password file
-            kubeadmin_password_file = self.config['users'][0]["kubeadmin_password"]
-            if os.path.isfile(kubeadmin_password_file):
-                self.kubeadmin_password_file = kubeadmin_password_file
+            # validate admin_file
+            admin_file = self.config['users'][0]["admin_file"]
+            if os.path.isfile(admin_file):
+                self.admin_file = admin_file
             else:
-                self.logger.error(f"kubeadmin_password file '{kubeadmin_password_file}' does not exist. Please the your config file.")
+                self.logger.error(f"admin_file '{admin_file}' does not exist. Please the your config file.")
                 return False
 
         except KeyError as e:
@@ -66,10 +66,10 @@ class GlobalData:
         return True
         
     def init_users(self):
-        # load all developer users
+        # load test users
         all_users.load_users(self.user_file)       
         # load admin user
-        all_users.load_admin(self.kubeadmin_password_file)
+        all_users.load_users(self.admin_file)
 
         self.users = all_users.get_users()
         

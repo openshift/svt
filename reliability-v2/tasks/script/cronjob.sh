@@ -14,7 +14,7 @@
 USER=${USER:-""}
 image="image-registry.openshift-image-registry.svc:5000/openshift/cli"
 cmd="/bin/sh -c date"
-ns="${USER}-cronjob"
+ns="${USER}-0"
 cronjob_prefix="cronjob"
 
 function _usage {
@@ -113,9 +113,8 @@ while getopts ":n:s:cdh" opt; do
     esac
 done
 
-#create test namespace
-oc get project $ns || oc new-project $ns
-oc label namespace $ns purpose=reliability
+#use test namespace
+oc project $ns
 # cleanup cronjobs under the test namespace
 delete_all_cronjobs
 

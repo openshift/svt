@@ -56,10 +56,10 @@ all_contexts = Contexts()
 if __name__ == '__main__':
     class TestUser:
         def __init__(self):
-            self.name = 'kubeadmin'
+            self.name = 'admin'
             self.password = '<password>'
     user = TestUser()
-    users = {'kubeadmin': user}
+    users = {'admin': user}
     all_contexts.create_kubeconfigs('<path to kubeconfig of the cluster>"', users)
-    with open(os.getcwd() + '/kubeconfigs/kubeconfig_kubeadmin') as f:
+    with open(os.getcwd() + '/kubeconfigs/kubeconfig_admin') as f:
         print(f.read())

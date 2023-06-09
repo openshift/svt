@@ -45,10 +45,11 @@ class SlackIntegration:
             self.logger.error("Please provide either SLACK_API_TOKEN or SLACK_WEBHOOK_URL environment variable to enable slack integration.")
             self.logger.warning("Disable slack integration.")
             self.slack_enable = False
+        # if only SLACK_API_TOKEN is provided, use SLACK_API_TOKEN
         # if both SLACK_API_TOKEN and SLACK_WEBHOOK_URL are provided, SLACK_API_TOKEN takes precedence.
-        elif self.slack_api_token != "" and self.slack_webhook_url != "":
+        elif self.slack_api_token != "":
             self.slack_messaging_method = "web_api"
-            self.logger.info("Both SLACK_API_TOKEN and SLACK_WEBHOOK_URL are set. Slack integration method is set to 'web_api'.")
+            self.logger.info("SLACK_API_TOKEN is set. Slack integration method is set to 'web_api'.")
             try:
                 self.slack_web_client = WebClient(token=self.slack_api_token)
                 self.logger.info("Slack client created.")
