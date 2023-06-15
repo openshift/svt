@@ -195,6 +195,6 @@ else
   oc get nodes --no-headers | grep -v Ready
   echo ""
   echo "Actual creation time for $num_projects projects (expected time $create_cycle_threshold seconds (or less): $total_create_cycle_time s."
-  echo "Actual celetion time for $num_projects projects (expected time $delete_cycle_thresshold second (or less): $total_delete_cycle_time s."
+  echo "Actual celetion time for $num_projects projects (expected time $delete_cycle_thresshold seconds (or less): $total_delete_cycle_time s."
   exit 1
 fi 
