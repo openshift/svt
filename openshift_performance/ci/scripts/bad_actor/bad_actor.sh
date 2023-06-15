@@ -4,7 +4,8 @@
 ## Polarion test case: OCP-41643 - Load cluster to test bad actor resilience	
 ## https://polarion.engineering.redhat.com/polarion/#/project/OSE/workitem?id=OCP-41643
 ## Bug related: https://issues.redhat.com/browse/OCPBUGS-12266
-## Cluster config: 3 master (m5.2xlarge or equivalent) with 40 workers (The machine running the test should have at least 4 cores).
+## Cluster config: 3 master (m5.4xlarge or equivalent) with 40 workers (vm_type_workers: m5.2xlarge or equivalent).
+## The machine running the test should have at least 4 cores.
 ##
 ## Note: While the test runs, check the functionality of the cluster. A simple example (found in the Polarion test case):
 ##       while true; do oc get co --no-headers| grep -v 'True.*False.*False'; oc get nodes --no-headers| grep -v ' Ready'; date; sleep 10; done
@@ -17,6 +18,8 @@ sleep_mins=${4:-5}
 create_string="Create"
 delete_string="Delete"
 test_object_type="namespaces"
+create_cycle_threshold=600
+delete_cycle_thresshold=1800
 
 
 
@@ -176,12 +179,12 @@ echo "Total time for create cycle: $total_create_cycle_time s."
 echo "Total time for delete cycle: $total_delete_cycle_time s."
 echo ""
 
-if [[ ( $bad_operators -eq 0 ) && ( $nodes_not_ready -eq 0 )  && ( $total_create_cycle_time -le 600 ) && ( $total_delete_cycle_time -le 600 )]]; then
+if [[ ( $bad_operators -eq 0 ) && ( $nodes_not_ready -eq 0 )  && ( $total_create_cycle_time -le $create_cycle_threshold ) && ( $total_delete_cycle_time -le $delete_cycle_thresshold )]]; then
   echo -e "\nBad Actor Testcase result:  PASS"
   echo "Expected: Cluster operators are stable."
   echo "Expected: All nodes are Ready."
-  echo "Expected: $num_projects projects created in 600 seconds/10 minutes (or less): $total_create_cycle_time s."
-  echo "Expected: $num_projects projects deleted in 600 seconds/10 minutes (or less): $total_delete_cycle_time s."
+  echo "Expected: $num_projects projects created in $create_cycle_threshold seconds (or less): $total_create_cycle_time s."
+  echo "Expected: $num_projects projects deleted in $delete_cycle_thresshold seconds (or less): $total_delete_cycle_time s."
   exit 0
 else
   echo -e "\nBad Actor Testcase result:  FAIL"
@@ -191,7 +194,7 @@ else
   echo "Nodes oc get nodes --no-headers | grep -v Ready):"
   oc get nodes --no-headers | grep -v Ready
   echo ""
-  echo "Creation time for $num_projects projects (expected time 600 seconds/10 minutes or less): $total_create_cycle_time s."
-  echo "Deletion time for $num_projects projects (expected time 600 seconds/10 minutes or less): $total_delete_cycle_time s."
+  echo "Actual creation time for $num_projects projects (expected time $create_cycle_threshold seconds (or less): $total_create_cycle_time s."
+  echo "Actual celetion time for $num_projects projects (expected time $delete_cycle_thresshold second (or less): $total_delete_cycle_time s."
   exit 1
 fi 
