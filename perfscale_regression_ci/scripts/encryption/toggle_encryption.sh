@@ -66,21 +66,21 @@ function check_secret {
     if [[ ${secret_migrated_resources} == "${migrated_resources_value_a}" ]] || [[ ${secret_migrated_resources} == "${migrated_resources_value_b}" ]]; then
         log "Founded: encryption.apiserver.operator.openshift.io/migrated-resources in ${secret_file} secret."
     else
-        log "Missing: encryption.apiserver.operator.openshift.io/migrated-resources in ${secret_file} secret."
+        log "Still waiting for: encryption.apiserver.operator.openshift.io/migrated-resources in ${secret_file} secret."
         continue_wait=true
     fi
 
     if [[ ${secret_timestamp} != "" ]]; then
         log "Founded: encryption.apiserver.operator.openshift.io/migrated-timestamp in ${secret_file} secret."
     else
-        log "Missing: encryption.apiserver.operator.openshift.io/migrated-timestamp in ${secret_file} secret."
+        log "Still waiting for: encryption.apiserver.operator.openshift.io/migrated-timestamp in ${secret_file} secret."
         continue_wait=true
     fi
 
     if [[ ${secret_mode} == "${mode}" ]]; then
         log "Founded: encryption.apiserver.operator.openshift.io/mode in ${kb_secrets_file} secret."
     else
-        log "Missing: encryption.apiserver.operator.openshift.io/mode in ${kb_secrets_file} secret."
+        log "Still waiting for: encryption.apiserver.operator.openshift.io/mode in ${kb_secrets_file} secret."
         continue_wait=true
     fi
 }
@@ -97,21 +97,10 @@ function wait_until_encryption_is_ready {
         # Getting secrets
         log "Getting ${oc_secrets_name} secret"
         oc get secret "${oc_secrets_name}" -o yaml -n openshift-config-managed >"${OC_SECRET}"
-        log "${OC_SECRET}"
-        cat "${OC_SECRET}"
-        echo ""
-
         log "Getting ${kb_secrets_name} secret"
         oc get secret "${kb_secrets_name}" -o yaml -n openshift-config-managed >"${KB_SECRET}"
-        log "${KB_SECRET}"
-        cat "${KB_SECRET}"
-        echo ""
-
         log "Getting ${oauth_secrets_name} secret"
         oc get secret "${oauth_secrets_name}" -o yaml -n openshift-config-managed >"${OAUTH_SECRET}"
-        log "${OAUTH_SECRET}"
-        cat "${OAUTH_SECRET}"
-        echo ""
 
         # Checking encryption-key-openshift-apiserver secret
         log "------- Checking ${oc_secrets_name} secret"
@@ -134,7 +123,15 @@ function wait_until_encryption_is_ready {
         exit 0
     done
 
-    log "TIMEOUT!"
+    log "!!!!!!!!!!! TIMEOUT !!!!!!!!!!!"
+    log "${OC_SECRET}"
+    cat "${OC_SECRET}"
+    echo ""
+    log "${KB_SECRET}"
+    cat "${KB_SECRET}"
+    echo ""
+    log "${OAUTH_SECRET}"
+    cat "${OAUTH_SECRET}"
     exit 1
 }
 
