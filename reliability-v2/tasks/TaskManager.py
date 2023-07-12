@@ -167,7 +167,7 @@ class TaskManager:
         if user_start == None and user_end == None: 
             users_tasks.append({"user":user_name,"group_name":name,"loops":loops,"trigger":trigger,"interval":interval,"jitter":jitter,"pre_tasks":pre_tasks,"tasks":tasks,"post_tasks":post_tasks})
             user_count = 1
-        elif user_end > user_start:   
+        elif user_end > user_start:
             for i in range(user_start, user_end):
                 users_tasks.append({"user":f"{user_name}{i}","group_name":name,"loops":loops,"trigger":trigger,"interval":interval,"jitter":jitter,"pre_tasks":pre_tasks,"tasks":tasks,"post_tasks":post_tasks})
             user_count = user_end - user_start

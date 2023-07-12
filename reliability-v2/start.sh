@@ -8,25 +8,13 @@
 
 function _usage {
     cat <<END
-Usage: $(basename "${0}") [-p <path_to_auth_files>] [-t <time_to_run>] -u
+Usage: $(basename "${0}") [-p <path_to_auth_files>] [-n <folder_name> ] [-t <time_to_run>] -u
 
-       $(basename "${0}") [-k <kubeconfig_path>] [-s <users.spec_path>] [-a <kubeadmin-password_path>] [-t <time_to_run>]   
-       
-       $(basename "${0}") [-i <flexy_install_build_id>] [-t <time_to_run>]
+  -p <path_to_auth_files>      : The absolute path of the folder that contains the kubeconfig, admin file and users file.
 
   -n <folder_name>             : Name of the folder to save the test contents. Default is testYYYYMMDDHHMMSS
   
   -t <time_to_run>             : Time to run the reliability test. e.g. 1d10h3m10s,7d,5m. Default is 10m. 
-
-  -p <path_to_auth_files>       : The local path that contains the kubeconfig, kubeadmin-password and users.spec files.
-  
-  -k <kubeconfig_path>         : The local path to kubeconfig file.
-
-  -a <kubeadmin-password_path> : The local path to kubeadmin-password file.
-
-  -s <users.spec_path>         : The local path to users.spec file.
-
-  -i <flexy_install_build_id>  : The build id of Flexy-install job. Use this when the server can connect to Jenkins. 
 
   -u                           : Upgrade the cluster every 24 hours.
 
@@ -40,7 +28,7 @@ if [[ "$1" = "" ]];then
     exit 1
 fi
 
-while getopts ":n:t:p:k:a:s:i:uh" opt; do
+while getopts ":n:t:p:uh" opt; do
     case ${opt} in
     n)
         folder_name=${OPTARG}
@@ -50,18 +38,6 @@ while getopts ":n:t:p:k:a:s:i:uh" opt; do
         ;;
     p)
         path_to_auth_files=${OPTARG}
-        ;;
-    k)
-        kubeconfig=${OPTARG}
-        ;;
-    a)
-        kubeadmin_password=${OPTARG}
-        ;;
-    s)
-        users_spec="${OPTARG}"
-        ;;
-    i)
-        flexy_install_build_id=${OPTARG}
         ;;
     u)
         upgrade=true
@@ -110,14 +86,21 @@ function get_os {
     fi
 }
 
-# $1 path_to_kubeconfig, $2 path_to_kubeadmin-password, $3 path_to_users.spec
+# $1 path_to_kubeconfig, $2 path_to_admin_file, $3 path_to_users_file
 function generate_config {
     echo "Generating reliabilty configuration file."
     get_os
+    if [[ -s $2 ]]; then
+        admin_name=$(cat $2 | cut -d ":" -f 1)
+    else
+        echo "[ERROR] '$2' is not a valid admin file path. Please provide the absolute path to the folder contains admin file with -p."
+        exit 1
+    fi
+
     if [[ $os == "linux" ]]; then
         sed -i s*'<path_to_kubeconfig>'*$1* reliability.yaml
-        sed -i s*'<path_to_kubeadmin-password>'*$2* reliability.yaml
-        sed -i s*'<path_to_users.spec>'*$3* reliability.yaml
+        sed -i s*'<path_to_admin_file>'*$2* reliability.yaml
+        sed -i s*'<path_to_users_file>'*$3* reliability.yaml
         sed -i s*'<path_to_script>'*$4* reliability.yaml
         sed -i s*'<path_to_content>'*$5* reliability.yaml
         if [[ $SLACK_API_TOKEN != "" || SLACK_WEBHOOK_URL != "" ]]; then
@@ -126,10 +109,12 @@ function generate_config {
                 sed -i s*'<Your slack member id>'*$SLACK_MEMBER* reliability.yaml
             fi
         fi
+        sed -i s*'<admin_username>'*$admin_name* reliability.yaml
+
     elif [[ $os == "mac" ]]; then
         sed -i "" s*'<path_to_kubeconfig>'*$1* reliability.yaml
-        sed -i "" s*'<path_to_kubeadmin-password>'*$2* reliability.yaml
-        sed -i "" s*'<path_to_users.spec>'*$3* reliability.yaml
+        sed -i "" s*'<path_to_admin_file>'*$2* reliability.yaml
+        sed -i "" s*'<path_to_users_file>'*$3* reliability.yaml
         sed -i "" s*'<path_to_script>'*$4* reliability.yaml
         sed -i "" s*'<path_to_content>'*$5* reliability.yaml
         if [[ $SLACK_API_TOKEN != "" || SLACK_WEBHOOK_URL != "" ]]; then
@@ -138,6 +123,7 @@ function generate_config {
                 sed -i "" s*'<Your slack member id>'*$SLACK_MEMBER* reliability.yaml
             fi
         fi
+        sed -i "" s*'<admin_username>'*$admin_name* reliability.yaml
     fi
 }
 
@@ -207,22 +193,11 @@ cd $folder_name
 script_folder=$RELIABILITY_DIR/tasks/script
 content_folder=$RELIABILITY_DIR/content
 if [[ ! -z $path_to_auth_files ]]; then
-    generate_config $path_to_auth_files/kubeconfig $path_to_auth_files/kubeadmin-password $path_to_auth_files/users.spec $script_folder $content_folder
+    generate_config $path_to_auth_files/kubeconfig $path_to_auth_files/admin $path_to_auth_files/users $script_folder $content_folder
     KUBECONFIG=$path_to_auth_files/kubeconfig
-elif [[ ! -z $flexy_install_build_id ]]; then
-    JENKINS_JOB_URL="https://mastern-jenkins-csb-openshift-qe.apps.ocp-c1.prod.psi.redhat.com/job/ocp-common/job/Flexy-install/$flexy_install_build_id"
-    KUBECONFIG_URL="$JENKINS_JOB_URL/artifact/workdir/install-dir/auth/kubeconfig"
-    KUBEADMINPASSWORD_URL="$JENKINS_JOB_URL/artifact/workdir/install-dir/auth/kubeadmin-password"
-    USERSSPEC_URL="$JENKINS_JOB_URL/artifact/users.spec"
-    wget --quiet "$KUBECONFIG_URL" -O kubeconfig
-    wget --quiet "$KUBEADMINPASSWORD_URL" -O kubeadmin-password
-    wget --quiet "$USERSSPEC_URL" -O users.spec
-    current_pwd=$(pwd)
-    generate_config $current_pwd/kubeconfig $current_pwd/kubeadmin-password $current_pwd/users.spec $script_folder $content_folder
-    KUBECONFIG=$current_pwd/kubeconfig
-elif [[ ! -z $kubeconfig && ! -z $users_spec && ! -z $kubeadmin_password ]]; then
-    generate_config $kubeconfig $kubeadmin_password $users_spec $script_folder $content_folder
-    KUBECONFIG=$kubeconfig
+else
+    echo "Please provide a valid path as -p path_to_auth_files."
+    exit 1
 fi
 
 echo "export KUBECONFIG=$KUBECONFIG"
@@ -297,7 +272,6 @@ fi
 cd $RELIABILITY_DIR
 log "info" "Clearing test ns with label purpose=reliability."
 oc delete ns -l purpose=reliability
-
 # Start reliability test
 log "info" "Start Reliability test. Log is writting to $folder_name/reliability.log."
 # run in background and dont append output to nohup.out

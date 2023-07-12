@@ -1,6 +1,7 @@
 OpenShift V4 Reliability - V2
 # Introduction
-Reliability-v2 is a longevity test tool simulating customer actions with load, integrated with health check, error injection and failure & performance monitoring. 
+Reliability-v2 is a longevity test tool simulating customer actions with load, integrated with health check, error injection and failure & performance monitoring.
+It can support OCP cluster and ROSA/ROSA Hypershift cluster.
 
 ## Overview
 ![Reliability-V2 Overview](media/openshift-reliability-test-v2-overview.png)
@@ -17,21 +18,37 @@ cd svt/reliability-v2
 [tmux](https://github.com/tmux/tmux/wiki) is a tool that can help to keep the reliability running in the background to avoid the termination of the run due to the unexpected termination of the terminal. Ad reliability test sometimes run for several days, we recommend you to run reliability in a tmux session.
 
 ## Prepare Authentication files
-If you installed your cluster with [Flexy-install](https://mastern-jenkins-csb-openshift-qe.apps.ocp4.prod.psi.redhat.com/job/ocp-common/job/Flexy-install/), download kubeconfig, users.spec and kubeadmin-password files from the Build Artifacts after the job completed successfully. The user `kubeadmin` has admin priviledge and its password is in kubeadmin-password. users.spec contains username and password pairs of 50 test users.
+You need to prepare 3 files
+1. kubeconfig
+2. admin: a file contains pairs of username and password of user which is admin role. e.g. kubeadmin:password (No space)
+3. users: a file contains pairs of usernames and passwords. e.g testuser-0:password1,testuser-1:password2,...,testuser-n:passwordn (No space)
+Use either of the options below to generate the 3 files.
 
-Replace `kubeconfig` `kubeadmin_password` and `user_file` with above files in your config file.
+Option 1
+[generate_auth_files.sh](https://github.com/openshift/svt/blob/master/reliability-v2/utils/generate_auth_files.sh) can help you to generate the required files mentioned above. Get the command's help with generate_auth_files.sh -h.
+
+Option 2
+If you installed your cluster with [Flexy-install](https://mastern-jenkins-csb-openshift-qe.apps.ocp4.prod.psi.redhat.com/job/ocp-common/job/Flexy-install/), download kubeconfig, users.spec and kubeadmin-password files from the Build Artifacts after the job completed successfully. The user `kubeadmin` has admin priviledge and its password is in kubeadmin-password. users.spec contains username and password pairs of 50 test users. Then compose the above 3 files based on the files you get.
+
+If you installed your rosa cluster with Prow CI, follow below instruction to get the kubeconfig, admin credential file and users credential files. Then compose the above 3 files based on the files you get.
+
+1. Open the job , find the link following "Using namespace".
+2. Open the link you get above and login, click your name on right top of the console, choose "Copy login command". You may need to open the link in a new incognito window in Chrome to get the token.
+3. Login the cluster with the token.
+4. Run 'oc get pods' and find the running pod of your test.
+5. Run 'oc rsh <pod_name>'
+6. 'cat /tmp/kubeconfig-xxx' to get the content of kubeconfig.
+7. 'cat /tmp/secret/api.login' to get the usernames and passwords from the output, and put them in the admin file in the format of username:password.
+8. 'cat ${SHARED_DIR}/runtime_env' to get the usernames and passwords from the output, and put them in the users file in the format of testuser-0:password1,testuser-1:password2,...,testuser-n:passwordn.
+
+Replace `kubeconfig` `admin_file` and `user_file` with above files 1. 2. 3. in your config yaml file.
 ```yaml
 reliability:
   kubeconfig: <absolute_path_to_kubeconfig>
   users:
-    - kubeadmin_password: <path_to_kubeadmin-password>
-    - user_file: <path_to_users.spec>
+    - admin_file: <path_to_admin_file>
+    - user_file: <path_to_users_file>
 ```
-
-If you installed your cluster with other ways, you need to prepare 3 files
-1. kubeconfig
-2. kubeadmin-password, a file contains password of kubeadmin user which is admin role
-3. users.spec, a file contains pares of usernames and passwords. e.g testuser-0:password1,testuser-1:password2,...,testuser-n:passwordn
 
 For more detail explaination about the configuration, please go to [Configuration Detail](#Configuration-Detail).
 
@@ -40,7 +57,7 @@ For more detail explaination about the configuration, please go to [Configuratio
 
 e.g. Run reliability test for 7 days with the default configuration and upgrade the cluster every 24 hours if there is new nightly build
 ```
-start.sh -p <path to the folder holding kubeconfig, kubeadmin-password and users.spec files> -t 7d -u
+start.sh -p <absolute path to the folder holding kubeconfig, admin and users files> -t 7d -u
 ```
 
 To enable slack notification, export either of the following env viriables before running start.sh
@@ -129,6 +146,10 @@ A group defines a group of users with the similar behavior, they will run the sa
 
 `interval` defines the time in second to wait between each task in a tasks list.
 
+`pre_tasks` will be run only once before the loop(s).
+
+`post_tasks` will be run only once after the loop(s).
+
 All users in a group run in parrellel. All groups run in parrellel.
 
 For tasks, oc cli, kubeconfig, shell script and build-in [func](Supported-Func)s are supported.
@@ -137,7 +158,9 @@ For tasks, oc cli, kubeconfig, shell script and build-in [func](Supported-Func)s
 reliability:
   groups:
     - name: admin
-      user_name: kubeadmin # username
+      # For cluster created by Jenkins Flexy-install job, the admin user_name is kubeadmin.
+      # For rosa cluster created in Prow, the admin user_name is rosa-admin.
+      user_name: <admin_username> # admin username as kubeadmin or rosa-admin.
       loops: forever # run group for loops times. integer > 0 or 'forever', default is 1.
       trigger: 600 # wait trigger seconds between each loop
       jitter: 60 # randomly start the users in this group in trigger seconds. Default is 0.
@@ -147,17 +170,23 @@ reliability:
         - oc get project -l purpose=reliability
         - func check_nodes
         - kubectl get pods -A -o wide | egrep -v "Completed|Running"
+        # Run test case as scripts. KUBECONFIG of the current user is set as env variable by reliability-v2. 
+        #- . <path_to_script>/create-delete-pod-ensure-service.sh
 
     - name: dev-test
       user_name: testuser- # if user_start and user_end exist, this will be username prefix
-      user_start: 0 # user_start is inclusive, start with testuser-0 in the users.spec file
-      user_end: 15 # user_end is exclusive, end with testuser-14 in the users.spec file
+      # For cluster created by Jenkins Flexy-install job, the users start from testuser-0
+      # For cluster created in Prow and used the following step to create test users, the users start from testuser-1. 
+      # https://github.com/openshift/release/blob/master/ci-operator/step-registry/osd-ccs/conf/idp/htpasswd/multi-users/osd-ccs-conf-idp-htpasswd-multi-users-ref.yaml
+      user_start: 1 # user_start is inclusive, start with testuser-1 in the users file. 
+      user_end: 11 # user_end is exclusive, end with testuser-10 in the users file
       loops: forever
       trigger: 60
       jitter: 600 # randomly start the users in this group in 10 minutes
       interval: 10
       tasks:
         - func delete_all_projects # clear all projects
+        - func verify_project_deletion 2 # verfy project deletion in 2 namespaces
         - func new_project 2 # new 2 projects
         # If network policy is planed in the test, uncomment the following line
         #- func apply 2 "<path_to_content>/allow-same-namespace.yaml" # Apply network policy to 2 projects
@@ -167,39 +196,27 @@ reliability:
         - func build 1 # build app in 1 namespace
         - func check_pods 2 # check pods in 2 namespaces 
         - func delete_project 2 # delete project in 2 namespaces
+        - func verify_project_deletion 2 # verfy project deletion in 2 namespaces
 
     - name: dev-prod
       user_name: testuser- 
-      user_start: 15 # user_start is inclusive, start with testuser-15 in users.spec
-      user_end: 16 # user_end is exclusive, end with testuser-15 in users.spec
+      user_start: 15
+      user_end: 16
       loops: forever
       trigger: 600
-      jitter: 1200 # randomly start the users in this group in 20 minutes
+      jitter: 1200
       interval: 600
       pre_tasks: 
-          - func delete_all_projects # clear all projects
-          - func new_project 2 # new 2 projects
-          - func new_app 2 # new app in 2 namespaces
+          - func delete_all_projects
+          - func verify_project_deletion 2
+          - func new_project 2
+          - func new_app 2
       tasks:
-        - func load_app 2 10 # load apps in 2 namespaces with 10 clients for each
+        - func load_app 2 10 
         - func scale_deployment 2 2 # scale app in 2 namespaces to 2 replicas
         - func scale_deployment 2 1 # scale app in 2 namespaces to 1 replicas
       post_tasks: 
         - func delete_project 2
-
-    - name: dev-cronjob
-      user_name: testuser- # if user_start and user_end exist, this will be username prefix
-      user_start: 16
-      user_end: 22
-      trigger: 600
-      loops: forever
-      pre_tasks:
-        -  func new_project 1
-        -  <path_to_script>/cronjob.sh -n 10
-      tasks:
-        - <path_to_script>/cronjob.sh -c
-      post_tasks:
-        -  <path_to_script>/cronjob.sh -d
 ```
 ## Supported func
 Funs are some build-in functions that calls oc cli to run some common operation(s).

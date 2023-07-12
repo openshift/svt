@@ -1,13 +1,13 @@
 reliability:
   kubeconfig: <path_to_kubeconfig>
   users:
-    - kubeadmin_password: <path_to_kubeadmin-password>
-    - user_file: <path_to_users.spec>
+    - admin_file: <path_to_admin_file>
+    - user_file: <path_to_users_file>
 
   appTemplates:
     - template: cakephp-mysql-persistent
-    - template: nodejs-postgresql-persistent
-    - template: django-psql-persistent
+    - template: nodejs-postgresql-persistent # N/A for FIPS
+    - template: django-psql-persistent # N/A for FIPS
     - template: rails-pgsql-persistent
     - template: dancer-mysql-persistent
 
@@ -17,7 +17,9 @@ reliability:
   # The max number of projects = groups x users x new_project
   groups:
     - name: admin
-      user_name: kubeadmin # username
+      # For cluster created by Jenkins Flexy-install job, the admin user_name is kubeadmin.
+      # For rosa cluster created in Prow, the admin user_name is rosa-admin.
+      user_name: <admin_username> # admin username as kubeadmin or rosa-admin.
       loops: forever # run group for loops times. integer > 0 or 'forever', default is 1.
       trigger: 600 # wait trigger seconds between each loop
       jitter: 60 # randomly start the users in this group in trigger seconds. Default is 0.
@@ -32,13 +34,17 @@ reliability:
 
     - name: dev-test
       user_name: testuser- # if user_start and user_end exist, this will be username prefix
-      user_start: 0 # user_start is inclusive, start with testuser-0 in the users.spec file
-      user_end: 15 # user_end is exclusive, end with testuser-14 in the users.spec file
+      # For cluster created by Jenkins Flexy-install job, the users start from testuser-0
+      # For cluster created in Prow and used the following step to create test users, the users start from testuser-1. 
+      # https://github.com/openshift/release/blob/master/ci-operator/step-registry/osd-ccs/conf/idp/htpasswd/multi-users/osd-ccs-conf-idp-htpasswd-multi-users-ref.yaml
+      user_start: 1 # user_start is inclusive, start with testuser-1 in the users file. 
+      user_end: 11 # user_end is exclusive, end with testuser-10 in the users file
       loops: forever
       trigger: 60
       jitter: 600 # randomly start the users in this group in 10 minutes
       interval: 10
       tasks:
+        - func delete_all_projects # clear all projects
         - func verify_project_deletion 2 # verfy project deletion in 2 namespaces
         - func new_project 2 # new 2 projects
         # If network policy is planed in the test, uncomment the following line
@@ -53,18 +59,19 @@ reliability:
 
     - name: dev-prod
       user_name: testuser- 
-      user_start: 15 # user_start is inclusive, start with testuser-15 in users.spec
-      user_end: 16 # user_end is exclusive, end with testuser-15 in users.spec
+      user_start: 15
+      user_end: 16
       loops: forever
       trigger: 600
-      jitter: 1200 # randomly start the users in this group in 20 minutes
+      jitter: 1200
       interval: 600
       pre_tasks: 
-          - func delete_all_projects # clear all projects
-          - func new_project 2 # new 2 projects
-          - func new_app 2 # new app in 2 namespaces
+          - func delete_all_projects
+          - func verify_project_deletion 2
+          - func new_project 2
+          - func new_app 2
       tasks:
-        - func load_app 2 10 # load apps in 2 namespaces with 10 clients for each
+        - func load_app 2 10 
         - func scale_deployment 2 2 # scale app in 2 namespaces to 2 replicas
         - func scale_deployment 2 1 # scale app in 2 namespaces to 1 replicas
       post_tasks: 
@@ -78,12 +85,16 @@ reliability:
       jitter: 1200
       loops: forever
       pre_tasks:
-        -  func new_project 1
-        -  <path_to_script>/cronjob.sh -n 10
+        - func delete_all_projects
+        - func verify_project_deletion 1
+        - func new_project 1
+        - <path_to_script>/cronjob.sh -n 10
       tasks:
         - <path_to_script>/cronjob.sh -c
       post_tasks:
-        -  <path_to_script>/cronjob.sh -d
+        - <path_to_script>/cronjob.sh -d
+        - func delete_project 1
+        - func verify_project_deletion 1
 
   cerberusIntegration:
     # start cerberus https://github.com/cloud-bulldozer/cerberus before starting reliabiity test.
