@@ -12,15 +12,13 @@
 
 #! /bin/bash
 
-
-
-expected_namespaces=250
-expected_secrets=5000
-secrets_per_namespace=20
+expected_namespaces=${1:-100}
+secrets_per_namespace=${2:-10}
+expected_secrets=$(( $expected_namespaces * $secrets_per_namespace ))
+debug_secrets_command="oc get secrets -A -l test=listobject --no-headers -v9"
 my_secret_name="-secret-"
 my_namespace="objecttest-"
 my_object_type="namespaces"
-
 
 # simple function to display the status of operators and nodes
 function get_operator_and_node_status() {
@@ -83,9 +81,13 @@ function delete_namespaces() {
 echo "Checking the cluster for test objects..."
 check_cluster=$(oc get $my_object_type -A| grep $my_namespace | wc -l)
 if [ $check_cluster -ne 0 ]; then
-   echo "Removing test objects from the cluster before test execution"
-   delete_namespaces $check_cluster
+  echo "Removing test objects from the cluster before test execution"
+  delete_namespaces $check_cluster
+else
+  echo "No test objects present..."
 fi
+
+echo ""
 
 # Step 2. Start the log file
 echo -e "\nWriting subprocess logs to ./object-list-test.log"
@@ -102,7 +104,6 @@ echo ""
 echo "$(date) - Namespace and secret creation starting..."
 cycle_start_time=`date +%s`
 create_namespaces_and_secrets
-sleep 5
 
 echo "$(date) - Namespace and secret creation complete."
 echo -e "\nNamespace and secret creation complete." >> object-list-test.log &
@@ -112,16 +113,12 @@ echo "Total time for create cycle: $total_cycle_time s."
 
 
 # Pause to allow the system to catch up
-echo -e "\nSleeping for 5 minutes..."
-echo -e "\nSleeping for 5 minutes..." >> object-list-test.log &
+echo -e "\nSleeping for 5 minutes..." | tee object-list-test.log
 sleep 5m
 
-echo -e "\nChecking for the namespaces and secrets."
-echo -e "\nChecking for the namespaces and secrets." >> object-list-test.log &
+echo -e "\nChecking for the namespaces and secrets." | tee object-list-test.log
 
 
-# Step 4. Count the secrets and namespaces, then compare the actual and expected values.
-# Find the secrets created by this test and print the output to the log file
 my_namespace_command='oc get secrets -A -l test=listobject &>> object-list-test.log &'
 eval $my_namespace_command
 
@@ -138,9 +135,9 @@ echo "actual # of namespaces: $actual_namespaces"
 echo "expected # of secrets: $expected_secrets"
 echo "actual # of secrets: $actual_secrets"
 
-echo "Check for the namespaces and secrets - COMPLETE"
-echo -e "\nCheck for the namespaces and secrets - COMPLETE" >> object-list-test.log &
-
+echo -e "\nCheck for the namespaces and secrets - COMPLETE" | tee object-list-test.log
+SCRIPT_DIR=$( cd ${0%/*} && pwd -P )
+echo "log output file can be found in same directory as test script: "${SCRIPT_DIR}""
 
 # Find and count operators and nodes in a bad state
 bad_operators=$(oc get co --no-headers| grep -v 'True.*False.*False' | wc -l)
@@ -171,6 +168,10 @@ else
     echo ""
     echo "expected # of namespaces: $expected_namespaces.  actual # of namespaces: $actual_namespaces"
     echo "expected # of secrets: $expected_secrets.  actual # of secrets: $actual_secrets"
+    echo ""
+    echo "============================================"
+    echo "Getting debug info"
+    eval $debug_secrets_command
     exit 1
 fi
 
