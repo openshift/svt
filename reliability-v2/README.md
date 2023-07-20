@@ -17,40 +17,19 @@ cd svt/reliability-v2
 ## Tmux
 [tmux](https://github.com/tmux/tmux/wiki) is a tool that can help to keep the reliability running in the background to avoid the termination of the run due to the unexpected termination of the terminal. Ad reliability test sometimes run for several days, we recommend you to run reliability in a tmux session.
 
-## Prepare Authentication files
-You need to prepare 3 files
-1. kubeconfig
-2. admin: a file contains pairs of username and password of user which is admin role. e.g. kubeadmin:password (No space)
-3. users: a file contains pairs of usernames and passwords. e.g testuser-0:password1,testuser-1:password2,...,testuser-n:passwordn (No space)
-Use either of the options below to generate the 3 files.
-
-Option 1
+## Generate auth files automatically with script
 [generate_auth_files.sh](https://github.com/openshift/svt/blob/master/reliability-v2/utils/generate_auth_files.sh) can help you to generate the required files mentioned above. Get the command's help with generate_auth_files.sh -h.
 
-Option 2
-If you installed your cluster with [Flexy-install](https://mastern-jenkins-csb-openshift-qe.apps.ocp4.prod.psi.redhat.com/job/ocp-common/job/Flexy-install/), download kubeconfig, users.spec and kubeadmin-password files from the Build Artifacts after the job completed successfully. The user `kubeadmin` has admin priviledge and its password is in kubeadmin-password. users.spec contains username and password pairs of 50 test users. Then compose the above 3 files based on the files you get.
+#### Pre-requisite:
+ - [oc cli](https://console.redhat.com/openshift/downloads)
 
-If you installed your rosa cluster with Prow CI, follow below instruction to get the kubeconfig, admin credential file and users credential files. Then compose the above 3 files based on the files you get.
+For rosa and rosa hypershift cluster, additional pre-requisite:
 
-1. Open the job , find the link following "Using namespace".
-2. Open the link you get above and login, click your name on right top of the console, choose "Copy login command". You may need to open the link in a new incognito window in Chrome to get the token.
-3. Login the cluster with the token.
-4. Run 'oc get pods' and find the running pod of your test.
-5. Run 'oc rsh <pod_name>'
-6. 'cat /tmp/kubeconfig-xxx' to get the content of kubeconfig.
-7. 'cat /tmp/secret/api.login' to get the usernames and passwords from the output, and put them in the admin file in the format of username:password.
-8. 'cat ${SHARED_DIR}/runtime_env' to get the usernames and passwords from the output, and put them in the users file in the format of testuser-0:password1,testuser-1:password2,...,testuser-n:passwordn.
+ - [rosa cli](https://console.redhat.com/openshift/downloads)
 
-Replace `kubeconfig` `admin_file` and `user_file` with above files 1. 2. 3. in your config yaml file.
-```yaml
-reliability:
-  kubeconfig: <absolute_path_to_kubeconfig>
-  users:
-    - admin_file: <path_to_admin_file>
-    - user_file: <path_to_users_file>
-```
+ - [ocm cli](https://console.redhat.com/openshift/downloads)
 
-For more detail explaination about the configuration, please go to [Configuration Detail](#Configuration-Detail).
+ - [aws configuration](https://docs.google.com/document/d/1j7bhLXT_cIAjpMh_x2jeegtpE7495Mj5A-EcQsgZEDo)
 
 ## A quick start script: start.sh
 [start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh) is a quick start script that helps you to do nessessary preparations and generate a default configurations based on [example_reliability.yaml](https://github.com/openshift/svt/blob/master/reliability-v2/config/example_reliability.yaml) and start a reliability test to run for a certain time. It can upgrade the cluster every 24 hours if there is new nightly build.
@@ -77,6 +56,53 @@ If [start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.
 **NOTE**: Recommended to use a virtual environment(pyenv,venv) so as to prevent conflicts with already installed packages.
 ```
 $ pip3 install -r requirements.txt
+```
+
+## Prepare Authentication files
+You need to prepare 3 files
+1. kubeconfig
+2. admin: a file contains pairs of username and password of user which is admin role. e.g. kubeadmin:password (No space)
+3. users: a file contains pairs of usernames and passwords. e.g testuser-0:password1,testuser-1:password2,...,testuser-n:passwordn (No space)
+Use either of the options below to generate the 3 files.
+
+### Option 1: Generate auth files automatically with script
+[generate_auth_files.sh](https://github.com/openshift/svt/blob/master/reliability-v2/utils/generate_auth_files.sh) can help you to generate the required files mentioned above. Get the command's help with generate_auth_files.sh -h.
+
+#### Pre-requisite:
+ - [oc cli](https://console.redhat.com/openshift/downloads)
+
+For rosa and rosa hypershift cluster, additional pre-requisite:
+
+ - [rosa cli](https://console.redhat.com/openshift/downloads)
+
+ - [ocm cli](https://console.redhat.com/openshift/downloads)
+
+ - [aws configuration](https://docs.google.com/document/d/1j7bhLXT_cIAjpMh_x2jeegtpE7495Mj5A-EcQsgZEDo)
+
+### Option 2: Generate auth files manually
+ - If you installed your cluster with [Flexy-install](https://mastern-jenkins-csb-openshift-qe.apps.ocp4.prod.psi.redhat.com/job/ocp-common/job/Flexy-install/) Jenkins job, download kubeconfig, users.spec and kubeadmin-password files from the Build Artifacts after the job completed successfully. The user `kubeadmin` has admin priviledge and its password is in kubeadmin-password. users.spec contains username and password pairs of 50 test users. Then compose the above 3 files based on the files you get.
+
+  - If you installed your rosa/rosa hypershift cluster with [ocm-profile-ci](https://mastern-jenkins-csb-openshift-qe.apps.ocp-c1.prod.psi.redhat.com/job/ocm/job/ocm-profile-ci) Jenkins job. Go to [Option 1](#Option-1-Generate-auth-filesautom-atically-with-script).
+
+
+ - If you installed your rosa/rosa hypershift cluster with Prow CI, follow below instruction to get the kubeconfig, admin credential file and users credential files. Then compose the above 3 files based on the files you get.
+
+1. Open the job , find the link following "Using namespace".
+2. Open the link you get above and login, click your name on right top of the console, choose "Copy login command". You may need to open the link in a new incognito window in Chrome to get the token.
+3. Login the cluster with the token.
+4. Run 'oc get pods' and find the running pod of your test.
+5. Run 'oc rsh <pod_name>'
+6. 'cat /tmp/kubeconfig-xxx' to get the content of kubeconfig.
+7. 'cat /tmp/secret/api.login' to get the usernames and passwords from the output, and put them in the admin file in the format of username:password.
+8. 'cat ${SHARED_DIR}/runtime_env' to get the usernames and passwords from the output, and put them in the users file in the format of testuser-0:password1,testuser-1:password2,...,testuser-n:passwordn.
+
+Replace `kubeconfig` `admin_file` and `user_file` with above files 1. 2. 3. in your config yaml file.
+```yaml
+reliability:
+  kubeconfig: <absolute_path_to_kubeconfig>
+  users:
+    - admin_file: <path_to_admin_file>
+    - user_file: <path_to_users_file>
 ```
 
 ## Prepare Configuration
