@@ -133,10 +133,9 @@ if [[ $type == "rosa" ]]; then
     start_time=$(date +"%s")
     while true; do
         sleep 60
-        eval $login_cmd > admin_login_out || true
-        if [[ $(cat admin_login_out) =~ "Login successful" ]]; then
+        eval $login_cmd > admin_login_cmd || true
+        if [[ $(cat admin_login_cmd) =~ "Login successful" ]]; then
             echo "admin user login successfully and kubeconfig file is created."
-            rm admin_login_out
             break
         fi
 

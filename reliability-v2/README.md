@@ -23,7 +23,7 @@ cd svt/reliability-v2
 #### Pre-requisite:
  - [oc cli](https://console.redhat.com/openshift/downloads)
 
-For rosa and rosa hypershift cluster, additional pre-requisite:
+For classic rosa and rosa hypershift cluster, additional pre-requisite:
 
  - [rosa cli](https://console.redhat.com/openshift/downloads)
 
@@ -71,7 +71,7 @@ Use either of the options below to generate the 3 files.
 #### Pre-requisite:
  - [oc cli](https://console.redhat.com/openshift/downloads)
 
-For rosa and rosa hypershift cluster, additional pre-requisite:
+For classic rosa and rosa hypershift cluster, additional pre-requisite:
 
  - [rosa cli](https://console.redhat.com/openshift/downloads)
 

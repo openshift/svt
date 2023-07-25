@@ -315,7 +315,8 @@ class Tasks:
         else:
             rc_return = 1
         # Check if operators are unavailable or degraded
-        (result,rc) = oc(f"get co --no-headers| grep -v 'True.*[True|False].*False'",self.__get_kubeconfig(user),ignore_log=True,ignore_slack=True)
+        # filter out insights operator as it is degraded on ocm staging env as expected
+        (result,rc) = oc(f"get co --no-headers| grep -v insights | grep -v 'True.*[True|False].*False'",self.__get_kubeconfig(user),ignore_log=True,ignore_slack=True)
         if rc == 1 and result == "":
             self.logger.info(f"Cluster operators are healthy.")
             rc_return = 0
