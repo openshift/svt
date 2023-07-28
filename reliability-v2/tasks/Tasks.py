@@ -53,6 +53,14 @@ class Tasks:
                 self.kubeconfig_admin = global_data.kubeconfigs[key]
                 break
 
+    def __get_kubeconfig(self,user):
+        kubeconfig = ""
+        try:
+            kubeconfig=global_data.kubeconfigs[user]
+        except Exception as e :
+            self.logger.error(f"Failed to find kubeconfig for user {user}. Exception: {e}")
+        return kubeconfig
+
     # check namespace are deleted successfully
     def verify_project_deletion(self,user,namespace):
         self.logger.info(f"[Task] User {user}: verify project deletion '{namespace}'")
@@ -78,9 +86,8 @@ class Tasks:
 
     # delete project in a namespace
     def delete_project(self,user,namespace):
-        kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: delete project '{namespace}'")
-        (result,rc) = oc(f"delete project {namespace}",kubeconfig)
+        (result,rc) = oc(f"delete project {namespace}",self.__get_kubeconfig(user))
         self.__log_result(rc)
         return (result,rc)
 
@@ -88,15 +95,13 @@ class Tasks:
     def delete_all_projects(self,user):
         if "admin" in user:
             return ("admin user not allowed for delete_all_projects function.",1)
-        kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: delete all projects for user {user}")
-        (result,rc) = oc(f"delete project --all",kubeconfig)
+        (result,rc) = oc(f"delete project --all",self.__get_kubeconfig(user))
         self.__log_result(rc)
         return (result,rc)
 
     # new a project
     def new_project(self,user,namespace):
-        kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: new project '{namespace}'")
         # Replaced the below lines of commented code by function verify_project_deletion. Will delete the below lines later.
         # retry = 5
@@ -110,7 +115,7 @@ class Tasks:
         #         # next step shows already exists. Sleep 20s can mitigate but not avoid this issue.
         #         sleep(20)
         #         break
-        (result,rc) = oc(f"new-project --skip-config-write {namespace}",kubeconfig)
+        (result,rc) = oc(f"new-project --skip-config-write {namespace}",self.__get_kubeconfig(user))
         if rc == 0:
             # developer is forbidden to patch resource "namespaces"
             oc(f"label namespace {namespace} purpose=reliability",self.kubeconfig_admin)
@@ -119,32 +124,29 @@ class Tasks:
 
     # check all projects for a user
     def check_all_projects(self,user):
-        kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: check all projects for user {user}")
-        (result,rc) = oc(f"get projects", kubeconfig)
+        (result,rc) = oc(f"get projects", self.__get_kubeconfig(user))
         self.__log_result(rc)
         return (result,rc)
 
     # pod tasks in a namespace
     def check_pods(self,user,namespace):
-        kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: check pods in namespace {namespace}")
-        (result, rc) = oc(f"get pods -o wide -n {namespace}",kubeconfig)
+        (result, rc) = oc(f"get pods -o wide -n {namespace}",self.__get_kubeconfig(user))
         #| egrep -v 'Running|Complete'
         self.__log_result(rc)
         return (result, rc)
 
     # new an app in a namespace
     def new_app(self,user,namespace):
-        kubeconfig = global_data.kubeconfigs[user]
         template = random.choice(global_data.config["appTemplates"])["template"]
         self.logger.info(f"[Task] User {user}: new app with tempate {template}")
-        (result,rc) = oc(f"new-app -n {namespace} --template {template}",kubeconfig)
+        (result,rc) = oc(f"new-app -n {namespace} --template {template}",self.__get_kubeconfig(user))
         if rc != 0:
             self.__log_result(rc)
             return(result,rc)
         else:
-            (route,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $2'}} | grep {template}",kubeconfig)
+            (route,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $2'}} | grep {template}",self.__get_kubeconfig(user))
             if rc == 0 and "No resources found" not in route:
                 route = route.rstrip()
                 max_tries = 60
@@ -195,8 +197,7 @@ class Tasks:
 
     # load the route in the given namespace with 'clients' number of concurrent threads
     def load_app(self,user,namespace,clients="1"):
-        kubeconfig = global_data.kubeconfigs[user]
-        (route,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $2'}}",kubeconfig)
+        (route,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $2'}}",self.__get_kubeconfig(user))
         if rc == 0 and "No resources found" not in route:
             route = route.rstrip()
             self.logger.info(f"[Task] load app route {route} in namespace {namespace} with {clients} clients.")
@@ -230,8 +231,7 @@ class Tasks:
 #task: <Task pending name='Task-32' coro=<LoadApp.get() running at /Users/qili/git/svt/reliability-v2/utils/LoadApp.py:19> wait_for=<Future pending cb=[shield.<locals>._outer_done_callback() at /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.8/lib/python3.8/asyncio/tasks.py:902, <TaskWakeupMethWrapper object at 0x10b564c10>()]>>
 
     # def load_app(self,user,namespace,clients="1"):
-    #     kubeconfig = global_data.kubeconfigs[user]
-    #     (route,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $2'}}",kubeconfig)
+    #     (route,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $2'}}",self.__get_kubeconfig(user))
     #     route = route.rstrip()
     #     self.logger.info(f"[Task] load app in namespace {namespace} with {clients} clients.")
     #     urls = []
@@ -254,20 +254,19 @@ class Tasks:
 
     # start build a build config in a given namespace
     def build(self,user,namespace):
-        kubeconfig = global_data.kubeconfigs[user]
-        (build_config,rc) = oc(f"get bc --no-headers -n {namespace}| awk {{'print $1'}}",kubeconfig)
+        (build_config,rc) = oc(f"get bc --no-headers -n {namespace}| awk {{'print $1'}}",self.__get_kubeconfig(user))
         self.logger.info(f"[Task] User {user}: build app in namespace {namespace} with build config '{build_config}'")
-        (result,rc) = oc(f"start-build -n {namespace} {build_config}",kubeconfig)
+        (result,rc) = oc(f"start-build -n {namespace} {build_config}",self.__get_kubeconfig(user))
         self.__log_result(rc)
         return (result,rc)
     
     # scale the deployment config to given number of replicas in the given namespace
     def scale_deployment(self,user,namespace,replicas="1"):
-        kubeconfig = global_data.kubeconfigs[user]
-        (deployment, rc) = oc(f"get dc --no-headers -n {namespace} | grep persistent | awk {{'print $1'}}",kubeconfig)
+        # 2>/dev/null to avoid Warning: apps.openshift.io/v1 DeploymentConfig is deprecated in v4.14+, unavailable in v4.10000+
+        (deployment, rc) = oc(f"get dc --no-headers -n {namespace} 2>/dev/null | grep persistent | awk {{'print $1'}}",self.__get_kubeconfig(user))
         deployment = deployment.rstrip()
         self.logger.info(f"[Task] User {user}: scale deployment '{deployment}' to '{replicas}' replicas")
-        (result, rc) = oc(f"scale --replicas={replicas} -n {namespace} dc/{deployment}",kubeconfig)
+        (result, rc) = oc(f"scale --replicas={replicas} -n {namespace} dc/{deployment}",self.__get_kubeconfig(user))
         if rc == 0:
             sleep(30)
             rc = self.__check_replicas(user,namespace,"dc",deployment,replicas)
@@ -276,13 +275,12 @@ class Tasks:
     
     # check replica numbers of a given deployment in the given namespace
     def __check_replicas(self,user,namespace,object,deployment,replicas):
-        kubeconfig = global_data.kubeconfigs[user]
-        (result, rc) = oc("get "+object+"/"+deployment+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}'",kubeconfig)
+        (result, rc) = oc("get "+object+"/"+deployment+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}'",self.__get_kubeconfig(user))
         max_tries = 10
         current_tries = 0
         while result != replicas and current_tries <= max_tries:
             self.logger.info(f"[Task] User {user}: check {object} '{deployment}' to reach '{replicas}' replicas. Current replica:{result}. Retry:{current_tries}/{max_tries}")
-            (result, rc) = oc("get "+object+"/"+deployment+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}'",kubeconfig)
+            (result, rc) = oc("get "+object+"/"+deployment+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}'",self.__get_kubeconfig(user))
             sleep(30)
             current_tries += 1
         if result != replicas:
@@ -295,9 +293,8 @@ class Tasks:
         
     # oc apply a file
     def apply(self,user,namespace,file):
-        kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] apply file {file} in namespace {namespace}.")
-        (result, rc) = oc(f"apply -f {file} -n {namespace}",kubeconfig)
+        (result, rc) = oc(f"apply -f {file} -n {namespace}",self.__get_kubeconfig(user))
         self.__log_result(rc)
         return (result,rc)
 
@@ -305,11 +302,10 @@ class Tasks:
     # check if the operators are all healthy
     def check_operators(self,user):
         # This operation can only be done by admin user
-        kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: check operators")
         # Headers AVAILABLE   PROGRESSING   DEGRADED
         # Check if operators are progressing
-        (result,rc) = oc(f"get co --no-headers| grep 'True.*True.*False'",kubeconfig,ignore_log=True,ignore_slack=True)
+        (result,rc) = oc(f"get co --no-headers| grep 'True.*True.*False'",self.__get_kubeconfig(user),ignore_log=True,ignore_slack=True)
         if rc == 0 :
             self.logger.info(f"Operator progressing: {result}")
             slackIntegration.info(f"Operator progressing: {result}")
@@ -319,7 +315,8 @@ class Tasks:
         else:
             rc_return = 1
         # Check if operators are unavailable or degraded
-        (result,rc) = oc(f"get co --no-headers| grep -v 'True.*[True|False].*False'",kubeconfig,ignore_log=True,ignore_slack=True)
+        # filter out insights operator as it is degraded on ocm staging env as expected
+        (result,rc) = oc(f"get co --no-headers| grep -v insights | grep -v 'True.*[True|False].*False'",self.__get_kubeconfig(user),ignore_log=True,ignore_slack=True)
         if rc == 1 and result == "":
             self.logger.info(f"Cluster operators are healthy.")
             rc_return = 0
@@ -334,10 +331,9 @@ class Tasks:
     
     # check if the nodes are all Ready
     def check_nodes(self,user):
-        kubeconfig = global_data.kubeconfigs[user]
         self.logger.info(f"[Task] User {user}: check nodes")
         # Check if nodes are Ready
-        (result,rc) = oc(f"get nodes --no-headers| grep -v ' Ready'",kubeconfig,ignore_log=True,ignore_slack=True)
+        (result,rc) = oc(f"get nodes --no-headers| grep -v ' Ready'",self.__get_kubeconfig(user),ignore_log=True,ignore_slack=True)
         if rc == 0:
             self.logger.error(f"Some nodes are not Ready: {result}")
             slackIntegration.error(f"Some nodes are not Ready: {result}")
@@ -353,30 +349,26 @@ class Tasks:
 
     # oc get the given type of resource in the given namespace
     def __get_namespace_resource(self,user,namespace,type):
-        kubeconfig = global_data.kubeconfigs[user]
-        (result,rc) = oc(f"get {type} -n {namespace}",kubeconfig)
+        (result,rc) = oc(f"get {type} -n {namespace}",self.__get_kubeconfig(user))
         return (result,rc)
     
     # run oc cli type of task
     def oc_task(self,task,user):
-        kubeconfig = global_data.kubeconfigs[user]
-        (result, rc) = oc(task,kubeconfig)
+        (result, rc) = oc(task,self.__get_kubeconfig(user))
         self.__log_result(rc)
         return (result,rc)
 
     # run kubectl type of task
     def kubectl_task(self,task,user):
-        kubeconfig = global_data.kubeconfigs[user]
-        (result, rc) = kubectl(task,kubeconfig)
+        (result, rc) = kubectl(task,self.__get_kubeconfig(user))
         self.__log_result(rc)
         return (result,rc)
 
     # run shell script type of task
     def shell_task(self,task,user):
-        kubeconfig = global_data.kubeconfigs[user]
         # pass kubeconfig and user name to the shell task
         # kubeconfig and user will be exported as env variables to the shell script
-        (result, rc) = shell(task, kubeconfig, user)
+        (result, rc) = shell(task, self.__get_kubeconfig(user), user)
         start_index=task.rfind('/')
         if start_index == -1:
             task_name=task
