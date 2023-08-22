@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: test
+  name: dedicated-nodes-test
+spec:
+  replicas: {{.pod_replicas}}
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      annotations:
+        descheduler.alpha.kubernetes.io/evict: "true"
+      labels:
+        app: test
+    spec: 
+      containers:
+      - image: "quay.io/openshifttest/hello-pod@sha256:04b6af86b03c1836211be2589db870dba09b7811c197c47c07fbbe33c7f80ef7"
+        name: hello-pod
+  
