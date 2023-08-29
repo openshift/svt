@@ -5,4 +5,4 @@ export WORKLOAD_TEMPLATE=${WORKLOAD_TEMPLATE:-"${DIR}/../../../kubeburner-object
 export NAME=${NAME:-"evict-pvc-desched"}
 export NAMESPACE=${NAMESPACE:-"evict-pvc-desched"}
 export WAIT_FOR=["PersistentVolumeClaim","ReplicationController"]
-export JOB_ITERATION=${JOB_ITERATION:=1}
+export JOB_ITERATION=${JOB_ITERATION:-1}
