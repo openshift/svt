@@ -20,6 +20,8 @@ jobs:
     objects:
     - objectTemplate: "pause-deployment.yaml"
       replicas: 1
+      inputVars:
+        serviceType: {{.SERVICE_TYPE}}
     - objectTemplate: "pause-service.yaml"
       replicas: 1
       inputVars:
