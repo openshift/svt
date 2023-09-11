@@ -275,12 +275,13 @@ class Tasks:
     
     # check replica numbers of a given deployment in the given namespace
     def __check_replicas(self,user,namespace,object,deployment,replicas):
-        (result, rc) = oc("get "+object+"/"+deployment+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}'",self.__get_kubeconfig(user))
+        # 2>/dev/null to avoid Warning: apps.openshift.io/v1 DeploymentConfig is deprecated in v4.14+, unavailable in v4.10000+
+        (result, rc) = oc("get "+object+"/"+deployment+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}' 2>/dev/null",self.__get_kubeconfig(user))
         max_tries = 10
         current_tries = 0
         while result != replicas and current_tries <= max_tries:
             self.logger.info(f"[Task] User {user}: check {object} '{deployment}' to reach '{replicas}' replicas. Current replica:{result}. Retry:{current_tries}/{max_tries}")
-            (result, rc) = oc("get "+object+"/"+deployment+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}'",self.__get_kubeconfig(user))
+            (result, rc) = oc("get "+object+"/"+deployment+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}' 2>/dev/null",self.__get_kubeconfig(user))
             sleep(30)
             current_tries += 1
         if result != replicas:
