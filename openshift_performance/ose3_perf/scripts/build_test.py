@@ -142,8 +142,7 @@ def do_post_actions(namespace, build_name, build_time):
                 global_build_stats["max_push"] = push_time
             if push_time < global_build_stats["min_push"]:
                 global_build_stats["min_push"] = push_time
-            
-            logger.info('status val end:' + str(idx) + "---"+ str(global_build_status[idx]))
+    
     except Exception as e:
         global_build_status[idx] = STATUS_LOGGING_ERROR
         logger.error("error in post " + str(e))
