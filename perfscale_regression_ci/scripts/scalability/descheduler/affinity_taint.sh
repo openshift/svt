@@ -15,7 +15,7 @@
 
 source ../../common.sh
 source common_func.sh
-source evict_pvc_env.sh
+source affinity_taint_env.sh
 source ../../../utils/run_workload.sh
 source ../../custom_workload_env.sh
 
@@ -36,6 +36,8 @@ for worker in ${worker_nodes}; do
   i=$((i + 1))
 done
 
+export STORAGE_CLASS=$(get_storageclass)
+
 # Validate RemovePodsViolatingNodeAffinity
 # Only create ~200 pods because they'll all be on one node
 echo "======Use kube-burner to load the cluster with test objects======"
@@ -54,7 +56,7 @@ worker_nme=$(get_node_name $first_worker)
 
 pass_or_fail=0
 echo $worker_nme
-pod_count=$(count_running_pods $NAMESPACE-$JOB_ITERATION $worker_nme dedicated-nodes-test)
+pod_count=$(count_running_pods $NAMESPACE-$((JOB_ITERATION-1)) $worker_nme dedicated-nodes-test)
 echo "$pod_count dedicated-nodes-test pods on $worker_nme"
 if [[ $pod_count -eq 0 ]]; then
   echo "PASS"

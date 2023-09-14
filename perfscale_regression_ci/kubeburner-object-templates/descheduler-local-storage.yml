@@ -7,7 +7,6 @@ jobs:
     namespacedIterations: true
     podWait: true
     verifyObjects: true
-    waitFor: {{.WAIT_FOR}}
     namespaceLabels:
       security.openshift.io/scc.podSecurityLabelSync: false
       pod-security.kubernetes.io/enforce: privileged
