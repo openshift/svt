@@ -18,15 +18,16 @@ echo "job iterations $JOB_ITERATION $PARAMETERS"
 echo "======Use kube-burner to load the cluster with test objects======"
 run_workload
 
-TOTAL_CLUSTERPROJECTS=$(oc get projects | grep -c ${NAMESPACE})
+secret_count=$(oc get secrets -A -l test=listobject --no-headers | wc -l)
+expected_secrets=$(( $JOB_ITERATION * $SECRET_REPLICAS ))
 echo -e "\nTotal number of ${NAMESPACE} namespaces created: ${TOTAL_CLUSTERPROJECTS}"
 
-if [[ $TOTAL_CLUSTERPROJECTS -ge $JOB_ITERATION ]]; then
+if [[ $expected_secrets -eq $secret_count ]]; then
   echo "======PASS======"
   exit 0
 else
   echo "======FAIL======"
   echo "Please debug, when done, delete all projects using 'oc delete project -l kube-burner-job=$NAMESPACE'"
+  oc get secrets -A -l test=listobject --no-headers -v9
   exit 1
 fi
-
