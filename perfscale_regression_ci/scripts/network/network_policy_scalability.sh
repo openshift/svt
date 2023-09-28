@@ -17,27 +17,32 @@ source ../common.sh
 source network_policy_scalability_env.sh
 
 pass_fail=0
-workload_template_list=("${DIR}/../../kubeburner-object-templates/scaling-network-policy-config.yaml" "${DIR}/../../kubeburner-object-templates/scaling-no-network-policy-config.yaml")
+workload_template="${DIR}/../../kubeburner-object-templates/scaling-network-policy-config.yaml"
 pod_scale_max=2000
-kube_burner_job_list=("np-issue-test" "no-np-issue-test")
+kube_burner_job_list="np-issue-test"
 final_time_list=()
 deny_network_policy="${DIR}/../../content/deny_network_traffic_policy.yaml"
 deny_traffic_code=000
 return_traffic_code=200
 
+scale(){
+    echo "[INFO] Scale to $1 replicas."
+    oc scale --replicas $1 deployment network-policy-scalability -n $namespace
+}
+
 
 echo "======Use kube-burner to load the cluster with test objects======"
 
-for ((i = 0; i < 2; i++));
-do
-    export WORKLOAD_TEMPLATE=${workload_template_list[$i]}
-    export NAME=${kube_burner_job_list[$i]}
-    export NAMESPACE=${kube_burner_job_list[$i]}
-    deployment_name=${kube_burner_job_list[$i]}
-    scale_up=0
+echo "Starting scale-up test for $workload_template..."
+export NAME=${kube_burner_job_list}
+export NAMESPACE=${kube_burner_job_list}
+deployment_name=${kube_burner_job_list}
+export WORKLOAD_TEMPLATE=$workload_template
+run_workload
 
-    echo "Starting scale-up test for ${kube_burner_job_list[$i]}..."
-    run_workload
+for ((i = 0; i < 2; i++));
+do 
+    scale_up=0
     oc scale --replicas $pod_scale_max deployment $deployment_name -n ${NAMESPACE}; start_time=`date +%s`
     echo "start time: $start_time"
     scale_up=$(oc get deployment $deployment_name --no-headers -n ${NAMESPACE} | awk -F ' {1,}' '{print $4}')
@@ -45,37 +50,36 @@ do
     end_time=`date +%s`
     echo "end time: $end_time"
     final_time=$((end_time - start_time))
-    echo "execution time for test ${kube_burner_job_list[$i]}: $final_time s."
+    echo "execution time for test ${kube_burner_job_list}: $final_time s."
     final_time_list+=($final_time)
-	sleep 1
-    echo "=========================================================================="
+	oc delete networkpolicy --all -n ${NAMESPACE}
+	oc get networkpolicy -n ${NAMESPACE}
+	if [[ $i -eq 0 ]]; then
+		# want to scale down first deployment to be able to 
+		oc scale --replicas 500 deployment $deployment_name -n ${NAMESPACE}
+		check_deployment_pod_scale ${NAMESPACE} $deployment_name $pod_scale_max 500
+		sleep 10
+		echo "=========================================================================="
+	fi
 done
-
-sleep 5
 
 pod_name=$(oc get po -n ${NAMESPACE} --no-headers | head -n 1 | awk '{print $1}')
 pod_ip=$(oc get po $pod_name -n  ${NAMESPACE} --output jsonpath='{.status.podIP}')
 apiserver_pod=$(oc get po -n openshift-oauth-apiserver --no-headers | head -n 1 | awk '{print $1}')
 
 echo "Starting test to deny network traffic in the namespace ${NAMESPACE}..."
-oc apply -f $deny_network_policy -n ${NAMESPACE}
-deny_time_start=`date +%s`
+oc create -f $deny_network_policy -n ${NAMESPACE} && deny_time_start=`date +%s`
 check_http_code $deny_traffic_code $pod_ip $apiserver_pod
 deny_time_end=`date +%s`
 deny_final_time=$((deny_time_end - deny_time_start))
 echo "Time taken for network policy to become inactive: $deny_final_time s"
 
-sleep 1
-
 echo "Starting test to allow network traffic in the namespace ${NAMESPACE}..."
-oc delete networkpolicy deny-by-default -n ${NAMESPACE}
-return_traffic_start=`date +%s`
+oc delete networkpolicy deny-by-default -n ${NAMESPACE} && return_traffic_start=`date +%s`
 check_http_code $return_traffic_code $pod_ip $apiserver_pod
 return_traffic_end=`date +%s`
 return_traffic_final_time=$((return_traffic_end - return_traffic_start))
 echo "Time taken for network policy to become active: $return_traffic_final_time s"
-
-echo "=========================================================================="
 
 
 final_time_np=${final_time_list[0]}
@@ -99,7 +103,6 @@ else
 	echo "Time when traffic blocked: $deny_final_time s"
 	echo "Time when network traffic returns: $return_traffic_final_time s"
 fi
-
 
 policy_no_policy_difference=$(calculate_difference ${final_time_np} ${final_time_no_np})
 deny_return_traffic_difference=$(calculate_difference ${deny_final_time} ${return_traffic_final_time})
