@@ -10,6 +10,11 @@ reliability:
     - template: django-psql-persistent # N/A for FIPS
     - template: rails-pgsql-persistent
     - template: dancer-mysql-persistent
+    # For test without pvc
+    # - template: cakephp-mysql-example
+    # - template: dancer-mysql-example
+    # - template: django-psql-example
+    # - template: nodejs-postgresql-example
 
   # The max number of projects is limited by the size of cluster.
   # For 3 nodes m5.xlarge cluster, 25 to 30 projects are recomended.
@@ -59,11 +64,11 @@ reliability:
 
     - name: dev-prod
       user_name: testuser- 
-      user_start: 15
+      user_start: 11
       user_end: 16
       loops: forever
       trigger: 600
-      jitter: 1200
+      jitter: 3600
       interval: 600
       pre_tasks: 
           - func delete_all_projects
