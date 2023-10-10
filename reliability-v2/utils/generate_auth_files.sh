@@ -69,33 +69,42 @@ else
     exit 1
 fi
 
-# checking ocm cli
-echo "Checking ocm cli"
-ocm version > /dev/null
-if [[ $? != 0 ]]; then
-    echo "ocm cli not found. Please install it from https://console.redhat.com/openshift/downloads"
-    exit 1
-fi
+if [[ $type =~ "rosa" ]]; then
+    # checking ocm cli
+    echo "Checking ocm cli"
+    ocm version > /dev/null
+    if [[ $? != 0 ]]; then
+        echo "ocm cli not found. Please install it from https://console.redhat.com/openshift/downloads"
+        exit 1
+    fi
 
-# checking roca cli
-echo "Checking rosa cli"
-rosa version > /dev/null
-if [[ $? != 0 ]]; then
-    echo "rosa cli not found. Installing rosa cli..."
-    wget https://mirror.openshift.com/pub/openshift-v4/clients/rosa/latest/rosa-linux.tar.gz
-    tar xvf rosa-linux.tar.gz
-    sudo mv rosa /usr/bin/rosa
-    sudo chmod u+x /usr/bin/rosa
-    rosa completion bash | sudo tee /etc/bash_completion.d/rosa
-    rosa version
+    # checking roca cli
+    echo "Checking rosa cli"
+    rosa version > /dev/null
+    if [[ $? != 0 ]]; then
+        echo "rosa cli not found. Installing rosa cli..."
+        wget https://mirror.openshift.com/pub/openshift-v4/clients/rosa/latest/rosa-linux.tar.gz
+        tar xvf rosa-linux.tar.gz
+        sudo mv rosa /usr/bin/rosa
+        sudo chmod u+x /usr/bin/rosa
+        rosa completion bash | sudo tee /etc/bash_completion.d/rosa
+        rosa version
+        echo "Checking oc cli"
+        oc version --client > /dev/null
+        if [[ $? != 0 ]]; then
+            echo "oc cli not found. Installing oc cli..."
+            rosa download openshift-client
+            tar xvf openshift-client-linux.tar.gz
+            sudo mv oc /usr/local/bin/oc
+            rosa verify openshift-client
+        fi
+    fi
+else
     echo "Checking oc cli"
     oc version --client > /dev/null
     if [[ $? != 0 ]]; then
-        echo "oc cli not found. Installing oc cli..."
-        rosa download openshift-client
-        tar xvf openshift-client-linux.tar.gz
-        sudo mv oc /usr/local/bin/oc
-        rosa verify openshift-client
+        echo "oc cli not found. Please install it first."
+        exit 1
     fi
 fi
 
@@ -122,6 +131,7 @@ if [[ $type == "rosa" ]]; then
             echo "login_cmd failed."
             exit 1
         fi
+        echo $login_cmd > login_cmd
         echo $login_cmd | awk '{print $5":"$7}' > admin && rm admin.out && echo "admin file is created"
     else
         echo "rosa create admin cmd failed."
@@ -133,9 +143,10 @@ if [[ $type == "rosa" ]]; then
     start_time=$(date +"%s")
     while true; do
         sleep 60
-        eval $login_cmd > admin_login_cmd || true
-        if [[ $(cat admin_login_cmd) =~ "Login successful" ]]; then
+        eval $login_cmd > admin_login_out || true
+        if [[ $(cat admin_login_out) =~ "Login successful" ]]; then
             echo "admin user login successfully and kubeconfig file is created."
+            rm admin_login_out
             break
         fi
 
