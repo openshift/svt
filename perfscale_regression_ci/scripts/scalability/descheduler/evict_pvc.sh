@@ -52,7 +52,7 @@ worker_nme=$(get_node_name $first_worker)
 
 pass_or_fail=0
 echo $worker_nme
-pod_count=$(count_running_pods $NAMESPACE-$JOB_ITERATION $worker_nme rcexpv)
+pod_count=$(count_running_pods $NAMESPACE-$((JOB_ITERATION-1)) $worker_nme rcexpv)
 echo "$pod_count rcexpv pods on $worker_nme"
 if [[ $pod_count -lt 110 ]]; then
   echo "PASS"
@@ -62,7 +62,7 @@ else
 fi
 
 
-lc_pod_count=$(count_running_pods $NAMESPACE-$JOB_ITERATION $worker_nme rcexlc)
+lc_pod_count=$(count_running_pods $NAMESPACE-$((JOB_ITERATION-1)) $worker_nme rcexlc)
 echo "$lc_pod_count rcexlc pods on $worker_nme"
 
 #update for current test case

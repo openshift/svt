@@ -19,6 +19,9 @@ spec:
         image: gcr.io/google-containers/pause-amd64:3.0
         ports:
         - containerPort: 8080
+        resources:
+          limits:
+            memory: 512Mi
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       

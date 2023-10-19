@@ -63,7 +63,6 @@ function wait_for_obj_creation() {
 # e.g. delete_project "test=concurent-job"
 function delete_project_by_label() {
   oc project default
-  
 
   oc delete projects -l $1 --wait=false --ignore-not-found=true
   while [ $(oc get projects -l $1 | wc -l) -gt 0 ]; do
@@ -97,6 +96,75 @@ function check_no_error_pods()
   fi
 }
 
+
+function wait_for_pod_running() {
+  namespaces=$1
+  replicas=$2
+  retry=$3
+  pod_number=$(($namespaces*$replicas))
+  echo "====Waiting for $replicas replicas to be running in $namespaces projects===="
+  COUNTER=0
+  running=$(oc get po -A -l deploymentconfig=$application | grep -c Running)
+  echo "Current running pods number: $running. Expected pods number: $pod_number."
+  while [ $running -ne $pod_number ]; do
+    sleep 30
+    running=$(oc get po -A -l deploymentconfig=$application | grep -c Running)
+    echo "Current running pods number: $running. Expected pods number: $pod_number."
+    COUNTER=$((COUNTER + 1))
+    if [[ $COUNTER -ge $retry ]]; then
+      echo "Running applications are still not reach expected number $pod_number after $retry retry, $((30*$retry))s"
+      echo "Not Running applications:"
+      oc get po -A -l deploymentconfig=$application | grep -v Running
+      break
+    fi
+  done
+  if [ $COUNTER -ge $retry ];then
+    return 1
+  else
+    echo "wait_for_pod_running passed in $((30*$retry))s"
+    return 0
+  fi
+}
+
+function fix(){
+   echo "----Fixing failed builds or deploys----"
+  # fixing issues recorded in https://docs.google.com/document/d/148Q-pIZlkZlyqdMDBI3Zr_I10_IDwMcKiBpuwP14lZw/edit#heading=h.nnxdwzdzlvx
+  echo "Fixing cakephp-mysql-persistent application that are not running ."
+  # resolve mysql replicacontroller not ready by deleting the mysql replicationcontroller and let it recreate
+  for namespace in $(sum(node_namespace_pod_container:container_memory_working_set_bytes{cluster="", node=~"ip-10-0-167-50.us-east-2.compute.internal"}) by (pod)
+ | awk '{print $1}'); do
+    oc get rc -n $namespace
+    echo "----Recreate mysql replicacontrollers in namespace $namespace----"
+    oc delete rc -l openshift.io/deployment-config.name=$database -n $namespace
+  done
+  echo "Sleep 120s to let mysql databae pod to start and let cakephp-mysql-persistent deploy to succeed"
+  sleep 120
+  # resolve the cakephp-mysql-persistent build error by triggering a new build
+  for namespace in $(oc get po -A -l openshift.io/build.name=cakephp-mysql-persistent-1 --no-headers| egrep -v "Running|Completed" | awk '{print $1}'); do
+    oc get all -n $namespace
+    echo "----Rebuild the buildconfig in namespace $namespace----"
+    oc start-build cakephp-mysql-persistent -n $namespace
+  done
+  # resolve cakephp-mysql-persistent replicacontroller not ready by deleting the cakephp-mysql-persistent replicationcontroller and let it recreate
+  for namespace in $(oc get rc -A -l openshift.io/deployment-config.name=$application --no-headers| egrep -v '1.*1.*1' | awk '{print $1}'); do
+    oc get rc -n $namespace
+    echo "----Recreate cakephp-mysql-persistent replicacontrollers in namespace $namespace----"
+    oc delete rc -l openshift.io/deployment-config.name=$application -n $namespace
+  done
+}
+
+function scale_apps() {
+  namespaces=$1
+  replicas=$2
+  echo "====`date`: Scaleing up to $replicas replicas for applications in $namespaces namespaces===="
+  for i in $(seq 1 $namespaces); do
+    # echo "Scaleing up to $replicas replicas for applications in namespaces $namespace_prefix-$i."
+    oc scale deploymentconfig.apps.openshift.io/cakephp-mysql-persistent --replicas $replicas -n $namespace_prefix-$i >/dev/null 2>&1
+  done
+  echo "====`date`: Scaleing up to $replicas replicas for applications in $namespaces namespaces finished===="
+}
+
+
 function count_running_pods()
 {
   name_space=$1
@@ -104,6 +172,14 @@ function count_running_pods()
   name_identifier=$3
 
   echo "$(oc get pods -n ${name_space} -o wide | grep ""${name_identifier}"" | grep ${node_name} | grep Running | wc -l | xargs)"
+}
+
+function count_running_pods_all()
+{
+  node_name=$1
+  name_identifier=$2
+
+  echo "$(oc get pods -A -o wide | grep ""${name_identifier}"" | grep ${node_name} | grep Running | wc -l | xargs)"
 }
 
 function install_dittybopper() 
@@ -153,6 +229,23 @@ function uncordon_all_nodes() {
     oc adm uncordon $worker
   done
 }
+
+
+
+function cordon_num_nodes() {
+  worker_nodes=$(oc get nodes -l node-role.kubernetes.io/worker= -o name)
+  for worker in ${worker_nodes}; do
+    if [[ $i -lt $1 ]]; then
+      first_worker=$worker
+    else
+      oc adm cordon $worker
+      last_worker=$worker
+    fi
+    i=$((i + 1))
+  done
+
+}
+
 
 function create_registry_machinesets(){
   template=$1
