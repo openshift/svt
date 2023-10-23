@@ -1,5 +1,5 @@
 function create_demo() {
-echo "$(date): Creating demo namespace..."
+echo "$(date): Creating demo namespace... \n"
 cat <<EOF | oc apply -f - 
 apiVersion: v1
 kind: Namespace
@@ -35,6 +35,8 @@ roleRef:
 EOF
 done
 
+echo "\n$(date): Creating ServiceAccounts...\n"
+
 for i in {0..2}; do
 cat <<EOF | oc apply -f -
 apiVersion: v1
@@ -49,8 +51,7 @@ done
 }
 
 function delete_namespace() {
-  oc get namespaces
-  echo "$(date): Deleting namespace..."
+  echo "\n$(date): Deleting namespace..."
   oc delete namespace demo
   echo "$(date): Namespace deleted"
 
@@ -58,7 +59,7 @@ function delete_namespace() {
 
 function create_flow_schemas() {
 cat <<EOF | oc apply -f -
-apiVersion: flowcontrol.apiserver.k8s.io/v1alpha1
+apiVersion: flowcontrol.apiserver.k8s.io/v1beta3
 kind: FlowSchema
 metadata:
   name: restrict-pod-lister
@@ -87,7 +88,7 @@ spec:
         name: podlister-2
         namespace: demo            
 ---
-apiVersion: flowcontrol.apiserver.k8s.io/v1alpha1
+apiVersion: flowcontrol.apiserver.k8s.io/v1beta3
 kind: PriorityLevelConfiguration
 metadata:
   name: restrict-pod-lister
@@ -106,8 +107,15 @@ EOF
 
 function delete_flow_schema() {
   oc get flowschema
-  echo "$(date): Deleting flowshema..."
+  echo "$(date): Deleting Flowschema..."
   oc delete flowschema restrict-pod-lister
+  echo "$(date): Flowschema deleted"
+}
+
+function delete_priority_level_configuration() {
+  oc get prioritylevelconfiguration
+  echo "$(date): Deleting PriorityLevelConfiguration..."
+  oc delete prioritylevelconfiguration restrict-pod-lister
   echo "$(date): Flowschema deleted"
 }
 
@@ -164,12 +172,12 @@ done
 }
 
 function delete_controller() {
-  oc get deployments
-  echo "$(date): Deleting deployments..."
+  oc get deployments -n demo
+  printf "$(date): Deleting deployments... \n\n"
   for i in {0..2}; do
-  oc delete deployment podlister-$i
-  echo "$(date): Deployments deleted"
+  oc delete deployment podlister-$i -n demo
   done
+  printf "\n$(date): Deployments deleted \n"
 }
 
 function scale_traffic() {
@@ -182,9 +190,10 @@ function check_logs() {
 
   echo ""
 
-  oc -n demo logs deploy/podlister-0 | grep -i "context deadline"
+  oc -n demo logs deploy/podlister-0 | grep -i "context deadline" | wc -l
 
   echo ""
+  
 }
 
 
@@ -201,13 +210,13 @@ CUSTOM_COLUMN=”uid:{metadata.uid},name:{metadata.name}”
 create_flow_schemas
 
 deploy_controller
-
+sleep 5
 echo "Logs before scaling traffic:"
 
 check_logs
 
 scale_traffic
-
+sleep 5
 echo "Logs after scaling traffic:"
 
 check_logs
