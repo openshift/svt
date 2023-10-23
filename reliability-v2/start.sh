@@ -6,11 +6,13 @@
 ## and SLACK_MEMBER(your slack member id)
 ################################################
 
+set -e
+
 function _usage {
     cat <<END
 Usage: $(basename "${0}") [-p <path_to_auth_files>] [-n <folder_name> ] [-t <time_to_run>] -u
 
-  -p <path_to_auth_files>      : The absolute path of the folder that contains the kubeconfig, admin file and users file.
+  -p <path_to_auth_files>      : The absolute path of the folder that contains the kubeconfig, admin file and users file. Optional.
 
   -n <folder_name>             : Name of the folder to save the test contents. Default is testYYYYMMDDHHMMSS
   
@@ -86,7 +88,8 @@ function get_os {
     fi
 }
 
-# $1 path_to_kubeconfig, $2 path_to_admin_file, $3 path_to_users_file
+# $1 path_to_kubeconfig, $2 path_to_admin_file, $3 path_to_users_file, $4 path_to_script, $5 path_to_content
+# $6 path_to_reliability_config_file
 function generate_config {
     echo "Generating reliabilty configuration file."
     get_os
@@ -96,35 +99,38 @@ function generate_config {
         echo "[ERROR] '$2' is not a valid admin file path. Please provide the absolute path to the folder contains admin file with -p."
         exit 1
     fi
-
+    reliability_config_file=$6
+    set +e
     if [[ $os == "linux" ]]; then
-        sed -i s*'<path_to_kubeconfig>'*$1* reliability.yaml
-        sed -i s*'<path_to_admin_file>'*$2* reliability.yaml
-        sed -i s*'<path_to_users_file>'*$3* reliability.yaml
-        sed -i s*'<path_to_script>'*$4* reliability.yaml
-        sed -i s*'<path_to_content>'*$5* reliability.yaml
+        sed -i s*'<path_to_kubeconfig>'*$1* $reliability_config_file
+        sed -i s*'<path_to_admin_file>'*$2* $reliability_config_file
+        sed -i s*'<path_to_users_file>'*$3* $reliability_config_file
+        sed -i s*'<path_to_script>'*$4* $reliability_config_file
+        sed -i s*'<path_to_content>'*$5* $reliability_config_file
         if [[ $SLACK_API_TOKEN != "" || SLACK_WEBHOOK_URL != "" ]]; then
-            sed -i s*'slack_enable: False'*'slack_enable: True'* reliability.yaml
+            sed -i s*'slack_enable: False'*'slack_enable: True'* $reliability_config_file
             if [[ $SLACK_MEMBER != "" ]]; then
-                sed -i s*'<Your slack member id>'*$SLACK_MEMBER* reliability.yaml
+                sed -i s*'<Your slack member id>'*$SLACK_MEMBER* $reliability_config_file
             fi
         fi
-        sed -i s*'<admin_username>'*$admin_name* reliability.yaml
+        sed -i s*'<admin_username>'*$admin_name* $reliability_config_file
 
     elif [[ $os == "mac" ]]; then
-        sed -i "" s*'<path_to_kubeconfig>'*$1* reliability.yaml
-        sed -i "" s*'<path_to_admin_file>'*$2* reliability.yaml
-        sed -i "" s*'<path_to_users_file>'*$3* reliability.yaml
-        sed -i "" s*'<path_to_script>'*$4* reliability.yaml
-        sed -i "" s*'<path_to_content>'*$5* reliability.yaml
+        sed -i "" s*'<path_to_kubeconfig>'*$1* $reliability_config_file
+        sed -i "" s*'<path_to_admin_file>'*$2* $reliability_config_file
+        sed -i "" s*'<path_to_users_file>'*$3* $reliability_config_file
+        sed -i "" s*'<path_to_script>'*$4* $reliability_config_file
+        sed -i "" s*'<path_to_content>'*$5* $reliability_config_file
         if [[ $SLACK_API_TOKEN != "" || SLACK_WEBHOOK_URL != "" ]]; then
-            sed -i "" s*'slack_enable: False'*'slack_enable: True'* reliability.yaml
+            sed -i "" s*'slack_enable: False'*'slack_enable: True'* $reliability_config_file
             if [[ $SLACK_MEMBER != "" ]]; then
-                sed -i "" s*'<Your slack member id>'*$SLACK_MEMBER* reliability.yaml
+                sed -i "" s*'<Your slack member id>'*$SLACK_MEMBER* $reliability_config_file
             fi
         fi
-        sed -i "" s*'<admin_username>'*$admin_name* reliability.yaml
+        sed -i "" s*'<admin_username>'*$admin_name* $reliability_config_file
     fi
+    set -e
+    echo "Reliability config file is generated to $reliability_config_file."
 }
 
 # $1 number of seconds
@@ -168,16 +174,16 @@ function dhms_to_seconds {
 RELIABILITY_DIR=$(cd $(dirname ${BASH_SOURCE[0]});pwd)
 SECONDS_TO_RUN=0
 start_log=start_$(date +"%Y%m%d_%H%M%S").log
-echo start.sh logs will be saved to $start_log.
+echo "start.sh logs will be saved to $start_log."
 
 rm -rf halt
 
 # Prepare venv
 [[ -z $folder_name ]] && folder_name="test"$(date "+%Y%m%d%H%M%S")
 mkdir $folder_name
-echo "Test folder $folder_name is created."
+log "info" "Test folder $folder_name is created."
 cd $folder_name
-echo "Preparing venv."
+log "info" "====Preparing venv===="
 python3 --version
 python3 -m venv reliability_venv > /dev/null
 source reliability_venv/bin/activate > /dev/null
@@ -187,16 +193,27 @@ pip3 install -r requirements.txt > /dev/null 2>&1
 
 # Prepare config yaml file
 cp config/example_reliability.yaml $folder_name/reliability.yaml
+CONFIG_FILE=$RELIABILITY_DIR/$folder_name/reliability.yaml
 
-cd $folder_name
+# if path_to_auth_files is not provided, generate it with generate_auth_files.sh
+if [[ -z $path_to_auth_files ]]; then
+    path_to_auth_files=$RELIABILITY_DIR/utils/path_to_auth_files
+    if [[ ! -f $path_to_auth_files/kubeconfig ]]; then
+        cd $RELIABILITY_DIR/utils
+        log "info" "====Generating auth files===="
+        ./generate_auth_files.sh
+    fi
+fi
 
 script_folder=$RELIABILITY_DIR/tasks/script
 content_folder=$RELIABILITY_DIR/content
+# generate reliability config file
 if [[ ! -z $path_to_auth_files ]]; then
-    generate_config $path_to_auth_files/kubeconfig $path_to_auth_files/admin $path_to_auth_files/users $script_folder $content_folder
+    log "info" "====Generating reliability config file===="
+    generate_config $path_to_auth_files/kubeconfig $path_to_auth_files/admin $path_to_auth_files/users $script_folder $content_folder $CONFIG_FILE
     KUBECONFIG=$path_to_auth_files/kubeconfig
 else
-    echo "Please provide a valid path as -p path_to_auth_files."
+    log "error" "Please provide a valid path as -p path_to_auth_files."
     exit 1
 fi
 
@@ -208,21 +225,36 @@ cd $RELIABILITY_DIR
 
 if [[ $(oc get storageclass -o json | jq .items) == "[]" ]];then
     cd utils
-    echo "Deploy nfs-provisioner"
+    log "info" "====Deploy nfs-provisioner===="
     #wget --quiet https://gitlab.cee.redhat.com/-/ide/project/wduan/openshift_storage/tree/master/-/nfs/deploy_nfs_provisioner.sh -O 
     #chmod +x deploy_nfs_provisioner.sh
     ./deploy_nfs_provisioner.sh
     cd -
+    storageclass="nfs_provisioner"
 fi
+
+[[ -z $time_to_run ]] && time_to_run=10m
+dhms_to_seconds $time_to_run
 
 # Configure storage for monitoring
 # https://docs.openshift.com/container-platform/4.12/scalability_and_performance/scaling-cluster-monitoring-operator.html#configuring-cluster-monitoring_cluster-monitoring-operator
+set +e
 oc get cm -n openshift-monitoring cluster-monitoring-config -o yaml  | grep volumeClaimTemplate > /dev/null 2>&1
 if [[ $? -eq 1  ]]; then
+    log "info" "====Configure storage for monitoring===="
     export STORAGE_CLASS=$(oc get storageclass | grep default | awk '{print $1}')
-    export PROMETHEUS_RETENTION_PERIOD=30d
-    export PROMETHEUS_STORAGE_SIZE=500Gi
-    export ALERTMANAGER_STORAGE_SIZE=20Gi
+    # For test run longer than 10 days
+    if [[ $SECONDS_TO_RUN -gt 864000 && $storageclass == "nfs_provisioner" ]]; then
+        export PROMETHEUS_RETENTION_PERIOD=40d
+        export PROMETHEUS_STORAGE_SIZE=500Gi
+        export ALERTMANAGER_STORAGE_SIZE=20Gi
+    # For test run equal or less than 10 days or using nfs_provisioner as storageclass uses node's local storage which has limited storage
+    # https://issues.redhat.com/browse/OCPQE-13514
+    elif [[ $SECONDS_TO_RUN -le 864000 ]]; then
+        export PROMETHEUS_RETENTION_PERIOD=20d
+        export PROMETHEUS_STORAGE_SIZE=50Gi
+        export ALERTMANAGER_STORAGE_SIZE=5Gi
+    fi
     envsubst < content/cluster-monitoring-config.yaml | oc apply -f -
     echo "Sleep 60s to wait for monitoring to take the new config map."
     sleep 60
@@ -242,10 +274,10 @@ if [[ $? -eq 1  ]]; then
     done
     if [[ "$prom_status" != "success" ]]; then
         prom_status=$(curl -s -g -k -X GET -H "Authorization: Bearer $token" -H 'Accept: application/json' -H 'Content-Type: application/json' "$URL/api/v1/query?query=up" | jq -r '.status')
-        echo "Error: Prometheus status is '$prom_status'. 'success' is expected"
+        log "error" "Prometheus status is '$prom_status'. 'success' is expected"
         exit 1
     else
-        echo "Prometheus is success now."
+        log "info" "Prometheus is success now."
     fi
 fi
 
@@ -254,7 +286,7 @@ cd $RELIABILITY_DIR
 
 oc get ns| grep dittybopper
 if [[ $? -eq 1 ]];then
-    echo "Install dittybopper"
+    log "info" "====Install dittybopper===="
     cd utils
     if [[ ! -f performance-dashboards ]]; then
         git clone git@github.com:cloud-bulldozer/performance-dashboards.git
@@ -264,20 +296,19 @@ if [[ $? -eq 1 ]];then
     if [[ $? -eq 0 ]];then
         log "info" "dittybopper installed successfully."
     else
-        log "info" "dittybopper install failed."
+        log "error" "dittybopper install failed."
     fi
 fi
+set -e
 
 # Cleanup test projects
 cd $RELIABILITY_DIR
-log "info" "Clearing test ns with label purpose=reliability."
+log "info" "====Clearing test ns with label purpose=reliability.===="
 oc delete ns -l purpose=reliability
 # Start reliability test
-log "info" "Start Reliability test. Log is writting to $folder_name/reliability.log."
+log "info" "====Start Reliability test. Log is writting to $folder_name/reliability.log.===="
 # run in background and dont append output to nohup.out
 nohup python3 reliability.py -c $folder_name/reliability.yaml -l $folder_name/reliability.log > /dev/null 2>&1 &
-[[ -z $time_to_run ]] && time_to_run=10m
-dhms_to_seconds $time_to_run
 timestamp_start=$(date +%s)
 timestamp_end=$(($timestamp_start + $SECONDS_TO_RUN))
 if [[ $os == "linux" ]]; then
