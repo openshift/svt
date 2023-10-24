@@ -1,4 +1,5 @@
 function create_demo() {
+# create the demo namespace
 echo "$(date): Creating demo namespace... \n"
 cat <<EOF | oc apply -f - 
 apiVersion: v1
@@ -7,6 +8,7 @@ metadata:
   name: demo
 EOF
 
+# give the podlisters permissions to LIST and GET pods from the demo namespace
 for i in {0..2}; do
 cat <<EOF | oc auth reconcile -f -
 apiVersion: rbac.authorization.k8s.io/v1
@@ -37,6 +39,7 @@ done
 
 echo "\n$(date): Creating ServiceAccounts...\n"
 
+# create the ServiceAccounts for the demo namespace
 for i in {0..2}; do
 cat <<EOF | oc apply -f -
 apiVersion: v1
@@ -51,13 +54,15 @@ done
 }
 
 function delete_namespace() {
+  # clean up the demo namespace
   echo "\n$(date): Deleting namespace..."
   oc delete namespace demo
   echo "$(date): Namespace deleted"
 
 }
 
-function create_flow_schemas() {
+function create_flow_control() {
+# create the FlowSchema and PriorityLevelConfigurations to moderate requests going to the service accounts
 cat <<EOF | oc apply -f -
 apiVersion: flowcontrol.apiserver.k8s.io/v1beta3
 kind: FlowSchema
@@ -106,6 +111,7 @@ EOF
 }
 
 function delete_flow_schema() {
+  # clean up the FlowSchema
   oc get flowschema
   echo "$(date): Deleting Flowschema..."
   oc delete flowschema restrict-pod-lister
@@ -113,6 +119,7 @@ function delete_flow_schema() {
 }
 
 function delete_priority_level_configuration() {
+  # clean up the PriorityLevelConfiguration
   oc get prioritylevelconfiguration
   echo "$(date): Deleting PriorityLevelConfiguration..."
   oc delete prioritylevelconfiguration restrict-pod-lister
@@ -120,6 +127,7 @@ function delete_priority_level_configuration() {
 }
 
 function deploy_controller() {
+# create three deployments to send continuous traffic to the ServiceAccounts
 for i in {0..2}; do
 cat <<EOF | oc apply -f -
 apiVersion: apps/v1
@@ -172,6 +180,7 @@ done
 }
 
 function delete_controller() {
+  # clean up deployments in the demo namespace
   oc get deployments -n demo
   printf "$(date): Deleting deployments... \n\n"
   for i in {0..2}; do
@@ -181,20 +190,33 @@ function delete_controller() {
 }
 
 function scale_traffic() {
-    echo "$(date): Scaling traffic..."
-    for i in {0..2}; do oc -n demo scale deploy/podlister-$i --replicas=10; done
+  # scale up the deployments to send more traffic and overload the APF settings
+  echo "$(date): Scaling traffic..."
+  for i in {0..2}; do oc -n demo scale deploy/podlister-$i --replicas=10; done
 }
 
-function check_logs() {
+function check_no_errors() {
+  # validate that the logs show no errors before traffic has been scaled
   oc -n demo set env deploy CONTEXT_TIMEOUT=1s --all                        
 
   echo ""
 
-  oc -n demo logs deploy/podlister-0 | grep -i "context deadline" | wc -l
+  not_scaled_log_count=$(oc -n demo logs deploy/podlister-0 | grep -i "context deadline" | wc -l > 0)
 
   echo ""
   
 }
+
+function check_errors() {
+  # validate that there are errors after the 
+  oc -n demo set env deploy CONTEXT_TIMEOUT=1s --all                        
+
+  scaled_log_count=$(oc -n demo logs deploy/podlister-0 | grep -i "context deadline" | wc -l > 0)
+
+  echo ""
+  
+}
+
 
 
 create_demo
@@ -207,16 +229,18 @@ PRIORITY_LEVEL_UID="$(oc get po -A --as "$SERVICE_ACCOUNT" -v8 2>&1 | grep -i X-
 
 CUSTOM_COLUMN=”uid:{metadata.uid},name:{metadata.name}”
 
-create_flow_schemas
+create_flow_control
 
 deploy_controller
-sleep 5
+
 echo "Logs before scaling traffic:"
 
 check_logs
 
 scale_traffic
+
 sleep 5
+
 echo "Logs after scaling traffic:"
 
 check_logs
