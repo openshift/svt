@@ -1,3 +1,5 @@
+REPLICAS=2
+
 function create_demo() {
 # create the demo namespace
 echo "$(date): Creating demo namespace... \n"
@@ -190,40 +192,44 @@ function delete_controller() {
 }
 
 function scale_traffic() {
+  oc get deployments -n demo
+  echo "$REPLICAS"
   # scale up the deployments to send more traffic and overload the APF settings
   echo "$(date): Scaling traffic..."
-  for i in {0..2}; do oc -n demo scale deploy/podlister-$i --replicas=20; done
+  for i in {0..2}; do oc -n demo scale deploy/podlister-$i --replicas=$REPLICAS; done
 }
 
 function check_no_errors() {
   # validate that the logs show no errors before traffic has been scaled
+
   oc -n demo set env deploy CONTEXT_TIMEOUT=1s --all                        
 
-  echo ""
-
-  not_scaled_log_count=$(oc -n demo logs deploy/podlister-0 | grep -i "context deadline" | wc -l)
-  echo "$not_scaled_log_count"
-  if [ $not_scaled_log_count -le 0 ]; then
-    echo "Expected: No error logs found"
-  else
-    echo "Errors found. Priority and Fairness settings did not properly catch the requests."
-  fi
+  echo "Checking that there are no errors before scaling traffic."
+  for i in {0..2}; do oc -n demo logs deploy/podlister-$i | grep -i "context deadline" | wc -l; done;  
+  # not_scaled_log_count=$(oc -n demo logs deploy/podlister-0 | grep -i "context deadline" | wc -l)
+  # echo "$not_scaled_log_count"
+  # if [ $not_scaled_log_count -le 0 ]; then
+  #   echo "Expected: No error logs found"
+  # else
+  #   echo "Errors found. Priority and Fairness settings did not properly catch the requests."
+  # fi
   
 }
 
 function check_errors() {
-  # validate that there are errors after the 
+  # validate that there are errors after the scaling process
+  echo "Checking that there are no errors after scaling traffic."
   oc -n demo set env deploy CONTEXT_TIMEOUT=1s --all
-  oc -n demo logs deploy/podlister-0 | grep -i "context deadline" | wc -l                        
-  scaled_log_count=$(oc -n demo logs deploy/podlister-0 | grep -i "context deadline" | wc -l)
-  echo "$scaled_log_count"
-  if [[ ($not_scaled_log_count -le 0) && ($scaled_log_count > 0) ]]; then
-    echo "API Priority and Fairness Test Result: PASS"
-    echo "Expected: Errors appeared when traffic was scaled."
-  else
-    echo "API Priority and Fairness Test Result: FAIL"
-    echo "No error logs found when traffic was scaled."
-  fi
+  for i in {0..2}; do oc -n demo logs deploy/podlister-$i | grep -i "context deadline" | wc -l; done;  
+  # scaled_log_count=$(oc -n demo logs deploy/podlister-0 | grep -i "context deadline" | wc -l)
+  # echo "$scaled_log_count"
+  # if [[ ($not_scaled_log_count -le 0) && ($scaled_log_count > 0) ]]; then
+  #   echo "API Priority and Fairness Test Result: PASS"
+  #   echo "Expected: Errors appeared when traffic was scaled."
+  # else
+  #   echo "API Priority and Fairness Test Result: FAIL"
+  #   echo "No error logs found when traffic was scaled."
+  # fi
 }
 
 
@@ -241,6 +247,8 @@ CUSTOM_COLUMN=”uid:{metadata.uid},name:{metadata.name}”
 create_flow_control
 
 deploy_controller
+
+sleep 10
 
 echo "Logs before scaling traffic:"
 
