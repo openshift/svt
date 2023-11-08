@@ -1,23 +1,38 @@
-REPLICAS=2
+#!/bin/zsh
+###############################################
+## Auth=fbledsoe@redhat.com, liqcui@redhat.com
+## Description: Test building new PriorityLevelConfiguration and FlowSchemas, and queueing and dropping excess requests. 
+## Polarion test case: OCP-41643 - Load cluster to test bad actor resilience	
+## https://polarion.engineering.redhat.com/polarion/#/project/OSE/workitem?id=OCP-41643
+## Bug related: https://issues.redhat.com/browse/OCPBUGS-12266
+## Cluster config: 3 master (m5.4xlarge or equivalent)
+## The machine running the test should have at least 4 cores.
+## Example test run: ./api_pf.sh 270 (pass in at least 90 replicas for each master node e.g 1: 90, 2:180)
+################################################ 
 
-function create_demo() {
-# create the demo namespace
-echo "$(date): Creating demo namespace... \n"
+replicas=$1
+namespace="test"
+apf_api_version="flowcontrol.apiserver.k8s.io/v1beta3"
+error_count=0
+
+function create_test() {
+# create the test namespace
+echo "$(date): Creating test namespace... \n"
 cat <<EOF | oc apply -f - 
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: demo
+  name: $namespace
 EOF
 
-# give the podlisters permissions to LIST and GET pods from the demo namespace
+# give the podlisters permissions to LIST and GET pods from the test namespace
 for i in {0..2}; do
 cat <<EOF | oc auth reconcile -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: podlister
-  namespace: demo  
+  namespace: $namespace  
 rules:
   - apiGroups: [""]
     resources: ["pods"]
@@ -27,7 +42,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: podlister
-  namespace: demo
+  namespace: $namespace
 subjects:
 - apiGroup: ""
   kind: ServiceAccount
@@ -41,14 +56,14 @@ done
 
 echo "\n$(date): Creating ServiceAccounts...\n"
 
-# create the ServiceAccounts for the demo namespace
+# create the ServiceAccounts for the test namespace
 for i in {0..2}; do
 cat <<EOF | oc apply -f -
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: podlister-$i
-  namespace: demo
+  namespace: $namespace
   labels:
     kubernetes.io/name: podlister-$i
 EOF
@@ -56,9 +71,9 @@ done
 }
 
 function delete_namespace() {
-  # clean up the demo namespace
+  # clean up the test namespace
   echo "\n$(date): Deleting namespace..."
-  oc delete namespace demo
+  oc delete namespace $namespace 
   echo "$(date): Namespace deleted"
 
 }
@@ -66,7 +81,7 @@ function delete_namespace() {
 function create_flow_control() {
 # create the FlowSchema and PriorityLevelConfigurations to moderate requests going to the service accounts
 cat <<EOF | oc apply -f -
-apiVersion: flowcontrol.apiserver.k8s.io/v1beta3
+apiVersion: $apf_api_version
 kind: FlowSchema
 metadata:
   name: restrict-pod-lister
@@ -78,24 +93,24 @@ spec:
   rules:
   - resourceRules:
     - apiGroups: [""]
-      namespaces: ["demo"]
+      namespaces: ["$namespace"]
       resources: ["pods"]
       verbs: ["list", "get"]
     subjects:
     - kind: ServiceAccount
       serviceAccount:
         name: podlister-0
-        namespace: demo
+        namespace: $namespace
     - kind: ServiceAccount
       serviceAccount:
         name: podlister-1
-        namespace: demo 
+        namespace: $namespace 
     - kind: ServiceAccount
       serviceAccount:
         name: podlister-2
-        namespace: demo            
+        namespace: $namespace            
 ---
-apiVersion: flowcontrol.apiserver.k8s.io/v1beta3
+apiVersion: $apf_api_version
 kind: PriorityLevelConfiguration
 metadata:
   name: restrict-pod-lister
@@ -136,7 +151,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: podlister-$i
-  namespace: demo
+  namespace: $namespace
   labels:
     kubernetes.io/name: podlister-$i
 spec:
@@ -167,7 +182,7 @@ spec:
         - name: SHOW_ERRORS_ONLY
           value: "true"
         - name: TARGET_NAMESPACE
-          value: demo
+          value: $namespace
         - name: TICK_INTERVAL
           value: 100ms         
         resources:
@@ -182,59 +197,63 @@ done
 }
 
 function delete_controller() {
-  # clean up deployments in the demo namespace
-  oc get deployments -n demo
+  # clean up deployments in the test namespace
+  oc get deployments -n $namespace
   printf "$(date): Deleting deployments... \n\n"
   for i in {0..2}; do
-  oc delete deployment podlister-$i -n demo
+  oc delete deployment podlister-$i -n $namespace
   done
   printf "\n$(date): Deployments deleted \n"
 }
 
 function scale_traffic() {
-  oc get deployments -n demo
-  echo "$REPLICAS"
+  oc get deployments -n $namespace
   # scale up the deployments to send more traffic and overload the APF settings
   echo "$(date): Scaling traffic..."
-  for i in {0..2}; do oc -n demo scale deploy/podlister-$i --replicas=$REPLICAS; done
+  for i in {0..2}; do oc -n $namespace scale deploy/podlister-$i --replicas=$replicas; done
 }
 
 function check_no_errors() {
   # validate that the logs show no errors before traffic has been scaled
-
-  oc -n demo set env deploy CONTEXT_TIMEOUT=1s --all                        
+  oc -n $namespace set env deploy CONTEXT_TIMEOUT=1s --all                        
 
   echo "Checking that there are no errors before scaling traffic."
-  for i in {0..2}; do oc -n demo logs deploy/podlister-$i | grep -i "context deadline" | wc -l; done;  
-  # not_scaled_log_count=$(oc -n demo logs deploy/podlister-0 | grep -i "context deadline" | wc -l)
-  # echo "$not_scaled_log_count"
-  # if [ $not_scaled_log_count -le 0 ]; then
-  #   echo "Expected: No error logs found"
-  # else
-  #   echo "Errors found. Priority and Fairness settings did not properly catch the requests."
-  # fi
+  for i in {0..2}; do
+  log_count=$(oc -n $namespace logs deploy/podlister-$i | grep -i "context deadline" | wc -l)
+  error_count=$((${error_count##*( )}+${log_count##*( )}))
+  echo "Error count: $error_count"
+  done  
+  if [[ $not_scaled_log_count -le 0 ]]; then
+    echo "Expected: No error logs found"
+  else
+    echo "Errors found. Priority and Fairness settings did not properly catch the requests."
+  fi
   
 }
 
 function check_errors() {
   # validate that there are errors after the scaling process
   echo "Checking that there are no errors after scaling traffic."
-  oc -n demo set env deploy CONTEXT_TIMEOUT=1s --all
-  for i in {0..2}; do oc -n demo logs deploy/podlister-$i | grep -i "context deadline" | wc -l; done;  
-  # scaled_log_count=$(oc -n demo logs deploy/podlister-0 | grep -i "context deadline" | wc -l)
-  # echo "$scaled_log_count"
-  # if [[ ($not_scaled_log_count -le 0) && ($scaled_log_count > 0) ]]; then
-  #   echo "API Priority and Fairness Test Result: PASS"
-  #   echo "Expected: Errors appeared when traffic was scaled."
-  # else
-  #   echo "API Priority and Fairness Test Result: FAIL"
-  #   echo "No error logs found when traffic was scaled."
-  # fi
+  oc -n $namespace set env deploy CONTEXT_TIMEOUT=1s --all
+  dropped_requests=$(oc get --raw /debug/api_priority_and_fairness/dump_priority_levels | grep restrict-pod-lister | cut -w -f 8)
+  oc get --raw /debug/api_priority_and_fairness/dump_priority_levels
+  for i in {0..2}; do
+  log_count=$(oc -n $namespace logs deploy/podlister-$i | grep -i "context deadline" | wc -l)
+  error_count=$((${error_count##*( )}+${log_count##*( )}))
+  echo "Error count: $error_count"
+  done  
+
+  if [ ${dropped_requests::-1} -gt 0 ] && [ $error_count -gt 0 ]; then
+    echo "API Priority and Fairness Test Result: PASS"
+    echo "Expected: Errors appeared when traffic was scaled."
+  else
+    echo "API Priority and Fairness Test Result: FAIL"
+    echo "No error logs found when traffic was scaled."
+  fi
+
 }
 
-
-
-create_demo
+create_test
 
 SERVICE_ACCOUNT="system:serviceaccount:openshift-apiserver-operator:openshift-apiserver-operator"
 
@@ -256,7 +275,11 @@ check_no_errors
 
 scale_traffic
 
-sleep 10
+echo "Sleeping for 10 minutes to let pods sending traffic to be ready."
+
+sleep 600
+
+# wait until all podlister pods are up to send all traffic
 
 echo "Logs after scaling traffic:"
 
@@ -267,5 +290,6 @@ delete_flow_schema
 delete_controller
 
 delete_namespace
+
 
 
