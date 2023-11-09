@@ -219,6 +219,7 @@ function check_no_errors() {
 
   echo "Checking that there are no errors before scaling traffic."
   for i in {0..2}; do
+  # count the amount of errors that appear in the logs
   log_count=$(oc -n $namespace logs deploy/podlister-$i | grep -i "context deadline" | wc -l)
   error_count=$((${error_count##*( )}+${log_count##*( )}))
   echo "Error count: $error_count"
@@ -233,7 +234,11 @@ function check_no_errors() {
 
 function check_errors() {
   # validate that there are errors after the scaling process
-  echo "Checking that there are no errors after scaling traffic."
+  echo "Checking that the API Servers never went down."
+  oc get pods -n openshift-kube-apiserver | grep "kube-apiserver-ip"
+  oc get pods -n openshift-apiserver
+
+  echo "Checking that there are errors after scaling traffic."
   oc -n $namespace set env deploy CONTEXT_TIMEOUT=1s --all
   dropped_requests=$(oc get --raw /debug/api_priority_and_fairness/dump_priority_levels | grep restrict-pod-lister | cut -w -f 8)
   oc get --raw /debug/api_priority_and_fairness/dump_priority_levels
@@ -277,7 +282,7 @@ scale_traffic
 
 echo "Sleeping for 10 minutes to let pods sending traffic to be ready."
 
-sleep 600
+sleep 900
 
 # wait until all podlister pods are up to send all traffic
 
