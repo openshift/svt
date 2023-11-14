@@ -68,6 +68,9 @@ metadata:
     kubernetes.io/name: podlister-$i
 EOF
 done
+
+echo "\n$(date): ServiceAccounts created.\n"
+
 }
 
 function delete_namespace() {
@@ -80,6 +83,7 @@ function delete_namespace() {
 
 function create_flow_control() {
 # create the FlowSchema and PriorityLevelConfigurations to moderate requests going to the service accounts
+echo "$(date): Creating FlowSchema and PriorityLevelConfiguration...\n"
 cat <<EOF | oc apply -f -
 apiVersion: $apf_api_version
 kind: FlowSchema
@@ -125,81 +129,82 @@ spec:
         handSize: 4
       type: Queue
 EOF
+echo "\n$(date): FlowSchema and PriorityLevelConfiguration created\n"
 }
 
 function delete_flow_schema() {
   # clean up the FlowSchema
-  oc get flowschema
-  echo "$(date): Deleting Flowschema..."
+  echo "\n$(date): Deleting Flowschema...\n"
   oc delete flowschema restrict-pod-lister
-  echo "$(date): Flowschema deleted"
+  echo "\n$(date): Flowschema deleted\n"
 }
 
 function delete_priority_level_configuration() {
   # clean up the PriorityLevelConfiguration
-  oc get prioritylevelconfiguration
-  echo "$(date): Deleting PriorityLevelConfiguration..."
+  echo "$(date): Deleting PriorityLevelConfiguration...\n"
   oc delete prioritylevelconfiguration restrict-pod-lister
-  echo "$(date): Flowschema deleted"
+  echo "\n$(date): PriorityLevelConfiguration deleted\n"
 }
 
 function deploy_controller() {
-# create three deployments to send continuous traffic to the ServiceAccounts
-for i in {0..2}; do
-cat <<EOF | oc apply -f -
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: podlister-$i
-  namespace: $namespace
-  labels:
-    kubernetes.io/name: podlister-$i
-spec:
-  selector:
-    matchLabels:
+  # create three deployments to send continuous traffic to the ServiceAccounts
+  echo "$(date): Deploying controllers..."
+  for i in {0..2}; do
+  cat <<EOF | oc apply -f -
+  apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: podlister-$i
+    namespace: $namespace
+    labels:
       kubernetes.io/name: podlister-$i
-  template:
-    metadata:
-      labels:
+  spec:
+    selector:
+      matchLabels:
         kubernetes.io/name: podlister-$i
-    spec:
-      serviceAccountName: podlister-$i
-      containers:
-      - name: podlister
-        image: quay.io/isim/podlister
-        imagePullPolicy: Always
-        command:
-        - /podlister
-        env:
-        - name: NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        - name: SHOW_ERRORS_ONLY
-          value: "true"
-        - name: TARGET_NAMESPACE
-          value: $namespace
-        - name: TICK_INTERVAL
-          value: 100ms         
-        resources:
-          requests:
-            cpu: 30m
-            memory: 50Mi
-          limits:
-            cpu: 100m
-            memory: 128Mi
+    template:
+      metadata:
+        labels:
+          kubernetes.io/name: podlister-$i
+      spec:
+        serviceAccountName: podlister-$i
+        containers:
+        - name: podlister
+          image: quay.io/isim/podlister
+          imagePullPolicy: Always
+          command:
+          - /podlister
+          env:
+          - name: NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: SHOW_ERRORS_ONLY
+            value: "true"
+          - name: TARGET_NAMESPACE
+            value: $namespace
+          - name: TICK_INTERVAL
+            value: 100ms         
+          resources:
+            requests:
+              cpu: 30m
+              memory: 50Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
 EOF
 done
+echo "$(date): Controllers deployed..."
+
 }
 
 function delete_controller() {
   # clean up deployments in the test namespace
-  oc get deployments -n $namespace
-  printf "$(date): Deleting deployments... \n\n"
+  printf "\n$(date): Deleting deployments... \n"
   for i in {0..2}; do
   oc delete deployment podlister-$i -n $namespace
   done
@@ -211,6 +216,7 @@ function scale_traffic() {
   # scale up the deployments to send more traffic and overload the APF settings
   echo "$(date): Scaling traffic..."
   for i in {0..2}; do oc -n $namespace scale deploy/podlister-$i --replicas=$replicas; done
+  echo "\n$(date): Traffic scaled.\n"
 }
 
 function check_no_errors() {
@@ -234,26 +240,26 @@ function check_no_errors() {
 
 function check_errors() {
   # validate that there are errors after the scaling process
-  echo "Checking that the API Servers never went down."
+  echo "\n======Verify that the API Servers never went down======"
   oc get pods -n openshift-kube-apiserver | grep "kube-apiserver-ip"
   oc get pods -n openshift-apiserver
 
-  echo "Checking that there are errors after scaling traffic."
-  oc -n $namespace set env deploy CONTEXT_TIMEOUT=1s --all
+  echo "\nChecking that there are errors after scaling traffic."
   dropped_requests=$(oc get --raw /debug/api_priority_and_fairness/dump_priority_levels | grep restrict-pod-lister | cut -w -f 8)
-  oc get --raw /debug/api_priority_and_fairness/dump_priority_levels
+  echo "\nNumber of rejected requests: ${dropped_requests::-1}\n"
   for i in {0..2}; do
   log_count=$(oc -n $namespace logs deploy/podlister-$i | grep -i "context deadline" | wc -l)
   error_count=$((${error_count##*( )}+${log_count##*( )}))
   echo "Error count: $error_count"
   done  
-
+  echo ""
+  echo "======Final test result======"
   if [ ${dropped_requests::-1} -gt 0 ] && [ $error_count -gt 0 ]; then
     echo "API Priority and Fairness Test Result: PASS"
     echo "Expected: Errors appeared when traffic was scaled."
   else
     echo "API Priority and Fairness Test Result: FAIL"
-    echo "No error logs found when traffic was scaled."
+    echo "Either no error logs found when traffic was scaled, or no requests were rejected.."
   fi
 
 }
@@ -280,7 +286,7 @@ check_no_errors
 
 scale_traffic
 
-echo "Sleeping for 10 minutes to let pods sending traffic to be ready."
+echo "Sleeping for 15 minutes to let pods sending traffic to be ready."
 
 sleep 900
 
@@ -290,7 +296,11 @@ echo "Logs after scaling traffic:"
 
 check_errors
 
+echo "\n======Starting cleanup======"
+
 delete_flow_schema
+
+delete_priority_level_configuration
 
 delete_controller
 
