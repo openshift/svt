@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pre-requisite: m5.2xlarge 4.x cluster with 10 worker nodes and oc client installed.
+# Pre-requisite: m6i.xlarge 4.x cluster with 10 worker nodes and oc client installed. (prior to 4.11, m5.2xlarge)
 # For accurate performance results all the nodes have to be in the same AWS availability zone
 # Author : rpattath@redhat.com
 
