@@ -12,13 +12,26 @@
 function _usage {
     cat <<END
 Usage: $(basename "${0}")
-If this is a cluster provisioned by Flexy-install Jenkins job, export AUTH_PATH as the path includes kubeconfig, users.spec and kubeadmin-password files downloaded from the Flexy-install job.
-If this is a rosa cluster provisioned by ocm-profile-ci Jenkins job, export the CLUSTER_ID get from the console output of the Jenkins job. 
-And export the OCM_TOKEN of the ocm account, get it from "perfscale-rosa-token" in bitwarden.
-And export OCM_ENV as staging or production.
-If this is a rosa or rosa hcp cluster provisioned in Prow CI, export TOKEN and SERVER get from the Prow CI's job. If there are multiple projects after login, also export PROJECT.
-If this is a rosa or rosa hcp cluster provisioned in Prow CI, and the reliability test is run in Prow. export PROW=rosa.
-If this is a cluster provisioned by other ways, export KUBECONFIG_PATH as the file path of the kubeconfig file.
+If this is a cluster provisioned by Flexy-install Jenkins job, and the reliability-v2 test is run from a local server:
+  export AUTH_PATH as the path to the folder with kubeconfig, users.spec and kubeadmin-password files downloaded from the Flexy-install job.
+
+If this is a rosa cluster provisioned by ocm-profile-ci Jenkins job, and the reliability-v2 test is run from a local server:
+  export CLUSTER_ID as the cluster id get from the console output of the Jenkins job. 
+  export OCM_TOKEN as the token of the ocm account, get it from "perfscale-rosa-token" in bitwarden.
+  export OCM_ENV as staging or production.
+
+If this is a rosa or rosa hcp cluster provisioned in Prow CI, and the reliability-v2 test is run from a local server:
+  export TOKEN and SERVER get from the Prow CI's job. If there are multiple projects after login, also export PROJECT.
+
+If this is a self-managed cluster provisioned in Prow CI, and the reliability-v2 test is run from Prow CI:
+   export PROW_CLUSTER_TYPE=self-managed
+If this is a rosa or rosa hcp cluster provisioned in Prow CI, and the reliability-v2 test is run from Prow CI:
+   export PROW_CLUSTER_TYPE=rosa
+If this is a ARO cluster provisioned in Prow CI, and the reliability-v2 test is run from Prow CI:
+   export PROW_CLUSTER_TYPE=aro
+
+If this is a cluster provisioned by other ways, and the reliability-v2 test is run from a local server:
+  export KUBECONFIG_PATH as the file path of the kubeconfig file.
 END
 }
 
@@ -53,27 +66,34 @@ if [[ "$1" = "-h" ]];then
     exit 1
 fi
 
-if [[ ! -z $CLUSTER_ID && ! -z $OCM_TOKEN && ! -z $OCM_ENV ]]; then
+if [[ ! -z $AUTH_PATH ]]; then
+    echo "AUTH_PATH is provided for Flexy-install Jenkins job provisioned cluster."
+    type="jenkins-self-managed-local"
+elif [[ ! -z $CLUSTER_ID && ! -z $OCM_TOKEN && ! -z $OCM_ENV ]]; then
     echo "CLUSTER_ID, OCM_TOKEN and OCM_ENV are provided for ocm-profile-ci Jenkins job provisioned rosa cluster."
-    type="local-rosa-jenkins"
+    type="jenkins-rosa-local"
 elif [[ ! -z $TOKEN && ! -z $SERVER ]]; then
     echo "TOKEN and SERVER are provided for Prow provisioned rosa cluster."
-    type="local-rosa-prow"
-elif [[ $PROW == 'rosa'  ]]; then
-    echo "Prow is provided for running in Prow on rosa or rosa hcp cluster."
-    type="prow-rosa"
-elif [[ ! -z $AUTH_PATH ]]; then
-    echo "AUTH_PATH is provided for Flexy-install Jenkins job provisioned cluster."
-    type="flexy"
+    type="prow-rosa-local"
+elif [[ $PROW_CLUSTER_TYPE == 'self-managed'  ]]; then
+    echo "PROW_CLUSTER_TYPE is provided for running in Prow on a self-managed cluster."
+    type="prow-self-managed-prow"
+elif [[ $PROW_CLUSTER_TYPE == 'rosa'  ]]; then
+    echo "PROW_CLUSTER_TYPE is provided for running in Prow on rosa or rosa hcp cluster."
+    type="prow-rosa-prow"
+elif [[ $PROW_CLUSTER_TYPE == 'aro'  ]]; then
+    echo "PROW_CLUSTER_TYPE is provided for running in Prow on an aro cluster."
+    type="prow-aro-prow"
 elif [[ ! -z $KUBECONFIG_PATH ]]; then
     echo "KUBECONFIG_PATH is provided."
-    type="other"
+    type="other-local"
 else
     _usage
     exit 1
 fi
 
-if [[ $type =~ "local-rosa" ]]; then
+# For jenkins-rosa-local and prow-rosa-local types
+if [[ $type =~ "rosa-local" ]]; then
     # checking ocm cli
     echo "Checking ocm cli"
     ocm version > /dev/null
@@ -117,7 +137,12 @@ mkdir path_to_auth_files
 
 utils_dir=$(cd $(dirname ${BASH_SOURCE[0]});pwd)
 
-if [[ $type == "local-rosa-jenkins" ]]; then
+if [[ $type == "jenkins-self-managed-local" ]]; then
+    cd path_to_auth_files
+    cp $AUTH_PATH/kubeconfig kubeconfig
+    echo "kubeadmin":$(cat $AUTH_PATH/kubeadmin-password) > admin
+    cp $AUTH_PATH/users.spec users
+elif [[ $type == "jenkins-rosa-local" ]]; then
     cd path_to_auth_files
     # Log in
     rosa login --env $OCM_ENV --token $OCM_TOKEN
@@ -161,8 +186,7 @@ if [[ $type == "local-rosa-jenkins" ]]; then
     done
 
     create_idp_users_rosa $IDP_USER_COUNT
-
-elif [[ $type == "local-rosa-prow" ]]; then
+elif [[ $type == "prow-rosa-local" ]]; then
     cd path_to_auth_files
     # For rosa cluster installed by Prow
     oc login --token=$TOKEN --server=$SERVER
@@ -178,17 +202,18 @@ elif [[ $type == "local-rosa-prow" ]]; then
 
     cat admin.out| awk '{print $5":"$7}' > admin && rm admin.out && echo "admin file is created"
     cat users.out | cut -d "=" -f 2 > users && rm users.out && echo "users file is created"
-elif [[ $type == "prow-rosa" ]]; then
+elif [[ $type == "prow-self-managed-prow" ]]; then
     cd path_to_auth_files
-    oc rsh $pod cat /tmp/secret/kubeconfig > kubeconfig && echo "kubeconfig file is created"
-    oc rsh $pod cat /tmp/secret/api.login > admin.out
-    SHARED_DIR='/var/run/secrets/ci.openshift.io/multi-stage'
-    oc rsh $pod cat ${SHARED_DIR}/runtime_env > users.out
-elif [[ $type == "flexy" ]]; then
+    cp /tmp/secret/kubeconfig ./
+    cat /tmp/secret/api.login| awk '{print $5":"$7}' > admin && echo "admin file is created"
+    cat ${SHARED_DIR}/runtime_env | cut -d "=" -f 2 > users && echo "users file is created"
+elif [[ $type == "prow-rosa-prow" ]]; then
     cd path_to_auth_files
-    cp $AUTH_PATH/kubeconfig kubeconfig
-    echo "kubeadmin":$(cat $AUTH_PATH/kubeadmin-password) > admin
-    cp $AUTH_PATH/users.spec users
+    cp /tmp/secret/kubeconfig ./
+    cat /tmp/secret/api.login| awk '{print $5":"$7}' > admin && echo "admin file is created"
+    cat ${SHARED_DIR}/runtime_env | cut -d "=" -f 2 > users && echo "users file is created"
+elif [[ $type == "prow-aro-prow" ]]; then
+    # code to be added
 elif [[ $type == "other" ]]; then
     cd path_to_auth_files
     cp $KUBECONFIG_PATH kubeconfig
