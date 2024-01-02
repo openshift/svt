@@ -205,14 +205,16 @@ elif [[ $type == "prow-rosa-local" ]]; then
 elif [[ $type == "prow-self-managed-prow" ]]; then
     cd path_to_auth_files
     cp /tmp/secret/kubeconfig ./
-    cat /tmp/secret/api.login| awk '{print $5":"$7}' > admin && echo "admin file is created"
-    cat ${SHARED_DIR}/runtime_env | cut -d "=" -f 2 > users && echo "users file is created"
+    echo "kubeadmin":$(cat /tmp/secret/kubeadmin-password) > ./admin && echo "admin file is created"
+    cp ${SHARED_DIR}/runtime_env ./users && echo "users file is created"
 elif [[ $type == "prow-rosa-prow" ]]; then
     cd path_to_auth_files
     cp /tmp/secret/kubeconfig ./
     cat /tmp/secret/api.login| awk '{print $5":"$7}' > admin && echo "admin file is created"
     cat ${SHARED_DIR}/runtime_env | cut -d "=" -f 2 > users && echo "users file is created"
 elif [[ $type == "prow-aro-prow" ]]; then
+    cd path_to_auth_files
+    cp /tmp/secret/kubeconfig ./
     # code to be added
 elif [[ $type == "other" ]]; then
     cd path_to_auth_files
