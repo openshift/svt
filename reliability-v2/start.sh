@@ -16,7 +16,9 @@ Usage: $(basename "${0}") [-p <path_to_auth_files>] [-n <folder_name> ] [-t <tim
 
   -n <folder_name>             : Name of the folder to save the test contents. Default is testYYYYMMDDHHMMSS
   
-  -t <time_to_run>             : Time to run the reliability test. e.g. 1d10h3m10s,7d,5m. Default is 10m. 
+  -t <time_to_run>             : Time to run the reliability test. e.g. 1d10h3m10s,7d,5m. Default is 10m.
+
+  -r <tolerance_rate>          : Tolerance of failure rate. Default is 1(test fails when any failure rate is > 1%). 
 
   -u                           : Upgrade the cluster every 24 hours.
 
@@ -30,7 +32,7 @@ if [[ "$1" = "" ]];then
     exit 1
 fi
 
-while getopts ":n:t:p:uh" opt; do
+while getopts ":n:t:p:r:uh" opt; do
     case ${opt} in
     n)
         folder_name=${OPTARG}
@@ -40,6 +42,9 @@ while getopts ":n:t:p:uh" opt; do
         ;;
     p)
         path_to_auth_files=${OPTARG}
+        ;;
+    r)
+        tolerance_rate=${OPTARG}
         ;;
     u)
         upgrade=true
@@ -349,4 +354,28 @@ fi
 
 # Stop reliability test
 touch halt
-log "info" "Reliability test is halted after running $time_to_run. Please check logs in $folder_name/reliability.log."
+log "info" "Reliability test is stopped after running $time_to_run. Please check logs in $folder_name/reliability.log."
+
+# Check results
+[[ -z $tolerance_rate ]] && tolerance_rate=1
+cd $folder_name
+if [ ! -f reliability.log ]; then
+    echo "Reliability test log missing."
+    exit 1
+fi
+grep 'Reliability test results' reliability.log -A 30 > reliability_result
+if [ -f reliability_result ]; then
+    echo "========reliability_result========"
+    cat reliability_result
+    cat reliability_result| grep %|cut -d '%' -f 1|tr -d ' '|awk -v tr=$tolerance_rate -F'|' 'BEGIN{print "Tasks with failure rate > "tr"%:"}$5>=tr{print $1"Failure rate:" $5"%"}' > reliability_failures
+    if [[ $(cat reliability_failures | wc -l) -gt 1 ]]; then
+        echo "========reliability_failure========"
+        cat reliability_failures
+        exit 1
+    else
+        echo "Reliability Test Passed!"
+    fi
+else
+    echo "Reliability test results missing, please check $folder_name/reliability.log"
+    exit 1
+fi
