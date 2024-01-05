@@ -361,20 +361,20 @@ log "info" "Reliability test is stopped after running $time_to_run. Please check
 # Wait for all tasks to finish the last loop
 sleep 600
 process_name="reliability.py"
-max_retries=5
+max_retries=8
 retry_count=0
 while [ $retry_count -lt $max_retries ]; do
     if ps aux | grep -v grep | grep "$process_name" > /dev/null; then
         echo "The process $process_name is still running. Waiting for it to terminate..."
         sleep 600
-        ((retry_count++))
+        retry_count=$(($retry_count+1))
     else
         echo "The process $process_name has been terminated."
         break
     fi
 done
 if [ $retry_count -eq $max_retries ]; then
-    echo "Reliability test is not stopped after 1 hour"
+    echo "Reliability test tasks are not stopped after 90 minutes"
     ps aux | grep -v grep | grep "reliability"
     exit 1
 fi
