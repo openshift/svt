@@ -238,7 +238,9 @@ if [[ $(oc get storageclass -o json | jq .items) == "[]" ]];then
     storageclass="nfs_provisioner"
 fi
 
-[[ -z $time_to_run ]] && time_to_run=10m
+if [[ -z $time_to_run ]]; then
+    time_to_run="10m"
+fi
 dhms_to_seconds $time_to_run
 
 # Configure storage for monitoring
@@ -356,15 +358,37 @@ fi
 touch halt
 log "info" "Reliability test is stopped after running $time_to_run. Please check logs in $folder_name/reliability.log."
 
-# Check results
-[[ -z $tolerance_rate ]] && tolerance_rate=1
-cd $folder_name
-if [ ! -f reliability.log ]; then
-    echo "Reliability test log missing."
+# Wait for all tasks to finish the last loop
+sleep 600
+process_name="reliability.py"
+max_retries=5
+retry_count=0
+while [ $retry_count -lt $max_retries ]; do
+    if ps aux | grep -v grep | grep "$process_name" > /dev/null; then
+        echo "The process $process_name is still running. Waiting for it to terminate..."
+        sleep 600
+        ((retry_count++))
+    else
+        echo "The process $process_name has been terminated."
+        break
+    fi
+done
+if [ $retry_count -eq $max_retries ]; then
+    echo "Reliability test is not stopped after 1 hour"
+    ps aux | grep -v grep | grep "reliability"
     exit 1
 fi
-grep 'Reliability test results' reliability.log -A 30 > reliability_result
-if [ -f reliability_result ]; then
+
+# Check results
+if [[ -z $tolerance_rate ]]; then
+    tolerance_rate=1
+fi
+cd $folder_name
+if [ ! -f reliability.log ]; then
+    echo "reliability.log is not found."
+    exit 1
+fi
+if grep 'Reliability test results' reliability.log -A 30 > reliability_result; then
     echo "========reliability_result========"
     cat reliability_result
     cat reliability_result| grep %|cut -d '%' -f 1|tr -d ' '|awk -v tr=$tolerance_rate -F'|' 'BEGIN{print "Tasks with failure rate > "tr"%:"}$5>=tr{print $1"Failure rate:" $5"%"}' > reliability_failures
@@ -376,6 +400,6 @@ if [ -f reliability_result ]; then
         echo "Reliability Test Passed!"
     fi
 else
-    echo "Reliability test results missing, please check $folder_name/reliability.log"
+    echo "Reliability test results missing, please check reliability.log"
     exit 1
 fi
