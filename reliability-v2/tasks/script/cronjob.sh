@@ -10,6 +10,7 @@
 ## During the test, check the inode and worker node's memory usage on dittybopper's openshift-performance dashboard.
 ## Reference: https://docs.openshift.com/container-platform/4.12/nodes/jobs/nodes-nodes-jobs.html#nodes-nodes-jobs-creating-cron_nodes-nodes-jobs
 ################################################
+set -x
 
 USER=${USER:-""}
 image="image-registry.openshift-image-registry.svc:5000/openshift/cli"

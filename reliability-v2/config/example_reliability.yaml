@@ -56,7 +56,7 @@ reliability:
         #- func apply 2 "<path_to_content>/allow-same-namespace.yaml" # Apply network policy to 2 projects
         - func check_all_projects # check all project under this user
         - func new_app 2 # new app in 2 namespaces
-        - func load_app 2 10 # load apps in 2 namespaces with 10 clients for each
+        - func load_app 2 1 # load apps in 2 namespaces with 1 clients for each
         - func build 1 # build app in 1 namespace
         - func check_pods 2 # check pods in 2 namespaces 
         - func delete_project 2 # delete project in 2 namespaces
