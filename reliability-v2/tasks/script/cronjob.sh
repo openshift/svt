@@ -1,4 +1,4 @@
-#/!/bin/bash
+#!/bin/bash
 ################################################
 ## Author: qili@redhat.com
 ## Description: Script for cronjob typ of workload
@@ -10,7 +10,6 @@
 ## During the test, check the inode and worker node's memory usage on dittybopper's openshift-performance dashboard.
 ## Reference: https://docs.openshift.com/container-platform/4.12/nodes/jobs/nodes-nodes-jobs.html#nodes-nodes-jobs-creating-cron_nodes-nodes-jobs
 ################################################
-set -x
 
 USER=${USER:-""}
 image="image-registry.openshift-image-registry.svc:5000/openshift/cli"
@@ -18,16 +17,13 @@ cmd="/bin/sh -c date"
 ns="${USER}-0"
 cronjob_prefix="cronjob"
 
-function _usage {
-    cat <<END
-Usage: $(basename "${0}") [-n <number of cronjobs>] [-s <schedule>] -d
-
-  -n <number>                  : Number of cronjobs to be created. Default is 1.
-  -s <schedule>                : Schedule for the cronjob. Default is '*/1 * * * *'
-  -d                           : Delete all cronjobs and
-  -c                           : Check all jobs
-  -h                           : Help
-END
+function usage {
+    echo "Usage: $(basename "${0}") [-n <number of cronjobs>] [-s <schedule>] -d"
+    echo "-n <number>                  : Number of cronjobs to be created. Default is 1."
+    echo "-s <schedule>                : Schedule for the cronjob. Default is '*/1 * * * *'"
+    echo "-d                           : Delete all cronjobs"
+    echo "-c                           : Check all jobs"
+    echo "-h                           : Help"
 }
 
 # delete all cronjobs under the namespace
@@ -78,7 +74,7 @@ function check_cronjob_pod {
 }
 
 if [[ "$1" = "" ]];then
-    _usage
+    usage
     exit 1
 fi
 
@@ -98,17 +94,17 @@ while getopts ":n:s:cdh" opt; do
         check_cronjob_pod
         ;;
     h)
-        _usage
+        usage
         exit 1
         ;;
     \?)
         echo -e "\033[32mERROR: Invalid option -${OPTARG}\033[0m" >&2
-        _usage
+        usage
         exit 1
         ;;
     :)
         echo -e "\033[32mERROR: Option -${OPTARG} requires an argument.\033[0m" >&2
-        _usage
+        usage
         exit 1
         ;;
     esac

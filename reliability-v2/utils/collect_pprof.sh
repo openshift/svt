@@ -1,4 +1,4 @@
-#/!/bin/bash
+#!/bin/bash
 ################################################
 ## Author: qili@redhat.com
 ## Description: Collect pprof perodically

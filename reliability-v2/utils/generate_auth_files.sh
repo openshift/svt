@@ -1,4 +1,4 @@
-#/!/bin/bash
+#!/bin/bash
 ################################################
 ## Author: qili@redhat.com
 ## Description: Script to generate authentication files to run reliability-v2 test

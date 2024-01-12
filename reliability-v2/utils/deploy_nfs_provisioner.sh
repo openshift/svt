@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 echo "INFO: Start to deploy nfs-provisioner."
 echo "INFO: Step1: Create namespace nfs-provisioner." 

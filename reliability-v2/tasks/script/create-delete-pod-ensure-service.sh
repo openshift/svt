@@ -1,4 +1,4 @@
-#/!/bin/bash
+#!/bin/bash
 ################################################
 ## Author: qili@redhat.com
 ## Description: Script for pod created/deleted continuously over time with same name, ensure serivce works
