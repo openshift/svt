@@ -18,6 +18,8 @@ Usage: $(basename "${0}") [-p <path_to_auth_files>] [-n <folder_name> ] [-t <tim
   
   -t <time_to_run>             : Time to run the reliability test. e.g. 1d10h3m10s,7d,5m. Default is 10m.
 
+  -c <config_template>         : The reliability configuration template yaml under config folder. Default is reliability.yaml.
+
   -r <tolerance_rate>          : Tolerance of failure rate. Default is 1(test fails when any failure rate is > 1%). 
 
   -u                           : Upgrade the cluster every 24 hours.
@@ -32,7 +34,7 @@ if [[ "$1" = "" ]];then
     exit 1
 fi
 
-while getopts ":n:t:p:r:uh" opt; do
+while getopts ":n:t:p:c:r:uh" opt; do
     case ${opt} in
     n)
         folder_name=${OPTARG}
@@ -42,6 +44,9 @@ while getopts ":n:t:p:r:uh" opt; do
         ;;
     p)
         path_to_auth_files=${OPTARG}
+        ;;
+    c)
+        config_template=${OPTARG}
         ;;
     r)
         tolerance_rate=${OPTARG}
@@ -197,7 +202,10 @@ pip3 install --upgrade pip > /dev/null 2>&1
 pip3 install -r requirements.txt > /dev/null 2>&1
 
 # Prepare config yaml file
-cp config/example_reliability.yaml $folder_name/reliability.yaml
+if [[ -z $config_template ]]; then
+    config_template="reliability.yaml"
+fi
+cp config/${config_template} $folder_name/reliability.yaml
 CONFIG_FILE=$RELIABILITY_DIR/$folder_name/reliability.yaml
 
 # if path_to_auth_files is not provided, generate it with generate_auth_files.sh
