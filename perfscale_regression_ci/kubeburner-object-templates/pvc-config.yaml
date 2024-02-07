@@ -1,0 +1,20 @@
+jobs:
+  - name: {{.NAME}}
+    namespace: {{.NAMESPACE}}
+    jobIterations: {{.JOB_ITERATION}}
+    qps: {{.QPS}}
+    burst: {{.BURST}}
+    namespacedIterations: false
+    podWait: true
+    verifyObjects: true
+    waitFor: {{.WAIT_FOR}} 
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+    objects:
+    - objectTemplate: "sk2-pvc/pvc.yaml"
+      replicas: {{.PVC_REPLICAS}}
+      inputVars:
+        storageClassName: {{.STORAGE_CLASS}}

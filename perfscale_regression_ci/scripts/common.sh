@@ -28,16 +28,40 @@ function wait_for_termination() {
   COUNTER=0
   existing_obj=$(oc get $object_type -A| grep $name_identifier | wc -l)
   while [ $existing_obj -ne 0 ]; do
-    sleep 5
+    sleep 1
     existing_obj=$(oc get $object_type -A | grep $name_identifier | wc -l | xargs )
     echo "Waiting for $object_type to be deleted: $existing_obj still exist"
     COUNTER=$((COUNTER + 1))
-    if [ $COUNTER -ge 60 ]; then
+    if [ $COUNTER -ge 300 ]; then
       echo "$existing_obj $object_type are still not deleted after 5 minutes"
       exit 1
     fi
   done
   echo "All $object_type are deleted"
+}
+
+
+# pass $name_identifier $object_type
+function delete_obj_in_ns() {
+  ns_name=$1
+  object_type=$2
+  
+  oc delete $object_type --wait=false --ignore-not-found=true -n $ns_name --all
+  wait_for_termination $ns_name $object_type
+
+}
+
+
+# pass $name_identifier $object_type
+function delete_obj_with_time() {
+  delete_file=$3
+  start_time=`date +%s`
+  delete_obj_in_ns $1 $2
+  stop_time=`date +%s`
+  echo "start $start_time stop $stop_time"
+  total_time=`echo $stop_time - $start_time | bc`
+  echo "Deletion Time - $total_time" >> $delete_file
+
 }
 
 # pass $name_identifier $object_type
@@ -67,7 +91,7 @@ function delete_project_by_label() {
   oc delete projects -l $1 --wait=false --ignore-not-found=true
   while [ $(oc get projects -l $1 | wc -l) -gt 0 ]; do
     echo "Waiting for projects to delete"
-    sleep 5
+    sleep 1
   done
   
 }
@@ -80,6 +104,7 @@ function delete_projects_time_to_file() {
   start_time=`date +%s`
   delete_project_by_label $1
   stop_time=`date +%s`
+  echo "start $start_time stop $stop_time"
   total_time=`echo $stop_time - $start_time | bc`
   echo "Deletion Time - $total_time" >> $delete_file
 
@@ -131,8 +156,7 @@ function fix(){
   # fixing issues recorded in https://docs.google.com/document/d/148Q-pIZlkZlyqdMDBI3Zr_I10_IDwMcKiBpuwP14lZw/edit#heading=h.nnxdwzdzlvx
   echo "Fixing cakephp-mysql-persistent application that are not running ."
   # resolve mysql replicacontroller not ready by deleting the mysql replicationcontroller and let it recreate
-  for namespace in $(sum(node_namespace_pod_container:container_memory_working_set_bytes{cluster="", node=~"ip-10-0-167-50.us-east-2.compute.internal"}) by (pod)
- | awk '{print $1}'); do
+  for namespace in $(sum(node_namespace_pod_container:container_memory_working_set_bytes{cluster="", node=~"ip-10-0-167-50.us-east-2.compute.internal"}) by (pod) | awk '{print $1}'); do
     oc get rc -n $namespace
     echo "----Recreate mysql replicacontrollers in namespace $namespace----"
     oc delete rc -l openshift.io/deployment-config.name=$database -n $namespace
@@ -230,8 +254,6 @@ function uncordon_all_nodes() {
   done
 }
 
-
-
 function cordon_num_nodes() {
   worker_nodes=$(oc get nodes -l node-role.kubernetes.io/worker= -o name)
   for worker in ${worker_nodes}; do
@@ -245,7 +267,6 @@ function cordon_num_nodes() {
   done
 
 }
-
 
 function create_registry_machinesets(){
   template=$1
