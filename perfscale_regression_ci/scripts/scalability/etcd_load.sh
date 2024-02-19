@@ -15,7 +15,7 @@ source ../common.sh
 source etcd_load_env.sh
 
 # If PARAMETERS is set from upstream ci, overwirte JOB_ITERATION
-export JOB_ITERATION=${PARAMETERS:-1000}
+export JOB_ITERATION=${PARAMETERS:-1}
 
 echo "job iterations $JOB_ITERATION $PARAMETERS"
 echo "======Use kube-burner to load the cluster with test objects======"

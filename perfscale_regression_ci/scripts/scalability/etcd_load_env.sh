@@ -1,6 +1,6 @@
 # WORKLOAD_TEMPLATE for custom workload of kube-burner
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-export WORKLOAD_TEMPLATE=${WORKLOAD_TEMPLATE:-"${DIR}/../../kubeburner-object-templates/loaded-projects-config.yml"}
+export WORKLOAD_TEMPLATE=${WORKLOAD_TEMPLATE:-"${DIR}/../../kubeburner-object-templates/etcd-load-config.yaml"}
 # ENVs to overwrite the kube-burner configuration file
 export NAME=${NAME:-"loaded-projects"}
 export NAMESPACE=${NAMESPACE:-"loaded-projects"}
