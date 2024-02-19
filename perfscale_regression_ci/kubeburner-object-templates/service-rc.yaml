@@ -1,0 +1,17 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: service{{.Replica}}-{{.Iteration}}
+spec:
+  selector:
+    name: replicationcontroller{{.Replica}}-{{.Iteration}}
+  ports:
+  - name: serviceport{{.Replica}}-{{.Iteration}}
+    protocol: TCP
+    port: 80
+    targetPort: 8080
+  portalIP: ''
+  type: ClusterIP
+  sessionAffinity: None
+status:
+  loadBalancer: {}
