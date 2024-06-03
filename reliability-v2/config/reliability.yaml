@@ -43,7 +43,7 @@ reliability:
       # For cluster created in Prow and used the following step to create test users, the users start from testuser-1. 
       # https://github.com/openshift/release/blob/master/ci-operator/step-registry/osd-ccs/conf/idp/htpasswd/multi-users/osd-ccs-conf-idp-htpasswd-multi-users-ref.yaml
       user_start: 1 # user_start is inclusive, start with testuser-1 in the users file. 
-      user_end: 11 # user_end is exclusive, end with testuser-10 in the users file
+      user_end: 5 # user_end is exclusive, end with testuser-10 in the users file
       loops: forever
       trigger: 60
       jitter: 600 # randomly start the users in this group in 10 minutes
