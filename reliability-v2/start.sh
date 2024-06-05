@@ -22,6 +22,8 @@ Usage: $(basename "${0}") [-p <path_to_auth_files>] [-n <folder_name> ] [-t <tim
 
   -r <tolerance_rate>          : Tolerance of failure rate. Default is 1(test fails when any failure rate is > 1%). 
 
+  -i                           : Install infra nodes and move components to infra nodes
+
   -u                           : Upgrade the cluster every 24 hours.
 
   -h                           : Help
@@ -34,7 +36,7 @@ if [[ "$1" = "" ]];then
     exit 1
 fi
 
-while getopts ":n:t:p:c:r:uh" opt; do
+while getopts ":n:t:p:c:r:iuh" opt; do
     case ${opt} in
     n)
         folder_name=${OPTARG}
@@ -50,6 +52,9 @@ while getopts ":n:t:p:c:r:uh" opt; do
         ;;
     r)
         tolerance_rate=${OPTARG}
+        ;;
+    i)
+        infra=true
         ;;
     u)
         upgrade=true
@@ -192,14 +197,14 @@ rm -rf halt
 [[ -z $folder_name ]] && folder_name="test"$(date "+%Y%m%d%H%M%S")
 mkdir $folder_name
 log "info" "Test folder $folder_name is created."
-cd $folder_name
-log "info" "====Preparing venv===="
-python3 --version
-python3 -m venv reliability_venv > /dev/null
-source reliability_venv/bin/activate > /dev/null
-cd -
-pip3 install --upgrade pip > /dev/null 2>&1
-pip3 install -r requirements.txt > /dev/null 2>&1
+# cd $folder_name
+# log "info" "====Preparing venv===="
+# python3 --version
+# python3 -m venv reliability_venv > /dev/null
+# source reliability_venv/bin/activate > /dev/null
+# cd -
+# pip3 install --upgrade pip > /dev/null 2>&1
+# pip3 install -r requirements.txt > /dev/null 2>&1
 
 # Prepare config yaml file
 if [[ -z $config_template ]]; then
@@ -251,6 +256,27 @@ if [[ -z $time_to_run ]]; then
 fi
 dhms_to_seconds $time_to_run
 
+# Install infra nodes and move componets to infra nodes
+if [[ $infra ]]; then
+    cd utils
+    export SET_ENV_BY_PLATFORM="custom"
+    export INFRA_TAINT="true"
+    ./openshift-qe-workers-infra-workload-commands.sh
+    export OPENSHIFT_PROMETHEUS_RETENTION_PERIOD=15d
+    export OPENSHIFT_ALERTMANAGER_STORAGE_SIZE=2Gi
+    # For test run longer than 10 days
+    if [[ $SECONDS_TO_RUN -gt 864000 ]]; then
+        export OPENSHIFT_PROMETHEUS_STORAGE_SIZE=100Gi
+     # For test run equal or less than 10 days
+    else
+        export OPENSHIFT_PROMETHEUS_STORAGE_SIZE=50Gi
+    fi
+    export IF_MOVE_INGRESS="true"
+    export IF_MOVE_REGISTRY="true"
+    export IF_MOVE_MONITORING="true"
+    ./openshift-qe-move-pods-infra-commands.sh
+fi
+
 # Configure storage for monitoring
 # https://docs.openshift.com/container-platform/4.12/scalability_and_performance/scaling-cluster-monitoring-operator.html#configuring-cluster-monitoring_cluster-monitoring-operator
 set +e
@@ -262,13 +288,13 @@ if [[ $? -eq 1  ]]; then
     if [[ $SECONDS_TO_RUN -gt 864000 && $storageclass == "nfs_provisioner" ]]; then
         export PROMETHEUS_RETENTION_PERIOD=40d
         export PROMETHEUS_STORAGE_SIZE=500Gi
-        export ALERTMANAGER_STORAGE_SIZE=20Gi
+        export ALERTMANAGER_STORAGE_SIZE=2Gi
     # For test run equal or less than 10 days or using nfs_provisioner as storageclass uses node's local storage which has limited storage
     # https://issues.redhat.com/browse/OCPQE-13514
     elif [[ $SECONDS_TO_RUN -le 864000 ]]; then
         export PROMETHEUS_RETENTION_PERIOD=20d
         export PROMETHEUS_STORAGE_SIZE=50Gi
-        export ALERTMANAGER_STORAGE_SIZE=5Gi
+        export ALERTMANAGER_STORAGE_SIZE=2Gi
     fi
     envsubst < content/cluster-monitoring-config.yaml | oc apply -f -
     echo "Sleep 60s to wait for monitoring to take the new config map."
@@ -304,7 +330,7 @@ if [[ $? -eq 1 ]];then
     log "info" "====Install dittybopper===="
     cd utils
     if [[ ! -f performance-dashboards ]]; then
-        git clone git@github.com:cloud-bulldozer/performance-dashboards.git
+        git clone git@github.com:cloud-bulldozer/performance-dashboards.git --depth 1
     fi
     cd performance-dashboards/dittybopper
     ./deploy.sh
@@ -322,6 +348,11 @@ log "info" "====Clearing test ns with label purpose=reliability.===="
 oc delete ns -l purpose=reliability
 # Start reliability test
 log "info" "====Start Reliability test. Log is writting to $folder_name/reliability.log.===="
+log "info" "Cluster information:"
+oc version
+# get haproxy version
+oc rsh -n openshift-ingress $(oc get po -n openshift-ingress --no-headers | head -n 1 | awk '{print $1}') haproxy -v
+echo $STORAGE_CLASS
 # run in background and dont append output to nohup.out
 nohup python3 reliability.py -c $folder_name/reliability.yaml -l $folder_name/reliability.log > /dev/null 2>&1 &
 timestamp_start=$(date +%s)
