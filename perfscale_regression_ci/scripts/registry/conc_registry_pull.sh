@@ -72,8 +72,7 @@ function fix(){
   # fixing issues recorded in https://docs.google.com/document/d/148Q-pIZlkZlyqdMDBI3Zr_I10_IDwMcKiBpuwP14lZw/edit#heading=h.nnxdwzdzlvx
   echo "Fixing cakephp-mysql-persistent application that are not running ."
   # resolve mysql replicacontroller not ready by deleting the mysql replicationcontroller and let it recreate
-  for namespace in $(sum(node_namespace_pod_container:container_memory_working_set_bytes{cluster="", node=~"ip-10-0-167-50.us-east-2.compute.internal"}) by (pod)
- | awk '{print $1}'); do
+  for namespace in $(oc get rc -A -l openshift.io/deployment-config.name=$database --no-headers| egrep -v '1.*1.*1' | awk '{print $1}'); do
     oc get rc -n $namespace
     echo "----Recreate mysql replicacontrollers in namespace $namespace----"
     oc delete rc -l openshift.io/deployment-config.name=$database -n $namespace
