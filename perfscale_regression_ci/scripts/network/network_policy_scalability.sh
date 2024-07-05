@@ -1,7 +1,7 @@
 #/!/bin/bash -x
 ################################################
 ## Auth=mifiedle@redhat.com qili@redhat.com lhorsley@redhat.com
-## Desription: On a 10 node OVN cluster, time how long it takes to scale up to 2000 pods with and without the networkpolicy 
+## Desription: Time how long it takes to scale up to 2000 pods with and without the networkpolicy 
 ## Note: The scale up time with the networkpolicy in place will be more than without, but it should not be an order of magnitude difference.	
 ## Polarion test case: OCP-41535 - NetworkPolicy scalability - 2000 pods per namespace using customer network policy	
 ## https://polarion.engineering.redhat.com/polarion/#/project/OSE/workitem?id=OCP-41535
