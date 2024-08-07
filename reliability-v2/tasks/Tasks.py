@@ -119,6 +119,8 @@ class Tasks:
         if rc == 0:
             # developer is forbidden to patch resource "namespaces"
             oc(f"label namespace {namespace} purpose=reliability",self.kubeconfig_admin)
+            group_name = namespace.split(f"-{user}")[0]
+            oc(f"label namespace {namespace} group={group_name}",self.kubeconfig_admin)
         self.__log_result(rc)
         return (result,rc)
 
@@ -293,9 +295,16 @@ class Tasks:
             return(0)
         
     # oc apply a file
-    def apply(self,user,namespace,file):
-        self.logger.info(f"[Task] apply file {file} in namespace {namespace}.")
-        (result, rc) = oc(f"apply -f {file} -n {namespace}",self.__get_kubeconfig(user))
+    def apply(self,user,namespace,parameter):
+        self.logger.info(f"[Task] apply file {parameter} in namespace {namespace}.")
+        (result, rc) = oc(f"apply -f {parameter} -n {namespace}",self.__get_kubeconfig(user))
+        self.__log_result(rc)
+        return (result,rc)
+    
+    # oc apply a file
+    def apply_nonamespace(self,user,parameter):
+        self.logger.info(f"[Task] apply file {parameter} without namespace.")
+        (result, rc) = oc(f"apply -f {parameter}",self.__get_kubeconfig(user))
         self.__log_result(rc)
         return (result,rc)
 
@@ -366,10 +375,11 @@ class Tasks:
         return (result,rc)
 
     # run shell script type of task
-    def shell_task(self,task,user):
-        # pass kubeconfig and user name to the shell task
-        # kubeconfig and user will be exported as env variables to the shell script
-        (result, rc) = shell(task, self.__get_kubeconfig(user), user)
+    def shell_task(self,task,user,group_name):
+        # pass kubeconfig, user and group name to the shell task
+        # kubeconfig, user and group name will be exported as env variables to the shell script
+        (result, rc) = shell(task, self.__get_kubeconfig(user), user, group_name)
+        # drop the path, only use the shell file name as the task name
         start_index=task.rfind('/')
         if start_index == -1:
             task_name=task

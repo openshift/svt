@@ -12,9 +12,10 @@
 ################################################
 
 USER=${USER:-""}
+GROUP=${GROUPNAME:-""}
 image="image-registry.openshift-image-registry.svc:5000/openshift/cli"
 cmd="/bin/sh -c date"
-ns="${USER}-0"
+ns="${GROUP}-${USER}-0"
 cronjob_prefix="cronjob"
 
 function usage {
@@ -133,12 +134,12 @@ job_pod_retry=60
 job_pod_retry_interval=30
 while [[ $(oc get job -n $ns | grep " 1/1 " | wc -l) -ne $number || $(oc get pod -n $ns | grep "Completed" | wc -l) -lt $number || $job_pod_retry -eq 0 ]]
 do
-    RETRY=$(($job_pod_retry_interval-1))
+    job_pod_retry=$(($job_pod_retry-1))
     echo "Wait until cronjobs got completed once...Retry left: $job_pod_retry"
-    sleep 30
+    sleep $job_pod_retry_interval
 done
-if [[ $job_pod_retry_interval -eq 0 ]]; then
-    echo "[FAIL] Jobs were not successfully COMPLETIONS after $job_pod_retry retry, please debug."
+if [[ $job_pod_retry -eq 0 ]]; then
+    echo "[FAIL] Jobs were not successfully COMPLETIONS after 60 retry, please debug."
     exit 1
 fi
 

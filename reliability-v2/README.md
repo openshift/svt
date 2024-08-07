@@ -106,7 +106,7 @@ reliability:
 ```
 
 ## Prepare Configuration
-Example [config](https://github.com/openshift/svt/blob/master/reliability-v2/config/example_reliability.yaml). 
+Example [config](https://github.com/openshift/svt/blob/master/reliability-v2/config/reliability.yaml). 
 
 You can customize the configuration file, check [Configuration](#Configuration) for details.
 
@@ -153,7 +153,7 @@ touch halt
 ```
 
 # Configuration
-Example [config](https://github.com/openshift/svt/blob/master/reliability-v2/config/example_reliability.yaml). Below sections explains each part of the configuration file.
+Example [config](https://github.com/openshift/svt/blob/master/reliability-v2/config/reliability.yaml). Below sections explains each part of the configuration file.
 
 ## Groups and Tasks
 A group defines a group of users with the similar behavior, they will run the same tasks. You can use any meaningful name for a group
@@ -178,72 +178,8 @@ A group defines a group of users with the similar behavior, they will run the sa
 
 All users in a group run in parrellel. All groups run in parrellel.
 
-For tasks, oc cli, kubeconfig, shell script and build-in [func](Supported-Func)s are supported.
+For tasks, oc, kubeconfig, shell and build-in [func](Supported-Func)s are supported.
 
-```yaml
-reliability:
-  groups:
-    - name: admin
-      # For cluster created by Jenkins Flexy-install job, the admin user_name is kubeadmin.
-      # For rosa cluster created in Prow, the admin user_name is rosa-admin.
-      user_name: <admin_username> # admin username as kubeadmin or rosa-admin.
-      loops: forever # run group for loops times. integer > 0 or 'forever', default is 1.
-      trigger: 600 # wait trigger seconds between each loop
-      jitter: 60 # randomly start the users in this group in trigger seconds. Default is 0.
-      interval: 10 # wait interval seconds between tasks.
-      tasks: 
-        - func check_operators
-        - oc get project -l purpose=reliability
-        - func check_nodes
-        - kubectl get pods -A -o wide | egrep -v "Completed|Running"
-        # Run test case as scripts. KUBECONFIG of the current user is set as env variable by reliability-v2. 
-        #- . <path_to_script>/create-delete-pod-ensure-service.sh
-
-    - name: dev-test
-      user_name: testuser- # if user_start and user_end exist, this will be username prefix
-      # For cluster created by Jenkins Flexy-install job, the users start from testuser-0
-      # For cluster created in Prow and used the following step to create test users, the users start from testuser-1. 
-      # https://github.com/openshift/release/blob/master/ci-operator/step-registry/osd-ccs/conf/idp/htpasswd/multi-users/osd-ccs-conf-idp-htpasswd-multi-users-ref.yaml
-      user_start: 1 # user_start is inclusive, start with testuser-1 in the users file. 
-      user_end: 11 # user_end is exclusive, end with testuser-10 in the users file
-      loops: forever
-      trigger: 60
-      jitter: 600 # randomly start the users in this group in 10 minutes
-      interval: 10
-      tasks:
-        - func delete_all_projects # clear all projects
-        - func verify_project_deletion 2 # verfy project deletion in 2 namespaces
-        - func new_project 2 # new 2 projects
-        # If network policy is planed in the test, uncomment the following line
-        #- func apply 2 "<path_to_content>/allow-same-namespace.yaml" # Apply network policy to 2 projects
-        - func check_all_projects # check all project under this user
-        - func new_app 2 # new app in 2 namespaces
-        - func load_app 2 10 # load apps in 2 namespaces with 10 clients for each
-        - func build 1 # build app in 1 namespace
-        - func check_pods 2 # check pods in 2 namespaces 
-        - func delete_project 2 # delete project in 2 namespaces
-        - func verify_project_deletion 2 # verfy project deletion in 2 namespaces
-
-    - name: dev-prod
-      user_name: testuser- 
-      user_start: 15
-      user_end: 16
-      loops: forever
-      trigger: 600
-      jitter: 1200
-      interval: 600
-      pre_tasks: 
-          - func delete_all_projects
-          - func verify_project_deletion 2
-          - func new_project 2
-          - func new_app 2
-      tasks:
-        - func load_app 2 10 
-        - func scale_deployment 2 2 # scale app in 2 namespaces to 2 replicas
-        - func scale_deployment 2 1 # scale app in 2 namespaces to 1 replicas
-      post_tasks: 
-        - func delete_project 2
-```
 ## Supported func
 Funs are some build-in functions that calls oc cli to run some common operation(s).
 
@@ -252,15 +188,16 @@ The following funcs are supported now:
 | name | parameters | user | comment |
 | ---- | ---- | ---- | ---- |
 | delete_all_projects  | N/A | developer | delete all projects for a user | 
-| new_project | number_of_projects | developer | Create n projects for the user|
+| new_project | -n number_of_projects | developer | Create n projects for the user|
 | check_all_projects  | N/A | developer | Check projects under the user|
-| new_app  | number_of_projects | developer | New an app under each project|
-| load_app  | number_of_projects  number_of_clients | developer | Load an app under each project with a number of clients|
-| apply  | number_of_projects  file_location | developer admin | apply a file under each project|
-| build  | number_of_projects | developer | Build under each project|
-| scale_deployment  | number_of_projects number_of_replicas | developer | Scaleup the deployment to number_of_replicas replicas under each project|
-| check_pods  | number_of_projects | developer | Check pods under each project|
-| delete_project  | number_of_projects | developer | Delete each project|
+| new_app  | -n number_of_projects | developer | New an app under each project|
+| load_app  | -n number_of_projects -p number_of_clients | developer | Load an app under each project with a number of clients|
+| apply  | -n number_of_projects -p file_location | developer admin | apply a file under each project|
+| apply_nonamespace  | -p file_location | admin | apply a file without namespace|
+| build  | -n number_of_projects | developer | Build under each project|
+| scale_deployment  | -n number_of_projects -p number_of_replicas | developer | Scaleup the deployment to number_of_replicas replicas under each project|
+| check_pods  | -n number_of_projects | developer | Check pods under each project|
+| delete_project  | -n number_of_projects | developer | Delete each project|
 | check_operators  | N/A | admin | Check Degraded operators|
 | check_nodes  | N/A | admin | Check not Ready nodes|
 

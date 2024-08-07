@@ -1,0 +1,24 @@
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: AdminNetworkPolicy
+metadata:
+  name: allow-traffic-reliability
+spec:
+  priority: 40
+  subject:
+    namespaces:
+      matchLabels:
+        purpose: reliability
+  ingress:
+  - name: "allow-ingress-from-reliability"
+    action: "Allow"
+    from:
+    - namespaces:
+        matchLabels:
+          purpose: reliability
+  egress:
+  - name: "allow-egress-to-reliability"
+    action: "Allow"
+    to:
+    - namespaces:
+        matchLabels:
+          purpose: reliability
