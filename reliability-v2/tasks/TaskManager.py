@@ -16,7 +16,7 @@ class TaskManager:
         self.tasks = Tasks()
         self.cerberus_history_file = cerberus_history_file
 
-    def run_task(self,task,user):
+    def run_task(self,task,user,group_name):
         label = f"[User: {user}] [Task: {task}]"
         rc = 0
         self.logger.info(f"{label}: will be run")
@@ -30,22 +30,59 @@ class TaskManager:
             _, rc = self.tasks.kubectl_task(cmd, user)
         elif task.startswith('func ',0,5):
             task_split = task.split(" ")
+            # [1]: the second part is the function name. e.g. "func new_project -n 2"
             func = task_split[1]
-            if len(task_split) > 2:
-                rc = 0
-                for i in range(int(task_split[2])):
-                    if rc == 0:
-                        namespace = f"{user}-{i}"
-                        if len(task_split) == 3:
-                            _, rc = eval(f"self.tasks.{func}")(user,namespace)
-                        elif len(task_split) == 4:
-                            _, rc = eval(f"self.tasks.{func}")(user,namespace,task_split[3])
-                    else:
-                        break
-            else:
+            # If there is no '-n' and '-p', only pass user to the func. e.g. "func check_nodes"
+            if len(task_split) == 2:
                 _, rc = eval(f"self.tasks.{func}")(user)
+            elif len(task_split) > 2:
+                # [2]: if the third part is '-n', e.g. "func new_project -n 2", plit it to n namespaces
+                if task_split[2] == "-n":
+                    rc = 0
+                    # [3]: the forth part after -n is the number of namespaces
+                    for i in range(int(task_split[3])):
+                        namespace = f"{group_name}-{user}-{i}"
+                        # If the prefious namespace's task is successful, continue the next namespace's task
+                        if rc == 0:
+                            # if there is no '-p', pass the namespace to the func. 
+                            # e.g. "func new_project -n 2"
+                            if len(task_split) == 4:
+                                _, rc = eval(f"self.tasks.{func}")(user,namespace)
+                            # if the forth part is '-p', pass the fifth part as the parameter to the func. 
+                            # e.g. 'func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml"'
+                            elif len(task_split) >= 6:
+                                if task_split[4] == "-p":
+                                    _, rc = eval(f"self.tasks.{func}")(user,namespace," ".join(task_split[5:]))
+                            elif len(task_split) == 5:
+                                if task_split[4] == "-p":
+                                    rc = -3
+                                    self.logger.error((f"'{label}: the task needs a parameter after '-p'. Result is: '{rc}'."))
+                                    return rc
+                                else:
+                                    rc = -3
+                                    self.logger.error((f"'{label}: the task needs only a number after '-n'. Result is: '{rc}'."))
+                                    return rc
+                        # If the prefious namespace's task is successful, drop the next namespace's task
+                        else:
+                            break
+                # if there is no '-n', the func does not need a namespace.
+                # If there is '-p', pass the fifth part as the parameter to the func.
+                # e.g. 'func apply_nonamespace -p "<path_to_content>/network-policy/00_banp_deny-workload.yaml"'
+                elif task_split[2] == "-p":
+                    if len(task_split) >= 4:
+                        _, rc = eval(f"self.tasks.{func}")(user," ".join(task_split[3:]))
+                    else:
+                        rc = -3
+                        self.logger.error((f"'{label}: the task needs a parameter after '-p'. Result is: '{rc}'."))
+                        return rc
+                else:
+                    rc = -3
+                    self.logger.error((f"'{label}: the task needs either '-n' or '-p' after the func name. Result is: '{rc}'."))
+                    return rc
+        # shell
         else:
-            _, rc = self.tasks.shell_task(task, user)
+            # pass in the user and the group_name, script can use them to form a project name.
+            _, rc = self.tasks.shell_task(task, user, group_name)
         self.logger.info((f"'{label}: finished. Result is: '{rc}'."))
 
         return rc
@@ -80,7 +117,7 @@ class TaskManager:
             self.logger.info(f"{label}: will run pre_tasks")
             for pre_task in pre_tasks:
                 if pre_rc == 0:
-                    pre_rc = self.run_task(pre_task, user)
+                    pre_rc = self.run_task(pre_task, user, group_name)
                     time.sleep(20)
         if pre_rc != 0:
             result = f"{label}: pre tasks failed." 
@@ -94,7 +131,7 @@ class TaskManager:
                         rc = 0
                         for task in tasks:
                             if rc == 0:
-                                rc = self.run_task(task, user)
+                                rc = self.run_task(task, user, group_name)
                                 # sleep interval seconds between tasks
                                 self.logger.info(f"{label}: will sleep {interval}s before next task")
                                 time.sleep(interval)           
@@ -122,7 +159,7 @@ class TaskManager:
                         rc = 0
                         for task in tasks:
                             if rc == 0:
-                                rc = self.run_task(task, user)
+                                rc = self.run_task(task, user, group_name)
                                 self.logger.info(f"{label}: will sleep {interval}s before next task")
                                 time.sleep(interval)           
                         self.logger.info(f"{label}: will sleep {trigger}s after loop '{loop}'")
@@ -146,7 +183,7 @@ class TaskManager:
             post_rc = 0
             for post_task in post_tasks:
                 if post_rc == 0:
-                    post_rc = self.run_task(post_task, user)
+                    post_rc = self.run_task(post_task, user, group_name)
                     time.sleep(20)
         return result
 

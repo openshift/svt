@@ -197,14 +197,14 @@ rm -rf halt
 [[ -z $folder_name ]] && folder_name="test"$(date "+%Y%m%d%H%M%S")
 mkdir $folder_name
 log "info" "Test folder $folder_name is created."
-# cd $folder_name
-# log "info" "====Preparing venv===="
-# python3 --version
-# python3 -m venv reliability_venv > /dev/null
-# source reliability_venv/bin/activate > /dev/null
-# cd -
-# pip3 install --upgrade pip > /dev/null 2>&1
-# pip3 install -r requirements.txt > /dev/null 2>&1
+cd $folder_name
+log "info" "====Preparing venv===="
+python3 --version
+python3 -m venv reliability_venv > /dev/null
+source reliability_venv/bin/activate > /dev/null
+cd -
+pip3 install --upgrade pip > /dev/null 2>&1
+pip3 install -r requirements.txt > /dev/null 2>&1
 
 # Prepare config yaml file
 if [[ -z $config_template ]]; then

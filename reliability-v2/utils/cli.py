@@ -3,7 +3,7 @@ import subprocess
 import logging
 import os
 
-def shell(cmd,config="",user="",ignore_log=False,ignore_slack=False):
+def shell(cmd,config="",user="",group_name="",ignore_log=False,ignore_slack=False):
     logger = logging.getLogger('reliability')
     rc = 0
     result = ""
@@ -16,7 +16,7 @@ def shell(cmd,config="",user="",ignore_log=False,ignore_slack=False):
     if not ignore_log:
         logger.info(f"=> {cmd_mask}")
     try:
-        env = dict(os.environ, KUBECONFIG=config, USER=user)
+        env = dict(os.environ, KUBECONFIG=config, USER=user, GROUPNAME=group_name)
         result = subprocess.check_output(cmd,stderr=subprocess.STDOUT,env=env,shell=True)
         string_result = result.decode("utf-8")
         if not ignore_log:

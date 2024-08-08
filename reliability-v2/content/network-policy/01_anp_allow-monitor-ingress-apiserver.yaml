@@ -1,0 +1,33 @@
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: AdminNetworkPolicy
+metadata:
+  name: allow-ingress-from-monitoring-ingress-apiserver
+spec:
+  priority: 35
+  subject:
+    namespaces: {}
+  ingress:
+  - name: "allow-from-monitoring"
+    action: "Allow"
+    from:
+    - namespaces:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-monitoring
+  - name: "allow-from-ingress"
+    action: "Allow"
+    from:
+    - namespaces:
+        matchLabels:
+          kubernetes.io/metadata.name: openshift-ingress
+  egress:
+  - name: "allow-to-API-server"
+    action: "Allow"
+    to:
+    - nodes:
+        matchExpressions:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+    ports:
+    - portNumber:
+        port: 6443
+        protocol: TCP
