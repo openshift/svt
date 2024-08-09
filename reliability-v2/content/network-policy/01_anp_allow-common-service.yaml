@@ -1,0 +1,54 @@
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: AdminNetworkPolicy
+metadata:
+  name: allow-monitoring
+spec:
+  priority: 5
+  subject:
+    namespaces: {}
+  ingress:
+  - name: "allow-ingress-from-monitoring"
+    action: "Allow"
+    from:
+    - namespaces:
+        namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: openshift-monitoring
+---
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: AdminNetworkPolicy
+metadata:
+  name: allow-ingress
+spec:
+  priority: 6
+  subject:
+    namespaces: {}
+  ingress:
+  - name: "allow-ingress-from-ingress"
+    action: "Allow"
+    from:
+    - namespaces:
+        namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: openshift-ingress
+---
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: AdminNetworkPolicy
+metadata:
+  name: allow-api-server
+spec:
+  priority: 7
+  subject:
+    namespaces: {}         
+  egress:
+  - name: "allow-to-API-server"
+    action: "Allow"
+    to:
+    - nodes:
+        matchExpressions:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+    ports:
+    - portNumber:
+        port: 6443
+        protocol: TCP

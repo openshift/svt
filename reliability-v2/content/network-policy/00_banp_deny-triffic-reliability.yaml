@@ -1,0 +1,34 @@
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: BaselineAdminNetworkPolicy
+metadata:
+  name: default
+spec:
+  subject:
+    namespaces:
+      matchExpressions:
+      - key: purpose
+        operator: In
+        values: ["reliability"]
+  ingress:
+  - name: "deny-all-ingress-from-any-ns"
+    action: "Deny"
+    from:
+    - namespaces: {}
+  # egress:
+  # - name: "deny-all-egress-to-any-ns"
+  #   action: "Deny"
+  #   to:
+  #   - namespaces:
+  #       namespaceSelector: {}
+  # - name: egress-deny-all-traffic-to-any-network
+  #   action: Deny
+  #   to:
+  #   - networks:
+  #     - 0.0.0.0/0
+  # - action: Deny
+  #   name: egress-deny-all-traffic-to-any-node
+  #   to:
+  #   - nodes:
+  #       matchExpressions:
+  #       - key: kubernetes.io/hostname
+  #         operator: Exists

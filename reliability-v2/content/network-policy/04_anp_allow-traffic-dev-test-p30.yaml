@@ -1,24 +1,24 @@
 apiVersion: policy.networking.k8s.io/v1alpha1
 kind: AdminNetworkPolicy
 metadata:
-  name: allow-traffic-reliability
+  name: allow-traffic-dev-test-p30
 spec:
-  priority: 40
+  priority: 30
   subject:
     namespaces:
       matchLabels:
-        purpose: reliability
+        group: dev-test
   ingress:
-  - name: "allow-ingress-from-reliability"
+  - name: "allow-all-ingress-from-dev-test"
     action: "Allow"
     from:
     - namespaces:
         matchLabels:
-          purpose: reliability
+          group: dev-test
   egress:
-  - name: "allow-egress-to-reliability"
-    action: "Allow"
+  - name: "deny-all-egress-to-dev-test"
+    action: "Deny"
     to:
     - namespaces:
         matchLabels:
-          purpose: reliability
+          group: dev-test

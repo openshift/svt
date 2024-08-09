@@ -29,6 +29,13 @@ reliability:
       trigger: 600 # wait trigger seconds between each loop
       jitter: 60 # randomly start the users in this group in trigger seconds. Default is 0.
       interval: 10 # wait interval seconds between tasks.
+      # If admin network policy function is planed in the test, uncomment the following line
+      pre_tasks:
+        - func apply_nonamespace -p "<path_to_content>/network-policy/00_banp_deny-triffic-reliability.yaml"
+        - func apply_nonamespace -p "<path_to_content>/network-policy/01_anp_allow-common-service.yaml"
+        - func apply_nonamespace -p "<path_to_content>/network-policy/02_anp_allow-traffic-egress-cidr-cluster-network-p20.yaml"
+        - func apply_nonamespace -p "<path_to_content>/network-policy/04_anp_allow-traffic-dev-test-p30.yaml"
+        - func apply_nonamespace -p "<path_to_content>/network-policy/03_anp_allow-traffic-dev-prod-p31.yaml"
       tasks: 
         - func check_operators
         - oc get project -l purpose=reliability
