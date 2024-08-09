@@ -6,7 +6,7 @@ reliability:
 
   appTemplates:
     - template: cakephp-mysql-persistent
-    - template: nodejs-postgresql-persistent # N/A for FIPS
+    #- template: nodejs-postgresql-persistent # N/A for FIPS
     - template: django-psql-persistent # N/A for FIPS
     - template: rails-pgsql-persistent
     - template: dancer-mysql-persistent
@@ -27,8 +27,15 @@ reliability:
       user_name: <admin_username> # admin username as kubeadmin or rosa-admin.
       loops: forever # run group for loops times. integer > 0 or 'forever', default is 1.
       trigger: 600 # wait trigger seconds between each loop
-      jitter: 60 # randomly start the users in this group in trigger seconds. Default is 0.
+      jitter: 0 # randomly start the users in this group in trigger seconds. Default is 0.
       interval: 10 # wait interval seconds between tasks.
+      # If admin network policy function is planed in the test, uncomment the following line
+      pre_tasks:
+        - func apply_nonamespace -p "<path_to_content>/network-policy/00_banp_deny-triffic-reliability.yaml"
+        - func apply_nonamespace -p "<path_to_content>/network-policy/01_anp_allow-common-service.yaml"
+        - func apply_nonamespace -p "<path_to_content>/network-policy/02_anp_allow-traffic-egress-cidr-cluster-network-p20.yaml"
+        - func apply_nonamespace -p "<path_to_content>/network-policy/04_anp_allow-traffic-dev-test-p30.yaml"
+        - func apply_nonamespace -p "<path_to_content>/network-policy/03_anp_allow-traffic-dev-prod-p31.yaml"
       tasks: 
         - func check_operators
         - oc get project -l purpose=reliability
@@ -71,12 +78,12 @@ reliability:
       jitter: 3600
       interval: 600
       pre_tasks: 
-          - func delete_all_projects
-          - func verify_project_deletion -n 2
-          - func new_project -n 2
-          # If network policy is planed in the test, uncomment the following line
-          #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
-          - func new_app -n 2
+        - func delete_all_projects
+        - func verify_project_deletion -n 2
+        - func new_project -n 2
+        # If network policy is planed in the test, uncomment the following line
+        #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
+        - func new_app -n 2
       tasks:
         - func load_app -n 2 -p 10 
         - func scale_deployment -n 2 -p 2 # scale app in 2 namespaces to 2 replicas

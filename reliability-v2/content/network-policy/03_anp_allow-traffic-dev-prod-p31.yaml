@@ -1,0 +1,24 @@
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: AdminNetworkPolicy
+metadata:
+  name: allow-traffic-dev-prod-p31
+spec:
+  priority: 31
+  subject:
+    namespaces:
+      matchLabels:
+        group: dev-prod
+  ingress:
+  - name: "allow-all-ingress-from-dev-prod"
+    action: "Allow"
+    from:
+    - namespaces:
+        matchLabels:
+          group: dev-prod
+  egress:
+  - name: "deny-all-egress-to-dev-prod"
+    action: "Deny"
+    to:
+    - namespaces:
+        matchLabels:
+          group: dev-prod

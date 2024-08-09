@@ -132,9 +132,12 @@ done
 # wait the first jobs to be completed
 job_pod_retry=60
 job_pod_retry_interval=30
-while [[ $(oc get job -n $ns | grep " 1/1 " | wc -l) -ne $number || $(oc get pod -n $ns | grep "Completed" | wc -l) -lt $number || $job_pod_retry -eq 0 ]]
+while [[ $(oc get pod -n $ns | grep "Completed") ]]
 do
     job_pod_retry=$(($job_pod_retry-1))
+    if [[ $job_pod_retr -eq 0 ]]; then
+        break
+    fi
     echo "Wait until cronjobs got completed once...Retry left: $job_pod_retry"
     sleep $job_pod_retry_interval
 done

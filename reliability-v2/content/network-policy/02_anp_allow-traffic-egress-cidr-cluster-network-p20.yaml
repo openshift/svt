@@ -1,0 +1,18 @@
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: AdminNetworkPolicy
+metadata:
+  name: allow-egress-cidr-cluster-network-p20
+spec:
+  priority: 20
+  subject:
+    namespaces:
+      matchExpressions:
+      - key: group
+        operator: In
+        values: ["dev-test","dev-prod"]
+  egress:
+  - name: "allow-egress-to-cluster-network"
+    action: "Allow"  
+    to:
+    - networks:
+      - 0.0.0.0/0
