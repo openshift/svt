@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: http-perf
+  labels:
+    run: http-perf
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/workload
+                operator: DoesNotExist
+              - key: node-role.kubernetes.io/infra
+                operator: DoesNotExist
+      containers:
+      - name: nginx
+        image: quay.io/cloud-bulldozer/nginx:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "10Mi"
+            cpu: "10m"    
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      

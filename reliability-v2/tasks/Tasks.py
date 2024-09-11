@@ -263,27 +263,39 @@ class Tasks:
         return (result,rc)
     
     # scale the deployment config to given number of replicas in the given namespace
-    def scale_deployment(self,user,namespace,replicas="1"):
+    def scale_deploymentconfig(self,user,namespace,replicas="1"):
         # 2>/dev/null to avoid Warning: apps.openshift.io/v1 DeploymentConfig is deprecated in v4.14+, unavailable in v4.10000+
-        (deployment, rc) = oc(f"get dc --no-headers -n {namespace} 2>/dev/null | grep persistent | awk {{'print $1'}}",self.__get_kubeconfig(user))
-        deployment = deployment.rstrip()
-        self.logger.info(f"[Task] User {user}: scale deployment '{deployment}' to '{replicas}' replicas")
-        (result, rc) = oc(f"scale --replicas={replicas} -n {namespace} dc/{deployment}",self.__get_kubeconfig(user))
+        (deploymentconfig, rc) = oc(f"get dc --no-headers -n {namespace} 2>/dev/null | grep persistent | awk {{'print $1'}}",self.__get_kubeconfig(user))
+        deploymentconfig = deploymentconfig.rstrip()
+        self.logger.info(f"[Task] User {user}: scale deployment config'{deploymentconfig}' to '{replicas}' replicas")
+        (result, rc) = oc(f"scale --replicas={replicas} -n {namespace} dc/{deploymentconfig}",self.__get_kubeconfig(user))
         if rc == 0:
             sleep(30)
-            rc = self.__check_replicas(user,namespace,"dc",deployment,replicas)
+            rc = self.__check_replicas(user,namespace,"dc",deploymentconfig,replicas)
+        self.__log_result(rc)
+        return (result,rc)
+    
+    # scale the deployment to given number of replicas in the given namespace
+    def scale_deployment(self,user,namespace,replicas="1"):
+        (deployment, rc) = oc(f"get deployment --no-headers -n {namespace} | awk {{'print $1'}}",self.__get_kubeconfig(user))
+        deployment = deployment.rstrip()
+        self.logger.info(f"[Task] User {user}: scale deployment'{deployment}' to '{replicas}' replicas")
+        (result, rc) = oc(f"scale deployment --replicas={replicas} -n {namespace} {deployment}",self.__get_kubeconfig(user))
+        if rc == 0:
+            sleep(30)
+            rc = self.__check_replicas(user,namespace,"deployment",deployment,replicas)
         self.__log_result(rc)
         return (result,rc)
     
     # check replica numbers of a given deployment in the given namespace
-    def __check_replicas(self,user,namespace,object,deployment,replicas):
+    def __check_replicas(self,user,namespace,object,name,replicas):
         # 2>/dev/null to avoid Warning: apps.openshift.io/v1 DeploymentConfig is deprecated in v4.14+, unavailable in v4.10000+
-        (result, rc) = oc("get "+object+"/"+deployment+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}' 2>/dev/null",self.__get_kubeconfig(user))
+        (result, rc) = oc("get "+object+"/"+name+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}' 2>/dev/null",self.__get_kubeconfig(user))
         max_tries = 10
         current_tries = 0
         while result != replicas and current_tries <= max_tries:
-            self.logger.info(f"[Task] User {user}: check {object} '{deployment}' to reach '{replicas}' replicas. Current replica:{result}. Retry:{current_tries}/{max_tries}")
-            (result, rc) = oc("get "+object+"/"+deployment+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}' 2>/dev/null",self.__get_kubeconfig(user))
+            self.logger.info(f"[Task] User {user}: check {object} '{name}' to reach '{replicas}' replicas. Current replica:{result}. Retry:{current_tries}/{max_tries}")
+            (result, rc) = oc("get "+object+"/"+name+" -n "+namespace+" -o jsonpath='{.status.readyReplicas}' 2>/dev/null",self.__get_kubeconfig(user))
             sleep(30)
             current_tries += 1
         if result != replicas:
