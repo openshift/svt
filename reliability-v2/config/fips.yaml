@@ -86,8 +86,8 @@ reliability:
           - func new_app -n 2
       tasks:
         - func load_app -n 2 -p 10 
-        - func scale_deployment -n 2 -p 2 # scale app in 2 namespaces to 2 replicas
-        - func scale_deployment -n 2 -p 1 # scale app in 2 namespaces to 1 replicas
+        - func scale_deploymentconfig -n 2 -p 2 # scale app deploymentconfig in 2 namespaces to 2 replicas
+        - func scale_deploymentconfig -n 2 -p 1 # scale app deploymentconfig in 2 namespaces to 1 replicas
       post_tasks: 
         - func delete_project -n 2
 
