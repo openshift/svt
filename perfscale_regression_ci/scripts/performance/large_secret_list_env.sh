@@ -4,4 +4,4 @@ export WORKLOAD_TEMPLATE="${DIR}/../../kubeburner-object-templates/secret-projec
 export NAME=${NAME:-"large-secrets"}
 export NAMESPACE=${NAMESPACE:-"large-secrets"}
 export JOB_ITERATION=${PARAMETERS:=100}
-export SECRET_REPLICAS=10
+export SECRET_REPLICAS=${SECRET_REPLICAS:=20}
