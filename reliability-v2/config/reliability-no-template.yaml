@@ -38,7 +38,7 @@ reliability:
       # For cluster created in Prow and used the following step to create test users, the users start from testuser-1. 
       # https://github.com/openshift/release/blob/master/ci-operator/step-registry/osd-ccs/conf/idp/htpasswd/multi-users/osd-ccs-conf-idp-htpasswd-multi-users-ref.yaml
       user_start: 1 # user_start is inclusive, start with testuser-1 in the users file. 
-      user_end: 6 # user_end is exclusive, end with testuser-10 in the users file
+      user_end: 11 # user_end is exclusive, end with testuser-10 in the users file
       loops: forever
       trigger: 60
       jitter: 600 # randomly start the users in this group in 10 minutes
@@ -60,8 +60,8 @@ reliability:
 
     - name: dev-prod
       user_name: testuser- 
-      user_start: 11
-      user_end: 16
+      user_start: 21
+      user_end: 31
       loops: forever
       trigger: 600
       jitter: 3600
@@ -84,8 +84,8 @@ reliability:
 
     - name: dev-cronjob
       user_name: testuser- # if user_start and user_end exist, this will be username prefix
-      user_start: 16
-      user_end: 17
+      user_start: 41
+      user_end: 42
       trigger: 600
       jitter: 1200
       loops: forever
