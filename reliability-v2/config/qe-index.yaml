@@ -1,0 +1,25 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: qe-app-registry
+  namespace: openshift-marketplace
+spec:
+  displayName: QE Catalog
+  image: quay.io/openshift-qe-optional-operators/aosqe-index:v${CLUSTER_VERSION}
+  sourceType: grpc
+---
+apiVersion: operator.openshift.io/v1alpha1
+kind: ImageContentSourcePolicy
+metadata:
+  name: brew-registry
+spec:
+  repositoryDigestMirrors:
+  - mirrors:
+    - brew.registry.redhat.io
+    source: registry.redhat.io
+  - mirrors:
+    - brew.registry.redhat.io
+    source: registry.stage.redhat.io
+  - mirrors:
+    - brew.registry.redhat.io
+    source: registry-proxy.engineering.redhat.com

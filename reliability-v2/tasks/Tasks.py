@@ -399,3 +399,50 @@ class Tasks:
             task_name=task[start_index+1:]
         self.__log_result(rc,task_name)
         return (result,rc)
+    
+    # check flowcollector status for netobserv
+    def check_flowcollector(self, user):
+        self.logger.info(f"[Task] User {user}: check flowcollector")
+        # Check if nodes are Ready
+        (result, rc) = oc(
+            f"get flowcollector --no-headers| grep -v 'Ready'",
+            self.__get_kubeconfig(user),
+            ignore_log=False,
+            ignore_slack=False,
+        )
+
+        if rc == 0:
+            self.logger.error(f"Flowcollector is not Ready: {result}")
+            slackIntegration.error(f"Flowcollector not Ready: {result}")
+            rc_return = 1
+        elif rc == 1 and result == "":
+            self.logger.info(f"Flowcollector is Ready.")
+            rc_return = 0
+        else:
+            self.logger.error(f"Flowcollector status fetch error: result {result}, rc - {rc}")
+
+        return (result, rc_return)
+
+    # check netobserv pods health
+    def check_netobserv_pods(self, user):
+        self.logger.info(f"[Task] User {user}: check netobserv pods")
+        # Check if nodes are Ready
+        for ns in ("netobserv", "netobserv-privileged"):
+            (result, rc) = oc(
+                f"get pods -n {ns} -o wide --no-headers| grep -v 'Running'",
+                self.__get_kubeconfig(user),
+                ignore_log=False,
+                ignore_slack=False,
+            )
+
+            if rc == 0:
+                self.logger.error(f"Some pods are not Ready in {ns} ns: {result}")
+                slackIntegration.error(f"Some pods are not Ready in ns {ns}: {result}")
+                rc_return = 1
+            elif rc == 1 and result == "":
+                self.logger.info(f"Pods in ns {ns} are healthy.")
+                rc_return = 0
+            else:
+                self.logger.error(f"Pods status fetch error: result {result}, rc - {rc}")
+
+        return (result, rc_return)

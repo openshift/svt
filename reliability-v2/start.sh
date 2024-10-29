@@ -7,6 +7,15 @@
 ################################################
 
 set -e
+trap cleanup SIGINT EXIT
+
+function cleanup() { 
+    if [[ $reliability_pid ]] ; then
+        kill $reliability_pid
+    fi 
+    cd $RELIABILITY_DIR || true
+    rm -rf kubeconfigs rm -rf utils/kubeconfig utils/path_to_auth_files
+}
 
 function _usage {
     cat <<END
@@ -28,6 +37,8 @@ Usage: $(basename "${0}") [-p <path_to_auth_files>] [-n <folder_name> ] [-t <tim
 
   -h                           : Help
 
+  -o <operator(s) to enable>   : To enable optional operators, pass csv list of operators to install. Optional.
+
 END
 }
 
@@ -36,7 +47,7 @@ if [[ "$1" = "" ]];then
     exit 1
 fi
 
-while getopts ":n:t:p:c:r:iuh" opt; do
+while getopts ":n:t:p:c:r:o:iuh" opt; do
     case ${opt} in
     n)
         folder_name=${OPTARG}
@@ -58,6 +69,10 @@ while getopts ":n:t:p:c:r:iuh" opt; do
         ;;
     u)
         upgrade=true
+        ;;
+    o)
+        operators=${OPTARG}
+        IFS=',' read -ra operatorsToInstall <<< "$OPTARG"
         ;;
     h)
         _usage
@@ -186,6 +201,20 @@ function dhms_to_seconds {
     echo "Total seconds to run is: $SECONDS_TO_RUN"
 }
 
+function setup_netobserv(){
+    log "Setting up Network Observability operator"
+    rm -rf ocp-qe-perfscale-ci
+    git clone https://github.com/openshift-qe/ocp-qe-perfscale-ci.git --branch netobserv-perf-tests
+    OCPQE_PERFSCALE_DIR=$PWD/ocp-qe-perfscale-ci
+    source ocp-qe-perfscale-ci/scripts/env.sh
+    source ocp-qe-perfscale-ci/scripts/netobserv.sh
+    deploy_lokistack
+    deploy_kafka
+    deploy_netobserv
+    createFlowCollector "-p KafkaConsumerReplicas=6"
+    export IMPORT_DASHBOARD=$OCPQE_PERFSCALE_DIR/scripts/queries/netobserv_dittybopper.json
+}
+
 RELIABILITY_DIR=$(cd $(dirname ${BASH_SOURCE[0]});pwd)
 SECONDS_TO_RUN=0
 start_log=start_$(date +"%Y%m%d_%H%M%S").log
@@ -259,7 +288,7 @@ dhms_to_seconds $time_to_run
 # Install infra nodes and move componets to infra nodes
 if [[ $infra ]]; then
     cd utils
-    export SET_ENV_BY_PLATFORM="custom"
+    export SET_ENV_BY_PLATFORM="custom"Prometheus status is not success yet
     export INFRA_TAINT="true"
     ./openshift-qe-workers-infra-workload-commands.sh
     export OPENSHIFT_PROMETHEUS_RETENTION_PERIOD=15d
@@ -323,24 +352,44 @@ if [[ $? -eq 1  ]]; then
 fi
 
 # Install dittybopper
-cd $RELIABILITY_DIR
-
-oc get ns| grep dittybopper
-if [[ $? -eq 1 ]];then
+function install_dittybopper(){
+    cd $RELIABILITY_DIR
     log "info" "====Install dittybopper===="
     cd utils
-    if [[ ! -f performance-dashboards ]]; then
+    if [[ ! -d performance-dashboards ]]; then
         git clone git@github.com:cloud-bulldozer/performance-dashboards.git --depth 1
     fi
     cd performance-dashboards/dittybopper
-    ./deploy.sh
+    if [[ -z $IMPORT_DASHBOARD ]]; then
+        ./deploy.sh
+    else
+        ./deploy.sh -i "$IMPORT_DASHBOARD"
+    fi
     if [[ $? -eq 0 ]];then
         log "info" "dittybopper installed successfully."
     else
         log "error" "dittybopper install failed."
     fi
-fi
+}
+
 set -e
+
+# Configure QE index image if optional operators needs to be deployed
+# and call respective functions for the operator set up
+if [[ $operators ]]; then
+    CLUSTER_VERSION=$(oc get clusterversion/version -o jsonpath='{.spec.channel}' | cut -d'-' -f 2)
+    export CLUSTER_VERSION
+    log "Setting up QE index image for optional operators"
+    envsubst < config/qe-index.yaml | oc apply -f -
+
+    for operator in "${operatorsToInstall[@]}"; do
+        if [[ $operator == "netobserv-operator" ]]; then
+            setup_netobserv
+        fi
+    done
+fi
+
+install_dittybopper
 
 # Cleanup test projects
 cd $RELIABILITY_DIR
@@ -355,12 +404,14 @@ oc rsh -n openshift-ingress $(oc get po -n openshift-ingress --no-headers | head
 echo $STORAGE_CLASS
 # run in background and dont append output to nohup.out
 nohup python3 reliability.py -c $folder_name/reliability.yaml -l $folder_name/reliability.log > /dev/null 2>&1 &
+reliability_pid=$!
 timestamp_start=$(date +%s)
 timestamp_end=$(($timestamp_start + $SECONDS_TO_RUN))
 if [[ $os == "linux" ]]; then
     date_end_format=$(date --date=@$timestamp_end)
 elif [[ $os == "mac" ]]; then date_end_format=$(date -j -f "%s" $timestamp_end "+%Y-%m-%d %H:%M:%S")
 fi
+
 log "info" "Reliability test will run $time_to_run. Test will end on $date_end_format. \
 If you want to halt the test before that, open another terminal and 'touch halt' under reliability-v2 folder."
 log "warning" "DO NOT CTRL+c or terminate this session."
@@ -422,6 +473,18 @@ fi
 if [[ -z $tolerance_rate ]]; then
     tolerance_rate=1
 fi
+
+# Clean up operators setup if operators were installed
+if [[ $operators ]]; then
+    for operator in "${operatorsToInstall[@]}"; do
+        if [[ $operator == "netobserv" ]]; then
+            # shellcheck source=reliability-v2/ocp-qe-perfscale-ci/scripts/netobserv.sh
+            source ${RELIABILITY_DIR}/${OCPQE_PERFSCALE_DIR}/scripts/netobserv.sh
+            nukeobserv
+        fi
+    done
+fi
+
 cd $folder_name
 if [ ! -f reliability.log ]; then
     echo "reliability.log is not found."
