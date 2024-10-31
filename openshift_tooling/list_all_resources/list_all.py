@@ -1,16 +1,17 @@
 from optparse import OptionParser
 from subprocess import check_output, STDOUT
 import re
+import subprocess
 from time import time
 
 
-ns_match = re.compile("(\S+?)\s+(.*)")
+ns_match = re.compile(r"(\\S+?)\\s+(.*)")
 def run(cmd, config=""):
 
     if config:
         cmd = "KUBECONFIG=" + config + " " + cmd
-    result = check_output(cmd, stderr=STDOUT, shell=True)
-    return result
+    result = subprocess.check_output(cmd, stderr=STDOUT, shell=True)
+    return result.decode('utf-8')
 
 def get_namespace_param(namespace):
     if namespace == "":
@@ -22,8 +23,8 @@ def get_namespace_param(namespace):
     return namespace_param
 
 def get_all(type, namespace):
-    namespace_param = get_namespace_param(namespace)
-    result = run("oc get --ignore-not-found --no-headers " + type + namespace_param ) 
+    namespace_param = f" -n {namespace}" if namespace else ""
+    result = run("oc get --ignore-not-found --no-headers " + type + namespace_param)
     return result.splitlines()
 
 def get_crd_list(scope):
@@ -55,11 +56,14 @@ def get_all_items(all_types, namespace):
         type_items[this_type] = []
         if options.verbose:
             print(this_type + ": " + str(elapsed_time))
+        if isinstance(result, list):
+            result = "\n".join(result)
         if len(result) > 0:
-            for this_result in result:
+            for this_result in result.splitlines():
                 this_item={}
-                if namespace == "all-namespaces":
-                    m = ns_match.match(this_result)
+                m = ns_match.match(this_result)
+                if m:
+                    this_item = {}
                     this_item["namespace"] = m.group(1)
                     this_item["value"] = m.group(2)
                 else:
@@ -127,8 +131,3 @@ if __name__ == "__main__":
     
     items = get_all_items(type_list,options.namespace)
     print_items(items)  
-        
-
-    
-    
-    
