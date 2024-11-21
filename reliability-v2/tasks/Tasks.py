@@ -407,8 +407,8 @@ class Tasks:
         (result, rc) = oc(
             f"get flowcollector --no-headers| grep -v 'Ready'",
             self.__get_kubeconfig(user),
-            ignore_log=False,
-            ignore_slack=False,
+            ignore_log=True,
+            ignore_slack=True,
         )
 
         if rc == 0:
@@ -431,8 +431,8 @@ class Tasks:
             (result, rc) = oc(
                 f"get pods -n {ns} -o wide --no-headers| grep -v 'Running'",
                 self.__get_kubeconfig(user),
-                ignore_log=False,
-                ignore_slack=False,
+                ignore_log=True,
+                ignore_slack=True,
             )
 
             if rc == 0:
