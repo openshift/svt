@@ -14,7 +14,7 @@ reliability:
       # For rosa cluster created in Prow, the admin user_name is rosa-admin.
       user_name: <admin_username> # admin username as kubeadmin or rosa-admin.
       loops: forever # run group for loops times. integer > 0 or 'forever', default is 1.
-      trigger: 600 # wait trigger seconds between each loop
+      trigger: 300 # wait trigger seconds between each loop
       jitter: 0 # randomly start the users in this group in trigger seconds. Default is 0.
       interval: 10 # wait interval seconds between tasks.
       # If admin network policy function is planed in the test, uncomment the following line
@@ -24,7 +24,9 @@ reliability:
         - func apply_nonamespace -p "<path_to_content>/network-policy/02_anp_allow-traffic-egress-cidr-cluster-network-p20.yaml"
         - func apply_nonamespace -p "<path_to_content>/network-policy/04_anp_allow-traffic-dev-test-p30.yaml"
         - func apply_nonamespace -p "<path_to_content>/network-policy/03_anp_allow-traffic-dev-prod-p31.yaml"
-      tasks: 
+      tasks:
+        - func check_netobserv_pods
+        - func check_flowcollector
         - func check_operators
         - oc get project -l purpose=reliability
         - func check_nodes
@@ -45,18 +47,18 @@ reliability:
       interval: 10
       tasks:
         - func delete_all_projects # clear all projects
-        - func verify_project_deletion -n 2 # verfy project deletion in 2 namespaces
-        - func new_project -n 2 # new 2 projects
+        - func verify_project_deletion -n 8 # verfy project deletion in 2 namespaces
+        - func new_project -n 8 # new 8 projects
         # If network policy is planed in the test, uncomment the following line
         #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
         - func check_all_projects # check all project under this user
-        - func apply -n 2 -p "<path_to_content>/nginx-deploy.yaml"
-        - func apply -n 2 -p "<path_to_content>/http-service.yaml"
-        - func apply -n 2 -p "<path_to_content>/http-route.yaml"
-        - func load_app -n 2 -p 10 # load apps in 2 namespaces with 10 clients for each
-        - func check_pods -n 2 # check pods in 2 namespaces 
-        - func delete_project -n 2 # delete project in 2 namespaces
-        - func verify_project_deletion -n 2 # verfy project deletion in 2 namespaces
+        - func apply -n 8 -p "<path_to_content>/nginx-deploy.yaml"
+        - func apply -n 8 -p "<path_to_content>/http-service.yaml"
+        - func apply -n 8 -p "<path_to_content>/http-route.yaml"
+        - func load_app -n 8 -p 50 # load apps in 2 namespaces with 10 clients for each
+        - func check_pods -n 8 # check pods in 2 namespaces 
+        - func delete_project -n 4 # delete project in 2 namespaces
+        - func verify_project_deletion -n 4 # verfy project deletion in 2 namespaces
 
     - name: dev-prod
       user_name: testuser- 
@@ -68,19 +70,19 @@ reliability:
       interval: 600
       pre_tasks: 
         - func delete_all_projects
-        - func verify_project_deletion -n 2
-        - func new_project -n 2
+        - func verify_project_deletion -n 8
+        - func new_project -n 8
         # If network policy is planed in the test, uncomment the following line
         #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
-        - func apply -n 2 -p "<path_to_content>/nginx-deploy.yaml"
-        - func apply -n 2 -p "<path_to_content>/http-service.yaml"
-        - func apply -n 2 -p "<path_to_content>/http-route.yaml"
+        - func apply -n 8 -p "<path_to_content>/nginx-deploy.yaml"
+        - func apply -n 8 -p "<path_to_content>/http-service.yaml"
+        - func apply -n 8 -p "<path_to_content>/http-route.yaml"
       tasks:
-        - func load_app -n 2 -p 10 
-        - func scale_deployment -n 2 -p 2 # scale deployment in 2 namespaces to 2 replicas
-        - func scale_deployment -n 2 -p 1 # scale deployment in 2 namespaces to 1 replicas
+        - func load_app -n 8 -p 50 
+        - func scale_deployment -n 8 -p 8 # scale deployment in 2 namespaces to 2 replicas
+        - func scale_deployment -n 8 -p 5 # scale deployment in 2 namespaces to 1 replicas
       post_tasks: 
-        - func delete_project -n 2
+        - func delete_project -n 8
 
     - name: dev-cronjob
       user_name: testuser- # if user_start and user_end exist, this will be username prefix
