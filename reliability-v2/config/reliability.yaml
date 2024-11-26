@@ -36,6 +36,7 @@ reliability:
         - func apply_nonamespace -p "<path_to_content>/network-policy/02_anp_allow-traffic-egress-cidr-cluster-network-p20.yaml"
         - func apply_nonamespace -p "<path_to_content>/network-policy/04_anp_allow-traffic-dev-test-p30.yaml"
         - func apply_nonamespace -p "<path_to_content>/network-policy/03_anp_allow-traffic-dev-prod-p31.yaml"
+        - <path_to_script>/list_all_resources.sh
       tasks: 
         - func check_operators
         - oc get project -l purpose=reliability
@@ -43,6 +44,8 @@ reliability:
         - kubectl get pods -A -o wide | egrep -v "Completed|Running"
         # Run test case as scripts. KUBECONFIG of the current user is set as env variable by reliability-v2. 
         #- . <path_to_script>/create-delete-pod-ensure-service.sh
+      post_tasks: 
+        - <path_to_script>/list_all_resources.sh
 
     - name: dev-test
       user_name: testuser- # if user_start and user_end exist, this will be username prefix
