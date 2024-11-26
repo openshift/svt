@@ -76,7 +76,7 @@ get_all_items() {
         fi
         elapsed_time=$(($(date +%s) - start_time))
         if [[ "$VERBOSE" == true ]]; then
-            echo "$this_type: ${elapsed_time}s"
+            echo "$this_type: ${elapsed_time}s" >> resource_list.log
         fi
         if [[ -n "$result" ]]; then
             for this_result in $result; do
@@ -88,7 +88,7 @@ get_all_items() {
             done
         fi
     done
-    echo -e "${type_items[@]}"
+    echo -e "${type_items[@]}" >> resource_list.log
 }
 
 # Function to print items based on the output format
@@ -97,32 +97,32 @@ print_items() {
     local output=${OUTPUT:-"list"}
     for this_type in "${all_items[@]}"; do
         if [[ "$output" == "list" ]]; then
-            echo -e "\n\n==============="
-            echo "TYPE: $this_type"
-            echo -e "${all_items[$this_type]}"
-            echo -e "\n\n==============="
+            echo -e "\n\n===============" >> resource_list.log
+            echo "TYPE: $this_type" >> resource_list.log
+            echo -e "${all_items[$this_type]}" >> resource_list.log
+            echo -e "\n\n===============" >> resource_list.log
         elif [[ "$output" == "ns-count" ]]; then
             declare -A ns_count
             for item in ${all_items[$this_type]}; do
                 ns="${item%%:*}"
                 ((ns_count["$ns"]++))
             done
-            echo -e "\n\n==============="
-            echo "TYPE: $this_type"
+            echo -e "\n\n===============" >> resource_list.log
+            echo "TYPE: $this_type" >> resource_list.log
             for ns in "${!ns_count[@]}"; do
-                echo -e "\t$ns: ${ns_count[$ns]}"
-                echo -e "\n\n==============="
+                echo -e "\t$ns: ${ns_count[$ns]}" >> resource_list.log
+                echo -e "\n\n===============" >> resource_list.log
             done
         else
             count=0
-            echo -e "\n\n==============="
-            echo "TYPE: $this_type"
+            echo -e "\n\n===============" >> resource_list.log
+            echo "TYPE: $this_type" >> resource_list.log
             for item in ${all_items[$this_type]}; do
-                echo "$item"
+                echo "$item" >> resource_list.log
                 ((count++))
             done
-            echo "$this_type Count: $count"
-            echo -e "\n\n==============="
+            echo "$this_type Count: $count" >> resource_list.log
+            echo -e "\n\n===============" >> resource_list.log
         fi
 
 
