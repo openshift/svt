@@ -410,7 +410,6 @@ class Tasks:
             ignore_log=True,
             ignore_slack=True,
         )
-
         if rc == 0:
             self.logger.error(f"Flowcollector is not Ready: {result}")
             slackIntegration.error(f"Flowcollector not Ready: {result}")
@@ -420,7 +419,7 @@ class Tasks:
             rc_return = 0
         else:
             self.logger.error(f"Flowcollector status fetch error: result {result}, rc - {rc}")
-
+            rc_return = 1
         return (result, rc_return)
 
     # check netobserv pods health
@@ -434,7 +433,6 @@ class Tasks:
                 ignore_log=True,
                 ignore_slack=True,
             )
-
             if rc == 0:
                 self.logger.error(f"Some pods are not Ready in {ns} ns: {result}")
                 slackIntegration.error(f"Some pods are not Ready in ns {ns}: {result}")
@@ -444,5 +442,5 @@ class Tasks:
                 rc_return = 0
             else:
                 self.logger.error(f"Pods status fetch error: result {result}, rc - {rc}")
-
+                rc_return = 1
         return (result, rc_return)

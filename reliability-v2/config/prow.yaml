@@ -9,7 +9,7 @@ reliability:
     - template: nodejs-postgresql-persistent # N/A for FIPS
     - template: django-psql-persistent # N/A for FIPS
     - template: rails-pgsql-persistent
-    - template: dancer-mysql-persistent
+    #- template: dancer-mysql-persistent
     # For test without pvc
     # - template: cakephp-mysql-example
     # - template: dancer-mysql-example
@@ -36,7 +36,7 @@ reliability:
         - func apply_nonamespace -p "<path_to_content>/network-policy/02_anp_allow-traffic-egress-cidr-cluster-network-p20.yaml"
         - func apply_nonamespace -p "<path_to_content>/network-policy/04_anp_allow-traffic-dev-test-p30.yaml"
         - func apply_nonamespace -p "<path_to_content>/network-policy/03_anp_allow-traffic-dev-prod-p31.yaml"
-      tasks: 
+      tasks:
         - func check_operators
         - oc get project -l purpose=reliability
         - func check_nodes
@@ -50,7 +50,33 @@ reliability:
       # For cluster created in Prow and used the following step to create test users, the users start from testuser-1. 
       # https://github.com/openshift/release/blob/master/ci-operator/step-registry/osd-ccs/conf/idp/htpasswd/multi-users/osd-ccs-conf-idp-htpasswd-multi-users-ref.yaml
       user_start: 1 # user_start is inclusive, start with testuser-1 in the users file. 
-      user_end: 6 # user_end is exclusive, end with testuser-10 in the users file
+      user_end: 11 # user_end is exclusive, end with testuser-10 in the users file
+      loops: forever
+      trigger: 60
+      jitter: 600 # randomly start the users in this group in 10 minutes
+      interval: 10
+      tasks:
+        - func delete_all_projects # clear all projects
+        - func verify_project_deletion -n 2 # verfy project deletion in 2 namespaces
+        - func new_project -n 2 # new 2 projects
+        # If network policy is planed in the test, uncomment the following line
+        #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
+        - func check_all_projects # check all project under this user
+        - func apply -n 2 -p "<path_to_content>/nginx-deploy.yaml"
+        - func apply -n 2 -p "<path_to_content>/http-service.yaml"
+        - func apply -n 2 -p "<path_to_content>/http-route.yaml"
+        - func load_app -n 2 -p 10 # load apps in 2 namespaces with 10 clients for each
+        - func check_pods -n 2 # check pods in 2 namespaces 
+        - func delete_project -n 2 # delete project in 2 namespaces
+        - func verify_project_deletion -n 2 # verfy project deletion in 2 namespaces
+
+    - name: dev-test-build
+      user_name: testuser- # if user_start and user_end exist, this will be username prefix
+      # For cluster created by Jenkins Flexy-install job, the users start from testuser-0
+      # For cluster created in Prow and used the following step to create test users, the users start from testuser-1. 
+      # https://github.com/openshift/release/blob/master/ci-operator/step-registry/osd-ccs/conf/idp/htpasswd/multi-users/osd-ccs-conf-idp-htpasswd-multi-users-ref.yaml
+      user_start: 21 # user_start is inclusive, start with testuser-1 in the users file. 
+      user_end: 26 # user_end is exclusive, end with testuser-10 in the users file
       loops: forever
       trigger: 60
       jitter: 600 # randomly start the users in this group in 10 minutes
@@ -70,31 +96,33 @@ reliability:
         - func verify_project_deletion -n 2 # verfy project deletion in 2 namespaces
 
     - name: dev-prod
-      user_name: testuser- 
-      user_start: 11
-      user_end: 16
+      user_name: testuser-
+      user_start: 31
+      user_end: 41
       loops: forever
       trigger: 600
       jitter: 3600
       interval: 600
-      pre_tasks: 
-          - func delete_all_projects
-          - func verify_project_deletion -n 2
-          - func new_project -n 2
-          # If network policy is planed in the test, uncomment the following line
-          #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
-          - func new_app -n 2
+      pre_tasks:
+        - func delete_all_projects
+        - func verify_project_deletion -n 8
+        - func new_project -n 8
+        # If network policy is planed in the test, uncomment the following line
+        #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
+        - func apply -n 8 -p "<path_to_content>/nginx-deploy.yaml"
+        - func apply -n 8 -p "<path_to_content>/http-service.yaml"
+        - func apply -n 8 -p "<path_to_content>/http-route.yaml"
       tasks:
-        - func load_app -n 2 -p 1 
-        - func scale_deploymentconfig -n 2 -p 2 # scale app deploymentconfig in 2 namespaces to 2 replicas
-        - func scale_deploymentconfig -n 2 -p 1 # scale app deploymentconfig in 2 namespaces to 1 replicas
-      post_tasks: 
-        - func delete_project -n 2
+        - func load_app -n 8 -p 50
+        - func scale_deployment -n 8 -p 2 # scale deployment in 2 namespaces to 2 replicas
+        - func scale_deployment -n 8 -p 1 # scale deployment in 2 namespaces to 1 replicas
+      post_tasks:
+        - func delete_project -n 8
 
     - name: dev-cronjob
       user_name: testuser- # if user_start and user_end exist, this will be username prefix
-      user_start: 16
-      user_end: 17
+      user_start: 41
+      user_end: 42
       trigger: 600
       jitter: 1200
       loops: forever

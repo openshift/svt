@@ -201,6 +201,27 @@ function dhms_to_seconds {
     echo "Total seconds to run is: $SECONDS_TO_RUN"
 }
 
+# Install dittybopper
+function install_dittybopper(){
+    cd $RELIABILITY_DIR
+    log "info" "====Install dittybopper===="
+    cd utils
+    if [[ ! -d performance-dashboards ]]; then
+        git clone git@github.com:cloud-bulldozer/performance-dashboards.git --depth 1
+    fi
+    cd performance-dashboards/dittybopper
+    if [[ -z $IMPORT_DASHBOARD ]]; then
+        ./deploy.sh
+    else
+        ./deploy.sh -i "$IMPORT_DASHBOARD"
+    fi
+    if [[ $? -eq 0 ]];then
+        log "info" "dittybopper installed successfully."
+    else
+        log "error" "dittybopper install failed."
+    fi
+}
+
 function setup_netobserv(){
     log "Setting up Network Observability operator"
     rm -rf ocp-qe-perfscale-ci
@@ -288,7 +309,7 @@ dhms_to_seconds $time_to_run
 # Install infra nodes and move componets to infra nodes
 if [[ $infra ]]; then
     cd utils
-    export SET_ENV_BY_PLATFORM="custom"Prometheus status is not success yet
+    export SET_ENV_BY_PLATFORM="custom"
     export INFRA_TAINT="true"
     ./openshift-qe-workers-infra-workload-commands.sh
     export OPENSHIFT_PROMETHEUS_RETENTION_PERIOD=15d
@@ -351,27 +372,6 @@ if [[ $? -eq 1  ]]; then
     fi
 fi
 
-# Install dittybopper
-function install_dittybopper(){
-    cd $RELIABILITY_DIR
-    log "info" "====Install dittybopper===="
-    cd utils
-    if [[ ! -d performance-dashboards ]]; then
-        git clone git@github.com:cloud-bulldozer/performance-dashboards.git --depth 1
-    fi
-    cd performance-dashboards/dittybopper
-    if [[ -z $IMPORT_DASHBOARD ]]; then
-        ./deploy.sh
-    else
-        ./deploy.sh -i "$IMPORT_DASHBOARD"
-    fi
-    if [[ $? -eq 0 ]];then
-        log "info" "dittybopper installed successfully."
-    else
-        log "error" "dittybopper install failed."
-    fi
-}
-
 set -e
 
 # Configure QE index image if optional operators needs to be deployed
@@ -380,7 +380,7 @@ if [[ $operators ]]; then
     CLUSTER_VERSION=$(oc get clusterversion/version -o jsonpath='{.spec.channel}' | cut -d'-' -f 2)
     export CLUSTER_VERSION
     log "Setting up QE index image for optional operators"
-    envsubst < config/qe-index.yaml | oc apply -f -
+    envsubst < content/operators/qe-index.yaml | oc apply -f -
 
     for operator in "${operatorsToInstall[@]}"; do
         if [[ $operator == "netobserv-operator" ]]; then
@@ -454,8 +454,8 @@ process_name="reliability.py"
 max_retries=8
 retry_count=0
 while [ $retry_count -lt $max_retries ]; do
-    if ps aux | grep -v grep | grep "$process_name" > /dev/null; then
-        echo "The process $process_name is still running. Waiting for it to terminate..."
+    if ps aux | grep -v grep | grep "$process_name" | grep $folder_name > /dev/null; then
+        echo "The process $process_name for $folder_name is still running. Waiting for it to terminate..."
         sleep 600
         retry_count=$(($retry_count+1))
     else
