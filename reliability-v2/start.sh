@@ -14,7 +14,11 @@ function cleanup() {
         kill $reliability_pid
     fi 
     cd $RELIABILITY_DIR || true
-    rm -rf kubeconfigs rm -rf utils/kubeconfig utils/path_to_auth_files
+    rm -rf kubeconfigs
+    # If this is a rosa cluster, don't remove the auth files as they are created by the reliability test and can not be retrieved after deleted.
+    if [[ ! -f utils/path_to_auth_files/login_cmd ]];then
+        rm -rf utils/path_to_auth_files
+    fi
 }
 
 function _usage {
