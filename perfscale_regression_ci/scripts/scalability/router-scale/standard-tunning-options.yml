@@ -1,0 +1,82 @@
+# vi: expandtab shiftwidth=2 softtabstop=2
+
+# First scenario is configured as warmup and it will also tune the default ingress-controller to assign the router pods to the infra nodes
+- termination: http
+  connections: 200
+  samples: 5
+  duration: 3m
+  path: /1024.html
+  concurrency: 18
+  tool: wrk
+  serverReplicas: 45
+  tuningPatch: '{"spec":{"tuningOptions":{"threadCount": 8, "clientFinTimeout": "2s", "clientTimeout": "60s", "headerBufferBytes": 65536, "headerBufferMaxRewriteBytes": 16384, "healthCheckInterval": "10s", "serverFinTimeout": "2s", "serverTimeout": "60s", "tlsInspectDelay": "30s", "tunnelTimeout": "2h", "maxConnections": -1}, "nodePlacement": {"nodeSelector": {"matchLabels": {"node-role.kubernetes.io/infra": ""}}}, "replicas": 3}}'
+  delay: 10s
+  requestTimeout: 10s
+  warmup: true
+
+- termination: http
+  connections: 200
+  samples: 2
+  duration: 3m
+  path: /1024.html
+  concurrency: 18
+  tool: wrk
+  serverReplicas: 45
+  requestTimeout: 10s
+  delay: 10s
+
+- termination: edge
+  connections: 200
+  samples: 2
+  duration: 3m
+  path: /1024.html
+  concurrency: 18
+  tool: wrk
+  serverReplicas: 45
+  requestTimeout: 10s
+  delay: 10s
+
+- termination: reencrypt
+  connections: 200
+  samples: 2
+  duration: 3m
+  path: /1024.html
+  concurrency: 18
+  tool: wrk
+  serverReplicas: 45
+  requestTimeout: 10s
+  delay: 10s
+
+- termination: passthrough
+  connections: 200
+  samples: 2
+  duration: 3m
+  path: /1024.html
+  concurrency: 18
+  tool: wrk
+  serverReplicas: 45
+  requestTimeout: 10s
+  delay: 10s
+
+- termination: reencrypt
+  connections: 200
+  samples: 2
+  duration: 3m
+  path: /1024.html
+  concurrency: 18
+  tool: hloader
+  serverReplicas: 45
+  requestTimeout: 10s
+  tuningPatch: '{"metadata":{"annotations": {"ingress.operator.openshift.io/default-enable-http2": "true"}}}'
+  http2: true
+
+- termination: passthrough
+  connections: 200
+  samples: 2
+  duration: 3m
+  path: /1024.html
+  concurrency: 18
+  tool: hloader
+  serverReplicas: 45
+  requestTimeout: 10s
+  http2: true
