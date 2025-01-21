@@ -1,7 +1,7 @@
 #/!/bin/bash
 ################################################
 ## Auth=qili@redhat.com
-## Desription: Script for router scale test
+## Desription: Script for ingress scale test case
 ## Polarion test case: OCP-43281
 ## https://polarion.engineering.redhat.com/polarion/#/project/OSE/workitem?id=OCP-43281
 ## Cluster config: 3 master (m5.xlarge), 9 workers(m5.2xlarge), 3 infras(c5.4xlarge), do not move component to infra nodes before the test
@@ -19,9 +19,9 @@ export CONFIG=../../../standard-3replicas.yml
 run_ingress_perf
 
 echo "[INFO] scale infra replicas to 4"
-machineset=$(oc get machinesets -n openshift-machine-api --no-headers | head -n 1 | awk {'print $1'})
-oc scale machineset --replicas=2 ${machineset} -n openshift-machine-api
-oc get machinesets -n openshift-machine-api
+scaleInfraMachineSets 4
+waitForInfraNodesReady 4
+labelNode "node-role.kubernetes.io/infra=" "node-role.kubernetes.io/worker-"
 
 echo "[INFO] run ingress-perf with thread=4, replica=4"
 export CONFIG=../../../standard-4replicas.yml

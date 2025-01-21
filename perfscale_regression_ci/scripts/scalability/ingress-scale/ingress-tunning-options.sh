@@ -1,7 +1,7 @@
 #/!/bin/bash
 ################################################
 ## Auth=qili@redhat.com
-## Desription: Script for router scale test
+## Desription: Script for ingress tunning options test case
 ## Polarion test case: OCP-43281
 ## https://polarion.engineering.redhat.com/polarion/#/project/OSE/workitem?id=OCP-43281
 ## Cluster config: 3 master (m5.xlarge), 9 workers(m5.2xlarge), 3 infras(c5.4xlarge), do not move component to infra nodes before the test

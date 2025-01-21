@@ -420,3 +420,61 @@ function calculate_difference(){
 	temp_value=$(($value_1-$value_2))
 	echo ${temp_value#-}
 }
+
+# pass $number_of_infra_machines_to_scale
+function scaleInfraMachineSets(){
+    infra_machinesets=$(oc get --no-headers machinesets -n openshift-machine-api -l machine.openshift.io/cluster-api-machine-role=infra -o name)
+    infra_machinesets_num=$(echo $infra_machinesets | wc -w | xargs)
+    scale_size=$(($1/$infra_machinesets_num))
+    first_machine=""
+    first_set=false
+    for machineset in $(echo $infra_machinesets); do
+        oc scale -n openshift-machine-api $machineset --replicas $scale_size
+        if [[ "$first_set" = false ]]; then
+            first_machineset=$machineset
+            first_set=true
+        fi
+    done
+    if [[ $(($1%$infra_machinesets_num)) != 0 ]]; then
+        echo $first_machineset
+        oc scale -n openshift-machine-api $first_machineset --replicas $(($scale_size+$(($1%$infra_machinesets_num))))
+    fi
+}
+
+# pass $number_of_nodes_to_wait
+function waitForInfraNodesReady() {
+    echo "Wait for Ready"
+    local retries=0
+    local attempts=140
+    while [[ $(oc get nodes --no-headers -l node-role.kubernetes.io/infra=,node.openshift.io/os_id=rhcos --output jsonpath="{.items[?(@.status.conditions[-1].type=='Ready')].status.conditions[-1].status}" | tr ' ' '\n' | grep -c "True") != "$1" ]]; do
+        echo "Following nodes are currently present, waiting for desired count $1 to be met."
+        echo "Machinesets:"
+        oc get machinesets -A
+        echo "Nodes:"
+        oc get nodes --no-headers -l node-role.kubernetes.io/infra | cat -n
+        echo "Sleeping for 60 seconds"
+        sleep 60
+        ((retries += 1))
+        if [[ "${retries}" -gt ${attempts} ]]; then
+            for node in $(oc get nodes --no-headers -l node-role.kubernetes.io/infra --output jsonpath="{.items[?(@.status.conditions[-1].type=='Ready')].metadata.name}"); do
+                oc describe node $node
+            done
+
+            for machine in $(oc get machine  -n openshift-machine-api -l machine.openshift.io/cluster-api-machine-type=infra  --output jsonpath="{.items[?(@.status.phase!='Running')].metadata.name}"); do
+                oc describe machine $machine -n openshift-machine-api
+            done
+            echo "error: all $1 nodes didn't become READY in time, failing"
+            exit 1
+        fi
+    done
+    oc get nodes --no-headers -l node-role.kubernetes.io/infra
+}
+
+# pass $label_to_find_node, $label_to_update
+# e.g. labelNode "node-role.kubernetes.io/infra=" "node-role.kubernetes.io/worker-"
+function labelNode() {
+  nodes=$(oc get --no-headers nodes -l $1 -o name)
+  for n in $(echo $nodes); do
+    oc label $n $2
+  done
+}
