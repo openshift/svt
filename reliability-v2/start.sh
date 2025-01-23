@@ -229,7 +229,7 @@ function install_dittybopper(){
 function setup_netobserv(){
     log "Setting up Network Observability operator"
     rm -rf ocp-qe-perfscale-ci
-    git clone https://github.com/openshift-qe/ocp-qe-perfscale-ci.git --branch netobserv-perf-tests
+    git clone https://github.com/openshift-eng/ocp-qe-perfscale-ci.git --branch netobserv-perf-tests
     OCPQE_PERFSCALE_DIR=$PWD/ocp-qe-perfscale-ci
     source ocp-qe-perfscale-ci/scripts/env.sh
     source ocp-qe-perfscale-ci/scripts/netobserv.sh
