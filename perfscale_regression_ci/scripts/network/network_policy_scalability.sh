@@ -42,6 +42,10 @@ do
     echo "start time: $start_time"
     scale_up=$(oc get deployment $deployment_name --no-headers -n ${NAMESPACE} | awk -F ' {1,}' '{print $4}')
     check_deployment_pod_scale ${NAMESPACE} $deployment_name $scale_up $pod_scale_max
+    if [ $? -ne 0 ]; then
+        echo "Not all test pods are running under ${NAMESPACE}, please check. Exit the test."
+        exit 1
+    fi
     end_time=`date +%s`
     echo "end time: $end_time"
     final_time=$((end_time - start_time))
