@@ -5,6 +5,7 @@ import requests
 import sys
 from threading import Lock
 import asyncio
+import string
 from tasks.GlobalData import global_data
 from utils.cli import oc,kubectl,shell
 from utils.LoadApp import loadApp
@@ -403,7 +404,7 @@ class Tasks:
     # check flowcollector status for netobserv
     def check_flowcollector(self, user):
         self.logger.info(f"[Task] User {user}: check flowcollector")
-        # Check if nodes are Ready
+        # Check if flowcollector is Ready
         (result, rc) = oc(
             f"get flowcollector --no-headers| grep -v 'Ready'",
             self.__get_kubeconfig(user),
@@ -420,12 +421,13 @@ class Tasks:
         else:
             self.logger.error(f"Flowcollector status fetch error: result {result}, rc - {rc}")
             rc_return = 1
+        self.__log_result(rc)
         return (result, rc_return)
 
     # check netobserv pods health
     def check_netobserv_pods(self, user):
         self.logger.info(f"[Task] User {user}: check netobserv pods")
-        # Check if nodes are Ready
+        # Check if pods are Running
         for ns in ("netobserv", "netobserv-privileged"):
             (result, rc) = oc(
                 f"get pods -n {ns} -o wide --no-headers| grep -v 'Running'",
@@ -443,4 +445,36 @@ class Tasks:
             else:
                 self.logger.error(f"Pods status fetch error: result {result}, rc - {rc}")
                 rc_return = 1
+        self.__log_result(rc)
         return (result, rc_return)
+    
+    # check pod restarts
+    def check_pod_restarts(self, user, namespace):
+        self.logger.info(f"[Task] User {user}: check pod restarts in namespace {namespace}")
+        # get all pods in the namespace
+        pods = {}
+        (result, rc) = oc(
+            "get pods -n {namespace} -o jsonpath='{.items[*].metadata.name}'",
+            self.__get_kubeconfig(user),
+            ignore_log=True,
+            ignore_slack=True,
+        )
+        if rc == 0 and result != "":
+            self.logger.info(f"Pods in ns {namespace} are: {result}")  
+            pods = string.Split(string.Trim(result, "'"), " ")
+
+        # check if any pods have restarted in that namespace
+        pods_dict = {key: 0 for key in pods}
+        for pod in pods:
+            (result, rc) = oc(
+                "get pod {pod} -n {ns} -o jsonpath='{.status.containerStatuses[0].restartCount}'")
+            if rc == 0 and int(result) > 0 and pods_dict[pod] != int(result):
+                pods_dict[pod] = int(result)
+                self.logger.error(f"Pod {pod} in namespace {namespace} restarted")
+                slackIntegration.error(f"Pod {pod} restarted in namespace {namespace}: {result}")
+                rc_return = 1
+            else:
+                self.logger.info(f"Pods in namespace {namespace} have no restarts.")
+                rc_return = 0
+        self.__log_result(rc)
+        return (pods_dict, rc_return)
