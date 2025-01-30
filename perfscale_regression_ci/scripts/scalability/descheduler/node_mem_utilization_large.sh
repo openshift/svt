@@ -21,6 +21,7 @@ i=0
 
 pass_or_fail=0
 
+./operator/create_operator.sh
 validate_descheduler_installation "LifecycleAndUtilization"
 
 echo "Prepare worker nodes"

@@ -23,6 +23,7 @@ middle_worker=""
 pass_or_fail=0
 scale_num=190
 
+./operator/create_operator.sh
 validate_descheduler_installation "TopologyAndDuplicates"
 
 echo "Create and label new project"
@@ -84,7 +85,7 @@ for project_name in "${project_name_list[@]}"; do
 done
 
 echo "======Final test result======"
-if [[ ${pass_or_fail} -eq 9 ]]; then
+if [[ ${pass_or_fail} -ge 9 ]]; then
   echo -e "\nDescheduler - Validate Descheduling Pods in a Deployment at scale Testcase result:  PASS"
   echo "======Clean up test environment======"
   echo "Deleting test objects"

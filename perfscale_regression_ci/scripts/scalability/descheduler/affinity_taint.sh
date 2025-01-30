@@ -19,6 +19,7 @@ source affinity_taint_env.sh
 source ../../../utils/run_workload.sh
 source ../../custom_workload_env.sh
 
+./operator/create_operator.sh
 validate_descheduler_installation "AffinityAndTaints"
 
 node=""

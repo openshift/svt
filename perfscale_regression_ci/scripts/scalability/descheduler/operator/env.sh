@@ -1,0 +1,9 @@
+export DESCH_NAME="cluster-kube-descheduler-operator"
+export DESCH_NAMESPACE="openshift-kube-descheduler-operator"
+export CHANNELNAME="stable"
+export OPSRCNAME="qe-app-registry"
+export SOURCENAME="openshift-marketplace"
+export operator_group_name="openshift-kube-descheduler-operator"
+export INTERSECONDS=300
+export LOGLEVEL="Normal"
+export OPERATORLOGLEVEL="Normal"
