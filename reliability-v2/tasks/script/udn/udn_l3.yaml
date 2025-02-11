@@ -1,0 +1,12 @@
+apiVersion: k8s.ovn.org/v1
+kind: UserDefinedNetwork
+metadata:
+  name: udn-l3
+spec:
+  topology: Layer3
+  layer3:
+      role: Primary
+      subnets:
+        - cidr: 10.132.0.0/16
+          hostSubnet: 24
+      mtu: 1300

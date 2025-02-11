@@ -1,0 +1,9 @@
+apiVersion: k8s.ovn.org/v1
+kind: UserDefinedNetwork
+metadata:
+  name: udn-l2
+spec:
+  topology: Layer2
+  layer2:
+      role: Primary
+      subnets: ["10.132.0.0/16"]

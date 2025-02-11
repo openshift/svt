@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubernetes.io/metadata.name: udn
+    k8s.ovn.org/primary-user-defined-network: ""
+  name: <namespace_name>
+spec:
+  finalizers:
+  - kubernetes
