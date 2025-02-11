@@ -58,7 +58,8 @@ reliability:
       tasks:
         - func delete_all_projects # clear all projects
         - func verify_project_deletion -n 2 # verfy project deletion in 2 namespaces
-        - <path_to_script>/udn/create_namespace_udn.sh -n 2 -l 3
+        - func new_project -n 2 # new 2 projects
+        - func apply -n 2 -p "<path_to_content>/udn_l2.yaml"
         # If network policy is planed in the test, uncomment the following line
         #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
         - func check_all_projects # check all project under this user
@@ -84,7 +85,8 @@ reliability:
       tasks:
         - func delete_all_projects # clear all projects
         - func verify_project_deletion -n 2 # verfy project deletion in 2 namespaces
-        - <path_to_script>/udn/create_namespace_udn.sh -n 2 -l 2
+        - func new_project -n 2 # new 2 projects
+        - func apply -n 2 -p "<path_to_content>/udn_l3.yaml"
         # If network policy is planed in the test, uncomment the following line
         #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
         - func check_all_projects # check all project under this user
@@ -106,10 +108,10 @@ reliability:
       pre_tasks:
         - func delete_all_projects
         - func verify_project_deletion -n 8
-        - <path_to_script>/udn/create_namespace_udn.sh -n 8 -l 3
+        - func apply -n 8 -p "<path_to_content>/udn_l3.yaml"
+        - func new_project -n 8
         # If network policy is planed in the test, uncomment the following line
         #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
-        - 
         - func apply -n 8 -p "<path_to_content>/nginx-deploy.yaml"
         - func apply -n 8 -p "<path_to_content>/http-service.yaml"
         - func apply -n 8 -p "<path_to_content>/http-route.yaml"
@@ -130,7 +132,8 @@ reliability:
       pre_tasks:
         - func delete_all_projects
         - func verify_project_deletion -n 1
-        - <path_to_script>/udn/create_namespace_udn.sh -n 1 -l 3
+        - func new_project -n 1
+        - func apply -n 1 -p "<path_to_content>/udn_l3.yaml"
         - <path_to_script>/cronjob.sh -n 10
       tasks:
         - <path_to_script>/cronjob.sh -c
