@@ -277,7 +277,7 @@ class Tasks:
     
     # scale the deployment to given number of replicas in the given namespace
     def scale_deployment(self,user,namespace,replicas="1"):
-        (deployment, rc) = oc(f"get deployment --no-headers -n {namespace} | awk {{'print $1'}}",self.__get_kubeconfig(user))
+        (deployment, rc) = oc(f"get deployment --no-headers -n {namespace} | grep -v client | awk {{'print $1'}}",self.__get_kubeconfig(user))
         deployment = deployment.rstrip()
         self.logger.info(f"[Task] User {user}: scale deployment'{deployment}' to '{replicas}' replicas")
         (result, rc) = oc(f"scale deployment --replicas={replicas} -n {namespace} {deployment}",self.__get_kubeconfig(user))
