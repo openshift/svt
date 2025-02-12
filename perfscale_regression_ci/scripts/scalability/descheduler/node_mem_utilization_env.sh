@@ -19,3 +19,5 @@ export JOB_TIMEOUT=${JOB_TIMEOUT:-3h}
 export VERIFY_OBJECTS=${VERIFY_OBJECTS:-true}
 # Other ENV needed by the test case script
 export NETWORK_POLICY=${NETWORK_POLICY:-"${DIR}/../../content/allow_default_network_policy.yaml"}
+export PROFILE1="LifecycleAndUtilization"
+export UTILIZATION_THRESHOLD="High"

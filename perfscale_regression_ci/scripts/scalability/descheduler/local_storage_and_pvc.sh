@@ -20,7 +20,7 @@ source local_storage_and_pvc_env.sh
 source ../../../utils/run_workload.sh
 source ../../custom_workload_env.sh
 
-
+./operator/create_operator.sh
 validate_descheduler_installation "TopologyAndDuplicates,EvictPodsWithLocalStorage"
 
 node=""

@@ -6,3 +6,5 @@ export NAME=${NAME:-"local-storage-desched"}
 export NAMESPACE=${NAMESPACE:-"local-storage-desched"}
 export WAIT_FOR=["PersistentVolumeClaim","ReplicationController"]
 export JOB_ITERATION=${JOB_ITERATION:=1}
+export PROFILE1="TopologyAndDuplicates"
+export PROFILE2="EvictPodsWithLocalStorage"

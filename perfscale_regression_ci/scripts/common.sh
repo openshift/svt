@@ -1,5 +1,37 @@
 #/!/bin/bash
 
+# wait for object type to get created
+# pass $obj_identifier
+# e.g. wait_for_object_type "
+function wait_for_object_type() {
+  object_type=$1
+  COUNTER=0
+  get_objects=$(oc get $object_type -A 2>&1)
+  echo "get object response: $get_objects"
+  while [[ $get_objects == *"the server doesn't have a resource type"* ]]; do
+    echo "get object response2:  $get_objects"
+    sleep 1
+    get_objects=$(oc get $object_type -A 2>&1)
+    COUNTER=$((COUNTER + 1))
+    if [ $COUNTER -ge 1200 ]; then
+      echo "$object_type object type still does not exist"
+      exit 1
+    fi
+  done
+}
+
+
+function count_running_pods_name()
+{
+  name_space=$1
+  name_identifier=$2
+  completed=$(oc get pods -A | grep $name_identifier | grep -c Completed)
+  while [ $completed -lt $number ]; do
+    echo "$(oc get pods -n ${name_space} -o wide | grep ${name_identifier} | grep Running | wc -l | xargs)"
+  done
+}
+
+
 # pass $name_identifier $number
 # e.g. wait_for_completion "job-" 100
 function wait_for_completion() {
@@ -81,6 +113,7 @@ function wait_for_obj_creation() {
       break
     fi
   done
+  echo "Object $name_identifier is done creating"
 }
 
 # pass $label
@@ -144,6 +177,37 @@ function wait_for_pod_running() {
     fi
   done
   if [ $COUNTER -ge $retry ];then
+    return 1
+  else
+    echo "wait_for_pod_running passed in $((30*$retry))s"
+    return 0
+  fi
+}
+
+function wait_for_app_pod_running() {
+  namespace=$1
+  replicas=$2
+  application=$3
+
+  echo "====Waiting for $replicas replicas to be running in $namespace projects===="
+  COUNTER=0
+
+  oc get pods -n $namespace -l app=$application --no-headers | grep Running
+  running=$(oc get pods -n $namespace -l app=$application --no-headers | grep Running | wc -l | xargs)
+  echo "Current running pods number: $running. Expected pods number: $replicas."
+  while [ $running -ne $replicas ]; do
+    sleep 5
+    running=$(oc get po -n $namespace -l app=$application | grep Running | wc -l | xargs)
+    echo "Current running pods number: $running. Expected pods number: $replicas."
+    COUNTER=$((COUNTER + 1))
+    if [[ $COUNTER -ge 15 ]]; then
+      echo "Running applications are still not reach expected number $replicas after $retry retry, $((30*$retry))s"
+      echo "Not Running applications:"
+      oc get pods -n $namespace -l app=$application | grep -v Running
+      break
+    fi
+  done
+  if [ $COUNTER -ge $retry ]; then
     return 1
   else
     echo "wait_for_pod_running passed in $((30*$retry))s"

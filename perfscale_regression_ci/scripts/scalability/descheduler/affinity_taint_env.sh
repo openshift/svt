@@ -10,3 +10,4 @@ export POD_REPLICAS=${POD_REPLICAS:=210}
 export ALERTS_PROFILE=${ALERTS_PROFILE:-""}
 export COMPARISON_CONFIG=""
 export GEN_CSV=false
+export PROFILE1="AffinityAndTaints"
