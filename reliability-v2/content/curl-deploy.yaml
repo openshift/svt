@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: client
+  template:
+    metadata:
+      labels:
+        name: client
+        app: client
+    spec:
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: client
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/worker
+                operator: Exists
+              - key: node-role.kubernetes.io/infra
+                operator: DoesNotExist
+      containers:
+      - name: client-app
+        image: quay.io/cloud-bulldozer/curl:latest
+        command: ["sleep", "inf"]
+        resources:
+          requests:
+            memory: "10Mi"
+            cpu: "10m"
+        env:
+        - name: SERVICE_ENDPOINT
+          value: "http://http-perf/256.html"
+        imagePullPolicy: IfNotPresent
+        startupProbe:
+          exec:
+            command: 
+              - "/bin/sh"
+              - "-c"
+              - "curl --fail -sS ${SERVICE_ENDPOINT} -o /dev/null"
+          periodSeconds: 1
+          timeoutSeconds: 1
+          failureThreshold: 600    
+        livenessProbe:
+          exec:
+            command:
+            - "/bin/sh"
+            - "-c"
+            - "curl --fail -sS ${SERVICE_ENDPOINT} -o /dev/null"
+          failureThreshold: 1
+          periodSeconds: 10    
+        readinessProbe:
+          exec:
+            command:
+            - "/bin/sh"
+            - "-c"
+            - "curl --fail -sS ${SERVICE_ENDPOINT} -o /dev/null"  
+        securityContext:
+          privileged: false
+      restartPolicy: Always
+  strategy:
+    type: RollingUpdate

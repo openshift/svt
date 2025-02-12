@@ -1,7 +1,7 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: http-perf
+  name: niginx-service
 spec:
   port:
     targetPort: http
