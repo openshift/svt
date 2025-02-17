@@ -17,7 +17,7 @@ objects:
     profiles:
       - "${PROFILE1}"
     profileCustomizations:
-      devLowNodeUtilizationThresholds: "${UTILIZATION_THRESHOLD}"
+      devLowNodeUtilizationThresholds: "High"
 parameters:
 - name: DESCH_NAMESPACE
 - name: INTERSECONDS
@@ -25,4 +25,3 @@ parameters:
 - name: LOGLEVEL
 - name: OPERATORLOGLEVEL
 - name: PROFILE1
-- name: UTILIZATION_THRESHOLD
