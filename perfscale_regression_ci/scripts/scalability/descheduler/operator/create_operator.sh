@@ -38,7 +38,7 @@ if [[ -z $(oc get subscription $DESCH_NAME -n $DESCH_NAMESPACE) ]]; then
     oc process -f subscription.yaml -p=NAME=$DESCH_NAME -p=DESCH_NAMESPACE=$DESCH_NAMESPACE -p=CHANNELNAME=$CHANNELNAME -p=OPSRCNAME=$OPSRCNAME -p=SOURCENAME=$SOURCENAME | oc create -f -
     # Wait for the descheduler operator pod running
     wait_for_obj_creation descheduler-operator pod
-    sleep 5
+    sleep 15
 else 
     echo "subscription already exists"
 fi 
