@@ -60,7 +60,7 @@ fi
 # create kube scheduler cluster
 if [[ -n $UTILIZATION_THRESHOLD ]]; then 
     echo "utilization threshold"
-    oc process -f utilization_kubedescheduler.yaml -p=DESCH_NAMESPACE=$DESCH_NAMESPACE -p=INTERSECONDS=$INTERSECONDS -p=OPERATORLOGLEVEL=$OPERATORLOGLEVEL -p=IMAGEINFO=$image -p=LOGLEVEL=$LOGLEVEL -p=PROFILE1=$PROFILE1 -p=UTILIZATION_THRESHOLD=$UTILIZATION_THRESHOLD | oc create -f -
+    oc process -f utilization_kubedescheduler.yaml -p=DESCH_NAMESPACE=$DESCH_NAMESPACE -p=INTERSECONDS=$INTERSECONDS -p=OPERATORLOGLEVEL=$OPERATORLOGLEVEL -p=LOGLEVEL=$LOGLEVEL -p=PROFILE1=$PROFILE1 | oc create -f -
 elif [[ -z $PROFILE2 ]]; then
     echo "profile"
     oc process -f kubedescheduler.yaml -p=DESCH_NAMESPACE=$DESCH_NAMESPACE -p=INTERSECONDS=$INTERSECONDS -p=OPERATORLOGLEVEL=$OPERATORLOGLEVEL -p=IMAGEINFO=$image -p=LOGLEVEL=$LOGLEVEL -p=PROFILE1=$PROFILE1 | oc create -f -
