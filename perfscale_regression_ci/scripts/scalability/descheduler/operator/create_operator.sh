@@ -11,6 +11,11 @@ source ../../../common.sh
 
 #must be kubeadmin
 
+if [[ $INSTALL_OPERATOR == true ]]; then 
+    echo "dont install operator"
+    exit 0
+fi
+
 env
 
 if [[ -z $(oc get ns | grep $DESCH_NAMESPACE) ]]; then 
