@@ -10,7 +10,6 @@ objects:
     namespace: "${DESCH_NAMESPACE}"
   spec:
     deschedulingIntervalSeconds: ${{INTERSECONDS}}
-    image: "${IMAGEINFO}"
     logLevel: "${LOGLEVEL}"
     mode: Automatic
     operatorLogLevel: "${OPERATORLOGLEVEL}"
@@ -21,7 +20,6 @@ objects:
 parameters:
 - name: DESCH_NAMESPACE
 - name: INTERSECONDS
-- name: IMAGEINFO
 - name: LOGLEVEL
 - name: OPERATORLOGLEVEL
 - name: PROFILE1
