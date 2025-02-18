@@ -20,9 +20,9 @@ jobs:
     - objectTemplate: "rc_local_storage.yaml"
       replicas: 1
       inputVars:
-         pod_replicas: 108
+         pod_replicas: 110
     - objectTemplate: "rc_using_pvc.yaml"
       replicas: 1
       inputVars:
-         pod_replicas: 108
+         pod_replicas: 110
         

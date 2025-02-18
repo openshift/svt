@@ -11,7 +11,7 @@ source ../../../common.sh
 
 #must be kubeadmin
 
-if [[ $INSTALL_OPERATOR == true ]]; then 
+if [[ $INSTALL_OPERATOR == false ]]; then 
     echo "dont install operator"
     exit 0
 fi
