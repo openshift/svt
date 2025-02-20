@@ -25,6 +25,8 @@ TOTAL_CLUSTERPROJECTS=$(oc get projects | grep -c ${NAMESPACE})
 echo -e "\nTotal number of ${NAMESPACE} namespaces created: ${TOTAL_CLUSTERPROJECTS}"
 
 if [[ $TOTAL_CLUSTERPROJECTS -ge $JOB_ITERATION ]]; then
+
+  ../encryption/enable_encryption.sh
   echo "======PASS======"
   exit 0
 else
