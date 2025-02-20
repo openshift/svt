@@ -18,20 +18,14 @@ source network_policy_scalability_env.sh
 pass_case=0
 workload_template_list=("${DIR}/../../kubeburner-object-templates/scaling-network-policy-config.yaml" "${DIR}/../../kubeburner-object-templates/scaling-no-network-policy-config.yaml")
 pod_scale_max=2000
-kube_burner_job_list="np-issue-test"
+kube_burner_job_list=("np-issue-test" "no-np-issue-test")
 final_time_list=()
 deny_network_policy="${DIR}/../../content/deny_network_traffic_policy.yaml"
 deny_traffic_code=000
 return_traffic_code=200
 
-scale(){
-    echo "[INFO] Scale to $1 replicas."
-    oc scale --replicas $1 deployment network-policy-scalability -n $namespace
-}
-
 
 echo "======Use kube-burner to load the cluster with test objects======"
-<<<<<<< HEAD
 length=${#kube_burner_job_list[@]}
 for ((i = 0; i < $length; i++));
 do
@@ -44,19 +38,6 @@ do
     echo "Load objects for ${kube_burner_job_list[$i]}..."
     run_workload
     echo "Starting scale-up test for ${kube_burner_job_list[$i]}..."
-=======
-
-echo "Starting scale-up test for $workload_template..."
-export NAME=${kube_burner_job_list}
-export NAMESPACE=${kube_burner_job_list}
-deployment_name=${kube_burner_job_list}
-export WORKLOAD_TEMPLATE=$workload_template
-run_workload
-
-for ((i = 0; i < 2; i++));
-do 
-    scale_up=0
->>>>>>> 78e466b (Create 1 namespace and scale up and down)
     oc scale --replicas $pod_scale_max deployment $deployment_name -n ${NAMESPACE}; start_time=`date +%s`
     echo "start time: $start_time"
     scale_up=$(oc get deployment $deployment_name --no-headers -n ${NAMESPACE} | awk -F ' {1,}' '{print $4}')
@@ -68,45 +49,41 @@ do
     end_time=`date +%s`
     echo "end time: $end_time"
     final_time=$((end_time - start_time))
-    echo "execution time for test ${kube_burner_job_list}: $final_time s."
+    echo "execution time for test ${kube_burner_job_list[$i]}: $final_time s."
     final_time_list+=($final_time)
-<<<<<<< HEAD
     # delete the test objects to release more resource for the next test
     if (($(($i+1)) != $length)); then
         delete_project_by_label kube-burner-job
     fi
     sleep 1
     echo "=========================================================================="
-=======
-	oc delete networkpolicy --all -n ${NAMESPACE}
-	oc get networkpolicy -n ${NAMESPACE}
-	if [[ $i -eq 0 ]]; then
-		# want to scale down first deployment to be able to 
-		oc scale --replicas 500 deployment $deployment_name -n ${NAMESPACE}
-		check_deployment_pod_scale ${NAMESPACE} $deployment_name $pod_scale_max 500
-		sleep 10
-		echo "=========================================================================="
-	fi
->>>>>>> 78e466b (Create 1 namespace and scale up and down)
 done
+
+sleep 5
 
 pod_name=$(oc get po -n ${NAMESPACE} --no-headers | head -n 1 | awk '{print $1}')
 pod_ip=$(oc get po $pod_name -n  ${NAMESPACE} --output jsonpath='{.status.podIP}')
 apiserver_pod=$(oc get po -n openshift-oauth-apiserver --no-headers | head -n 1 | awk '{print $1}')
 
 echo "Starting test to deny network traffic in the namespace ${NAMESPACE}..."
-oc create -f $deny_network_policy -n ${NAMESPACE} && deny_time_start=`date +%s`
+oc apply -f $deny_network_policy -n ${NAMESPACE}
+deny_time_start=`date +%s`
 check_http_code $deny_traffic_code $pod_ip $apiserver_pod
 deny_time_end=`date +%s`
 deny_final_time=$((deny_time_end - deny_time_start))
 echo "Time taken for deny network policy to become active: $deny_final_time s"
 
+sleep 1
+
 echo "Starting test to allow network traffic in the namespace ${NAMESPACE}..."
-oc delete networkpolicy deny-by-default -n ${NAMESPACE} && return_traffic_start=`date +%s`
+oc delete networkpolicy deny-by-default -n ${NAMESPACE}
+return_traffic_start=`date +%s`
 check_http_code $return_traffic_code $pod_ip $apiserver_pod
 return_traffic_end=`date +%s`
 return_traffic_final_time=$((return_traffic_end - return_traffic_start))
 echo "Time taken for deny network policy to become inactive: $return_traffic_final_time s"
+
+echo "=========================================================================="
 
 
 final_time_np=${final_time_list[0]}
@@ -133,22 +110,6 @@ else
     echo "FAIL: Time taken for deny network policy to become inactive: ${return_traffic_final_time} s should be <= 10 s."
 fi
 
-<<<<<<< HEAD
-=======
-policy_no_policy_difference=$(calculate_difference ${final_time_np} ${final_time_no_np})
-deny_return_traffic_difference=$(calculate_difference ${deny_final_time} ${return_traffic_final_time})
-
-if [[ ( $policy_no_policy_difference -le 10 ) && ( $deny_return_traffic_difference -le 10 ) ]]; then
-	echo "Expected: Difference in test times (with and without network policy) $policy_no_policy_difference s <= 10 s."
-	echo "Expected: Difference in test times (traffic denied and traffic returned) $deny_return_traffic_difference s <= 10 s."
-	((++pass_fail))
-else
-	echo "Difference in test times (with and without network policy): $policy_no_policy_difference"
-	echo "Difference in test times (traffic denied and traffic returned): $deny_return_traffic_difference"
-fi
-
-
->>>>>>> 78e466b (Create 1 namespace and scale up and down)
 echo ""
 echo "======Final test result======"
 

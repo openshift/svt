@@ -6,4 +6,3 @@ export WAIT_FOR=["Deployment"]
 export POD_REPLICAS=${POD_REPLICAS:=500}
 # Other ENV needed by the test case script
 export NETWORK_POLICY=${NETWORK_POLICY:-"${DIR}/../../content/scaling_network_policy.yaml"}
-export COMPARISON_CONFIG=""
