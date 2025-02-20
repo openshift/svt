@@ -339,13 +339,13 @@ if [[ $? -eq 1  ]]; then
     log "info" "====Configure storage for monitoring===="
     export STORAGE_CLASS=$(oc get storageclass | grep default | awk '{print $1}')
     # For test run longer than 10 days
-    if [[ $SECONDS_TO_RUN -gt 864000 && $storageclass == "nfs_provisioner" ]]; then
+    if [[ $SECONDS_TO_RUN -gt 864000 && $storageclass != "nfs_provisioner" ]]; then
         export PROMETHEUS_RETENTION_PERIOD=40d
         export PROMETHEUS_STORAGE_SIZE=500Gi
         export ALERTMANAGER_STORAGE_SIZE=2Gi
     # For test run equal or less than 10 days or using nfs_provisioner as storageclass uses node's local storage which has limited storage
     # https://issues.redhat.com/browse/OCPQE-13514
-    elif [[ $SECONDS_TO_RUN -le 864000 ]]; then
+    elif [[ $SECONDS_TO_RUN -le 864000 || $storageclass == "nfs_provisioner" ]]; then
         export PROMETHEUS_RETENTION_PERIOD=20d
         export PROMETHEUS_STORAGE_SIZE=50Gi
         export ALERTMANAGER_STORAGE_SIZE=2Gi
@@ -403,9 +403,10 @@ oc delete ns -l purpose=reliability
 log "info" "====Start Reliability test. Log is writting to $folder_name/reliability.log.===="
 log "info" "Cluster information:"
 oc version
+# get storage class used in the test
+echo "default storage class: $STORAGE_CLASS"
 # get haproxy version
 oc rsh -n openshift-ingress $(oc get po -n openshift-ingress --no-headers | head -n 1 | awk '{print $1}') haproxy -v
-echo $STORAGE_CLASS
 # run in background and dont append output to nohup.out
 nohup python3 reliability.py -c $folder_name/reliability.yaml -l $folder_name/reliability.log > /dev/null 2>&1 &
 reliability_pid=$!
