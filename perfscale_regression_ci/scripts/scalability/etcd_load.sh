@@ -26,7 +26,8 @@ echo -e "\nTotal number of ${NAMESPACE} namespaces created: ${TOTAL_CLUSTERPROJE
 
 if [[ $TOTAL_CLUSTERPROJECTS -ge $JOB_ITERATION ]]; then
 
-  source ../encryption/enable_encryption.sh
+  cd ../encryption
+  ./enable_encryption.sh
   echo "======PASS======"
   exit 0
 else
