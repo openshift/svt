@@ -10,19 +10,16 @@ objects:
     namespace: "${DESCH_NAMESPACE}"
   spec:
     deschedulingIntervalSeconds: ${{INTERSECONDS}}
-    image: "${IMAGEINFO}"
     logLevel: "${LOGLEVEL}"
     mode: Automatic
     operatorLogLevel: "${OPERATORLOGLEVEL}"
     profiles:
       - "${PROFILE1}"
     profileCustomizations:
-      devLowNodeUtilizationThresholds: {UTILIZATION_THRESHOLD}
+      devLowNodeUtilizationThresholds: "High"
 parameters:
 - name: DESCH_NAMESPACE
 - name: INTERSECONDS
-- name: IMAGEINFO
 - name: LOGLEVEL
 - name: OPERATORLOGLEVEL
 - name: PROFILE1
-- name: UTILIZATION_THRESHOLD

@@ -11,6 +11,11 @@ source ../../../common.sh
 
 #must be kubeadmin
 
+if [[ $INSTALL_OPERATOR == false ]]; then 
+    echo "dont install operator"
+    exit 0
+fi
+
 env
 
 if [[ -z $(oc get ns | grep $DESCH_NAMESPACE) ]]; then 
@@ -38,7 +43,7 @@ if [[ -z $(oc get subscription $DESCH_NAME -n $DESCH_NAMESPACE) ]]; then
     oc process -f subscription.yaml -p=NAME=$DESCH_NAME -p=DESCH_NAMESPACE=$DESCH_NAMESPACE -p=CHANNELNAME=$CHANNELNAME -p=OPSRCNAME=$OPSRCNAME -p=SOURCENAME=$SOURCENAME | oc create -f -
     # Wait for the descheduler operator pod running
     wait_for_obj_creation descheduler-operator pod
-    sleep 5
+    sleep 15
 else 
     echo "subscription already exists"
 fi 
@@ -60,7 +65,7 @@ fi
 # create kube scheduler cluster
 if [[ -n $UTILIZATION_THRESHOLD ]]; then 
     echo "utilization threshold"
-    oc process -f utilization_kubedescheduler.yaml -p=DESCH_NAMESPACE=$DESCH_NAMESPACE -p=INTERSECONDS=$INTERSECONDS -p=OPERATORLOGLEVEL=$OPERATORLOGLEVEL -p=IMAGEINFO=$image -p=LOGLEVEL=$LOGLEVEL -p=PROFILE1=$PROFILE1 -p=UTILIZATION_THRESHOLD=$UTILIZATION_THRESHOLD | oc create -f -
+    oc process -f utilization_kubedescheduler.yaml -p=DESCH_NAMESPACE=$DESCH_NAMESPACE -p=INTERSECONDS=$INTERSECONDS -p=OPERATORLOGLEVEL=$OPERATORLOGLEVEL -p=LOGLEVEL=$LOGLEVEL -p=PROFILE1=$PROFILE1 | oc create -f -
 elif [[ -z $PROFILE2 ]]; then
     echo "profile"
     oc process -f kubedescheduler.yaml -p=DESCH_NAMESPACE=$DESCH_NAMESPACE -p=INTERSECONDS=$INTERSECONDS -p=OPERATORLOGLEVEL=$OPERATORLOGLEVEL -p=IMAGEINFO=$image -p=LOGLEVEL=$LOGLEVEL -p=PROFILE1=$PROFILE1 | oc create -f -

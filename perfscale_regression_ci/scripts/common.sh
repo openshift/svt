@@ -207,10 +207,10 @@ function wait_for_app_pod_running() {
       break
     fi
   done
-  if [ $COUNTER -ge $retry ]; then
+  if [[ $COUNTER -ge $retry ]]; then
     return 1
   else
-    echo "wait_for_pod_running passed in $((30*$retry))s"
+    echo "wait_for_pod_running passed in $((30 * $retry))s"
     return 0
   fi
 }
