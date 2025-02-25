@@ -6,7 +6,7 @@ spec:
   host: www.example{{.Iteration}}.com
   to:
     kind: Service
-    name: service{{.Replica}}-{{.Replica}}{{.Iteration}}
+    name: service-{{.Replica}}{{.Iteration}}
   tls:
     termination: edge
     certificate: |-

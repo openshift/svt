@@ -1,0 +1,40 @@
+kind: DeploymentConfig
+apiVersion: v1
+metadata:
+  name: deploymentconfig{{.Replica}}-{{.Iteration}}
+spec:
+  template:
+    metadata:
+      labels:
+        name: replicationcontroller{{.Replica}}-{{.Iteration}}
+    spec:
+      containers:
+      - name: pause{{.Replica}}-{{.Iteration}}
+        image: gcr.io/google-containers/pause-amd64:3.0
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        env:
+        - name: ENVVAR1_{{.Replica}}-{{.Iteration}}
+          value: "${ENV_VALUE}"
+        - name: ENVVAR2_{{.Replica}}-{{.Iteration}}
+          value: "${ENV_VALUE}"
+        - name: ENVVAR3_{{.Replica}}-{{.Iteration}}
+          value: "${ENV_VALUE}"
+        - name: ENVVAR4_{{.Replica}}-{{.Iteration}}
+          value: "${ENV_VALUE}"
+        resources: {}
+        imagePullPolicy: IfNotPresent
+        capabilities: {}
+        securityContext:
+          capabilities: {}
+          privileged: false
+      restartPolicy: Always
+      serviceAccount: ''
+  replicas: 0
+  selector:
+    name: replicationcontroller{{.Replica}}-{{.Iteration}}
+  triggers:
+  - type: ConfigChange
+  strategy:
+    type: Rolling
