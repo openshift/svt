@@ -197,6 +197,7 @@ The following funcs are supported now:
 | build  | -n number_of_projects | developer | Build under each project|
 | scale_deployment  | -n number_of_projects -p number_of_replicas | developer | Scaleup the deployment to number_of_replicas replicas under each project|
 | check_pods  | -n number_of_projects | developer | Check pods under each project|
+| check_pod_restarts  | -p project | admin | Check pod restarts in specific project|
 | delete_project  | -n number_of_projects | developer | Delete each project|
 | check_operators  | N/A | admin | Check Degraded operators|
 | check_nodes  | N/A | admin | Check not Ready nodes|

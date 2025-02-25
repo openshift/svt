@@ -34,6 +34,8 @@ reliability:
       tasks:
         - func check_netobserv_pods
         - func check_flowcollector
+        - func check_pod_restarts -p "netobserv" # check pod restarts in netobserv namespace
+        - func check_pod_restarts -p "netobserv-privileged" # check pod restarts in netobserv-privileged namespace
         - func check_operators
         - oc get project -l purpose=reliability
         - func check_nodes
