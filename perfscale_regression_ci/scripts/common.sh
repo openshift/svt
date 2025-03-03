@@ -122,7 +122,7 @@ function delete_project_by_label() {
   oc project default
 
   oc delete projects -l $1 --wait=false --ignore-not-found=true
-  while [ $(oc get projects -l $1 | wc -l) -gt 0 ]; do
+  while [ $(oc get projects -l $1 -o name --no-headers | wc -l) -gt 0 ]; do
     echo "Waiting for projects to delete"
     sleep 1
   done

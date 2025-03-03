@@ -1,0 +1,34 @@
+jobs:
+  - name: {{.NAME}}
+    namespace: {{.NAMESPACE}}
+    jobIterations: {{.JOB_ITERATION}}
+    qps: {{.QPS}}
+    burst: {{.BURST}}
+    namespacedIterations: true
+    podWait: true
+    verifyObjects: true
+    waitFor: {{.WAIT_FOR}}
+    preLoadImages: false
+    namespaceLabels:
+      security.openshift.io/scc.podSecurityLabelSync: false
+      pod-security.kubernetes.io/enforce: privileged
+      pod-security.kubernetes.io/audit: privileged
+      pod-security.kubernetes.io/warn: privileged
+    objects:
+    - objectTemplate: "build.yaml"
+      replicas: {{.BUILDS_REPLICAS}}
+    - objectTemplate: "image-stream.yaml"
+      replicas: {{.IMAGES_STREAM_REPLICAS}}
+      inputVars: 
+        image: gcr.io/google_containers/pause-amd64
+        name: pauseimagestream
+    - objectTemplate: "deployment-rc.yaml"
+      replicas: {{.DEPLOYMENT_REPLICAS}}
+    - objectTemplate: "service-rc.yaml"
+      replicas: {{.DEPLOYMENT_REPLICAS}}
+    - objectTemplate: ssh-secret.yaml
+      replicas: {{.SECRETS_REPLICAS}}
+    - objectTemplate: "route.yaml"
+      replicas: {{.ROUTES_REPLICAS}}
+    - objectTemplate: "configmap.yaml"
+      replicas: {{.CM_REPLICAS}}
