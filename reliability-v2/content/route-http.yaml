@@ -1,11 +1,11 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: niginx-service
+  name: nginx-http
 spec:
   port:
     targetPort: http
   to:
     kind: Service
-    name: http-perf
+    name: nginx
     

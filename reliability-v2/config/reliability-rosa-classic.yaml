@@ -63,8 +63,8 @@ reliability:
         #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
         - func check_all_projects # check all project under this user
         - func apply -n 2 -p "<path_to_content>/nginx-deploy.yaml"
-        - func apply -n 2 -p "<path_to_content>/http-service.yaml"
-        - func apply -n 2 -p "<path_to_content>/http-route.yaml"
+        - func apply -n 2 -p "<path_to_content>/nginx-service.yaml"
+        - func apply -n 2 -p "<path_to_content>/route-http.yaml"
         - func load_app -n 2 -p 10 # load apps in 2 namespaces with 10 clients for each
         - func check_pods -n 2 # check pods in 2 namespaces 
         - func delete_project -n 2 # delete project in 2 namespaces
@@ -85,8 +85,8 @@ reliability:
         # If network policy is planed in the test, uncomment the following line
         #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
         - func apply -n 8 -p "<path_to_content>/nginx-deploy.yaml"
-        - func apply -n 8 -p "<path_to_content>/http-service.yaml"
-        - func apply -n 8 -p "<path_to_content>/http-route.yaml"
+        - func apply -n 8 -p "<path_to_content>/nginx-service.yaml"
+        - func apply -n 8 -p "<path_to_content>/route-http.yaml"
       tasks:
         - func load_app -n 8 -p 50
         - func scale_deployment -n 8 -p 2 # scale deployment in 2 namespaces to 2 replicas

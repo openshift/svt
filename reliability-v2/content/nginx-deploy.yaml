@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: http-perf
+  name: nginx
   labels:
-    run: http-perf
+    run: nginx
     app: nginx
 spec:
   replicas: 1
