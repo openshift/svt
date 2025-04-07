@@ -151,6 +151,7 @@ class Tasks:
             (route,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $2'}} | grep {template}",self.__get_kubeconfig(user))
             if rc == 0 and "No resources found" not in route:
                 route = route.rstrip()
+                url = f"http://{route}:80"
                 max_tries = 60
                 current_tries = 0
                 visit_success = False
@@ -158,17 +159,17 @@ class Tasks:
                     self.logger.info(f"{template} route not available yet, sleeping 30 seconds. Retry:{current_tries}/{max_tries}.")
                     sleep(30)
                     current_tries += 1
-                    visit_success,status_code = self.__visit_app(route)
+                    visit_success,status_code = self.__visit_app(url)
                 if not visit_success:
                     # debug the namespace
                     self.__get_namespace_resource(user,namespace,"pods")
                     self.__get_namespace_resource(user,namespace,"events")
                     # sleep 5 minutes for manual debug
-                    self.logger.info(f"new_app: visit '{route}' failed after 30 minutes. status_code: {status_code}. Wait 5 more minutes for manual debug.")
-                    slackIntegration.info(f"new_app: visit '{route}' failed after 30 minutes. status_code: {status_code}. Wait more 5 minutes for manual debug.")
+                    self.logger.info(f"new_app: visit '{url}' failed after 30 minutes. status_code: {status_code}. Wait 5 more minutes for manual debug.")
+                    slackIntegration.info(f"new_app: visit '{url}' failed after 30 minutes. status_code: {status_code}. Wait more 5 minutes for manual debug.")
                     sleep(300)
-                    self.logger.error(f"new_app: visit '{route}' failed after 35 minutes. status_code: {status_code}")
-                    slackIntegration.error(f"new_app: visit '{route}' failed after 35 minutes. status_code: {status_code}")
+                    self.logger.error(f"new_app: visit '{url}' failed after 35 minutes. status_code: {status_code}")
+                    slackIntegration.error(f"new_app: visit '{url}' failed after 35 minutes. status_code: {status_code}")
                     # return 1 so the upcoming tasks won't be run
                     self.__log_result(1)
                     return(visit_success,1)
@@ -183,29 +184,34 @@ class Tasks:
             return(visit_success,0)
 
     # visit the given application route
-    def __visit_app(self,route):
+    def __visit_app(self,url):
         visit_success = False
         try:
-            r = requests.get(f"http://{route}/")
+            r = requests.get(url, verify=False)
             if r.status_code != 200:
-                self.logger.info(f"Response code:{str(r.status_code)}. Visit failed: {route}")
+                self.logger.info(f"Response code:{str(r.status_code)}. Visit failed: {url}")
             if r.status_code == 200:
-                self.logger.info(f"Response code:{str(r.status_code)}. Visit succeeded: {route}")
+                self.logger.info(f"Response code:{str(r.status_code)}. Visit succeeded: {url}")
                 visit_success = True
             return visit_success, r.status_code
         except Exception as e :
-            self.logger.error(f"Visit exception: {route}. Exception: {e}")
+            self.logger.error(f"Visit exception: {url}. Exception: {e}")
             return visit_success, 0
 
     # load the route in the given namespace with 'clients' number of concurrent threads
     def load_app(self,user,namespace,clients="1"):
-        (route,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $2'}}",self.__get_kubeconfig(user))
-        if rc == 0 and "No resources found" not in route:
-            route = route.rstrip()
-            self.logger.info(f"[Task] load app route {route} in namespace {namespace} with {clients} clients.")
+        (host,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $2'}}",self.__get_kubeconfig(user))
+        (termination,rc1) = oc(f"get route --no-headers -n {namespace} | awk {{'print $5'}}",self.__get_kubeconfig(user))
+        if rc == 0 and "No resources found" not in host:
+            host = host.rstrip()
+            termination = termination.rstrip()
+            url = f"http://{host}:80"
+            if termination == "edge" or termination == "reencrypt" or termination == "passthrough":
+                url = f"https://{host}:443"
+            self.logger.info(f"[Task] load app route {url} in namespace {namespace} with {clients} clients.")
             urls = []
             for i in range(int(clients)):
-                urls.append(route)
+                urls.append(url)
             with ThreadPoolExecutor(max_workers=int(clients)) as executor:
                 results = executor.map(self.__visit_app, urls)
                 return_value = 0
@@ -218,8 +224,8 @@ class Tasks:
                         return_value = 1
                         status_code = result[1]
             if return_value == 1:
-                self.logger.error(f"load_app: visit route '{route}' failed. status_code: {status_code}")
-                slackIntegration.error(f"load_app: visit route '{route}' failed. status_code: {status_code}")
+                self.logger.error(f"load_app: visit route '{url}' failed. status_code: {status_code}")
+                slackIntegration.error(f"load_app: visit route '{url}' failed. status_code: {status_code}")
             return ("",return_value)
         else:
             self.logger.error(f"load_app: get route failed for namespace '{namespace}'.")
@@ -373,6 +379,36 @@ class Tasks:
     def __get_namespace_resource(self,user,namespace,type):
         (result,rc) = oc(f"get {type} -n {namespace}",self.__get_kubeconfig(user))
         return (result,rc)
+
+    # oc create secret
+    def __create_secret(self,user,namespace,type,name,path):
+        self.logger.info(f"[Task] create secret in namespace {namespace}.")
+        (result, rc) = oc(f"create secret {type} {name} --cert={path}/tls.crt --key={path}/tls.key -n {namespace}",self.__get_kubeconfig(user))        
+        self.__log_result(rc)
+        return (result,rc)
+
+    # oc create role
+    def __create_role(self,user,namespace,name,verb,resource,resourcename):
+        self.logger.info(f"[Task] create role in namespace {namespace}.")
+        (result, rc) = oc(f"create role {name} --verb={verb} --resource={resource} --resource-name={resourcename} -n {namespace}",self.__get_kubeconfig(user))
+        self.__log_result(rc)
+        return (result,rc)
+    
+    # oc create rolebinding
+    def __create_rolebinding(self,user,namespace,name,role,serviceaccount):
+        self.logger.info(f"[Task] create rolebinding in namespace {namespace}.")
+        (result, rc) = oc(f"create rolebinding {name} --role={role} --serviceaccount={serviceaccount} -n {namespace}",self.__get_kubeconfig(user))        
+        self.__log_result(rc)
+        return (result,rc)
+    
+    # oc create secret
+    def enable_route_external_cert(self,user,namespace,parameter):
+        self.logger.info(f"[Task] create secret, role, rolebinding for edge route external certification in namespace {namespace}.")
+        (result,rc) = self.__create_secret(user,namespace,"tls","edge-external-cert",parameter)
+        (result,rc) = self.__create_role(user,namespace,"secret-reader","get,list,watch","secrets","edge-external-cert")
+        (result,rc) = self.__create_rolebinding(user,namespace,"secret-reader-binding","secret-reader","openshift-ingress:router")
+        self.__log_result(rc)
+        return (result,rc)  
     
     # run oc cli type of task
     def oc_task(self,task,user):

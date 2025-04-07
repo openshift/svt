@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nginx-edge
+spec:
+  port:
+    targetPort: http
+  tls:
+    externalCertificate:
+      name: edge-external-cert
+    termination: edge
+  to:
+    kind: Service
+    name: nginx
+    

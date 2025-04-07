@@ -229,7 +229,7 @@ function install_dittybopper(){
 function setup_netobserv(){
     log "Setting up Network Observability operator"
     rm -rf ocp-qe-perfscale-ci
-    git clone https://github.com/openshift-qe/ocp-qe-perfscale-ci.git --branch netobserv-perf-tests
+    git clone https://github.com/openshift-eng/ocp-qe-perfscale-ci.git --branch netobserv-perf-tests
     OCPQE_PERFSCALE_DIR=$PWD/ocp-qe-perfscale-ci
     source ocp-qe-perfscale-ci/scripts/env.sh
     source ocp-qe-perfscale-ci/scripts/netobserv.sh
@@ -279,6 +279,12 @@ fi
 
 script_folder=$RELIABILITY_DIR/tasks/script
 content_folder=$RELIABILITY_DIR/content
+
+# Create key and cert for route external certification
+log "info" "====Create key and cert for route external certification and move to ${content_folder}===="
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=edge-ingress-perf.apps.mohit.perfscale.devcluster.openshift.com/O=MyOrganization" > /dev/null 2>&1
+mv tls.key tls.crt ${content_folder}
+
 # generate reliability config file
 if [[ ! -z $path_to_auth_files ]]; then
     log "info" "====Generating reliability config file===="
@@ -294,7 +300,7 @@ export KUBECONFIG
 
 # Deploy NFS storage class for cluster without storageclass
 cd $RELIABILITY_DIR
-
+nfs_provisioner=false
 if [[ $(oc get storageclass -o json | jq .items) == "[]" ]];then
     cd utils
     log "info" "====Deploy nfs-provisioner===="
@@ -302,7 +308,7 @@ if [[ $(oc get storageclass -o json | jq .items) == "[]" ]];then
     #chmod +x deploy_nfs_provisioner.sh
     ./deploy_nfs_provisioner.sh
     cd -
-    storageclass="nfs_provisioner"
+    nfs_provisioner=true
 fi
 
 if [[ -z $time_to_run ]]; then
@@ -334,18 +340,18 @@ fi
 # Configure storage for monitoring
 # https://docs.openshift.com/container-platform/4.12/scalability_and_performance/scaling-cluster-monitoring-operator.html#configuring-cluster-monitoring_cluster-monitoring-operator
 set +e
+export STORAGE_CLASS=$(oc get storageclass | grep default | awk '{print $1}')
 oc get cm -n openshift-monitoring cluster-monitoring-config -o yaml  | grep volumeClaimTemplate > /dev/null 2>&1
 if [[ $? -eq 1  ]]; then
     log "info" "====Configure storage for monitoring===="
-    export STORAGE_CLASS=$(oc get storageclass | grep default | awk '{print $1}')
     # For test run longer than 10 days
-    if [[ $SECONDS_TO_RUN -gt 864000 && $storageclass == "nfs_provisioner" ]]; then
+    if [[ $SECONDS_TO_RUN -gt 864000 && $nfs_provisioner == false ]]; then
         export PROMETHEUS_RETENTION_PERIOD=40d
         export PROMETHEUS_STORAGE_SIZE=500Gi
         export ALERTMANAGER_STORAGE_SIZE=2Gi
     # For test run equal or less than 10 days or using nfs_provisioner as storageclass uses node's local storage which has limited storage
     # https://issues.redhat.com/browse/OCPQE-13514
-    elif [[ $SECONDS_TO_RUN -le 864000 ]]; then
+    elif [[ $SECONDS_TO_RUN -le 864000 || $nfs_provisioner == true ]]; then
         export PROMETHEUS_RETENTION_PERIOD=20d
         export PROMETHEUS_STORAGE_SIZE=50Gi
         export ALERTMANAGER_STORAGE_SIZE=2Gi
@@ -393,7 +399,11 @@ if [[ $operators ]]; then
     done
 fi
 
-install_dittybopper
+# Install dittybopper if not exist
+oc get ns dittybopper
+if [[ $? -ne 0 ]]; then
+    install_dittybopper
+fi
 
 # Cleanup test projects
 cd $RELIABILITY_DIR
@@ -401,11 +411,16 @@ log "info" "====Clearing test ns with label purpose=reliability.===="
 oc delete ns -l purpose=reliability
 # Start reliability test
 log "info" "====Start Reliability test. Log is writting to $folder_name/reliability.log.===="
-log "info" "Cluster information:"
-oc version
+log "info" "Cluster information: $(oc version)"
+# get storage class used in the test
+log "info" "default storage class: $STORAGE_CLASS"
 # get haproxy version
-oc rsh -n openshift-ingress $(oc get po -n openshift-ingress --no-headers | head -n 1 | awk '{print $1}') haproxy -v
-echo $STORAGE_CLASS
+log "info" "haproxy: $(oc rsh -n openshift-ingress $(oc get po -n openshift-ingress --no-headers | head -n 1 | awk '{print $1}') haproxy -v)"
+# get node os image and containerRuntimeVersion
+log "info" "node os image: $(oc get nodes -o json | jq -r '.items[0].status.nodeInfo.osImage')"
+log "info" "node containerRuntimeVersion: $(oc get nodes -o json | jq -r '.items[0].status.nodeInfo.containerRuntimeVersion')"
+# get config
+log "info" "Reliability config: $config_template"
 # run in background and dont append output to nohup.out
 nohup python3 reliability.py -c $folder_name/reliability.yaml -l $folder_name/reliability.log > /dev/null 2>&1 &
 reliability_pid=$!
