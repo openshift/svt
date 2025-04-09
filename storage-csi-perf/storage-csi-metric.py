@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-import elasticsearch
+from elasticsearch import Elasticsearch
 import subprocess
 import json
 import requests
@@ -11,6 +11,8 @@ import uuid
 import os
 import ast
 import ssl
+from zoneinfo import ZoneInfo
+
 es_server = os.getenv("ES_SERVER")
 es_index = os.getenv("ES_INDEX")
 def index_result(payload, retry_count=3):
@@ -21,16 +23,22 @@ def index_result(payload, retry_count=3):
             ssl_ctx = ssl.create_default_context()
             ssl_ctx.check_hostname = False
             ssl_ctx.verify_mode = ssl.CERT_NONE
-            es = elasticsearch.Elasticsearch([es_server], send_get_body_as='POST',ssl_context=ssl_ctx, use_ssl=True)
+
+            es = Elasticsearch(es_server, send_get_body_as='POST',ssl_context=ssl_ctx, use_ssl=True)
             print("#"*118)
             print("ES Information: \n{}".format(es.info()))
             print("#"*118)
             print()
-            es.index(index=es_index, body=payload,doc_type='doc')
+
+            response=es.index(index=es_index,body=payload)
+            #response=es.index(index=es_index,id=1,body=payload, doc_type='doc')
+            print("-"*118)
+            print("ES Response: "+response['result'])
+            print()
 
             retry_count = 0
         except Exception as e:
-            print("Failed Indexing - \n" + str(e.message))
+            print("Failed Indexing - \n" + str(e))
             print("Retrying again to index...")
             retry_count -= 1
 
@@ -120,7 +128,7 @@ def get_storage_metrics(provider,start_time,end_time,spec_time_duration):
 
         payload={}
 
-        currentTime=datetime.utcnow()
+        currentTime=datetime.now().isoformat()
         test_type = os.getenv("WORKLOAD")
         total_workload = os.getenv("TOTAL_WORKLOAD")
         get_timestamp_uuid = os.getenv("UUID")
@@ -148,7 +156,7 @@ def get_storage_metrics(provider,start_time,end_time,spec_time_duration):
         payload["cluster.kubernetes_version"] = kubernetes_version
         payload["cluster.sdn"] = network_type
         payload["cluster.platform"] = cluster_platform
-
+        payload["timestamp"] = currentTime
 
         results = storage_metrics_json['data']['result']
         for r in results:
@@ -161,8 +169,7 @@ def get_storage_metrics(provider,start_time,end_time,spec_time_duration):
         print("The payload will save to elasticsearch:\n{}\n{}".format("-" * 118,payload))
         print("-" * 118+'\n')
         #save to elasticsearch
-        if es_server != "":
-           payload["timestamp"] = currentTime
+        if es_server != None:           
            index_result(payload)
 
 if __name__ == "__main__":
