@@ -5,11 +5,15 @@ import requests
 import sys
 from threading import Lock
 import asyncio
+import string
+import re
 from tasks.GlobalData import global_data
 from utils.cli import oc,kubectl,shell
 from utils.LoadApp import loadApp
 from integrations.SlackIntegration import slackIntegration
 from concurrent.futures import ThreadPoolExecutor
+
+netobserv_pods = {}
 
 class Tasks:
     def __init__(self):
@@ -439,7 +443,7 @@ class Tasks:
     # check flowcollector status for netobserv
     def check_flowcollector(self, user):
         self.logger.info(f"[Task] User {user}: check flowcollector")
-        # Check if nodes are Ready
+        # Check if flowcollector is Ready
         (result, rc) = oc(
             f"get flowcollector --no-headers| grep -v 'Ready'",
             self.__get_kubeconfig(user),
@@ -456,12 +460,13 @@ class Tasks:
         else:
             self.logger.error(f"Flowcollector status fetch error: result {result}, rc - {rc}")
             rc_return = 1
+        self.__log_result(rc)
         return (result, rc_return)
 
     # check netobserv pods health
     def check_netobserv_pods(self, user):
         self.logger.info(f"[Task] User {user}: check netobserv pods")
-        # Check if nodes are Ready
+        # Check if pods are Running
         for ns in ("netobserv", "netobserv-privileged"):
             (result, rc) = oc(
                 f"get pods -n {ns} -o wide --no-headers| grep -v 'Running'",
@@ -479,4 +484,36 @@ class Tasks:
             else:
                 self.logger.error(f"Pods status fetch error: result {result}, rc - {rc}")
                 rc_return = 1
+        self.__log_result(rc)
         return (result, rc_return)
+    
+    # check netobserv pod restarts
+    def check_netobserv_pod_restarts(self, user):
+        self.logger.info(f"[Task] User {user}: check netobserv pod restarts")
+        pod_entry_regex = re.compile("(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?)\s+(.*?).*.*")
+        for ns in ("netobserv", "netobserv-privileged", "openshift-netobserv-operator"):
+            (result, rc) = oc(f"get pods -n {ns} --no-headers -o wide",self.__get_kubeconfig(user),ignore_log=True,ignore_slack=True)
+            if rc == 0:
+                pod_info_list = result.split('\n')
+                for pod_info in pod_info_list:
+                    pod_entry_parse = pod_entry_regex.search(pod_info)
+                    if pod_entry_parse:
+                        pod_restarts = int(pod_entry_parse.group(4))
+                        pod_name = pod_entry_parse.group(1)
+                        if pod_restarts > 0 and pod_name not in netobserv_pods:
+                            self.logger.info(f"New pod {pod_name} in namespace {ns} has restarted {pod_restarts} times")
+                            slackIntegration.info(f"New pod {pod_name} in namespace {ns} has restarted {pod_restarts} times")
+                            netobserv_pods.update({pod_name:pod_restarts})
+                        elif pod_name in netobserv_pods and pod_restarts > netobserv_pods[pod_name]:
+                            self.logger.error(f"Pod {pod_name} in namespace {ns} has restarted {pod_restarts} times")
+                            slackIntegration.info(f"Pod {pod_name} in namespace {ns} has restarted {pod_restarts} times")
+                            netobserv_pods[pod_name] = pod_restarts
+                    elif pod_info != '':       
+                        self.logger.error("Could not parse oc get pods output: " + pod_info)
+                        rc_return = 1
+                rc_return = 0
+            else:
+                self.logger.error("oc get pods failed with rc: " + str(rc))
+                rc_return = 1
+        self.__log_result(rc)
+        return (netobserv_pods, rc_return)

@@ -37,6 +37,7 @@ reliability:
         - func check_operators
         - oc get project -l purpose=reliability
         - func check_nodes
+        - func check_netobserv_pod_restarts # check pod restarts in netobserv namespaces
         - kubectl get pods -A -o wide | egrep -v "Completed|Running"
         # Run test case as scripts. KUBECONFIG of the current user is set as env variable by reliability-v2. 
         #- . <path_to_script>/create-delete-pod-ensure-service.sh

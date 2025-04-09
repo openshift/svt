@@ -33,7 +33,7 @@ if [[ $latest_accepted_nightly_build == $current_version ]]; then
 else
     if [[ ! -d ocp-qe-perfscale-ci ]]; then
         log "info" "Cloning upgrade branch of ocp-qe-perfscale-ci repo"
-        git clone -b upgrade git@github.com:openshift-qe/ocp-qe-perfscale-ci.git
+        git clone -b upgrade git@github.com:openshift-eng/ocp-qe-perfscale-ci.git
     fi
     cd ocp-qe-perfscale-ci/upgrade_scripts
     log "info" "Preparing venv"
