@@ -188,10 +188,15 @@ class Tasks:
             return(visit_success,0)
 
     # visit the given application route
-    def __visit_app(self,url):
+    def __visit_app(self,url,cacert="skip"):
         visit_success = False
         try:
-            r = requests.get(url, verify=False)
+            if cacert != "skip":
+                # use custom CA certificate file
+                r = requests.get(url, verify=cacert)
+            else:
+                # disable SSL verification
+                r = requests.get(url, verify=False)
             if r.status_code != 200:
                 self.logger.info(f"Response code:{str(r.status_code)}. Visit failed: {url}")
             if r.status_code == 200:
@@ -206,18 +211,27 @@ class Tasks:
     def load_app(self,user,namespace,clients="1"):
         (host,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $2'}}",self.__get_kubeconfig(user))
         (termination,rc1) = oc(f"get route --no-headers -n {namespace} | awk {{'print $5'}}",self.__get_kubeconfig(user))
+        cacert = "skip"
         if rc == 0 and "No resources found" not in host:
             host = host.rstrip()
             termination = termination.rstrip()
             url = f"http://{host}:80"
             if termination == "edge" or termination == "reencrypt" or termination == "passthrough":
                 url = f"https://{host}:443"
+                if termination == "edge" or termination == "reencrypt":
+                    (route,rc) = oc(f"get route --no-headers -n {namespace} | awk {{'print $1'}}",self.__get_kubeconfig(user))
+                    route = route.rstrip()
+                    (result,rc) = oc(f"get route {route} -o yaml -n {namespace} | grep externalCertificate | awk {{'print $1'}}",self.__get_kubeconfig(user))
+                    if rc == 0:
+                        cacert = "tls.crt"
             self.logger.info(f"[Task] load app route {url} in namespace {namespace} with {clients} clients.")
             urls = []
+            cacerts = []
             for i in range(int(clients)):
                 urls.append(url)
+                cacerts.append(cacert)
             with ThreadPoolExecutor(max_workers=int(clients)) as executor:
-                results = executor.map(self.__visit_app, urls)
+                results = executor.map(self.__visit_app, urls, cacerts)
                 return_value = 0
                 for result in results:
                     # if any of the client visit fails, load_app func is marked as failed.
@@ -379,38 +393,53 @@ class Tasks:
             rc_return = 1
         return(result,rc_return)
 
-    # oc get the given type of resource in the given namespace
+    # get the given type of resource in the given namespace
     def __get_namespace_resource(self,user,namespace,type):
         (result,rc) = oc(f"get {type} -n {namespace}",self.__get_kubeconfig(user))
         return (result,rc)
 
-    # oc create secret
-    def __create_secret(self,user,namespace,type,name,path):
-        self.logger.info(f"[Task] create secret in namespace {namespace}.")
-        (result, rc) = oc(f"create secret {type} {name} --cert={path}/tls.crt --key={path}/tls.key -n {namespace}",self.__get_kubeconfig(user))        
+    # create secret
+    def __create_secret(self,user,namespace,type,name,key,cert):
+        self.logger.info(f"[Task] create secret {name} in namespace {namespace}.")
+        (result, rc) = oc(f"create secret {type} {name} --cert={cert} --key={key} -n {namespace}",self.__get_kubeconfig(user))        
         self.__log_result(rc)
         return (result,rc)
 
-    # oc create role
+    # create role
     def __create_role(self,user,namespace,name,verb,resource,resourcename):
-        self.logger.info(f"[Task] create role in namespace {namespace}.")
+        self.logger.info(f"[Task] create role {name} in namespace {namespace}.")
         (result, rc) = oc(f"create role {name} --verb={verb} --resource={resource} --resource-name={resourcename} -n {namespace}",self.__get_kubeconfig(user))
         self.__log_result(rc)
         return (result,rc)
     
-    # oc create rolebinding
+    # create rolebinding
     def __create_rolebinding(self,user,namespace,name,role,serviceaccount):
-        self.logger.info(f"[Task] create rolebinding in namespace {namespace}.")
+        self.logger.info(f"[Task] create rolebinding {name} in namespace {namespace}.")
         (result, rc) = oc(f"create rolebinding {name} --role={role} --serviceaccount={serviceaccount} -n {namespace}",self.__get_kubeconfig(user))        
         self.__log_result(rc)
         return (result,rc)
-    
-    # oc create secret
-    def enable_route_external_cert(self,user,namespace,parameter):
+
+    # patch secret
+    def __patch_secret(self,user,namespace,type,name,key,cert):
+        self.logger.info(f"[Task] patch secret {name} in namespace {namespace}.")
+        (result, rc) = oc(f"create secret {type} {name} --cert={cert} --key={key} -n {namespace} --dry-run=client -o yaml > secret-patch.yaml",self.__get_kubeconfig(user))
+        (result, rc) = oc(f"apply -f secret-patch.yaml -n {namespace}",self.__get_kubeconfig(user))
+        self.__log_result(rc)
+        return (result,rc)
+
+    # enable route external cert
+    def enable_route_external_cert(self,user,namespace):
         self.logger.info(f"[Task] create secret, role, rolebinding for edge route external certification in namespace {namespace}.")
-        (result,rc) = self.__create_secret(user,namespace,"tls","edge-external-cert",parameter)
-        (result,rc) = self.__create_role(user,namespace,"secret-reader","get,list,watch","secrets","edge-external-cert")
+        (result,rc) = self.__create_secret(user,namespace,"tls","external-cert","tls.key","tls.crt")
+        (result,rc) = self.__create_role(user,namespace,"secret-reader","get,list,watch","secrets","external-cert")
         (result,rc) = self.__create_rolebinding(user,namespace,"secret-reader-binding","secret-reader","openshift-ingress:router")
+        self.__log_result(rc)
+        return (result,rc)  
+
+    # update external cert
+    def update_route_external_cert(self,user,namespace):
+        self.logger.info(f"[Task] create secret, role, rolebinding for edge route external certification in namespace {namespace}.")
+        (result,rc) = self.__patch_secret(user,namespace,"tls","external-cert","tls1.key","tls1.crt")
         self.__log_result(rc)
         return (result,rc)  
     
