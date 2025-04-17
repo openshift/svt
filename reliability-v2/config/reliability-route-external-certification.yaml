@@ -95,9 +95,34 @@ reliability:
         - func delete_project -n 2 # delete project in 2 namespaces
         - func verify_project_deletion -n 2 # verfy project deletion in 2 namespaces
 
-    - name: dev-prod
+    - name: dev-prod-edge
       user_name: testuser-
       user_start: 31
+      user_end: 34
+      loops: forever
+      trigger: 600
+      jitter: 3600
+      interval: 600
+      pre_tasks:
+        - func delete_all_projects
+        - func verify_project_deletion -n 8
+        - func new_project -n 8
+        # If network policy is planed in the test, uncomment the following line
+        #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
+        - func apply -n 8 -p "<path_to_content>/nginx-deploy.yaml"
+        - func apply -n 8 -p "<path_to_content>/nginx-service.yaml"
+        - func enable_route_external_cert -n 8
+        - func apply -n 8 -p "<path_to_content>/route-edge.yaml"
+      tasks:
+        - func load_app -n 8 -p 50
+        - func scale_deployment -n 8 -p 2 # scale deployment in 2 namespaces to 2 replicas
+        - func scale_deployment -n 8 -p 1 # scale deployment in 2 namespaces to 1 replicas
+      post_tasks:
+        - func delete_project -n 8
+
+    - name: dev-prod-reencrypt
+      user_name: testuser-
+      user_start: 34
       user_end: 36
       loops: forever
       trigger: 600
@@ -111,10 +136,10 @@ reliability:
         #- func apply -n 2 -p "<path_to_content>/network-policy/allow-same-namespace.yaml" # Apply network policy to 2 projects
         - func apply -n 8 -p "<path_to_content>/nginx-deploy.yaml"
         - func apply -n 8 -p "<path_to_content>/nginx-service.yaml"
-        - func enable_route_external_cert -n 8 -p <path_to_content>
-        - func apply -n 8 -p "<path_to_content>/route-edge.yaml"
+        - func enable_route_external_cert -n 8
+        - func apply -n 8 -p "<path_to_content>/route-reencrypt.yaml"
       tasks:
-        - func load_app -n 8 -p 50
+        - func load_app -n 8 -p 50 
         - func scale_deployment -n 8 -p 2 # scale deployment in 2 namespaces to 2 replicas
         - func scale_deployment -n 8 -p 1 # scale deployment in 2 namespaces to 1 replicas
       post_tasks:
