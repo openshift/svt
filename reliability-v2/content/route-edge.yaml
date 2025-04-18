@@ -7,7 +7,7 @@ spec:
     targetPort: http
   tls:
     externalCertificate:
-      name: edge-external-cert
+      name: external-cert
     termination: edge
   to:
     kind: Service
