@@ -280,10 +280,7 @@ fi
 script_folder=$RELIABILITY_DIR/tasks/script
 content_folder=$RELIABILITY_DIR/content
 
-# Create key and cert for route external certification
-log "info" "====Create key and cert for route external certification and move to ${content_folder}===="
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=edge-ingress-perf.apps.mohit.perfscale.devcluster.openshift.com/O=MyOrganization" > /dev/null 2>&1
-mv tls.key tls.crt ${content_folder}
+cd $RELIABILITY_DIR
 
 # generate reliability config file
 if [[ ! -z $path_to_auth_files ]]; then
@@ -297,6 +294,14 @@ fi
 
 echo "export KUBECONFIG=$KUBECONFIG"
 export KUBECONFIG
+
+# Create key and cert for route external certification
+log "info" "====Create key and cert for route external certification===="
+base_domain=$(oc get dns cluster -o json | jq '.spec.baseDomain')
+base_domain=$(echo "$base_domain" | tr -d '"')
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=*.apps.${base_domain}" > /dev/null 2>&1
+#openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls1.key -out tls1.crt -subj "/CN=*.apps.${base_domain}" > /dev/null 2>&1
+ls *.key *.crt
 
 # Deploy NFS storage class for cluster without storageclass
 cd $RELIABILITY_DIR
