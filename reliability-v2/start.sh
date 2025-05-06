@@ -405,10 +405,12 @@ if [[ $operators ]]; then
 fi
 
 # Install dittybopper if not exist
+set +e
 oc get ns dittybopper
 if [[ $? -ne 0 ]]; then
     install_dittybopper
 fi
+set -e
 
 # Cleanup test projects
 cd $RELIABILITY_DIR
