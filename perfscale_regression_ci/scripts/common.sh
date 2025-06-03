@@ -510,7 +510,7 @@ function waitForInfraNodesReady() {
     echo "Wait for Ready"
     local retries=0
     local attempts=140
-    while [[ $(oc get nodes --no-headers -l node-role.kubernetes.io/infra=,node.openshift.io/os_id=rhcos --output jsonpath="{.items[?(@.status.conditions[-1].type=='Ready')].status.conditions[-1].status}" | tr ' ' '\n' | grep -c "True") != "$1" ]]; do
+    while [[ $(oc get nodes --no-headers -l node-role.kubernetes.io/infra= --output jsonpath="{.items[?(@.status.conditions[-1].type=='Ready')].status.conditions[-1].status}" | tr ' ' '\n' | grep -c "True") != "$1" ]]; do
         echo "Following nodes are currently present, waiting for desired count $1 to be met."
         echo "Machinesets:"
         oc get machinesets -A
