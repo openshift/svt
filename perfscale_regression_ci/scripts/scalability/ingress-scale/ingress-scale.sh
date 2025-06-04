@@ -14,7 +14,7 @@ source ../../../utils/run_workload.sh
 
 echo "[INFO] run ingress-perf with thread=4, replica=2"
 run_ingress_perf
-#run ingress-perf with thread=4, replica=3
+echo "[INFO] run ingress-perf with thread=4, replica=3"
 export CONFIG=../../../standard-3replicas.yml
 run_ingress_perf
 
@@ -39,4 +39,4 @@ echo "[INFO] run ingress-perf with thread=8, replica=2"
 unset CONFIG
 run_ingress_perf
 
-echo "[INFO] Test is finished. Pleaset check results in the grafana and dittybopper dashboards."
+echo "[INFO] Test is finished. Pleaset check results in the grafana dashboards."
