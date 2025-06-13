@@ -1,4 +1,4 @@
-#/!/bin/bash
+#!/bin/bash
 ################################################
 ## Auth=prubenda@redhat.com qili@redhat.com
 ## Desription: Script for creating pause deployments and adding network policies
@@ -7,7 +7,7 @@
 ## Cluster config: 3 master (m5.2xlarge or equivalent) with 3 worker
 ## kube-burner config: perfscale_regerssion_ci/kubeburner-object-templates/loaded-projects-config.yml
 ## PARAMETERS: number of JOB_ITERATION
-################################################ 
+################################################
 
 source ../../utils/run_workload.sh
 source ../custom_workload_env.sh
@@ -29,7 +29,6 @@ if [[ $TOTAL_CLUSTERPROJECTS -ge $JOB_ITERATION ]]; then
   exit 0
 else
   echo "======FAIL======"
-  echo "Please debug, when done, delete all projects using 'oc delete project -l kube-burner-job=$NAMESPACE'"
+  echo "Please debug, when done, delete all projects using 'oc delete project -l kube-burner-job=$NAME'"
   exit 1
 fi
-
