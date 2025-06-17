@@ -22,10 +22,10 @@ source ../../utils/run_workload.sh
 
 # If parameters is set from upstream ci, overwrite params
 echo "Upstream PARAMETERS set to $PARAMETERS"
-export params=(${PARAMETERS:-gcp 15 120})
+export params=(${PARAMETERS:-aws 15 120})
 echo "params is $params"
 
-export CLOUD=${params[0]:-"gcp"}
+export CLOUD=${params[0]:-"aws"}
 export REPLICAS=${params[1]:-"15"}
 export JOB_ITERATIONS=${params[2]:-"120"}
 
@@ -35,11 +35,11 @@ echo "Testing with $CLOUD $REPLICAS $JOB_ITERATIONS"
 install_dittybopper
 
 if [ $? -eq 0 ]; 
-then 
+then
     # Cluster health check prior to testing
     python -c "import utils.ocp_utils as ocp_utils; ocp_utils.cluster_health_check()"
-    echo "Run workload on current worker nodes machineset." 
-    run_workload
+    echo "Run workload on current worker nodes machineset."
+    run_kube-burner-ocp-wrapper
     sleep 180
     echo "Deploy new machineset and scale down one machine at a time from existing machinesets." 
     cd ./replace_nodes/clouds
@@ -49,17 +49,14 @@ then
     echo "Existing machines scaled down and new nodes are up."
     sleep 180 
     python -c "import utils.ocp_utils as ocp_utils; ocp_utils.cluster_health_check()"
-    echo
     echo "Cleanup existing workload namespaces."
     delete_project_by_label kube-burner-job=$WORKLOAD
     sleep 180
     python -c "import utils.ocp_utils as ocp_utils; ocp_utils.cluster_health_check()"
-    echo
     echo "Rerun workload on new machineset."
-    run_workload
+    run_kube-burner-ocp-wrapper
     sleep 180
     python -c "import utils.ocp_utils as ocp_utils; ocp_utils.cluster_health_check()"
-    echo
     echo "Test complete!"
     echo "Verify test results as defined in Polarion test case."
     exit 0

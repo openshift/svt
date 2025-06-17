@@ -46,7 +46,7 @@ def scale_machine_replicas(machine_set, replicas):
 
 def wait_for_node_deletion(machine_set, wanted_replicas):
     machine_name = machine_set.split('/')[-1]
-    cmd = "oc get machines -l machine.openshift.io/cluster-api-machineset=%s -n openshift-machine-api --no-headers| wc -l" % (machine_name)
+    cmd = "oc get machines -l machine.openshift.io/cluster-api-machineset=%s -n openshift-machine-api --no-headers | grep worker | wc -l" % (machine_name)
     while True:
         try:
             replicas=run(cmd)
@@ -72,7 +72,7 @@ def wait_for_node_deletion(machine_set, wanted_replicas):
     print()
 
 def wait_for_node_creation(wanted_replicas, new_worker_instance_type):
-    cmd = "oc get nodes -l node.kubernetes.io/instance-type=%s -n openshift-machine-api --no-headers | wc -l" % (new_worker_instance_type)
+    cmd = "oc get nodes -l node.kubernetes.io/instance-type=%s -n openshift-machine-api --no-headers | grep worker | wc -l" % (new_worker_instance_type)
     while True:
         try:
             replicas=run(cmd)

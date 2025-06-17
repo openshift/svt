@@ -34,6 +34,9 @@ for machineset in machines_sets:
     if final_machine_set_name in machineset: 
         print ("new machine set in use \n")
         continue
+    if "infra" in machineset: 
+        print ("skip infra machineset \n")
+        continue
     else:
         replicas = ocp_utils.get_machine_replicas(machineset)
         #print (replicas)

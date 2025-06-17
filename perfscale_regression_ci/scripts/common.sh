@@ -272,6 +272,10 @@ function count_running_pods_all()
 
 function install_dittybopper() 
 {
+    if [[ $(oc get pods -n dittybopper --no-headers | wc -l) -ge 1 ]]; then
+        echo "Dittybopper already installed"
+        return 0
+    fi
     # Clone and start dittybopper to monitor resource usage over time
     git clone https://github.com/cloud-bulldozer/performance-dashboards.git
     cd ./performance-dashboards/dittybopper
