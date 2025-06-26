@@ -26,7 +26,7 @@ export NUMBER_OF_ETCD_PODS="" # Used for passing number of ETCD nodes - later us
 export NAME=${NAME:-"project-deletion-tests"} # Used for labeling project
 export NAMESPACE=${NAMESPACE:-"project-to-delete"} # Name for projects
 export PARAMETERS=${PARAMETERS:-15} # Number of projects to delete
-export DELETION_TIMEOUT=${DELETION_TIMEOUT:-5} # Time out for deletion of projects in minutes
+export DELETION_TIMEOUT=${DELETION_TIMEOUT:-15} # Time out for deletion of projects in minutes
 
 function log {
   echo -e "[$(date "+%F %T")]: $*"

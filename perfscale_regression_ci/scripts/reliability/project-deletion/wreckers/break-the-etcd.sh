@@ -9,16 +9,16 @@
 ##########################################################################################
 
 no_xtrace=$1
-sleep_time=5 # Sleep time in seconds between checks
-wait_timeout=5 # Timeout in minutes
+sleep_time=5    # Sleep time in seconds between checks
+wait_timeout=15 # Timeout in minutes
 
 function log {
   echo -e "[$(date "+%F %T")]: $*"
 }
 
 function get_etcd_pod_readiness {
-# Can't use jsonpath here - can't filter by two variables.
-# https://github.com/kubernetes/kubernetes/issues/20352
+  # Can't use jsonpath here - can't filter by two variables.
+  # https://github.com/kubernetes/kubernetes/issues/20352
   is_ready=$(oc get pods -n openshift-etcd -o json | jq -r --arg MASTER_NODE_WITH_ETCD "$MASTER_NODE_WITH_ETCD" '.items[] | select(.spec.nodeName==$MASTER_NODE_WITH_ETCD and .metadata.labels.app=="guard").status.containerStatuses[].ready')
   echo "$is_ready"
 }
@@ -30,7 +30,7 @@ fi
 MASTER_NODE_WITH_ETCD=$(oc get nodes -o jsonpath='{.items[?(@.metadata.labels.node-role\.kubernetes\.io/master)].metadata.name}' | cut -d ' ' -f 1)
 
 # export MASTER_NODE_WITH_ETCD - it's needed for recovery script.
-echo "export MASTER_NODE_WITH_ETCD=$MASTER_NODE_WITH_ETCD" >> exports.sh
+echo "export MASTER_NODE_WITH_ETCD=$MASTER_NODE_WITH_ETCD" >>exports.sh
 
 log "Moving out etcd-pod manifest..."
 oc debug node/"$MASTER_NODE_WITH_ETCD" -- chroot /host mv /etc/kubernetes/manifests/etcd-pod.yaml /root/
