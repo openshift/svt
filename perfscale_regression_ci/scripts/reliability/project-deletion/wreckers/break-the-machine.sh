@@ -9,8 +9,8 @@
 ##########################################################################################
 
 no_xtrace=$1
-wait_timeout=5 # Timeout in minutes
-sleep_time=5 # Sleep time in seconds befteew checks
+wait_timeout=15 # Timeout in minutes
+sleep_time=5    # Sleep time in seconds befteew checks
 
 function log {
   echo -e "[$(date "+%F %T")]: $*"
@@ -20,9 +20,8 @@ if [[ $no_xtrace != "true" ]]; then
   set -x
 fi
 
-
 NUMBER_OR_RUNNING_WORKER_NODES=$(oc get nodes | grep worker | grep -c Ready)
-echo "export NUMBER_OR_RUNNING_WORKER_NODES=$NUMBER_OR_RUNNING_WORKER_NODES" >> exports.sh
+echo "export NUMBER_OR_RUNNING_WORKER_NODES=$NUMBER_OR_RUNNING_WORKER_NODES" >>exports.sh
 log "Getting machine where pods is running"
 node_name=$(oc get pods -n "${NAMESPACE}-1" -o jsonpath='{.items[0].spec.nodeName}')
 log "Node to delete: $node_name"

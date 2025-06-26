@@ -9,8 +9,8 @@
 ##########################################################################################
 
 no_xtrace=$1
-wait_timeout=10 # Timeout in minutes
-sleep_time=30 # Sleep time in seconds between checks.
+wait_timeout=15 # Timeout in minutes
+sleep_time=30   # Sleep time in seconds between checks.
 
 source ./exports.sh
 
@@ -49,4 +49,3 @@ while sleep $sleep_time; do
     continue
   fi
 done
-
