@@ -58,12 +58,16 @@ spec:
           - filters:
             - name: tag:Name
               values:
-              - ${CLUSTER_NAME}-worker-sg
+              - ${CLUSTER_NAME}-node
+          - filters:
+            - name: tag:Name
+              values:
+              - ${CLUSTER_NAME}-lb
           subnet:
             filters:
             - name: tag:Name
               values:
-              - ${CLUSTER_NAME}-private-${CLUSTER_REGION}a
+              - ${CLUSTER_NAME}-subnet-private-${CLUSTER_REGION}a
           tags:
           - name: kubernetes.io/cluster/${CLUSTER_NAME}-worker
             value: owned
