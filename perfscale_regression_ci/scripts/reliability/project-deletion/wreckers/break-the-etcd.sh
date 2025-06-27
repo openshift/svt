@@ -33,6 +33,7 @@ MASTER_NODE_WITH_ETCD=$(oc get nodes -o jsonpath='{.items[?(@.metadata.labels.no
 echo "export MASTER_NODE_WITH_ETCD=$MASTER_NODE_WITH_ETCD" >>exports.sh
 
 log "Moving out etcd-pod manifest..."
+oc project default
 oc debug node/"$MASTER_NODE_WITH_ETCD" -- chroot /host mv /etc/kubernetes/manifests/etcd-pod.yaml /root/
 
 timeout=$(date -d "+$wait_timeout minutes" +%s)
