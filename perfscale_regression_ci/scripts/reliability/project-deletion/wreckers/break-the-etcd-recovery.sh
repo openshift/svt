@@ -37,6 +37,7 @@ log "Moving back etcd-pod manifest..."
 # Getting exported values by etcd wreck script
 source exports.sh
 
+oc project default
 oc debug node/"$MASTER_NODE_WITH_ETCD" -- chroot /host mv /root/etcd-pod.yaml /etc/kubernetes/manifests/
 
 timeout=$(date -d "+$wait_timeout minutes" +%s)
