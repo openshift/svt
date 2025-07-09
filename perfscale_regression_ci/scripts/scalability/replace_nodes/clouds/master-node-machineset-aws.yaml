@@ -1,0 +1,78 @@
+apiVersion: machine.openshift.io/v1beta1
+kind: MachineSet
+metadata:
+  creationTimestamp: null
+  labels:
+    machine.openshift.io/cluster-api-cluster: ${CLUSTER_NAME}
+    machine.openshift.io/cluster-api-machine-role: master
+    machine.openshift.io/cluster-api-machine-type: master
+    machine.openshift.io/cluster-api-machineset: ${CLUSTER_NAME}-master-new
+  name: ${CLUSTER_NAME}-master-new 
+  namespace: openshift-machine-api
+spec:
+  replicas: 0 # Initial replicas set to 0. The script will scale this up.
+  selector:
+    matchLabels:
+      machine.openshift.io/cluster-api-cluster: ${CLUSTER_NAME}
+      machine.openshift.io/cluster-api-machineset: ${CLUSTER_NAME}-master-new
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        machine.openshift.io/cluster-api-cluster: ${CLUSTER_NAME}
+        machine.openshift.io/cluster-api-machine-role: master
+        machine.openshift.io/cluster-api-machine-type: master
+        machine.openshift.io/cluster-api-machineset: ${CLUSTER_NAME}-master-new
+    spec:
+      metadata:
+        creationTimestamp: null
+        labels:
+          node-role.kubernetes.io/master: ""
+      providerSpec:
+        value:
+          ami:
+            id: ${AMI_ID}
+          apiVersion: awsproviderconfig.openshift.io/v1beta1
+          canIPForward: false
+          credentialsSecret:
+            name: aws-cloud-credentials
+          deletionProtection: false
+          disks:
+          - autoDelete: false
+            boot: true
+            image: ${MASTER_MACHINESET_IMAGE}
+            labels: null
+            sizeGb: ${OPENSHIFT_MASTER_NODE_VOLUME_SIZE}
+            type: ${OPENSHIFT_MASTER_NODE_VOLUME_TYPE}
+          deviceIndex: 0
+          iamInstanceProfile:
+            id: ${CLUSTER_NAME}-master-profile
+          instanceType: ${OPENSHIFT_MASTER_NODE_INSTANCE_TYPE}
+          kind: AWSMachineProviderConfig
+          metadata:
+            creationTimestamp: null
+          placement:
+            availabilityZone: ${CLUSTER_REGION}a
+            region: ${CLUSTER_REGION}
+          publicIp: true
+          securityGroups:
+          - filters:
+            - name: tag:Name
+              values:
+              - ${CLUSTER_NAME}-node
+          - filters:
+            - name: tag:Name
+              values:
+              - ${CLUSTER_NAME}-lb
+          subnet:
+            filters:
+            - name: tag:Name
+              values:
+              - ${CLUSTER_NAME}-subnet-private-${CLUSTER_REGION}a
+          tags:
+          - name: kubernetes.io/cluster/${CLUSTER_NAME}-master
+            value: owned
+          userDataSecret:
+            name: master-user-data
+      versions:
+        kubelet: ""

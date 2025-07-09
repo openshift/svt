@@ -22,7 +22,7 @@ final_machine_set="machinesets/"+os.environ['CLUSTER_NAME'] + "-worker-new"
 
 print('Start time: Scaling up new machineset {} at '.format(final_machine_set) + str(datetime.datetime.now()))
 ocp_utils.scale_machine_replicas(final_machine_set, replicas)
-ocp_utils.wait_for_node_creation(replicas, new_worker_instance_type)
+ocp_utils.wait_for_worker_node_creation(replicas, new_worker_instance_type)
 print('End time: Finished scaling up {} at '.format(final_machine_set) + str(datetime.datetime.now()))
 
 machines_sets=ocp_utils.run("oc get machinesets -A -o name  --no-headers").split('\n')
@@ -47,9 +47,8 @@ for machineset in machines_sets:
         while int(replicas) >= 1: 
             replicas = int(replicas) - 1
             ocp_utils.scale_machine_replicas(machineset, replicas) 
-            ocp_utils.wait_for_node_deletion(machineset, replicas)
+            ocp_utils.wait_for_worker_node_deletion(machineset, replicas)
         print('End time: All nodes deleted from {} at '.format(machineset) + str(datetime.datetime.now()))
         print()
         ocp_utils.cluster_health_check()
         #delete_machineset(machineset) #After scaling down do not delete machinesets for this scenario
-        
