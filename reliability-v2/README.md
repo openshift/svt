@@ -39,10 +39,10 @@ e.g. Run reliability test for 7 days with the default configuration and upgrade 
 start.sh -p <absolute path to the folder holding kubeconfig, admin and users files> -t 7d -u
 ```
 
-To enable slack notification, export either of the following env viriables before running start.sh
-export SLACK_WEBHOOK_URL OR SLACK_API_TOKEN, find them in https://vault.bitwarden.com 'Red Hat, Inc. vault' 'perfscale-reliability-credentials' item.
+To enable slack notification, export either of the following env variables before running start.sh
+export SLACK_API_TOKEN, find it in https://vault.bitwarden.com 'Red Hat, Inc. vault', 'Aos Qe' collection, 'perfscale-reliability-credentials' item, 'slack-web-api-token' field.
 
-To make you tagged in the slack notification, export the following env virable.
+To make you tagged in the slack notification, export the following env variable.
 export SLACK_MEMBER=<get it by clicking 'Copy member ID' in your slack Profile>
 
 If you don't want to use the default configuration, you can update (https://github.com/openshift/svt/blob/master/reliability-v2/config/example_reliability.yaml) before you trigger [start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh)
