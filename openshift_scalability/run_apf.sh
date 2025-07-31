@@ -5,6 +5,8 @@ NUM_PROJECTS=${2:-250}
 PARALLEL=${3:-10}
 
 CONFIG_TEMPLATE=config/apf_template.yaml
+deletion_time=30
+sleep=10
 
 cp $CONFIG_TEMPLATE config/apf_run.yaml
 
@@ -23,11 +25,29 @@ for i in {0..10}; do oc get pods -A | grep -v Running | grep -v Completed; echo;
 date
 
 for ((i=0; i<NUM_PROJECTS; i++)); do
-  oc delete project "${BASENAME}${i}"
+  oc label ns "${BASENAME}${i} purpose=test"
+done
+
+oc project default
+oc delete project -l purpose=test --wait=false
+
+timeout=$(date -d "+$DELETION_TIMEOUT minutes" +%s)
+
+while sleep $sleep_time; do
+  number_of_terminating_projects=$(oc get projects | grep -c Terminating)
+  echo -e "Number of terminating projects: $number_of_terminating_projects"
+  if [[ $number_of_terminating_projects -eq 0 ]]; then
+    echo -e "All test projects are deleted"
+    break
+  else
+    if [[ $timeout < $(date +%s) ]]; then
+      echo -e "ERROR: Timeout after $deletion_time. Not all projects were deleted."
+      break
+    fi
+  echo -e "sleep for $sleep_time before next check"
 done
 
 date
-
 
 # Build config Init:Error, I think the script needs update to get from a git that is reachable
 # build.build.openshift.io/buildconfig0-1   Source   Dockerfile,Git   Failed (FetchSourceFailed)   3 minutes ago   3m31s
