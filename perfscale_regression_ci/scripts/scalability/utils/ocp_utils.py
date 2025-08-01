@@ -44,7 +44,7 @@ def scale_machine_replicas(machine_set, replicas):
         else:
             break
 
-def wait_for_node_deletion(machine_set, wanted_replicas):
+def wait_for_worker_node_deletion(machine_set, wanted_replicas):
     machine_name = machine_set.split('/')[-1]
     cmd = "oc get machines -l machine.openshift.io/cluster-api-machineset=%s -n openshift-machine-api --no-headers | grep worker | wc -l" % (machine_name)
     while True:
@@ -71,8 +71,61 @@ def wait_for_node_deletion(machine_set, wanted_replicas):
             break
     print()
 
-def wait_for_node_creation(wanted_replicas, new_worker_instance_type):
+def wait_for_worker_node_creation(wanted_replicas, new_worker_instance_type):
     cmd = "oc get nodes -l node.kubernetes.io/instance-type=%s -n openshift-machine-api --no-headers | grep worker | wc -l" % (new_worker_instance_type)
+    while True:
+        try:
+            replicas=run(cmd)
+        except ValueError as err:
+            print (err)
+            continue
+        else:
+            if "No resources found" in replicas:
+                continue
+            else:
+                break
+    while int(wanted_replicas) != int(replicas):
+        print('wanted vs. actual replicas ' + str(wanted_replicas) +" " + str(replicas))
+        time.sleep(5)
+        try:
+            replicas=run(cmd)
+        except ValueError as err:
+            print (err)
+            continue
+        if "No resources found" in replicas:
+            print ("No resources found")
+            continue
+    print()
+
+def wait_for_master_node_deletion(machine_set, wanted_replicas):
+    machine_name = machine_set.split('/')[-1]
+    cmd = "oc get machines -l machine.openshift.io/cluster-api-machineset=%s -n openshift-machine-api --no-headers | grep master | wc -l" % (machine_name)
+    while True:
+        try:
+            replicas=run(cmd)
+            if "No resources found" in replicas:
+                print("No resources found")
+                return
+        except ValueError as err:
+            print (err)
+            continue
+        else:
+            break
+    while int(wanted_replicas) != int(replicas):
+        print('wanted vs. actual replicas ' + str(wanted_replicas) +" " + str(replicas))
+        time.sleep(5)
+        try:
+            replicas=run(cmd)
+        except ValueError as err:
+            print (err)
+            continue
+        if "No resources found" in replicas:
+            print("No resources found")
+            break
+    print()
+
+def wait_for_master_node_creation(wanted_replicas, new_master_instance_type):
+    cmd = "oc get nodes -l node.kubernetes.io/instance-type=%s -n openshift-machine-api --no-headers | grep master | wc -l" % (new_master_instance_type)
     while True:
         try:
             replicas=run(cmd)
