@@ -15,7 +15,12 @@ sed -i "s/NUM_PROJECTS/$NUM_PROJECTS/g" config/apf_run.yaml
 
 date
 SECONDS=0
+python3 -m venv ./venv
+source ./venv/bin/activate
+pip3 install -r ./cluster_loader_requirements.txt
 ./cluster-loader.py -f config/apf_run.yaml -p "$PARALLEL"
+deactivate
+
 duration=$SECONDS
 echo "Time taken: $duration"
 date
@@ -44,7 +49,8 @@ while sleep $sleep_time; do
       echo -e "ERROR: Timeout after $deletion_time. Not all projects were deleted."
       break
     fi
-  echo -e "sleep for $sleep_time before next check"
+    echo -e "sleep for $sleep_time before next check"
+  fi
 done
 
 date
