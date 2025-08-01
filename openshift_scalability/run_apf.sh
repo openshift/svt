@@ -19,7 +19,7 @@ python3 -m venv ./venv
 source ./venv/bin/activate
 pip --version
 pip install --upgrade pip
-pip install -U pyyaml
+pip install -r ./requirements.txt
 ./cluster-loader.py -f config/apf_run.yaml -p "$PARALLEL"
 deactivate
 
