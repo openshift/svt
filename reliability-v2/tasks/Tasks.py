@@ -337,10 +337,17 @@ class Tasks:
         self.__log_result(rc)
         return (result,rc)
     
-    # oc apply a file
+    # oc apply a file without namespace
     def apply_nonamespace(self,user,parameter):
         self.logger.info(f"[Task] apply file {parameter} without namespace.")
         (result, rc) = oc(f"apply -f {parameter}",self.__get_kubeconfig(user))
+        self.__log_result(rc)
+        return (result,rc)
+    
+    # oc apply a file with kubeadmin
+    def apply_admin(self,user,namespace,parameter):
+        self.logger.info(f"[Task] apply file {parameter} in namespace {namespace}.")
+        (result, rc) = oc(f"apply -f {parameter} -n {namespace}",self.kubeconfig_admin)
         self.__log_result(rc)
         return (result,rc)
 
@@ -445,7 +452,13 @@ class Tasks:
     
     # run oc cli type of task
     def oc_task(self,task,user):
-        (result, rc) = oc(task,self.__get_kubeconfig(user))
+        # if the task is for admin, use the admin kubeconfig
+        if ' adm ' in task:
+            (result, rc) = oc(task,self.kubeconfig_admin)
+            self.logger.info(f"[Task] User kubeadmin: {task}")
+        else:
+            (result, rc) = oc(task,self.__get_kubeconfig(user))
+            self.logger.info(f"[Task] User {user}: {task}")
         self.__log_result(rc)
         return (result,rc)
 
