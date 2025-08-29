@@ -1,0 +1,45 @@
+apiVersion: leaderworkerset.x-k8s.io/v1
+kind: LeaderWorkerSet
+metadata:
+  name: llamacpp-llama3-8b-instruct-bartowski-q5km
+spec:
+  replicas: 1
+  leaderWorkerTemplate:
+    size: 5
+    restartPolicy: RecreateGroupOnPodRestart
+    leaderTemplate:
+      metadata:
+        labels:
+          app: llamacpp-llama3-8b-instruct-bartowski-q5km
+      spec:
+        containers:
+        - name: llamacpp-leader
+          image: quay.io/rhn_support_qili/llamacpp-llama3-8b-instruct-bartowski-q5km:latest
+          imagePullPolicy: IfNotPresent
+          command: [ "/llamacpp-leader", "--", "--n-gpu-layers", "99", "--verbose" ]
+        securityContext:
+          runAsUser: 0
+        serviceAccountName: llama-sa
+    workerTemplate:
+      spec:
+        containers:
+        - name: llamacpp-worker
+          image: quay.io/rhn_support_qili/llamacpp-worker:latest
+          imagePullPolicy: IfNotPresent
+          args: ["--host", "0.0.0.0", "--mem", "4192"]
+        securityContext:
+          runAsUser: 0
+        serviceAccountName: llama-sa
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llamacpp
+spec:
+  clusterIP: None   #use headless service
+  selector:
+    app: llamacpp-llama3-8b-instruct-bartowski-q5km
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
