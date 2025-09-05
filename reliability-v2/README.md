@@ -32,7 +32,7 @@ For classic rosa and rosa hypershift cluster, additional pre-requisite:
  - [aws configuration](https://docs.google.com/document/d/1j7bhLXT_cIAjpMh_x2jeegtpE7495Mj5A-EcQsgZEDo)
 
 ## A quick start script: start.sh
-[start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh) is a quick start script that helps you to do nessessary preparations and generate a default configurations based on [example_reliability.yaml](https://github.com/openshift/svt/blob/master/reliability-v2/config/example_reliability.yaml) and start a reliability test to run for a certain time. It can upgrade the cluster every 24 hours if there is new nightly build.
+[start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh) is a quick start script that helps you to do nessessary preparations and generate a default configurations based on [reliability.yaml](https://github.com/openshift/svt/blob/master/reliability-v2/config/reliability.yaml) and start a reliability test to run for a certain time. It can upgrade the cluster every 24 hours if there is new nightly build.
 
 e.g. Run reliability test for 7 days with the default configuration and upgrade the cluster every 24 hours if there is new nightly build
 ```
@@ -45,7 +45,7 @@ export SLACK_API_TOKEN, find it in https://vault.bitwarden.com 'Red Hat, Inc. va
 To make you tagged in the slack notification, export the following env variable.
 export SLACK_MEMBER=<get it by clicking 'Copy member ID' in your slack Profile>
 
-If you don't want to use the default configuration, you can update (https://github.com/openshift/svt/blob/master/reliability-v2/config/example_reliability.yaml) before you trigger [start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh)
+If you don't want to use the default configuration, you can update (https://github.com/openshift/svt/blob/master/reliability-v2/config/reliability.yaml) before you trigger [start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh)
 
 For configuration details, check [Configuration](#Configuration)
 
