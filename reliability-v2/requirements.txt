@@ -1,5 +1,5 @@
-pyyaml==5.4.1
-requests==2.25.1
-aiohttp>=3.7.4
-apscheduler==3.8.0
+pyyaml>=6.0.2
+requests>=2.31.0
+aiohttp>=3.8.1
+apscheduler>=3.8.0
 slack_sdk==3.21.3
