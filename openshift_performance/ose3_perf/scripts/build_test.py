@@ -36,7 +36,8 @@ def analyze_builds(all_builds):
     for build in all_builds:
         namespace = build["namespace"]
         name = build["name"]
-        global_build_status[namespace + ":" + name] = STATUS_STARTED
+        # Using -1 to use stardad naming convention for Builds
+        global_build_status[namespace + ":" + name + "-1"] = STATUS_STARTED
 
     
     with ThreadPoolExecutor(max_workers=global_config["worker"]) \
