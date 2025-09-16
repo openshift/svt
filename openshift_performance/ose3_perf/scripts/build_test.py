@@ -31,6 +31,27 @@ def login(url, user, passwd):
     #    "--token=yPeDkR0b0ESwbX2WlC4AGWqQIHJHIeRbrEOOua9HEoQ")
 
 
+def analyze_builds(all_builds):
+    wait_flag = False
+    for build in all_builds:
+        namespace = build["namespace"]
+        name = build["name"]
+        # Using -1 to use stardad naming convention for Builds
+        global_build_status[namespace + ":" + name + "-1"] = STATUS_STARTED
+
+    
+    with ThreadPoolExecutor(max_workers=global_config["worker"]) \
+            as executor:
+        futures = []
+        check_build_status(executor, futures, wait_flag)
+        wait_flag = False
+        logger.debug("str(len(futures)): " + str(len(futures)))
+        wait(futures)
+
+    time.sleep(int(global_config["sleep_time"]))
+    
+
+
 def check_build_status(executor, futures, wait_flag):
     logger.info("check_build_status ...")
     # wait the first build is started
@@ -259,6 +280,7 @@ def get_build_configs():
 def start():
     global global_config
     global global_build_stats
+    global global_build_status
     parser = OptionParser()
     parser.add_option("-m", "--master", dest="master",
                       help="url of the OpenShift master to login to")
@@ -287,6 +309,8 @@ def start():
                       help="Debug messages")
     parser.add_option("-w", "--worker", dest="worker", default=50,
                       help="Number of workers")
+    parser.add_option("-y", "--analyze", dest="analyze", action="store_true", default=False,
+                      help="Analyze the results of existing builds")
 
     random.seed()
 
@@ -304,6 +328,7 @@ def start():
     global_config["shuffle"] = options.shuffle
     global_config["nologin"] = options.nologin
     global_config["worker"] = int(options.worker)
+    global_config["analyze"] = options.analyze
 
     if not global_config["nologin"]:
         login(global_config["master"], global_config["oseuser"],
@@ -321,17 +346,21 @@ def start():
     set_global_stats_dict()
     #https://stackoverflow.com/questions/2427240/thread-safe-equivalent-to-pythons-time-strptime
     datetime.strptime('', '')
-    for i in range(0, global_config["num_iterations"]):
-        global global_build_status
-        global_build_status = {}
-        logger.info(str(datetime.now()).split('.')[0] +
-                    ": iteration: " + str(i + 1))
+    if not global_config["analyze"]:
+        for i in range(0, global_config["num_iterations"]):
+            global global_build_status
+            global_build_status = {}
+            logger.info(str(datetime.now()).split('.')[0] +
+                        ": iteration: " + str(i + 1))
 
-        with ThreadPoolExecutor(max_workers=global_config["worker"]) \
-                as executor:
             with ThreadPoolExecutor(max_workers=global_config["worker"]) \
-                    as executor1:
-                run_builds(executor, executor1, all_builds)
+                    as executor:
+                with ThreadPoolExecutor(max_workers=global_config["worker"]) \
+                        as executor1:
+                    run_builds(executor, executor1, all_builds)
+    else:
+        global_build_status = {}
+        analyze_builds(all_builds)
         
     total_all_builds = global_build_stats["build_time"]
     max_all_builds = global_build_stats["max_build"]
