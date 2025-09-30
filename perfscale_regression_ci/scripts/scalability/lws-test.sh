@@ -109,7 +109,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 if [ $WORKLOAD = "custom" ]; then
-oc apply -f -<<EOF
+  oc apply -f - <<EOF
 apiVersion: leaderworkerset.x-k8s.io/v1
 kind: LeaderWorkerSet
 metadata:
@@ -135,7 +135,7 @@ EOF
 fi
 
 if [ $WORKLOAD = "llamacpp" ]; then
-oc apply -n $NAMESPACE -f -<<EOF
+  oc apply -f - <<EOF
 apiVersion: leaderworkerset.x-k8s.io/v1
 kind: LeaderWorkerSet
 metadata:
