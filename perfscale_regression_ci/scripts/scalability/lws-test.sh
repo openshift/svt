@@ -84,6 +84,7 @@ function wait_for_running_pod {
       echo "[PASS]" "Expected number of pods $TOTAL_RUNNING_PODS are running. Replicas: $REPLICAS, Size: $SIZE. Total pods running time: $ELAPSED seconds."
   else
       echo "[FAIL]" "Found $TOTAL_RUNNING_PODS, but expected $((REPLICAS * SIZE)) total running pods"
+      exit 1
   fi
 
   echo "START_TIME: $START_TIME, END_TIME: $END_TIME"
