@@ -25,7 +25,7 @@ echo "Testing with workload $WORKLOAD, replicas $REPLICAS, size $SIZE."
 # Install dittybopper to check resource usage
 # install_dittybopper
 
-Install cert-manager
+# Install cert-manager
 VERSION=v1.17.0
 oc apply -f https://github.com/cert-manager/cert-manager/releases/download/$VERSION/cert-manager.yaml
 oc -n cert-manager wait --for condition=ready pod -l app.kubernetes.io/instance=cert-manager --timeout=2m
@@ -36,6 +36,7 @@ pushd lws-operator
 echo "replace images"
 envsubst < deploy/05_deployment.yaml > deploy/05_deployment.yaml.tmp
 mv deploy/05_deployment.yaml.tmp deploy/05_deployment.yaml
+cat deploy/05_deployment.yaml
 
 echo "deploy the operator"
 oc apply -f deploy/
@@ -47,6 +48,11 @@ if [[ $? -ne 0 ]]; then
     oc apply -f deploy/
 fi
 popd
+
+# sleep 120s to wait for the crd to be created
+sleep 120
+oc get crd |grep -i leaderworkerset
+
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 # apply lws
 bash -x ${SCRIPT_DIR}/lws-test.sh -r $REPLICAS -s $SIZE
