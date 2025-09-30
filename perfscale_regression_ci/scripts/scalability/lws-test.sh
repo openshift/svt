@@ -84,6 +84,7 @@ function wait_for_running_pod {
       echo "[PASS]" "Expected number of pods $TOTAL_RUNNING_PODS are running. Replicas: $REPLICAS, Size: $SIZE. Total pods running time: $ELAPSED seconds."
   else
       echo "[FAIL]" "Found $TOTAL_RUNNING_PODS, but expected $((REPLICAS * SIZE)) total running pods"
+      exit 1
   fi
 
   echo "START_TIME: $START_TIME, END_TIME: $END_TIME"
@@ -109,7 +110,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 if [ $WORKLOAD = "custom" ]; then
-oc apply -f -<<EOF
+  oc apply -f - <<EOF
 apiVersion: leaderworkerset.x-k8s.io/v1
 kind: LeaderWorkerSet
 metadata:
@@ -135,7 +136,7 @@ EOF
 fi
 
 if [ $WORKLOAD = "llamacpp" ]; then
-oc apply -n $NAMESPACE -f -<<EOF
+  oc apply -f - <<EOF
 apiVersion: leaderworkerset.x-k8s.io/v1
 kind: LeaderWorkerSet
 metadata:
