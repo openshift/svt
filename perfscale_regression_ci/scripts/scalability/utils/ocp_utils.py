@@ -47,6 +47,9 @@ def scale_machine_replicas(machine_set, replicas):
 def wait_for_node_deletion(machine_set, wanted_replicas):
     machine_name = machine_set.split('/')[-1]
     cmd = "oc get machines -l machine.openshift.io/cluster-api-machineset=%s -n openshift-machine-api --no-headers | grep worker | wc -l" % (machine_name)
+    sleep_time = 5
+    retry = 0
+    max_retry = 1440 # with sleep_time = 5 that would be 2 hours
     while True:
         try:
             replicas=run(cmd)
@@ -59,13 +62,24 @@ def wait_for_node_deletion(machine_set, wanted_replicas):
         else:
             break
     while int(wanted_replicas) != int(replicas):
+        retry += 1
+        print('Attempt ' + str(retry) + " of " + str(max_retry) )
         print('wanted vs. actual replicas ' + str(wanted_replicas) +" " + str(replicas))
-        time.sleep(5)
+        time.sleep(sleep_time)
         try:
             replicas=run(cmd)
         except ValueError as err:
             print (err)
             continue
+        else:
+            if retry == max_retry:
+                print("Reached max number of retry: " + str(max_retry))
+                print("getting machines, machineset and nodes")
+                run("oc get machines -n openshift-machine-api")
+                run("oc get machineset -n openshift-machine-api")
+                run("oc get nodes -o wide")
+                print("Failed, EXIT")
+                sys.exit(1)
         if "No resources found" in replicas:
             print("No resources found")
             break
@@ -73,6 +87,9 @@ def wait_for_node_deletion(machine_set, wanted_replicas):
 
 def wait_for_node_creation(wanted_replicas, new_worker_instance_type):
     cmd = "oc get nodes -l node.kubernetes.io/instance-type=%s -n openshift-machine-api --no-headers | grep worker | wc -l" % (new_worker_instance_type)
+    sleep_time = 5
+    retry = 0
+    max_retry = 1440 # with sleep_time = 5 that would be 2 hours
     while True:
         try:
             replicas=run(cmd)
@@ -85,13 +102,24 @@ def wait_for_node_creation(wanted_replicas, new_worker_instance_type):
             else:
                 break
     while int(wanted_replicas) != int(replicas):
+        retry += 1
+        print('Attempt ' + str(retry) + " of " + str(max_retry) )
         print('wanted vs. actual replicas ' + str(wanted_replicas) +" " + str(replicas))
-        time.sleep(5)
+        time.sleep(sleep_time)
         try:
             replicas=run(cmd)
         except ValueError as err:
             print (err)
             continue
+        else:
+            if retry == max_retry:
+                print("Reached max number of retry: " + str(max_retry))
+                print("getting machines, machineset and nodes")
+                run("oc get machines -n openshift-machine-api")
+                run("oc get machineset -n openshift-machine-api")
+                run("oc get nodes -o wide")
+                print("Failed, EXIT")
+                sys.exit(1)
         if "No resources found" in replicas:
             print ("No resources found")
             continue
