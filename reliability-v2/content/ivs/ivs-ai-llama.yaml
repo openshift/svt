@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ivs-llama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ivs-llama
+  template:
+    metadata:
+      labels:
+        app: ivs-llama
+    spec:
+      containers:
+      - name: llamacpp
+        image: quay.io/ai/llamacpp:latest
+        args: ["--model", "/models/llama.bin"]
+        volumeMounts:
+        - name: volume
+          mountPath: /models
+          subPath: dir
+      volumes:
+      - name: volume
+        image:
+          reference: quay.io/crio/artifact:v1
+          pullPolicy: IfNotPresent
