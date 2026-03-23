@@ -502,7 +502,7 @@ class Tasks:
         else:
             self.logger.error(f"Flowcollector status fetch error: result {result}, rc - {rc}")
             rc_return = 1
-        self.__log_result(rc)
+        self.__log_result(rc_return)
         return (result, rc_return)
 
     # check netobserv pods health
@@ -526,7 +526,7 @@ class Tasks:
             else:
                 self.logger.error(f"Pods status fetch error: result {result}, rc - {rc}")
                 rc_return = 1
-        self.__log_result(rc)
+        self.__log_result(rc_return)
         return (result, rc_return)
     
     # check netobserv pod restarts
