@@ -141,10 +141,16 @@ function generate_config {
         sed -i s*'<path_to_users_file>'*$3* $reliability_config_file
         sed -i s*'<path_to_script>'*$4* $reliability_config_file
         sed -i s*'<path_to_content>'*$5* $reliability_config_file
-        if [[ $SLACK_API_TOKEN != "" || SLACK_WEBHOOK_URL != "" ]]; then
-            sed -i s*'slack_enable: False'*'slack_enable: True'* $reliability_config_file
+        if [[ $SLACK_API_TOKEN != "" || $SLACK_WEBHOOK_URL != "" ]]; then
+            sed -i "s/slack_enable:.*/slack_enable: True/" $reliability_config_file
             if [[ $SLACK_MEMBER != "" ]]; then
-                sed -i s*'<Your slack member id>'*$SLACK_MEMBER* $reliability_config_file
+                sed -i "s/slack_member:.*/slack_member: $SLACK_MEMBER/" $reliability_config_file
+            fi
+            if [[ $SLACK_API_TOKEN != "" ]]; then
+                sed -i "s/slack_api_token:.*/slack_api_token: $SLACK_API_TOKEN/" $reliability_config_file
+            fi
+            if [[ $SLACK_CHANNEL != "" ]]; then
+                sed -i "s/slack_channel:.*/slack_channel: $SLACK_CHANNEL/" $reliability_config_file
             fi
         fi
         sed -i s*'<admin_username>'*$admin_name* $reliability_config_file
@@ -155,10 +161,16 @@ function generate_config {
         sed -i "" s*'<path_to_users_file>'*$3* $reliability_config_file
         sed -i "" s*'<path_to_script>'*$4* $reliability_config_file
         sed -i "" s*'<path_to_content>'*$5* $reliability_config_file
-        if [[ $SLACK_API_TOKEN != "" || SLACK_WEBHOOK_URL != "" ]]; then
-            sed -i "" s*'slack_enable: False'*'slack_enable: True'* $reliability_config_file
+        if [[ $SLACK_API_TOKEN != "" || $SLACK_WEBHOOK_URL != "" ]]; then
+            sed -i "" "s/slack_enable:.*/slack_enable: True/" $reliability_config_file
             if [[ $SLACK_MEMBER != "" ]]; then
-                sed -i "" s*'<Your slack member id>'*$SLACK_MEMBER* $reliability_config_file
+                sed -i "" "s/slack_member:.*/slack_member: $SLACK_MEMBER/" $reliability_config_file
+            fi
+            if [[ $SLACK_API_TOKEN != "" ]]; then
+                sed -i "" "s/slack_api_token:.*/slack_api_token: $SLACK_API_TOKEN/" $reliability_config_file
+            fi
+            if [[ $SLACK_CHANNEL != "" ]]; then
+                sed -i "" "s/slack_channel:.*/slack_channel: $SLACK_CHANNEL/" $reliability_config_file
             fi
         fi
         sed -i "" s*'<admin_username>'*$admin_name* $reliability_config_file
@@ -264,7 +276,17 @@ pip3 -q install -r requirements.txt
 if [[ -z $config_template ]]; then
     config_template="reliability.yaml"
 fi
-cp config/${config_template} $folder_name/reliability.yaml
+if [[ "$config_template" = /* ]]; then
+    cp "$config_template" "$folder_name/reliability.yaml"
+else
+    cp "config/$config_template" "$folder_name/reliability.yaml"
+fi
+
+# Substitute ${RELIABILITY_DIR} in config file if present
+export RELIABILITY_DIR
+envsubst '${RELIABILITY_DIR}' < "$folder_name/reliability.yaml" > "$folder_name/reliability.yaml.tmp"
+mv "$folder_name/reliability.yaml.tmp" "$folder_name/reliability.yaml"
+
 CONFIG_FILE=$RELIABILITY_DIR/$folder_name/reliability.yaml
 
 # if path_to_auth_files is not provided, generate it with generate_auth_files.sh
@@ -422,14 +444,14 @@ log "info" "Cluster information: $(oc version)"
 # get storage class used in the test
 log "info" "default storage class: $STORAGE_CLASS"
 # get haproxy version
-log "info" "haproxy: $(oc rsh -n openshift-ingress $(oc get po -n openshift-ingress --no-headers | head -n 1 | awk '{print $1}') haproxy -v)"
+log "info" "haproxy: $(oc rsh -n openshift-ingress $(oc get po -n openshift-ingress --no-headers | grep Running | head -n 1 | awk '{print $1}') haproxy -v 2>/dev/null || echo 'N/A (haproxy not accessible)')"
 # get node os image and containerRuntimeVersion
 log "info" "node os image: $(oc get nodes -o json | jq -r '.items[0].status.nodeInfo.osImage')"
 log "info" "node containerRuntimeVersion: $(oc get nodes -o json | jq -r '.items[0].status.nodeInfo.containerRuntimeVersion')"
 # get config
 log "info" "Reliability config: $config_template"
 # run in background and dont append output to nohup.out
-nohup python3 reliability.py -c $folder_name/reliability.yaml -l $folder_name/reliability.log > /dev/null 2>&1 &
+nohup python3 reliability.py -c $folder_name/reliability.yaml -l $folder_name/reliability.log > $folder_name/reliability.stdout 2> $folder_name/reliability.stderr &
 reliability_pid=$!
 timestamp_start=$(date +%s)
 timestamp_end=$(($timestamp_start + $SECONDS_TO_RUN))
