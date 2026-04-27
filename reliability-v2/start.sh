@@ -223,7 +223,7 @@ function install_dittybopper(){
     log "info" "====Install dittybopper===="
     cd utils
     if [[ ! -d performance-dashboards ]]; then
-        git clone git@github.com:cloud-bulldozer/performance-dashboards.git --depth 1
+        git clone https://github.com/cloud-bulldozer/performance-dashboards.git --depth 1
     fi
     cd performance-dashboards/dittybopper
     if [[ -z $IMPORT_DASHBOARD ]]; then
