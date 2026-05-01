@@ -441,6 +441,7 @@ oc delete ns -l purpose=reliability
 # Start reliability test
 log "info" "====Start Reliability test. Log is writting to $folder_name/reliability.log.===="
 log "info" "Cluster information: $(oc version)"
+log "info" "Cluster topology: ${CLUSTER_TOPOLOGY:-unknown}"
 # get storage class used in the test
 log "info" "default storage class: $STORAGE_CLASS"
 # get haproxy version

@@ -121,10 +121,39 @@ if [[ "$ENABLE_LVMS" == "yes" ]]; then
   make docker-build docker-push
   make deploy
 
+  cd ~/reliability-v2
+
   LVMS_NAMESPACE=$(oc get deployments -A -o jsonpath='{range .items[*]}{.metadata.namespace}{"\n"}{end}' | grep -m1 lvm)
   if [ -z "$LVMS_NAMESPACE" ]; then
-    LVMS_NAMESPACE="openshift-storage"
+    LVMS_NAMESPACE="openshift-lvm-storage"
   fi
+
+  # Replace the default StorageClass with one that disables nrext64.
+  # Source-built xfsprogs may enable nrext64 by default, but RHCOS kernels
+  # may not support it, causing XFS mount failures.
+  echo "[INFO] Replacing StorageClass with nrext64=0 for kernel compatibility..."
+  oc scale deploy lvms-operator -n $LVMS_NAMESPACE --replicas=0
+  sleep 5
+  oc delete sc lvms-vg1 --ignore-not-found
+  oc create -f - <<'SCEOF'
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: lvms-vg1
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: topolvm.io
+parameters:
+  topolvm.io/device-class: vg1
+  topolvm.io/fstype: xfs
+  topolvm.io/mkfs-options: "-i nrext64=0"
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+SCEOF
+  oc scale deploy lvms-operator -n $LVMS_NAMESPACE --replicas=1
+  echo "[SUCCESS] StorageClass lvms-vg1 recreated with nrext64=0."
+
   echo "[INFO] LVMS namespace: $LVMS_NAMESPACE"
 
   for node in $(oc get nodes -l node-role.kubernetes.io/master -o jsonpath='{.items[*].metadata.name}'); do
@@ -169,7 +198,21 @@ if [[ "$ENABLE_LVMS" == "yes" ]]; then
   # Deploy LVMCluster only if it doesn't exist
   if ! oc get lvmcluster my-lvmcluster -n $LVMS_NAMESPACE &>/dev/null; then
     echo "[INFO] Deploying LVMCluster"
-    oc create -n $LVMS_NAMESPACE -f https://github.com/openshift/lvm-operator/raw/${LVMS_BRANCH}/config/samples/lvm_v1alpha1_lvmcluster.yaml
+    oc create -n $LVMS_NAMESPACE -f - <<'LCEOF'
+apiVersion: lvm.topolvm.io/v1alpha1
+kind: LVMCluster
+metadata:
+  name: my-lvmcluster
+spec:
+  storage:
+    deviceClasses:
+    - name: vg1
+      default: true
+      thinPoolConfig:
+        name: thin-pool-1
+        sizePercent: 90
+        overprovisionRatio: 10
+LCEOF
   else
     echo "[SKIP] LVMCluster 'my-lvmcluster' already exists. Skipping creation."
   fi
@@ -183,7 +226,7 @@ if [[ "$ENABLE_LVMS" == "yes" ]]; then
 
   echo "[INFO] Waiting for pods in $LVMS_NAMESPACE to be ready..."
   if ! oc wait --for=condition=Ready pods --all -n $LVMS_NAMESPACE --timeout=120s; then
-    echo "[ERROR] Some pods in openshift-storage are not ready:"
+    echo "[ERROR] Some pods in $LVMS_NAMESPACE are not ready:"
     oc get pods -n $LVMS_NAMESPACE
     exit 1
   fi

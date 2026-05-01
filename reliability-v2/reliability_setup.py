@@ -170,6 +170,7 @@ def main():
     tmux_cmd = f"""tmux new-session -d -s longevity_test bash -c '
         cd /home/{args.ssh_user}/reliability-v2 && \\
         export KUBECONFIG=/home/{args.ssh_user}/reliability-v2/path_to_auth_files/kubeconfig && \\
+        export CLUSTER_TOPOLOGY={topology.upper()} && \\
         export SLACK_ENABLE={args.slack_enable} && \\
         export SLACK_CHANNEL={args.slack_channel} && \\
         export SLACK_MEMBER={args.slack_member} && \\
