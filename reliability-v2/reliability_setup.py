@@ -9,6 +9,7 @@ import sys
 import time
 import re
 import json
+import shlex
 
 
 def redact_secrets(text):
@@ -20,7 +21,7 @@ def redact_secrets(text):
 
 def run_command(cmd, remote=False, ssh_prefix="", capture_output=False):
     if remote:
-        full_cmd = f"{ssh_prefix} \"{cmd}\""
+        full_cmd = f"{ssh_prefix} {shlex.quote(cmd)}"
     else:
         full_cmd = cmd
 
@@ -47,7 +48,7 @@ def run_command(cmd, remote=False, ssh_prefix="", capture_output=False):
 def validate_local_path(path, desc):
     if not Path(path).exists():
         print(f"[ERROR] {desc} does not exist at: {path}")
-        exit(1)
+        sys.exit(1)
 
 
 def detect_topology(ssh_prefix):
@@ -57,7 +58,12 @@ def detect_topology(ssh_prefix):
         "oc get nodes -o json",
         remote=True, ssh_prefix=ssh_prefix, capture_output=True
     )
-    nodes = json.loads(nodes_json)
+    try:
+        nodes = json.loads(nodes_json)
+    except json.JSONDecodeError as e:
+        print(f"[ERROR] Failed to parse node JSON: {e}")
+        print(f"[ERROR] Raw output: {nodes_json!r}")
+        sys.exit(1)
 
     master_count = 0
     worker_count = 0
@@ -79,6 +85,8 @@ def detect_topology(ssh_prefix):
         topology = "sno"
     elif master_count == 2:
         topology = "tna" if arbiter_count > 0 else "tnf"
+    elif master_count == 3 and worker_count == 0:
+        topology = "compact"
     else:
         topology = "standard"
 
@@ -92,7 +100,7 @@ def detect_topology(ssh_prefix):
 
 def select_config(topology):
     """Select the appropriate reliability config based on topology."""
-    if topology in ("tnf", "tna", "sno"):
+    if topology in ("tnf", "tna", "sno", "compact"):
         config = "reliability-small-cluster.yaml"
     else:
         config = "reliability.yaml"
@@ -103,7 +111,7 @@ def select_config(topology):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Automate Longevity Reliability Setup for OpenShift clusters (TNF, TNA, standard, SNO)"
+        description="Automate Longevity Reliability Setup for OpenShift clusters (TNF, TNA, compact, standard, SNO)"
     )
     parser.add_argument("--ec2-ip", required=True, help="EC2 instance public IP")
     parser.add_argument("--ssh-user", default="ec2-user", help="SSH username (default: ec2-user)")
@@ -115,9 +123,12 @@ def main():
     parser.add_argument("--slack-member", required=True, help="Slack member ID")
     parser.add_argument("--slack-api-token", required=True, help="Slack API token")
     parser.add_argument("--registry-namespace", required=False, help="Quay.io registry namespace for LVMS image")
-    parser.add_argument("--repositry-name", required=False, help="Quay.io repository name inside the namespace")
+    parser.add_argument("--repository-name", required=False, help="Quay.io repository name inside the namespace")
     parser.add_argument("--podman-username", required=False, help="Podman login username for quay.io")
     parser.add_argument("--quay-token", required=False, help="Quay.io OAuth token (can also use QUAY_TOKEN env var)")
+    parser.add_argument("--kubeconfig-path",
+        default="~/openshift-metal3/dev-scripts/ocp/ostest/auth/kubeconfig",
+        help="Path to source kubeconfig on EC2 instance (default: %(default)s)")
     parser.add_argument("--create-users", choices=["yes", "no"], default="yes", help="Whether to create test users and HTPasswd provider")
     args = parser.parse_args()
 
@@ -144,20 +155,28 @@ def main():
     print("[INFO] Copying kubeconfig from dev-scripts into reliability-v2...")
     run_command("mkdir -p ~/reliability-v2/path_to_auth_files", remote=True, ssh_prefix=ssh_prefix)
     copy_kubeconfig_cmd = (
-        "cp -f ~/openshift-metal3/dev-scripts/ocp/ostest/auth/kubeconfig "
+        f"cp -f {args.kubeconfig_path} "
         "~/reliability-v2/path_to_auth_files/kubeconfig"
     )
     run_command(copy_kubeconfig_cmd, remote=True, ssh_prefix=ssh_prefix)
 
+    # Write secrets to a temp env file via stdin (keeps them out of ps output)
+    env_file = "~/reliability-v2/.env_secrets"
+    subprocess.run(
+        f"{ssh_prefix} {shlex.quote(f'cat > {env_file} && chmod 600 {env_file}')}",
+        input=f"export PODMAN_PASSWORD='{args.podman_password}'\nexport SLACK_API_TOKEN={args.slack_api_token}\n",
+        shell=True, text=True
+    )
+
     # Run EC2 preparation script
     print("[INFO] Running preparation script on EC2...")
     prepare_script_cmd = (
-        f"PODMAN_PASSWORD='{args.podman_password}' "
+        f"source {env_file} && "
         f"bash ~/reliability-v2/tasks/script/ec2_prepare_env.sh "
         f"{args.enable_lvms} "
         f"{args.registry_namespace or ''} "
         f"{args.podman_username or ''} "
-        f"{args.repositry_name or ''} "
+        f"{args.repository_name or ''} "
         f"{args.create_users}"
     )
     run_command(prepare_script_cmd, remote=True, ssh_prefix=ssh_prefix)
@@ -168,13 +187,13 @@ def main():
 
     # Start tmux session with test command
     tmux_cmd = f"""tmux new-session -d -s longevity_test bash -c '
+        source ~/reliability-v2/.env_secrets && rm -f ~/reliability-v2/.env_secrets && \\
         cd /home/{args.ssh_user}/reliability-v2 && \\
         export KUBECONFIG=/home/{args.ssh_user}/reliability-v2/path_to_auth_files/kubeconfig && \\
         export CLUSTER_TOPOLOGY={topology.upper()} && \\
         export SLACK_ENABLE={args.slack_enable} && \\
         export SLACK_CHANNEL={args.slack_channel} && \\
         export SLACK_MEMBER={args.slack_member} && \\
-        export SLACK_API_TOKEN={args.slack_api_token} && \\
         ./start.sh -p /home/{args.ssh_user}/reliability-v2/path_to_auth_files -t {args.test_duration} -u -c {config_file} 2>&1 | tee live_output.log; \\
         tail -f live_output.log
     '"""
