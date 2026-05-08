@@ -1,0 +1,122 @@
+# Reliability config profile for small/constrained clusters (2-3 nodes).
+# Use this for Two Node Fencing (TNF), Two Node with Arbiter (TNA), or
+# other compact topologies where the default reliability.yaml would
+# overload the cluster.
+#
+# Key adjustments vs. default:
+#   - Fewer concurrent test users per group
+#   - 2 namespaces instead of 8 in dev-prod group
+#   - 10 load clients instead of 50
+#
+# Usage: ./start.sh -t 2d -c reliability-small-cluster.yaml -p /path/to/auth
+
+reliability:
+  kubeconfig: <path_to_kubeconfig>
+  users:
+    - admin_file: <path_to_admin_file>
+    - user_file: <path_to_users_file>
+
+  appTemplates:
+    - template: cakephp-mysql-persistent
+    - template: nodejs-postgresql-persistent # N/A for FIPS
+    - template: django-psql-persistent # N/A for FIPS
+    - template: rails-pgsql-persistent
+
+  # Scaled down for 2-3 node clusters.
+  # The max number of projects = groups x users x new_project
+  groups:
+    - name: admin
+      user_name: <admin_username>
+      loops: forever
+      trigger: 600
+      jitter: 60
+      interval: 10
+      pre_tasks:
+        - func apply_nonamespace -p "<path_to_content>/network-policy/00_banp_deny-traffic-reliability.yaml"
+        - func apply_nonamespace -p "<path_to_content>/network-policy/01_anp_allow-common-service.yaml"
+        - func apply_nonamespace -p "<path_to_content>/network-policy/02_anp_allow-traffic-egress-cidr-cluster-network-p20.yaml"
+        - func apply_nonamespace -p "<path_to_content>/network-policy/04_anp_allow-traffic-dev-test-p30.yaml"
+        - func apply_nonamespace -p "<path_to_content>/network-policy/03_anp_allow-traffic-dev-prod-p31.yaml"
+      tasks:
+        - oc get project -l purpose=reliability
+        - func check_nodes
+        - kubectl get pods -A -o wide | egrep -v "Completed|Running"
+
+    - name: dev-test
+      user_name: testuser-
+      user_start: 1
+      user_end: 3 # reduced from 6 for small clusters
+      loops: forever
+      trigger: 60
+      jitter: 600
+      interval: 10
+      tasks:
+        - func delete_all_projects
+        - func verify_project_deletion -n 2
+        - func new_project -n 2
+        - func check_all_projects
+        - func apply -n 2 -p "<path_to_content>/nginx-deploy.yaml"
+        - func apply -n 2 -p "<path_to_content>/nginx-service.yaml"
+        - func apply -n 2 -p "<path_to_content>/route-http.yaml"
+        - func load_app -n 2 -p 10
+        - func check_pods -n 2
+        - func delete_project -n 2
+        - func verify_project_deletion -n 2
+
+    - name: dev-prod
+      user_name: testuser-
+      user_start: 31
+      user_end: 33 # reduced from 36 for small clusters
+      loops: forever
+      trigger: 600
+      jitter: 3600
+      interval: 600
+      pre_tasks:
+        - func delete_all_projects
+        - func verify_project_deletion -n 2
+        - func new_project -n 2
+        - func apply -n 2 -p "<path_to_content>/nginx-deploy.yaml"
+        - func apply -n 2 -p "<path_to_content>/nginx-service.yaml"
+        - func apply -n 2 -p "<path_to_content>/route-http.yaml"
+      tasks:
+        - func load_app -n 2 -p 10
+        - func scale_deployment -n 2 -p 2
+        - func scale_deployment -n 2 -p 1
+      post_tasks:
+        - func delete_project -n 2
+
+    - name: dev-cronjob
+      user_name: testuser-
+      user_start: 41
+      user_end: 42
+      trigger: 600
+      jitter: 1200
+      loops: forever
+      pre_tasks:
+        - func delete_all_projects
+        - func verify_project_deletion -n 1
+        - func new_project -n 1
+        - <path_to_script>/cronjob.sh -n 10
+      tasks:
+        - <path_to_script>/cronjob.sh -c
+      post_tasks:
+        - <path_to_script>/cronjob.sh -d
+        - func delete_project -n 1
+        - func verify_project_deletion -n 1
+
+  cerberusIntegration:
+    cerberus_enable: False
+    cerberus_api: "http://0.0.0.0:8080"
+    cerberus_fail_action: pause
+
+  slackIntegration:
+    slack_enable: False
+    slack_channel: C0266JJ4XM5
+    slack_member: <Your slack member id>
+
+  krakenIntegration:
+    kraken_enable: False
+    # Kraken scenarios are not included in this profile. The default scenarios
+    # in reliability.yaml assume AWS and worker nodes, which do not apply to
+    # small bare-metal clusters (TNF/TNA). If you need Kraken chaos testing,
+    # copy scenarios from reliability.yaml and adjust for your environment.

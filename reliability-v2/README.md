@@ -47,7 +47,67 @@ export SLACK_MEMBER=<get it by clicking 'Copy member ID' in your slack Profile>
 
 If you don't want to use the default configuration, you can update (https://github.com/openshift/svt/blob/master/reliability-v2/config/reliability.yaml) before you trigger [start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh)
 
+For small clusters (2-3 nodes, e.g. TNF or TNA topologies), use `reliability-small-cluster.yaml` which reduces concurrent users, namespaces, and load clients to avoid overwhelming the cluster:
+```
+start.sh -p <path_to_auth_files> -t 2d -c reliability-small-cluster.yaml
+```
+
 For configuration details, check [Configuration](#Configuration)
+
+## Automated remote setup: reliability_setup.py
+
+**Note:** This script was designed primarily for small/compact cluster topologies (TNA, TNF, SNO) deployed via dev-scripts on EC2. For standard 3-master clusters, you can use `start.sh` directly without this script.
+
+`reliability_setup.py` automates the full setup and launch of a reliability test on a remote EC2 instance. It rsyncs the reliability-v2 directory to the instance, copies the kubeconfig from dev-scripts, runs environment preparation (user creation, LVMS deployment if enabled), detects the cluster topology (standard, TNA, TNF, or SNO), selects the appropriate config, and starts the test in a detached tmux session.
+
+### Prerequisites
+- SSH access to the EC2 instance (key-based auth)
+- A cluster deployed via dev-scripts on the instance (kubeconfig at `~/openshift-metal3/dev-scripts/ocp/ostest/auth/kubeconfig`)
+
+### Usage
+```
+python3 reliability_setup.py \
+  --ec2-ip <EC2_PUBLIC_IP> \
+  --reliability-path /path/to/svt/reliability-v2 \
+  --slack-channel <CHANNEL_ID> \
+  --slack-member <MEMBER_ID> \
+  --slack-api-token <TOKEN> \
+  --test-duration 2d
+```
+
+### Flags
+
+| Flag | Required | Default | Description |
+| ---- | ---- | ---- | ---- |
+| `--ec2-ip` | yes | | EC2 instance public IP |
+| `--reliability-path` | yes | | Local path to svt/reliability-v2 |
+| `--slack-channel` | yes | | Slack channel ID |
+| `--slack-member` | yes | | Slack member ID for @ mentions |
+| `--slack-api-token` | yes | | Slack API token |
+| `--ssh-user` | no | ec2-user | SSH username |
+| `--test-duration` | no | 2d | Test duration (e.g. 2d, 5h) |
+| `--slack-enable` | no | TRUE | Enable Slack reporting (TRUE/FALSE) |
+| `--enable-lvms` | no | no | Deploy LVMS with fake loopback disks (yes/no) |
+| `--create-users` | no | yes | Create HTPasswd test users (yes/no) |
+| `--quay-token` | no | | Quay.io OAuth token for LVMS image push (or set `QUAY_TOKEN` env var) |
+| `--registry-namespace` | no | | Quay.io registry namespace for LVMS image |
+| `--repositry-name` | no | | Quay.io repository name |
+| `--podman-username` | no | | Podman login username for quay.io |
+
+### Topology detection
+
+The script automatically detects the cluster topology by examining node roles and selects the config accordingly:
+
+| Topology | Detection | Config |
+| ---- | ---- | ---- |
+| Standard (3 masters) | 3 nodes with `master`/`control-plane` role | `reliability.yaml` |
+| TNA (Two Node + Arbiter) | 2 masters + `arbiter` role present | `reliability-small-cluster.yaml` |
+| TNF (Two Node Fencing) | 2 masters, no arbiter | `reliability-small-cluster.yaml` |
+| SNO (Single Node) | 1 master | `reliability-small-cluster.yaml` |
+
+### ec2_prepare_env.sh
+
+Called automatically by `reliability_setup.py`. Installs dependencies (tmux, podman, skopeo), creates HTPasswd test users if requested, and optionally builds and deploys LVMS with fake loopback disks for storage testing.
 
 # Run without start.sh
 If [start.sh](https://github.com/openshift/svt/tree/master/reliability-v2/start.sh) can not fit your requirment, you can run it with python. Read the folowing steps to know more details.
@@ -137,6 +197,8 @@ python3 reliability.py -c <path to the configuration file>
 Logs will go to stdout and `/tmp/reliability.log` by default if `-l` is not specified.
 
 Cerberus history file will go to `/tmp/cerberus-history.json` by default if `--cerberus-history` is not specified.
+
+When running on a remote EC2 instance, result files are located under `~/reliability-v2/` on the instance: `reliability.log`, `reliability_result`, `reliability_failures`, and `live_output.log`. Use `scp` to retrieve them after the test completes.
 ```
 python3 reliability.py -c <path to config file> -l <path to log config file> --cerberus-history <path to file to save cerberus history is cerberus is enabled>
 ```

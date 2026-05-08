@@ -223,7 +223,7 @@ function install_dittybopper(){
     log "info" "====Install dittybopper===="
     cd utils
     if [[ ! -d performance-dashboards ]]; then
-        git clone git@github.com:cloud-bulldozer/performance-dashboards.git --depth 1
+        git clone https://github.com/cloud-bulldozer/performance-dashboards.git --depth 1
     fi
     cd performance-dashboards/dittybopper
     if [[ -z $IMPORT_DASHBOARD ]]; then
@@ -441,6 +441,7 @@ oc delete ns -l purpose=reliability
 # Start reliability test
 log "info" "====Start Reliability test. Log is writting to $folder_name/reliability.log.===="
 log "info" "Cluster information: $(oc version)"
+log "info" "Cluster topology: ${CLUSTER_TOPOLOGY:-unknown}"
 # get storage class used in the test
 log "info" "default storage class: $STORAGE_CLASS"
 # get haproxy version
