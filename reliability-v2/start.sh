@@ -240,16 +240,16 @@ function install_dittybopper(){
 
 function setup_netobserv(){
     log "Setting up Network Observability operator"
-    rm -rf ocp-qe-perfscale-ci
-    git clone https://github.com/openshift-eng/ocp-qe-perfscale-ci.git --branch netobserv-perf-tests
-    OCPQE_PERFSCALE_DIR=$PWD/ocp-qe-perfscale-ci
-    source ocp-qe-perfscale-ci/scripts/env.sh
-    source ocp-qe-perfscale-ci/scripts/netobserv.sh
+    rm -rf netobserv-perf-tests
+    git clone https://github.com/netobserv/netobserv-perf-tests.git --branch main
+    export PERF_TESTS_DIR=$PWD/netobserv-perf-tests
+    source ${PERF_TESTS_DIR}/scripts/env.sh
+    source ${PERF_TESTS_DIR}/scripts/netobserv.sh
     deploy_lokistack
     deploy_kafka
     deploy_netobserv
-    createFlowCollector "-p KafkaConsumerReplicas=6"
-    export IMPORT_DASHBOARD=$OCPQE_PERFSCALE_DIR/scripts/queries/netobserv_dittybopper.json
+    createFlowCollector "-p KafkaConsumerReplicas=6 DeploymentModel=Service"
+    export IMPORT_DASHBOARD=${PERF_TESTS_DIR}/scripts/queries/netobserv_dittybopper.json
 }
 
 RELIABILITY_DIR=$(cd $(dirname ${BASH_SOURCE[0]});pwd)
@@ -527,8 +527,8 @@ fi
 if [[ $operators ]]; then
     for operator in "${operatorsToInstall[@]}"; do
         if [[ $operator == "netobserv" ]]; then
-            # shellcheck source=reliability-v2/ocp-qe-perfscale-ci/scripts/netobserv.sh
-            source ${RELIABILITY_DIR}/${OCPQE_PERFSCALE_DIR}/scripts/netobserv.sh
+            # shellcheck source=netobserv-perf-tests/scripts/netobserv.sh
+            source ${PERF_TESTS_DIR}/scripts/netobserv.sh
             nukeobserv
         fi
     done
