@@ -91,7 +91,7 @@ python3 reliability_setup.py \
 | `--create-users` | no | yes | Create HTPasswd test users (yes/no) |
 | `--quay-token` | no | | Quay.io OAuth token for LVMS image push (or set `QUAY_TOKEN` env var) |
 | `--registry-namespace` | no | | Quay.io registry namespace for LVMS image |
-| `--repositry-name` | no | | Quay.io repository name |
+| `--repository-name` | no | | Quay.io repository name |
 | `--podman-username` | no | | Podman login username for quay.io |
 
 ### Topology detection
